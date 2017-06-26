@@ -182,7 +182,7 @@ class UCIProtocol :
         if (strieq(params[0], "uci"))
             {
 			printf("id name Tomcat 1.0\n");
-			printf("id author Kranium\n");
+			printf("id author Gunnar Harms\n");
 			printf("option name Hash type spin default 1024 min 8 max 65536\n");
 			printf("option name Ponder type check default true\n");
 			printf("option name Threads type spin default 1 min 1 max 64\n");
