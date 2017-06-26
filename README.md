@@ -17,3 +17,6 @@ development tests at ultra fast TC indicate about a 45 elo improvement
 1	tomcat 030	2980.9	0.8	65860	131072	50.25%	+35405,=60909,-34758	1.72	98.9%
 2	tomcat 029	2979.1	0.8	65213	131072	49.75%	+34758,=60909,-35405		
 
+I've included the Visual Studio project files (Tomcat.vcxproj, etc)
+
+Norman Schmidt firefather@telenet.be 6/26/2017
