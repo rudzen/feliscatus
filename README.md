@@ -1,5 +1,5 @@
 # Tomcat 1.0
-chess engine based on Bobcat 8.0
+chess engine based on Bobcat 8.0 by Gunnar Harms
 
 - code optimizations and eval tuning
 
