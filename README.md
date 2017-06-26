@@ -19,4 +19,4 @@ development tests at ultra fast TC indicate about a 45 elo improvement
 
 I've included the Visual Studio project files (Tomcat.vcxproj, etc)
 
-firefather@telenet.be 6/26/2017
+Norman Schmidt firefather@telenet.be 6/26/2017
