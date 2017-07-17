@@ -5,7 +5,7 @@ https://github.com/Bobcat/bobcat
 
 - code optimizations and eval tuning
 
-development tests at ultra fast TC indicate about a 45 elo improvement
+development tests (ultra-fast/self-play) indicate about a 45 elo improvement
 
 1	tomcat 008	3059.3	1.5	17763	32347	54.91%	+10101,=15324,-6922	34.26	100.0%
 
