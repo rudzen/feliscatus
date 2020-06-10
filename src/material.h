@@ -1,6 +1,9 @@
 #pragma once
 
 #include <array>
+#include <algorithm>
+#include "board.h"
+#include "piece.h"
 
 constexpr int RECOGNIZEDDRAW = 1;
 
@@ -153,9 +156,9 @@ public:
         score = drawish_score;
       } else if (pc1 == 0)
       {
-        score = min(drawish_score, score);
+        score = std::min(drawish_score, score);
       } else if (pc2 == 0)
-      { score = max(drawish_score, score); }
+      { score = std::max(drawish_score, score); }
     }
     flags = this->flags;
     return side1 != side_to_move ? -score : score;
@@ -295,7 +298,7 @@ public:
       a_winning_cornersq       = a1;
       another_winning_cornersq = h8;
     }
-    return eval + 175 - min(25 * dist[a_winning_cornersq][loosing_kingsq], 25 * dist[another_winning_cornersq][loosing_kingsq]);
+    return eval + 175 - std::min(25 * dist[a_winning_cornersq][loosing_kingsq], 25 * dist[another_winning_cornersq][loosing_kingsq]);
   }
 
   int KBKX(int eval, uint32_t key1, uint32_t key2, int pc1, int pc2, const int side1, const int side2, int side_to_move) {
@@ -334,7 +337,7 @@ public:
     default:
       break;
     }
-    return min(0, eval);
+    return std::min(0, eval);
   }
 
   int KNKX(int eval, uint32_t key2, int pc1, int pc2, const int side1, const int side2, int side_to_move) {
@@ -368,7 +371,7 @@ public:
     default:
       break;
     }
-    return pc1 == 0 ? min(0, eval) : eval;
+    return pc1 == 0 ? std::min(0, eval) : eval;
   }
 
   int KNNKX(int eval, uint32_t key2, int pc1) {
@@ -382,7 +385,7 @@ public:
     default:
       break;
     }
-    return pc1 == 0 ? min(0, eval) : eval;
+    return pc1 == 0 ? std::min(0, eval) : eval;
   }
 
   int KKx(int eval, uint32_t key1, uint32_t key2, int pc1, int pc2, int side1) {

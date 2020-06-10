@@ -2,6 +2,10 @@
 
 #include <cstdint>
 
+#include "move.h"
+#include "board.h"
+#include "bitboard.h"
+
 struct MoveData {
   uint32_t move;
   int score;

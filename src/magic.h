@@ -25,12 +25,14 @@
  *were not changed in any way.
  */
 
+#pragma once
+
 namespace attacks
     {
 
     uint64_t magic_bishop_db[64][1 << 9];
 
-    uint64_t magicmoves_b_magics[64] =
+    constexpr uint64_t magicmoves_b_magics[64] =
         {
         0x0002020202020200ULL, 0x0002020202020000ULL, 0x0004010202000000ULL, 0x0004040080000000ULL,
         0x0001104000000000ULL, 0x0000821040000000ULL, 0x0000410410400000ULL, 0x0000104104104000ULL,
@@ -50,7 +52,7 @@ namespace attacks
         0x0000000010020200ULL, 0x0000000404080200ULL, 0x0000040404040400ULL, 0x0002020202020200ULL
         };
 
-    uint64_t magicmoves_b_mask[64] =
+    constexpr uint64_t magicmoves_b_mask[64] =
         {
         0x0040201008040200ULL, 0x0000402010080400ULL, 0x0000004020100A00ULL, 0x0000000040221400ULL,
         0x0000000002442800ULL, 0x0000000204085000ULL, 0x0000020408102000ULL, 0x0002040810204000ULL,
@@ -72,7 +74,7 @@ namespace attacks
 
     uint64_t magic_rook_db[64][1 << 12];
 
-    uint64_t magicmoves_r_magics[64] =
+    constexpr uint64_t magicmoves_r_magics[64] =
         {
         0x0080001020400080ULL, 0x0040001000200040ULL, 0x0080081000200080ULL, 0x0080040800100080ULL,
         0x0080020400080080ULL, 0x0080010200040080ULL, 0x0080008001000200ULL, 0x0080002040800100ULL,
@@ -92,7 +94,7 @@ namespace attacks
         0x0001000204080011ULL, 0x0001000204000801ULL, 0x0001000082000401ULL, 0x0000002040810402ULL
         };
 
-    uint64_t magicmoves_r_mask[64] =
+    constexpr uint64_t magicmoves_r_mask[64] =
         {
         0x000101010101017EULL, 0x000202020202027CULL, 0x000404040404047AULL, 0x0008080808080876ULL,
         0x001010101010106EULL, 0x002020202020205EULL, 0x004040404040403EULL, 0x008080808080807EULL,
@@ -112,27 +114,27 @@ namespace attacks
         0x6E10101010101000ULL, 0x5E20202020202000ULL, 0x3E40404040404000ULL, 0x7E80808080808000ULL
         };
 
-    __forceinline uint64_t bishopAttacks (const uint32_t square, const uint64_t occupied)
+    inline uint64_t bishopAttacks (const uint32_t square, const uint64_t occupied)
         {
         return magic_bishop_db[square][(((occupied) & magicmoves_b_mask[square])* magicmoves_b_magics[square]) >> 55];
         }
 
-    __forceinline uint64_t rookAttacks (const uint32_t square, const uint64_t occupied)
+    inline uint64_t rookAttacks (const uint32_t square, const uint64_t occupied)
         {
         return magic_rook_db[square][(((occupied) & magicmoves_r_mask[square])* magicmoves_r_magics[square]) >> 52];
         }
 
-    __forceinline uint64_t queenAttacks (const uint32_t square, const uint64_t occupied)
+    inline uint64_t queenAttacks (const uint32_t square, const uint64_t occupied)
         {
         return bishopAttacks(square, occupied) | rookAttacks(square, occupied);
         }
 
-    __forceinline uint64_t knightAttacks (const uint64_t sq)
+    inline uint64_t knightAttacks (const uint64_t sq)
         {
         return knight_attacks[sq];
         }
 
-    __forceinline uint64_t kingAttacks (const uint64_t sq)
+    inline uint64_t kingAttacks (const uint64_t sq)
         {
         return king_attacks[sq];
         }

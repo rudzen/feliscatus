@@ -1,4 +1,9 @@
+#pragma once
+
 #include <iostream>
+#include "pgn.h"
+#include "game.h"
+
 using namespace std;
 
 namespace pgn

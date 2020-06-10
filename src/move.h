@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "piece.h"
 
 constexpr int movePiece(const uint32_t move) {
   return (move >> 26) & 15;

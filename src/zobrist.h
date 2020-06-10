@@ -1,3 +1,7 @@
+#pragma once
+
+#include <random>
+
 namespace zobrist
     {
     uint64_t zobrist_pst[14][64];

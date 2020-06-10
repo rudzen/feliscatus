@@ -1,5 +1,12 @@
 #pragma once
 
+#include <windows.h>
+#include <sys/timeb.h>
+#include <time.h>
+#include <minwindef.h>
+#include <inttypes.h>
+#include <cstring>
+
 constexpr double sigmoid(double x, double K) {
   return 1 / (1 + pow(10, -K * x / 400));
 }
@@ -9,9 +16,9 @@ constexpr bool iswhitespace(char c) {
 }
 
 inline char *rtrim(char *buf) {
-  while (strlen(buf) && iswhitespace(buf[strlen(buf) - 1]))
+  while (std::strlen(buf) && iswhitespace(buf[std::strlen(buf) - 1]))
   {
-    buf[strlen(buf) - 1] = 0;
+    buf[std::strlen(buf) - 1] = 0;
   }
   return buf;
 }
@@ -34,7 +41,7 @@ inline int tokenize(char *input, char *tokens[], int max_tokens) {
 
   while (token != NULL && num_tokens < max_tokens)
   {
-    tokens[num_tokens] = new char[strlen(token) + 1];
+    tokens[num_tokens] = new char[std::strlen(token) + 1];
     strcpy(tokens[num_tokens++], token);
     token = strtok(NULL, " ");
   }
@@ -42,16 +49,16 @@ inline int tokenize(char *input, char *tokens[], int max_tokens) {
 }
 
 constexpr static int pow2(int x) {
-  return (int)pow(2.0, x);
+  return (int)std::pow(2.0, x);
 }
 
 inline bool strieq(const char *s1, const char *s2) {
-  if (strlen(s1) != strlen(s2))
+  if (std::strlen(s1) != std::strlen(s2))
   {
     return false;
   }
 
-  for (size_t i = 0; i < strlen(s1); i++)
+  for (size_t i = 0; i < std::strlen(s1); i++)
   {
     if (::tolower(*(s1 + i)) != ::tolower(*(s2 + i)))
     {
@@ -70,7 +77,7 @@ inline const char *FENfromParams(const char *params[], int num_params, int &para
 
   for (int i = 0; i < 6; i++)
   {
-    if (strlen(fen) + strlen(params[++param]) + 1 >= 128)
+    if (std::strlen(fen) + std::strlen(params[++param]) + 1 >= 128)
     {
       return NULL;
     }
@@ -106,24 +113,24 @@ public:
 
   Stopwatch(int) { QueryPerformanceFrequency(&frequency_); }
 
-  __forceinline void start() {
+  void start() {
     QueryPerformanceCounter(&start1_);
     start2_ = GetTickCount64();
   }
 
-  __forceinline uint64_t microsElapsedHighRes() const {
+  uint64_t microsElapsedHighRes() const {
     LARGE_INTEGER now;
     QueryPerformanceCounter(&now);
     return (now.QuadPart - start1_.QuadPart) * 1000000 / frequency_.QuadPart;
   }
 
-  __forceinline uint64_t millisElapsedHighRes() const {
+  uint64_t millisElapsedHighRes() const {
     LARGE_INTEGER now;
     QueryPerformanceCounter(&now);
     return (now.QuadPart - start1_.QuadPart) * 1000 / frequency_.QuadPart;
   }
 
-  __forceinline uint64_t millisElapsed() const { return GetTickCount64() - start2_; }
+  uint64_t millisElapsed() const { return GetTickCount64() - start2_; }
 };
 
 LARGE_INTEGER Stopwatch::frequency_;

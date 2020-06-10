@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "position.h"
+#include "zobrist.h"
 
 class Game {
 public:

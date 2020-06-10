@@ -1,5 +1,9 @@
 #pragma once
 
+#include "moves.h"
+#include "material.h"
+#include "hash.h"
+
 class Position : public Moves {
 public:
   Position() { clear(); }

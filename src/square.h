@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 namespace squares {
 int rankOf(const uint64_t sq) {
   return sq >> 3;
@@ -60,9 +62,9 @@ bool sameColor(const uint64_t sq1, const uint64_t sq2) {
       {
         for (uint32_t sq2 = 0; sq2 < 64; sq2++)
         {
-          uint32_t ranks = abs(rankOf(sq1) - rankOf(sq2));
-          uint32_t files = abs(fileOf(sq1) - fileOf(sq2));
-          dist[sq1][sq2] = max(ranks, files);
+          uint32_t ranks = std::abs(rankOf(sq1) - rankOf(sq2));
+          uint32_t files = std::abs(fileOf(sq1) - fileOf(sq2));
+          dist[sq1][sq2] = std::max(ranks, files);
         }
       }
 

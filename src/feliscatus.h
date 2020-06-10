@@ -1,3 +1,17 @@
+#pragma once
+
+#include <algorithm>
+#include "uci.h"
+#include "game.h"
+#include "eval.h"
+#include "see.h"
+#include "search.h"
+#include "hash.h"
+#include "worker.h"
+#include "zobrist.h"
+#include "perft.h"
+#include "tune.h"
+
 class Felis : public ProtocolListener {
 public:
   Felis() : num_threads(1) {}
@@ -77,11 +91,11 @@ public:
     {
       if (strieq("Hash", name))
       {
-        transt->init(min(65536, max(8, (int)strtol(value, NULL, 10))));
+        transt->init(std::min(65536, std::max(8, (int)strtol(value, NULL, 10))));
         _snprintf(buf, sizeof(buf), "Hash:%d", transt->getSizeMb());
       } else if (strieq("Threads", name) || strieq("NumThreads", name))
       {
-        num_threads = min(64, max(1, (int)strtol(value, NULL, 10)));
+        num_threads = std::min(64, std::max(1, (int)strtol(value, NULL, 10)));
         _snprintf(buf, sizeof(buf), "Threads:%d", num_threads);
       } else if (strieq("UCI_Chess960", name))
       {

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -5,7 +7,7 @@
 #include <memory>
 #include <iomanip>
 
-#pragma once
+#include "pgn_player.h"
 
 namespace eval {
 
@@ -569,11 +571,11 @@ public:
       {
         finished++;
       }
-      cout << i << ":" << params[i].name_ << ":" << params[i].value_ << "  step:" << params[i].step_ << endl;
+      std::cout << i << ":" << params[i].name_ << ":" << params[i].value_ << "  step:" << params[i].step_ << std::endl;
     }
 
-    cout << "Best E:" << std::setprecision(12) << E << "  " << endl;
-    cout << "Finished:" << finished * 100.0 / params.size() << "%" << endl;
+    std::cout << "Best E:" << std::setprecision(12) << E << "  " << std::endl;
+    std::cout << "Finished:" << finished * 100.0 / params.size() << "%" << std::endl;
   }
 
   double bestK() {

@@ -3,13 +3,14 @@
 
 #include <cstdint>
 #include <bit>
+#include "square.h"
 
 namespace bitboard {
 
-constexpr uint64_t AFILE = 0x0101010101010101;
-constexpr uint64_t HFILE = 0x8080808080808080;
-constexpr uint64_t BFILE = 0x0202020202020202;
-constexpr uint64_t GFILE = 0x4040404040404040;
+constexpr uint64_t AFILE_BB = 0x0101010101010101;
+constexpr uint64_t HFILE_BB = 0x8080808080808080;
+constexpr uint64_t BFILE_BB = 0x0202020202020202;
+constexpr uint64_t GFILE_BB = 0x4040404040404040;
 constexpr uint64_t RANK1 = 0x00000000000000ff;
 constexpr uint64_t RANK2 = 0x000000000000ff00;
 constexpr uint64_t RANK3 = 0x0000000000ff0000;
@@ -56,27 +57,27 @@ inline uint64_t southOne(const uint64_t &bb) {
 }
 
 inline uint64_t eastOne(const uint64_t &bb) {
-  return (bb & ~HFILE) << 1;
+  return (bb & ~HFILE_BB) << 1;
 }
 
 inline uint64_t westOne(const uint64_t &bb) {
-  return (bb & ~AFILE) >> 1;
+  return (bb & ~AFILE_BB) >> 1;
 }
 
 inline uint64_t northEastOne(const uint64_t &bb) {
-  return (bb & ~HFILE) << 9;
+  return (bb & ~HFILE_BB) << 9;
 }
 
 inline uint64_t southEastOne(const uint64_t &bb) {
-  return (bb & ~HFILE) >> 7;
+  return (bb & ~HFILE_BB) >> 7;
 }
 
 inline uint64_t southWestOne(const uint64_t &bb) {
-  return (bb & ~AFILE) >> 9;
+  return (bb & ~AFILE_BB) >> 9;
 }
 
 inline uint64_t northWestOne(const uint64_t &bb) {
-  return (bb & ~AFILE) << 7;
+  return (bb & ~AFILE_BB) << 7;
 }
 
 inline uint64_t northFill(const uint64_t &bb) {
@@ -117,7 +118,7 @@ void init() {
   {
     bb_square[sq] = (uint64_t)1 << sq;
     bb_rank[sq]   = RANK1 << (sq & 56);
-    bb_file[sq]   = AFILE << (sq & 7);
+    bb_file[sq]   = AFILE_BB << (sq & 7);
   }
 
   for (uint64_t sq = a1; sq <= h8; sq++)
@@ -144,28 +145,28 @@ void init() {
     initBetweenBitboards(sq, westOne, -1);
     initBetweenBitboards(sq, northWestOne, 7);
 
-    pawn_captures[sq] = (bbSquare(sq) & ~HFILE) << 9;
-    pawn_captures[sq] |= (bbSquare(sq) & ~AFILE) << 7;
-    pawn_captures[sq + 64] = (bbSquare(sq) & ~AFILE) >> 9;
-    pawn_captures[sq + 64] |= (bbSquare(sq) & ~HFILE) >> 7;
+    pawn_captures[sq] = (bbSquare(sq) & ~HFILE_BB) << 9;
+    pawn_captures[sq] |= (bbSquare(sq) & ~AFILE_BB) << 7;
+    pawn_captures[sq + 64] = (bbSquare(sq) & ~AFILE_BB) >> 9;
+    pawn_captures[sq + 64] |= (bbSquare(sq) & ~HFILE_BB) >> 7;
 
-    knight_attacks[sq] = (bbSquare(sq) & ~(AFILE | BFILE)) << 6;
-    knight_attacks[sq] |= (bbSquare(sq) & ~AFILE) << 15;
-    knight_attacks[sq] |= (bbSquare(sq) & ~HFILE) << 17;
-    knight_attacks[sq] |= (bbSquare(sq) & ~(GFILE | HFILE)) << 10;
-    knight_attacks[sq] |= (bbSquare(sq) & ~(GFILE | HFILE)) >> 6;
-    knight_attacks[sq] |= (bbSquare(sq) & ~HFILE) >> 15;
-    knight_attacks[sq] |= (bbSquare(sq) & ~AFILE) >> 17;
-    knight_attacks[sq] |= (bbSquare(sq) & ~(AFILE | BFILE)) >> 10;
+    knight_attacks[sq] = (bbSquare(sq) & ~(AFILE_BB | BFILE_BB)) << 6;
+    knight_attacks[sq] |= (bbSquare(sq) & ~AFILE_BB) << 15;
+    knight_attacks[sq] |= (bbSquare(sq) & ~HFILE_BB) << 17;
+    knight_attacks[sq] |= (bbSquare(sq) & ~(GFILE_BB | HFILE_BB)) << 10;
+    knight_attacks[sq] |= (bbSquare(sq) & ~(GFILE_BB | HFILE_BB)) >> 6;
+    knight_attacks[sq] |= (bbSquare(sq) & ~HFILE_BB) >> 15;
+    knight_attacks[sq] |= (bbSquare(sq) & ~AFILE_BB) >> 17;
+    knight_attacks[sq] |= (bbSquare(sq) & ~(AFILE_BB | BFILE_BB)) >> 10;
 
-    king_attacks[sq] = (bbSquare(sq) & ~AFILE) >> 1;
-    king_attacks[sq] |= (bbSquare(sq) & ~AFILE) << 7;
+    king_attacks[sq] = (bbSquare(sq) & ~AFILE_BB) >> 1;
+    king_attacks[sq] |= (bbSquare(sq) & ~AFILE_BB) << 7;
     king_attacks[sq] |= bbSquare(sq) << 8;
-    king_attacks[sq] |= (bbSquare(sq) & ~HFILE) << 9;
-    king_attacks[sq] |= (bbSquare(sq) & ~HFILE) << 1;
-    king_attacks[sq] |= (bbSquare(sq) & ~HFILE) >> 7;
+    king_attacks[sq] |= (bbSquare(sq) & ~HFILE_BB) << 9;
+    king_attacks[sq] |= (bbSquare(sq) & ~HFILE_BB) << 1;
+    king_attacks[sq] |= (bbSquare(sq) & ~HFILE_BB) >> 7;
     king_attacks[sq] |= bbSquare(sq) >> 8;
-    king_attacks[sq] |= (bbSquare(sq) & ~AFILE) >> 9;
+    king_attacks[sq] |= (bbSquare(sq) & ~AFILE_BB) >> 9;
   }
   corner_a1 = bbSquare(a1) | bbSquare(b1) | bbSquare(a2) | bbSquare(b2);
   corner_a8 = bbSquare(a8) | bbSquare(b8) | bbSquare(a7) | bbSquare(b7);
@@ -204,40 +205,17 @@ const int pawn_west_attack_dist[2] = {9, -7};
 
 const int pawn_east_attack_dist[2] = {7, -9};
 
-__forceinline void resetLSB(uint64_t &x) {
+constexpr void resetLSB(uint64_t &x) {
   x &= (x - 1);
 }
 
-#ifdef _M_X64
-__forceinline uint8_t popCount(uint64_t x) {
+constexpr uint8_t popCount(uint64_t x) {
   return std::popcount(x);
 }
 
-__forceinline int lsb(uint64_t x) {
-  register unsigned long index;
-  _BitScanForward64(&index, x);
-  return index;
+constexpr lsb(uint64_t x) {
+  return std::countr_zero(x);
 }
-#else
-__forceinline uint32_t popCount(uint64_t x) {
-  uint32_t lo = (uint32_t)x;
-  uint32_t hi = (uint32_t)(x >> 32);
-  return _mm_popcnt_u32(lo) + _mm_popcnt_u32(hi);
-}
-__forceinline uint32_t lsb(uint64_t x) {
-  uint32_t lo = (uint32_t)x;
-  uint32_t hi = (uint32_t)(x >> 32);
-  DWORD id;
-  if (lo)
-    _BitScanForward(&id, lo);
-  else
-  {
-    _BitScanForward(&id, hi);
-    id += 32;
-  }
-  return (uint32_t)id;
-}
-#endif
 
 }// namespace bitboard
 

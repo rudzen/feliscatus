@@ -1,3 +1,16 @@
+#pragma once
+
+#include <algorithm>
+#include <cassert>
+
+#include "moves.h"
+#include "uci.h"
+#include "game.h"
+#include "eval.h"
+#include "see.h"
+#include "hash.h"
+
+
 class Search : public MoveSorter {
 public:
   Search(Protocol *protocol, Game *game, Eval *eval, See *see, HashTable *transt) { init(protocol, game, eval, see, transt); }
@@ -39,8 +52,8 @@ public:
           }
           checkTime();
 
-          alpha = max(-MAXSCORE, score - 100);
-          beta  = min(MAXSCORE, score + 100);
+          alpha = std::max(-MAXSCORE, score - 100);
+          beta  = std::min(MAXSCORE, score + 100);
         } while (true);
 
         storePV();
@@ -49,8 +62,8 @@ public:
         {
           break;
         }
-        alpha = max(-MAXSCORE, pv[0][0].score - 20);
-        beta  = min(MAXSCORE, pv[0][0].score + 20);
+        alpha = std::max(-MAXSCORE, pv[0][0].score - 20);
+        beta  = std::min(MAXSCORE, pv[0][0].score + 20);
       } catch (const int)
       {
         while (ply)
@@ -121,7 +134,7 @@ protected:
 
       if (score < beta)
       {
-        return searchNodeScore(max(score, pos->eval_score + razor_margin[depth]));
+        return searchNodeScore(std::max(score, pos->eval_score + razor_margin[depth]));
       }
     }
     uint32_t singular_move = getSingularMove(depth, pv);
@@ -228,7 +241,7 @@ protected:
   __forceinline uint32_t getSingularMove(const int depth, bool pv) {
     if (pv && pos->transp_move && pos->transp_type == EXACT && depth >= 4)
     {
-      if (searchFailLow(depth / 2, max(-MAXSCORE, pos->eval_score - 75), pos->transp_move))
+      if (searchFailLow(depth / 2, std::max(-MAXSCORE, pos->eval_score - 75), pos->transp_move))
       {
         return pos->transp_move;
       }
@@ -306,11 +319,11 @@ protected:
 
       if (next_depth <= 3)
       {
-        auto score = -pos->eval_score + futility_margin[min(3, max(0, next_depth))];
+        auto score = -pos->eval_score + futility_margin[std::min(3, std::max(0, next_depth))];
 
         if (score < alpha)
         {
-          best_score = max(best_score, score);
+          best_score = std::max(best_score, score);
           return -999;
         }
       }
@@ -377,7 +390,7 @@ protected:
           break;
         } else if (pos->eval_score + piece_value(moveCaptured(move_data->move)) + 150 < alpha)
         {
-          best_score = max(best_score, pos->eval_score + piece_value(moveCaptured(move_data->move)) + 150);
+          best_score = std::max(best_score, pos->eval_score + piece_value(moveCaptured(move_data->move)) + 150);
           continue;
         }
       }
@@ -433,7 +446,7 @@ protected:
 
       getHashAndEvaluate(-beta, -alpha);
 
-      max_ply = max(max_ply, ply);
+      max_ply = std::max(max_ply, ply);
       return true;
     }
     return false;
@@ -501,7 +514,7 @@ protected:
 
       if (protocol && verbosity > 0)
       {
-        protocol->postPV(search_depth, max_ply, node_count * num_workers_, nodesPerSecond(), max(1ull, start_time.millisElapsed()), transt->getLoad(), score, buf, node_type);
+        protocol->postPV(search_depth, max_ply, node_count * num_workers_, nodesPerSecond(), std::max(1ull, start_time.millisElapsed()), transt->getLoad(), score, buf, node_type);
       }
     }
   }
@@ -586,7 +599,7 @@ protected:
           search_time = 2 * (time_left / (moves_left + 1) + time_inc);
           n_          = 2.5;
         }
-        search_time = max(0, min(search_time, time_left - time_reserve));
+        search_time = std::max(0, std::min(search_time, time_left - time_reserve));
       }
       transt->initSearch();
       stop_search = false;
@@ -663,10 +676,10 @@ protected:
 
     if (node_type == BETA)
     {
-      pos->eval_score = max(pos->eval_score, score);
+      pos->eval_score = std::max(pos->eval_score, score);
     } else if (node_type == ALPHA)
     {
-      pos->eval_score = min(pos->eval_score, score);
+      pos->eval_score = std::min(pos->eval_score, score);
     } else if (node_type == EXACT)
     { pos->eval_score = score; }
     pos->transposition = transt->insert(pos->key, depth, score, node_type, move, pos->eval_score);

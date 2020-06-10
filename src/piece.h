@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string_view>
+#include <cstdio>
 
 constexpr int Pawn    = 0;
 constexpr int Knight  = 1;

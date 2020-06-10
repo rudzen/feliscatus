@@ -1,7 +1,8 @@
 #pragma once
 
 #include <cstdint>
-
+#include <cmath>
+#include "util.h"
 #pragma pack(1)
 struct HashEntry {
   uint32_t key;
@@ -26,7 +27,7 @@ public:
   }
 
   void init(uint64_t new_size_mb) {
-    new_size_mb = pow2(log2(new_size_mb));
+    new_size_mb = pow2(std::log2(new_size_mb));
 
     if (new_size_mb == size_mb)
     {

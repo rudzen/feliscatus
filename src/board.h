@@ -3,6 +3,9 @@
 
 #include <cstdint>
 #include <array>
+#include "bitboard.h"
+#include "move.h"
+#include "magic.h"
 
 class Board {
 public:
