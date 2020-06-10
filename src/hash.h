@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cmath>
 #include "util.h"
+
 #pragma pack(1)
 struct HashEntry {
   uint32_t key;
@@ -42,7 +43,7 @@ public:
     clear();
   }
 
-  __forceinline void clear() {
+  void clear() {
     memset(table, 0, size * sizeof(HashEntry));
     occupied = 0;
     age      = 0;
@@ -50,7 +51,7 @@ public:
 
   void initSearch() { age++; }
 
-  __forceinline HashEntry *find(const uint64_t key) {
+  HashEntry *find(const uint64_t key) {
     HashEntry *transp = table + (key & mask);
 
     for (int i = 0; i < NUMBER_SLOTS; i++, transp++)
@@ -60,10 +61,10 @@ public:
         return transp;
       }
     }
-    return 0;
+    return nullptr;
   }
 
-  __forceinline HashEntry *insert(const uint64_t key, const int depth, const int score, const int type, const int move, int eval) {
+  HashEntry *insert(const uint64_t key, const int depth, const int score, const int type, const int move, int eval) {
     HashEntry *transp = getEntryToReplace(key, depth);
 
     if (transp->flags == 0)
@@ -80,7 +81,7 @@ public:
     return transp;
   }
 
-  __forceinline HashEntry *getEntryToReplace(uint64_t key, int depth) {
+  HashEntry *getEntryToReplace(uint64_t key, int depth) {
     HashEntry *transp = table + (key & mask);
 
     if (transp->flags == 0 || transp->key == key32(key))
@@ -107,14 +108,11 @@ public:
     return replace;
   }
 
-  __forceinline int getLoad() { return (int)((double)occupied / size * 1000); }
+  int getLoad() { return (int)((double)occupied / size * 1000); }
 
   int getSizeMb() { return (int)size_mb; }
 
-  __forceinline
-
-    static uint32_t
-    key32(const uint64_t key) {
+  static uint32_t key32(const uint64_t key) {
     return key >> 32;
   }
 
@@ -159,9 +157,9 @@ public:
     clear();
   }
 
-  __forceinline void clear() { memset(table, 0, size * sizeof(PawnHashEntry)); }
+  void clear() { memset(table, 0, size * sizeof(PawnHashEntry)); }
 
-  __forceinline PawnHashEntry *find(const uint64_t key) {
+  PawnHashEntry *find(const uint64_t key) {
     PawnHashEntry *pawnp = table + (key & mask);
 
     if (pawnp->zkey != key || pawnp->zkey == 0)
@@ -171,7 +169,7 @@ public:
     return pawnp;
   }
 
-  __forceinline PawnHashEntry *insert(const uint64_t key, int score_mg, int score_eg, int *passed_pawn_files) {
+  PawnHashEntry *insert(const uint64_t key, int score_mg, int score_eg, const std::array<int, 2> &passed_pawn_files) {
     PawnHashEntry *pawnp        = table + (key & mask);
     pawnp->zkey                 = key;
     pawnp->eval_mg              = (int16_t)score_mg;

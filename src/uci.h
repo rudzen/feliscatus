@@ -6,7 +6,6 @@
 #include <conio.h>
 
 #include <iostream>
-
 #include "game.h"
 
 constexpr int FIXED_MOVE_TIME    = 1;
@@ -26,9 +25,7 @@ public:
 
 class Protocol {
 public:
-  Protocol(ProtocolListener *callback, Game *game) {
-    this->callback = callback;
-    this->game     = game;
+  Protocol(ProtocolListener *cb, Game *g) : callback(cb), game(g) {
   }
 
   virtual ~Protocol() {}
@@ -54,8 +51,8 @@ public:
   void setFlags(int flags) { this->flags = flags; }
 
 protected:
-  int flags;
-  int depth;
+  int flags{};
+  int depth{};
   ProtocolListener *callback;
   Game *game;
 };

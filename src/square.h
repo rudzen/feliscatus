@@ -1,25 +1,28 @@
 #pragma once
 
 #include <cmath>
+#include <cstdint>
+#include <array>
 
 namespace squares {
-int rankOf(const uint64_t sq) {
+
+constexpr int rankOf(const uint64_t sq) {
   return sq >> 3;
 }
 
-int fileOf(const uint64_t sq) {
+constexpr int fileOf(const uint64_t sq) {
   return sq & 7;
 }
 
-uint64_t square(int f, int r) {
+constexpr uint64_t square(int f, int r) {
   return (r << 3) + f;
 }
 
-bool isDark(const uint64_t sq) {
+constexpr bool isDark(const uint64_t sq) {
   return ((9 * sq) & 8) == 0;
 }
 
-bool sameColor(const uint64_t sq1, const uint64_t sq2) {
+constexpr bool sameColor(const uint64_t sq1, const uint64_t sq2) {
   return isDark(sq1) == isDark(sq2);
 }
 
@@ -35,15 +38,25 @@ bool sameColor(const uint64_t sq1, const uint64_t sq2) {
 		a8, b8, c8, d8, e8, f8, g8, h8
         };
 
-    static uint32_t oo_allowed_mask[2] = {1, 4};
+    static constexpr std::array<int, 64> Squares{
+      a1, b1, c1, d1, e1, f1, g1, h1,
+		a2, b2, c2, d2, e2, f2, g2, h2,
+		a3, b3, c3, d3, e3, f3, g3, h3,
+		a4, b4, c4, d4, e4, f4, g4, h4,
+		a5, b5, c5, d5, e5, f5, g5, h5,
+		a6, b6, c6, d6, e6, f6, g6, h6,
+		a7, b7, c7, d7, e7, f7, g7, h7,
+		a8, b8, c8, d8, e8, f8, g8, h8};
 
-    static uint32_t ooo_allowed_mask[2] = {2, 8};
+    static constexpr std::array<uint32_t, 2> oo_allowed_mask{1, 4};
+
+    static constexpr std::array<uint32_t, 2> ooo_allowed_mask{2, 8};
 
     static uint32_t oo_king_from[2];
-    static uint32_t oo_king_to[2] = {g1, g8};
+    static constexpr std::array<uint32_t, 2> oo_king_to{g1, g8};
 
     static uint32_t ooo_king_from[2];
-    static uint32_t ooo_king_to[2] = {c1, c8};
+    static constexpr std::array<uint32_t, 2> ooo_king_to{c1, c8};
 
     static uint32_t rook_castles_to[64];  // indexed by position of the king
     static uint32_t rook_castles_from[64];// also
@@ -52,19 +65,19 @@ bool sameColor(const uint64_t sq1, const uint64_t sq2) {
     static uint32_t flip[2][64];
 
     static void init() {
-      for (uint32_t sq = 0; sq < 64; sq++)
+      for (const int sq : Squares)
       {
         flip[0][sq] = fileOf(sq) + ((7 - rankOf(sq)) << 3);
         flip[1][sq] = fileOf(sq) + (rankOf(sq) << 3);
       }
 
-      for (uint32_t sq1 = 0; sq1 < 64; sq1++)
+      for (const int sq1 : Squares)
       {
-        for (uint32_t sq2 = 0; sq2 < 64; sq2++)
+        for (const int sq2 : Squares)
         {
-          uint32_t ranks = std::abs(rankOf(sq1) - rankOf(sq2));
-          uint32_t files = std::abs(fileOf(sq1) - fileOf(sq2));
-          dist[sq1][sq2] = std::max(ranks, files);
+          const uint32_t ranks = std::abs(rankOf(sq1) - rankOf(sq2));
+          const uint32_t files = std::abs(fileOf(sq1) - fileOf(sq2));
+          dist[sq1][sq2]       = std::max(ranks, files);
         }
       }
 
@@ -78,9 +91,9 @@ bool sameColor(const uint64_t sq1, const uint64_t sq2) {
     }
 
     const char *squareToString(const uint64_t sq, char *buf) {
-      sprintf(buf, "%c%d", (char)(fileOf(sq) + 'a'), rankOf(sq) + 1);
+      sprintf(buf, "%c%d", static_cast<char>(fileOf(sq) + 'a'), rankOf(sq) + 1);
       return buf;
     }
-    }// namespace squares
+}// namespace squares
 
     using namespace squares;

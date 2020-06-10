@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include "game.h"
 #include "hash.h"
 
@@ -27,8 +28,8 @@ public:
 
     // Pass 1.
     evalPawnsBothSides();
-    evalKnights(0);
-    evalKnights(1);
+    evalKnights<0>();
+    evalKnights<1>();
     evalBishops(0);
     evalBishops(1);
     evalRooks(0);
@@ -118,47 +119,49 @@ protected:
     pawn_eval_eg[us] += score_eg;
   }
 
-  void evalKnights(const int us) {
-    const int them = us ^ 1;
+  template<int Us>
+  void evalKnights() {
+    constexpr int Them = Us ^ 1;
     int score_mg   = 0;
     int score_eg   = 0;
     int score      = 0;
 
-    for (uint64_t knights = game_.board.knights(us); knights; resetLSB(knights))
+    for (uint64_t knights = game_.board.knights(Us); knights; resetLSB(knights))
     {
       uint64_t sq     = lsb(knights);
-      uint64_t flipsq = flip[us][sq];
+      uint64_t flipsq = flip[Us][sq];
 
       score_mg += knight_pst_mg[flipsq];
       score_eg += knight_pst_eg[flipsq];
 
       const uint64_t &attacks = knight_attacks[sq];
-      int x                   = popCount(attacks & ~game_.board.occupied_by_side[us]);
+      int x                   = popCount(attacks & ~game_.board.occupied_by_side[Us]);
 
       score_mg += knight_mob_mg[x];
       score_eg += knight_mob_eg[x];
 
-      int x1 = popCount(attacks & ~game_.board.occupied_by_side[us] & ~pawn_attacks[them]);
+      int x1 = popCount(attacks & ~game_.board.occupied_by_side[Us] & ~pawn_attacks[Them]);
       score_mg += knight_mob2_mg[x1];
       score_eg += knight_mob2_eg[x1];
 
-      all_attacks[us] |= attacks;
-      _knight_attacks[us] |= attacks;
+      all_attacks[Us] |= attacks;
+      _knight_attacks[Us] |= attacks;
 
-      if (attacks & king_area[them])
+      if (attacks & king_area[Them])
       {
-        attack_counter[us] += popCount(attacks & king_area[them]) * knight_attack_king;
-        attack_count[us]++;
+        attack_counter[Us] += popCount(attacks & king_area[Them]) * knight_attack_king;
+        attack_count[Us]++;
       }
 
-      if (bbSquare(sq) & pawn_attacks[them])
+      if (bbSquare(sq) & pawn_attacks[Them])
       {
         score += knight_in_danger;
       }
     }
-    poseval[us] += score;
-    poseval_mg[us] += score_mg;
-    poseval_eg[us] += score_eg;
+
+    poseval[Us] += score;
+    poseval_mg[Us] += score_mg;
+    poseval_eg[Us] += score_eg;
   }
 
   void evalBishops(const int us) {
@@ -363,8 +366,9 @@ protected:
     pos        = game_.pos;
     pos->flags = 0;
 
-    poseval_mg[0] = poseval_eg[0] = poseval[0] = 0;
-    poseval_mg[1] = poseval_eg[1] = poseval[1] = 0;
+    poseval_mg.fill(0);
+    poseval_eg.fill(0);
+    poseval.fill(0);
 
     attack_counter[0] = attack_counter[1] = 0;
     attack_count[0] = attack_count[1] = 0;
@@ -398,14 +402,14 @@ protected:
   PawnHashTable *pawnt;
   PawnHashEntry *pawnp;
 
-  int poseval_mg[2];
-  int poseval_eg[2];
-  int poseval[2];
-  int pawn_eval_mg[2];
-  int pawn_eval_eg[2];
-  int passed_pawn_files[2];
-  int attack_counter[2];
-  int attack_count[2];
+  std::array<int, 2> poseval_mg{};
+  std::array<int, 2> poseval_eg{};
+  std::array<int, 2> poseval{};
+  std::array<int, 2> pawn_eval_mg{};
+  std::array<int, 2> pawn_eval_eg{};
+  std::array<int, 2> passed_pawn_files{};
+  std::array<int, 2> attack_counter{};
+  std::array<int, 2> attack_count{};
 
   uint64_t pawn_attacks[2];
   uint64_t all_attacks[2];

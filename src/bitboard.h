@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <bit>
+#include <algorithm>
 #include "square.h"
 
 namespace bitboard {
@@ -48,31 +49,31 @@ inline const uint64_t &bbFile(int sq) {
   return bb_file[sq];
 }
 
-inline uint64_t northOne(const uint64_t &bb) {
+constexpr uint64_t northOne(const uint64_t &bb) {
   return bb << 8;
 }
 
-inline uint64_t southOne(const uint64_t &bb) {
+constexpr uint64_t southOne(const uint64_t &bb) {
   return bb >> 8;
 }
 
-inline uint64_t eastOne(const uint64_t &bb) {
+constexpr uint64_t eastOne(const uint64_t &bb) {
   return (bb & ~HFILE_BB) << 1;
 }
 
-inline uint64_t westOne(const uint64_t &bb) {
+constexpr uint64_t westOne(const uint64_t &bb) {
   return (bb & ~AFILE_BB) >> 1;
 }
 
-inline uint64_t northEastOne(const uint64_t &bb) {
+constexpr uint64_t northEastOne(const uint64_t &bb) {
   return (bb & ~HFILE_BB) << 9;
 }
 
-inline uint64_t southEastOne(const uint64_t &bb) {
+constexpr uint64_t southEastOne(const uint64_t &bb) {
   return (bb & ~HFILE_BB) >> 7;
 }
 
-inline uint64_t southWestOne(const uint64_t &bb) {
+constexpr uint64_t southWestOne(const uint64_t &bb) {
   return (bb & ~AFILE_BB) >> 9;
 }
 
@@ -114,14 +115,14 @@ inline void initBetweenBitboards(const uint64_t from, uint64_t (*stepFunc)(const
 }
 
 void init() {
-  for (uint64_t sq = a1; sq <= h8; sq++)
+  for (const int sq : Squares)
   {
-    bb_square[sq] = (uint64_t)1 << sq;
+    bb_square[sq] = static_cast<uint64_t>(1) << sq;
     bb_rank[sq]   = RANK1 << (sq & 56);
     bb_file[sq]   = AFILE_BB << (sq & 7);
   }
 
-  for (uint64_t sq = a1; sq <= h8; sq++)
+  for (const int sq : Squares)
   {
     pawn_front_span[0][sq]        = northFill(northOne(bbSquare(sq)));
     pawn_front_span[1][sq]        = southFill(southOne(bbSquare(sq)));
@@ -132,10 +133,8 @@ void init() {
     passed_pawn_front_span[0][sq] = pawn_east_attack_span[0][sq] | pawn_front_span[0][sq] | pawn_west_attack_span[0][sq];
     passed_pawn_front_span[1][sq] = pawn_east_attack_span[1][sq] | pawn_front_span[1][sq] | pawn_west_attack_span[1][sq];
 
-    for (uint64_t to = a1; to < h8; to++)
-    {
-      bb_between[sq][to] = 0;
-    }
+    std::fill(std::begin(bb_between[sq]), std::end(bb_between[sq]), 0);
+
     initBetweenBitboards(sq, northOne, 8);
     initBetweenBitboards(sq, northEastOne, 9);
     initBetweenBitboards(sq, eastOne, 1);
@@ -174,36 +173,28 @@ void init() {
   corner_h8 = bbSquare(h8) | bbSquare(g8) | bbSquare(h7) | bbSquare(g7);
 }
 
-uint64_t (*pawnPush[2])
+uint64_t (*pawnPush[2]) (const uint64_t &) = {northOne, southOne};
+uint64_t (*pawnEastAttacks[2]) (const uint64_t &) = {northWestOne, southWestOne};
+uint64_t (*pawnWestAttacks[2]) (const uint64_t &) = {northEastOne, southEastOne};
+uint64_t (*pawnFill[2]) (const uint64_t &) = {northFill, southFill};
 
-  (const uint64_t &) = {northOne, southOne};
-uint64_t (*pawnEastAttacks[2])
+constexpr std::array<uint64_t, 2> rank_1{RANK1, RANK8};
 
-  (const uint64_t &) = {northWestOne, southWestOne};
-uint64_t (*pawnWestAttacks[2])
+constexpr std::array<uint64_t, 2> rank_3{RANK3, RANK6};
 
-  (const uint64_t &) = {northEastOne, southEastOne};
-uint64_t (*pawnFill[2])
+constexpr std::array<uint64_t, 2> rank_7{RANK7, RANK2};
 
-  (const uint64_t &) = {northFill, southFill};
+constexpr std::array<uint64_t, 2> rank_6_and_7{RANK6 | RANK7, RANK2 | RANK3};
 
-const uint64_t rank_1[2] = {RANK1, RANK8};
+constexpr std::array<uint64_t, 2> rank_7_and_8{RANK7 | RANK8, RANK1 | RANK2};
 
-const uint64_t rank_3[2] = {RANK3, RANK6};
+constexpr std::array<int, 2> pawn_push_dist{8, -8};
 
-const uint64_t rank_7[2] = {RANK7, RANK2};
+constexpr std::array<int, 2> pawn_double_push_dist{16, -16};
 
-const uint64_t rank_6_and_7[2] = {RANK6 | RANK7, RANK2 | RANK3};
+constexpr std::array<int, 2> pawn_west_attack_dist{9, -7};
 
-const uint64_t rank_7_and_8[2] = {RANK7 | RANK8, RANK1 | RANK2};
-
-const int pawn_push_dist[2] = {8, -8};
-
-const int pawn_double_push_dist[2] = {16, -16};
-
-const int pawn_west_attack_dist[2] = {9, -7};
-
-const int pawn_east_attack_dist[2] = {7, -9};
+constexpr std::array<int, 2> pawn_east_attack_dist{7, -9};
 
 constexpr void resetLSB(uint64_t &x) {
   x &= (x - 1);

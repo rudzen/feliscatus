@@ -312,7 +312,7 @@ private:
     addPawnMoves(pawnEastAttacks[side_to_move](pawns) & en_passant_square & to_squares, pawn_east_attack_dist, EPCAPTURE);
   }
 
-  void addPawnMoves(const uint64_t &to_squares, const int *dist, const uint32_t type) {
+  void addPawnMoves(const uint64_t &to_squares, const std::array<int, 2> &dist, const uint32_t type) {
     for (uint64_t bb = to_squares; bb; resetLSB(bb))
     {
       uint64_t to   = lsb(bb);
