@@ -1,7 +1,6 @@
 
 #pragma once
 
-
 // TODO : Replace with portable code
 #include <conio.h>
 
@@ -40,15 +39,15 @@ public:
 
   virtual void postPV(const int depth, int max_ply, uint64_t node_count, uint64_t nodes_per_second, uint64_t time, int hash_full, int score, const char *pv, int node_type) = 0;
 
-  int isAnalysing() { return flags & (INFINITE_MOVE_TIME | PONDER_SEARCH); }
+  int isAnalysing() const noexcept { return flags & (INFINITE_MOVE_TIME | PONDER_SEARCH); }
 
-  int isFixedTime() { return flags & FIXED_MOVE_TIME; }
+  int isFixedTime() const noexcept { return flags & FIXED_MOVE_TIME; }
 
-  int isFixedDepth() { return flags & FIXED_DEPTH; }
+  int isFixedDepth() const noexcept { return flags & FIXED_DEPTH; }
 
-  int getDepth() { return depth; }
+  int getDepth() const noexcept { return depth; }
 
-  void setFlags(int flags) { this->flags = flags; }
+  void setFlags(int flags) noexcept { this->flags = flags; }
 
 protected:
   int flags{};
@@ -128,27 +127,22 @@ public:
     char bound[24];
 
     if (node_type == 4)
-    {
       strcpy(bound, "upperbound ");
-    } else if (node_type == 2)
-    {
+    else if (node_type == 2)
       strcpy(bound, "lowerbound ");
-    } else
-    { bound[0] = 0; }
+    else
+      bound[0] = 0;
 
-    printf("info depth %d seldepth %d score cp %d %s hashfull %d nodes %llu nps %llu time %llu pv %s\n", depth, max_ply, score, bound, hash_full, node_count, nodes_per_second,
-           time, pv);
+    printf("info depth %d seldepth %d score cp %d %s hashfull %d nodes %llu nps %llu time %llu pv %s\n", depth, max_ply, score, bound, hash_full, node_count, nodes_per_second, time, pv);
   }
 
   virtual int handleInput(const char *params[], int num_params) {
     if (num_params < 1)
-    {
       return -1;
-    }
 
     if (strieq(params[0], "uci"))
     {
-      printf("id name Tomcat 1.0\n");
+      printf("id name Feliscatus 0.1\n");
       printf("id author Gunnar Harms\n");
       printf("option name Hash type spin default 1024 min 8 max 65536\n");
       printf("option name Ponder type check default true\n");

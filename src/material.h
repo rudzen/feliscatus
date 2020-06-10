@@ -31,21 +31,18 @@ public:
   }
 
   void updateKey(const int c, const int p, const int delta) {
-    if (p != King)
-    {
-      int x = count(c, p) + delta;
-      key[c] &= ~(15 << piece_bit_shift[p]);
-      key[c] |= (x << piece_bit_shift[p]);
-    }
+    if (p == King)
+      return;
+    int x = count(c, p) + delta;
+    key[c] &= ~(15 << piece_bit_shift[p]);
+    key[c] |= (x << piece_bit_shift[p]);
   }
 
   int count(const int c, const int p) { return (key[c] >> piece_bit_shift[p]) & 15; }
 
   void makeMove(const uint32_t m) {
     if (isCapture(m))
-    {
       remove(moveCaptured(m));
-    }
 
     if (moveType(m) & PROMOTION)
     {
