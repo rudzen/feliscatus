@@ -4,12 +4,12 @@ file(GLOB files
         "*.cpp"
         )
 
-list(REMOVE_ITEM files "tomcat.h")
-list(REMOVE_ITEM files "tomcat.cpp")
+list(REMOVE_ITEM files "feliscatus.h")
+list(REMOVE_ITEM files "feliscatus.cpp")
 
 add_library(logic STATIC ${files})
 
-add_executable(Feliscatus tomcat.cpp)
+add_executable(Feliscatus feliscatus.cpp)
 
 target_link_libraries(logic PRIVATE project_options project_warnings CONAN_PKG::fmt Threads::Threads)
 

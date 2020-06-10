@@ -12,5 +12,4 @@
 #include <iostream>
 using namespace std;
 
-#pragma warning(disable : 4996)// 'sscanf': This function or variable may be unsafe
-
+//#pragma warning(disable : 4996)// 'sscanf': This function or variable may be unsafe

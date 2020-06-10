@@ -1,7 +1,10 @@
-const int FIXED_MOVE_TIME = 1;
-const int FIXED_DEPTH = 2;
-const int INFINITE_MOVE_TIME = 4;
-const int PONDER_SEARCH = 8;
+
+#pragma once
+
+constexpr int FIXED_MOVE_TIME = 1;
+constexpr int FIXED_DEPTH = 2;
+constexpr int INFINITE_MOVE_TIME = 4;
+constexpr int PONDER_SEARCH = 8;
 
 class ProtocolListener
     {

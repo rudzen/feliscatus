@@ -1,15 +1,18 @@
-const int Pawn = 0;
-const int Knight = 1;
-const int Bishop = 2;
-const int Rook = 3;
-const int Queen = 4;
-const int King = 5;
-const int NoPiece = 6;
+#pragma once
 
-const static char piece_notation [] = " nbrqk";
+#include <string_view>
 
-const char * pieceToString (int piece, char * buf)
-    {
-    sprintf(buf, "%c", piece_notation[piece]);
-    return buf;
-    }
+constexpr int Pawn    = 0;
+constexpr int Knight  = 1;
+constexpr int Bishop  = 2;
+constexpr int Rook    = 3;
+constexpr int Queen   = 4;
+constexpr int King    = 5;
+constexpr int NoPiece = 6;
+
+constexpr std::string_view piece_notation = " nbrqk";
+
+inline const char *pieceToString(int piece, char *buf) {
+  sprintf(buf, "%c", piece_notation[piece]);
+  return buf;
+}

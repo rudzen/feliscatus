@@ -21,11 +21,10 @@
 #include "tune.h"
 #include "perft.h"
 #include "worker.h"
-#include "tomcat.h"
+#include "feliscatus.h"
 
-int main ()
-    {
-    Tomcat * engine = new Tomcat();
-	engine->init();
-    engine->run();
-    }
+int main() {
+  Felis engine;
+  engine.init();
+  engine.run();
+}
