@@ -51,7 +51,7 @@ namespace pgn
             if (pawn_move_)
                 {
                 piece |= Pawn;
-                game_->pos->generate_pawn_moves(capture_, bbSquare(to_square_));
+                game_->pos->generate_pawn_moves(capture_, bb_square(to_square_));
                 }
             else if (castle_move_)
                 {
@@ -86,7 +86,7 @@ namespace pgn
                         cout << "default [" << token_str << "]" << endl;
                         exit(0);
                     }
-                game_->pos->generate_moves(piece, bbSquare(to_square_));
+                game_->pos->generate_moves(piece, bb_square(to_square_));
                 }
             else
                 {

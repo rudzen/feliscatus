@@ -49,7 +49,7 @@ public:
 
     if (moveType(m) & DOUBLEPUSH)
     {
-      pos->en_passant_square = bbSquare(moveTo(m) + pawn_push_dist[pos->side_to_move]);
+      pos->en_passant_square = bb_square(moveTo(m) + pawn_push_dist[pos->side_to_move]);
     } else
     { pos->en_passant_square = 0; }
     pos->key                = prev->key;
@@ -90,7 +90,7 @@ public:
     {
       for (int side = 0; side <= 1; side++)
       {
-        for (uint64_t bb = board.piece[piece | (side << 3)]; bb != 0; resetLSB(bb))
+        for (uint64_t bb = board.piece[piece | (side << 3)]; bb != 0; reset_lsb(bb))
         {
           key ^= zobrist::zobrist_pst[piece | (side << 3)][lsb(bb)];
         }
@@ -312,7 +312,7 @@ public:
     {
       return 6;
     }
-    pos->en_passant_square          = sq < 64 ? bbSquare(sq) : 0;
+    pos->en_passant_square          = sq < 64 ? bb_square(sq) : 0;
     pos->reversible_half_move_count = 0;
 
     if (pos->side_to_move == 1)

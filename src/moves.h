@@ -42,7 +42,7 @@ public:
   void generate_moves(const int piece, const uint64_t &to_squares) {
     reset(0, 0, 0);
 
-    for (auto bb = board->piece[piece]; bb; resetLSB(bb))
+    for (auto bb = board->piece[piece]; bb; reset_lsb(bb))
     {
       const uint64_t from = lsb(bb);
       addMoves(piece, from, board->pieceAttacks(piece, from) & to_squares);
@@ -118,26 +118,26 @@ public:
 
   [[nodiscard]] bool is_pseudo_legal(const uint32_t m) const {
     // TO DO en passant moves and castle moves
-    if ((bb_piece[movePiece(m)] & bbSquare(moveFrom(m))) == 0)
+    if ((bb_piece[movePiece(m)] & bb_square(moveFrom(m))) == 0)
       return false;
 
     if (isCapture(m))
     {
-      const auto &bb_to = bbSquare(moveTo(m));
+      const auto &bb_to = bb_square(moveTo(m));
 
       if ((occupied_by_side[moveSide(m) ^ 1] & bb_to) == 0)
         return false;
 
       if ((bb_piece[moveCaptured(m)] & bb_to) == 0)
         return false;
-    } else if (occupied & bbSquare(moveTo(m)))
+    } else if (occupied & bb_square(moveTo(m)))
       return false;
 
     const auto piece = movePiece(m) & 7;
 
     if (piece == Bishop || piece == Rook || piece == Queen)
     {
-      if (bb_between[moveFrom(m)][moveTo(m)] & occupied)
+      if (between_bb[moveFrom(m)][moveTo(m)] & occupied)
         return false;
     }
     return true;
@@ -185,11 +185,11 @@ private:
   void generate_captures_and_promotions() {
     add_moves(occupied_by_side[side_to_move ^ 1]);
     const auto &pawns = board->pawns(side_to_move);
-    add_pawn_moves(pawnPush[side_to_move](pawns & rank_7[side_to_move]) & ~occupied, pawn_push_dist, QUIET);
-    add_pawn_moves(pawnWestAttacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1], pawn_west_attack_dist, CAPTURE);
-    add_pawn_moves(pawnEastAttacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1], pawn_east_attack_dist, CAPTURE);
-    add_pawn_moves(pawnWestAttacks[side_to_move](pawns) & en_passant_square, pawn_west_attack_dist, EPCAPTURE);
-    add_pawn_moves(pawnEastAttacks[side_to_move](pawns) & en_passant_square, pawn_east_attack_dist, EPCAPTURE);
+    add_pawn_moves(pawn_push[side_to_move](pawns & rank_7[side_to_move]) & ~occupied, pawn_push_dist, QUIET);
+    add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1], pawn_west_attack_dist, CAPTURE);
+    add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1], pawn_east_attack_dist, CAPTURE);
+    add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & en_passant_square, pawn_west_attack_dist, EPCAPTURE);
+    add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & en_passant_square, pawn_east_attack_dist, EPCAPTURE);
     stage++;
   }
 
@@ -202,9 +202,9 @@ private:
       if (can_castle_long())
         add_castle_move(ooo_king_from[side_to_move], ooo_king_to[side_to_move]);
     }
-    const auto pushed = pawnPush[side_to_move](board->pawns(side_to_move) & ~rank_7[side_to_move]) & ~occupied;
+    const auto pushed = pawn_push[side_to_move](board->pawns(side_to_move) & ~rank_7[side_to_move]) & ~occupied;
     add_pawn_moves(pushed, pawn_push_dist, QUIET);
-    add_pawn_moves(pawnPush[side_to_move](pushed & rank_3[side_to_move]) & ~occupied, pawn_double_push_dist, DOUBLEPUSH);
+    add_pawn_moves(pawn_push[side_to_move](pushed & rank_3[side_to_move]) & ~occupied, pawn_double_push_dist, DOUBLEPUSH);
     add_moves(~occupied);
     stage++;
   }
@@ -242,31 +242,31 @@ private:
     const auto offset = side_to_move << 3;
     uint64_t from;
 
-    for (bb = bb_piece[Queen + offset]; bb; resetLSB(bb))
+    for (bb = bb_piece[Queen + offset]; bb; reset_lsb(bb))
     {
       from = lsb(bb);
       addMoves(Queen + offset, from, queenAttacks(from, board->occupied) & to_squares);
     }
 
-    for (bb = bb_piece[Rook + offset]; bb; resetLSB(bb))
+    for (bb = bb_piece[Rook + offset]; bb; reset_lsb(bb))
     {
       from = lsb(bb);
       addMoves(Rook + offset, from, rookAttacks(from, board->occupied) & to_squares);
     }
 
-    for (bb = bb_piece[Bishop + offset]; bb; resetLSB(bb))
+    for (bb = bb_piece[Bishop + offset]; bb; reset_lsb(bb))
     {
       from = lsb(bb);
       addMoves(Bishop + offset, from, bishopAttacks(from, board->occupied) & to_squares);
     }
 
-    for (bb = bb_piece[Knight + offset]; bb; resetLSB(bb))
+    for (bb = bb_piece[Knight + offset]; bb; reset_lsb(bb))
     {
       from = lsb(bb);
       addMoves(Knight + offset, from, knightAttacks(from) & to_squares);
     }
 
-    for (bb = bb_piece[King + offset]; bb; resetLSB(bb))
+    for (bb = bb_piece[King + offset]; bb; reset_lsb(bb))
     {
       from = lsb(bb);
       addMoves(King + offset, from, kingAttacks(from) & to_squares);
@@ -274,7 +274,7 @@ private:
   }
 
   void addMoves(const int piece, const uint64_t from, const uint64_t &attacks) {
-    for (auto bb = attacks; bb; resetLSB(bb))
+    for (auto bb = attacks; bb; reset_lsb(bb))
     {
       const uint64_t to = lsb(bb);
       add_move(piece | (side_to_move << 3), from, to, board->getPiece(to) == NoPiece ? QUIET : CAPTURE);
@@ -282,21 +282,21 @@ private:
   }
 
   void add_pawn_quiet_moves(const uint64_t &to_squares) {
-    const auto pushed = pawnPush[side_to_move](board->pawns(side_to_move)) & ~occupied;
+    const auto pushed = pawn_push[side_to_move](board->pawns(side_to_move)) & ~occupied;
     add_pawn_moves(pushed & to_squares, pawn_push_dist, QUIET);
-    add_pawn_moves(pawnPush[side_to_move](pushed & rank_3[side_to_move]) & ~occupied & to_squares, pawn_double_push_dist, DOUBLEPUSH);
+    add_pawn_moves(pawn_push[side_to_move](pushed & rank_3[side_to_move]) & ~occupied & to_squares, pawn_double_push_dist, DOUBLEPUSH);
   }
 
   void add_pawn_capture_moves(const uint64_t &to_squares) {
     const auto &pawns = board->pawns(side_to_move);
-    add_pawn_moves(pawnWestAttacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1] & to_squares, pawn_west_attack_dist, CAPTURE);
-    add_pawn_moves(pawnEastAttacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1] & to_squares, pawn_east_attack_dist, CAPTURE);
-    add_pawn_moves(pawnWestAttacks[side_to_move](pawns) & en_passant_square & to_squares, pawn_west_attack_dist, EPCAPTURE);
-    add_pawn_moves(pawnEastAttacks[side_to_move](pawns) & en_passant_square & to_squares, pawn_east_attack_dist, EPCAPTURE);
+    add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1] & to_squares, pawn_west_attack_dist, CAPTURE);
+    add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1] & to_squares, pawn_east_attack_dist, CAPTURE);
+    add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & en_passant_square & to_squares, pawn_west_attack_dist, EPCAPTURE);
+    add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & en_passant_square & to_squares, pawn_east_attack_dist, EPCAPTURE);
   }
 
   void add_pawn_moves(const uint64_t &to_squares, const std::array<int, 2> &dist, const uint32_t type) {
-    for (auto bb = to_squares; bb; resetLSB(bb))
+    for (auto bb = to_squares; bb; reset_lsb(bb))
     {
       const uint64_t to = lsb(bb);
       const auto from   = to - dist[side_to_move];
@@ -326,7 +326,7 @@ private:
   }
 
   [[nodiscard]] bool is_legal(const uint32_t m, const int piece, const uint64_t from, const uint32_t type) const {
-    if ((pinned & bbSquare(from)) || in_check || (piece & 7) == King || (type & EPCAPTURE))
+    if ((pinned & bb_square(from)) || in_check || (piece & 7) == King || (type & EPCAPTURE))
     {
       board->makeMove(m);
 
@@ -355,9 +355,9 @@ private:
     const uint64_t rook_from = rook_castles_from[to];
     const auto king_square   = board->king_square[side_to_move];
 
-    const auto bb_castle_pieces = bbSquare(rook_from) | bbSquare(king_square);
+    const auto bb_castle_pieces = bb_square(rook_from) | bb_square(king_square);
 
-    const auto bb_castle_span = bb_castle_pieces | bbSquare(rook_to) | bbSquare(to) | bb_between[king_square][rook_from] | bb_between[rook_from][rook_to];
+    const auto bb_castle_span = bb_castle_pieces | bb_square(rook_to) | bb_square(to) | between_bb[king_square][rook_from] | between_bb[rook_from][rook_to];
 
     if ((bb_castle_span & occupied) != bb_castle_pieces)
       return false;
@@ -365,7 +365,7 @@ private:
     // Check that no square between the king's initial and final squares (including the initial and final
     // squares) may be under attack by an enemy piece. (Initial square was already checked a this point.)
 
-    for (auto bb = bb_between[king_square][to] | bbSquare(to); bb; resetLSB(bb))
+    for (auto bb = between_bb[king_square][to] | bb_square(to); bb; reset_lsb(bb))
     {
       if (board->isAttacked(lsb(bb), side_to_move ^ 1))
         return false;

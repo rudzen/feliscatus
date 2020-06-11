@@ -18,9 +18,9 @@ public:
   }
 
   void addPiece(const int p, const int side, const uint64_t sq) {
-    piece[p + (side << 3)] |= bbSquare(sq);
-    occupied_by_side[side] |= bbSquare(sq);
-    occupied |= bbSquare(sq);
+    piece[p + (side << 3)] |= bb_square(sq);
+    occupied_by_side[side] |= bb_square(sq);
+    occupied |= bb_square(sq);
     board[sq] = p + (side << 3);
 
     if (p == King)
@@ -30,16 +30,16 @@ public:
   }
 
   void removePiece(const int p, const int sq) {
-    piece[p] &= ~bbSquare(sq);
-    occupied_by_side[p >> 3] &= ~bbSquare(sq);
-    occupied &= ~bbSquare(sq);
+    piece[p] &= ~bb_square(sq);
+    occupied_by_side[p >> 3] &= ~bb_square(sq);
+    occupied &= ~bb_square(sq);
     board[sq] = NoPiece;
   }
 
   void addPiece(const int p, const int sq) {
-    piece[p] |= bbSquare(sq);
-    occupied_by_side[p >> 3] |= bbSquare(sq);
-    occupied |= bbSquare(sq);
+    piece[p] |= bb_square(sq);
+    occupied_by_side[p >> 3] |= bb_square(sq);
+    occupied |= bb_square(sq);
     board[sq] = p;
   }
 
@@ -121,15 +121,15 @@ public:
 
     while (pinners)
     {
-      pinned_pieces |= bb_between[lsb(pinners)][sq] & occupied_by_side[side];
-      resetLSB(pinners);
+      pinned_pieces |= between_bb[lsb(pinners)][sq] & occupied_by_side[side];
+      reset_lsb(pinners);
     }
     pinners = xrayRookAttacks(occupied, occupied_by_side[side], sq) & (piece[Rook + (opp << 3)] | piece[Queen | (opp << 3)]);
 
     while (pinners)
     {
-      pinned_pieces |= bb_between[lsb(pinners)][sq] & occupied_by_side[side];
-      resetLSB(pinners);
+      pinned_pieces |= between_bb[lsb(pinners)][sq] & occupied_by_side[side];
+      reset_lsb(pinners);
     }
     return pinned_pieces;
   }
@@ -146,7 +146,7 @@ public:
     return attacks ^ bishopAttacks(sq, occ ^ blockers);
   }
 
-  uint64_t isOccupied(uint64_t sq) { return bbSquare(sq) & occupied; }
+  uint64_t isOccupied(uint64_t sq) { return bb_square(sq) & occupied; }
 
   bool isAttacked(const uint64_t sq, const int side) const {
     return isAttackedBySlider(sq, side) || isAttackedByKnight(sq, side) || isAttackedByPawn(sq, side) || isAttackedByKing(sq, side);
@@ -240,18 +240,18 @@ public:
 
   bool isPawnPassed(const uint64_t sq, const int side) const { return (passed_pawn_front_span[side][sq] & pawns(side ^ 1)) == 0; }
 
-  bool isPieceOnSquare(const int p, const uint64_t sq, const int side) { return ((bbSquare(sq) & piece[p + (side << 3)]) != 0); }
+  bool isPieceOnSquare(const int p, const uint64_t sq, const int side) { return ((bb_square(sq) & piece[p + (side << 3)]) != 0); }
 
-  bool isPieceOnFile(const int p, const uint64_t sq, const int side) const { return ((bbFile(sq) & piece[p + (side << 3)]) != 0); }
+  bool isPieceOnFile(const int p, const uint64_t sq, const int side) const { return ((bb_file(sq) & piece[p + (side << 3)]) != 0); }
 
   bool isPawnIsolated(const uint64_t sq, const int side) const {
-    const uint64_t &bb      = bbSquare(sq);
-    uint64_t neighbourFiles = northFill(southFill(westOne(bb) | eastOne(bb)));
+    const uint64_t &bb      = bb_square(sq);
+    uint64_t neighbourFiles = north_fill(south_fill(west_one(bb) | east_one(bb)));
     return (pawns(side) & neighbourFiles) == 0;
   }
 
   bool isPawnBehind(const uint64_t sq, const int side) const {
-    const uint64_t &bbsq = bbSquare(sq);
-    return (pawns(side) & (pawnFill[side ^ 1](westOne(bbsq) | eastOne(bbsq)))) == 0;
+    const uint64_t &bbsq = bb_square(sq);
+    return (pawns(side) & (pawn_fill[side ^ 1](west_one(bbsq) | east_one(bbsq)))) == 0;
   }
 };
