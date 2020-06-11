@@ -4,7 +4,6 @@
 #include <sstream>
 #include <vector>
 #include <map>
-#include <memory>
 #include <iomanip>
 
 #include "pgn_player.h"
@@ -409,9 +408,9 @@ public:
     {
       alpha = best_score;
     }
-    game_.pos->generateCapturesAndPromotions(this);
+    game_.pos->generate_captures_and_promotions(this);
 
-    while (const auto move_data = game_.pos->nextMove())
+    while (const auto move_data = game_.pos->next_move())
     {
       if (!isPromotion(move_data->move))
       {
@@ -486,7 +485,7 @@ public:
     }
   }
 
-  virtual void sortMove(MoveData &move_data) {
+  virtual void sort_move(MoveData &move_data) {
     const auto m = move_data.move;
 
     if (isQueenPromotion(m))
@@ -505,7 +504,7 @@ public:
       if (value_piece <= value_captured)
       {
         move_data.score = 300000 + value_captured * 20 - value_piece;
-      } else if (see_.seeMove(m) >= 0)
+      } else if (see_.see_move(m) >= 0)
       {
         move_data.score = 160000 + value_captured * 20 - value_piece;
       } else

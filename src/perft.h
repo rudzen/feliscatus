@@ -42,9 +42,9 @@ public:
     double time = 0;
     double nps  = 0;
 
-    pos->generateMoves(0, 0, flags);
+    pos->generate_moves(0, 0, flags);
 
-    while (const MoveData *move_data = pos->nextMove())
+    while (const MoveData *move_data = pos->next_move())
     {
       const uint32_t *m = &move_data->move;
 
@@ -74,14 +74,14 @@ private:
       return 0;
     }
     Position *pos = game->pos;
-    pos->generateMoves(0, 0, flags);
+    pos->generate_moves(0, 0, flags);
 
     if ((flags & STAGES) == 0 && depth == 1)
     {
-      result.nodes += pos->moveCount();
+      result.nodes += pos->move_count();
     } else
     {
-      while (const MoveData *move_data = pos->nextMove())
+      while (const MoveData *move_data = pos->next_move())
       {
         const uint32_t *m = &move_data->move;
 

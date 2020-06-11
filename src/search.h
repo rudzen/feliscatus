@@ -140,13 +140,13 @@ protected:
     }
     const auto singular_move = get_singular_move(depth, pv);
 
-    pos->generateMoves(this, pos->transp_move, STAGES);
+    pos->generate_moves(this, pos->transp_move, STAGES);
 
     auto best_move  = 0;
     auto best_score = -MAXSCORE;
     auto move_count = 0;
 
-    while (auto *const move_data = pos->nextMove())
+    while (auto *const move_data = pos->next_move())
     {
       int score;
 
@@ -229,7 +229,7 @@ protected:
   }
 
   int search_next_depth(const bool pv, const int depth, const int alpha, const int beta, const int expectedNodeType) {
-    if (pos->isDraw() || game->isRepetition())
+    if (pos->is_draw() || game->isRepetition())
     {
       if (!isNullMove(pos->last_move))
       {
@@ -251,11 +251,11 @@ protected:
   }
 
   bool search_fail_low(const int depth, const int alpha, const uint32_t exclude_move) {
-    pos->generateMoves(this, pos->transp_move, STAGES);
+    pos->generate_moves(this, pos->transp_move, STAGES);
 
     auto move_count = 0;
 
-    while (const auto move_data = pos->nextMove())
+    while (const auto move_data = pos->next_move())
     {
       if (move_data->move == exclude_move)
       {
@@ -303,7 +303,7 @@ protected:
 
     if (pos->in_check)
     {
-      if (see->seeLastMove(m) >= 0)
+      if (see->see_last_move(m) >= 0)
       {
         return depth;
       }
@@ -343,7 +343,7 @@ protected:
 
     if (pos->in_check || is_passed_pawn_move(m))
     {
-      if (see->seeLastMove(m) >= 0)
+      if (see->see_last_move(m) >= 0)
       {
         return depth;
       }
@@ -380,9 +380,9 @@ protected:
     {
       alpha = best_score;
     }
-    pos->generateCapturesAndPromotions(this);
+    pos->generate_captures_and_promotions(this);
 
-    while (auto *const move_data = pos->nextMove())
+    while (auto *const move_data = pos->next_move())
     {
       if (!isPromotion(move_data->move))
       {
@@ -402,7 +402,7 @@ protected:
 
         int score;
 
-        if (pos->isDraw())
+        if (pos->is_draw())
         {
           score = -draw_score();
         } else
@@ -617,7 +617,7 @@ protected:
     memset(counter_moves, 0, sizeof(counter_moves));
   }
 
-  void sortMove(MoveData &move_data) override {
+  void sort_move(MoveData &move_data) override {
     const auto m = move_data.move;
 
     if (pos->transp_move == m)
@@ -639,7 +639,7 @@ protected:
       if (value_piece <= value_captured)
       {
         move_data.score = 300000 + value_captured * 20 - value_piece;
-      } else if (see->seeMove(m) >= 0)
+      } else if (see->see_move(m) >= 0)
       {
         move_data.score = 160000 + value_captured * 20 - value_piece;
       } else
@@ -712,7 +712,7 @@ protected:
   [[nodiscard]] bool move_is_easy() const {
     if (protocol)
     {
-      if ((pos->moveCount() == 1 && search_depth > 9) || (protocol->is_fixed_depth() && protocol->get_depth() == search_depth) || (pv[0][0].score == MAXSCORE - 1))
+      if ((pos->move_count() == 1 && search_depth > 9) || (protocol->is_fixed_depth() && protocol->get_depth() == search_depth) || (pv[0][0].score == MAXSCORE - 1))
       {
         return true;
       }

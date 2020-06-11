@@ -100,7 +100,7 @@ public:
 
     if (pos->en_passant_square)
     {
-      key ^= zobrist::zobrist_ep_file[fileOf(lsb(pos->en_passant_square))];
+      key ^= zobrist::zobrist_ep_file[file_of(lsb(pos->en_passant_square))];
     }
 
     if (pos->side_to_move == 1)
@@ -116,12 +116,12 @@ public:
 
     if ((pos - 1)->en_passant_square)
     {
-      pos->key ^= zobrist::zobrist_ep_file[fileOf(lsb((pos - 1)->en_passant_square))];
+      pos->key ^= zobrist::zobrist_ep_file[file_of(lsb((pos - 1)->en_passant_square))];
     }
 
     if (pos->en_passant_square)
     {
-      pos->key ^= zobrist::zobrist_ep_file[fileOf(lsb(pos->en_passant_square))];
+      pos->key ^= zobrist::zobrist_ep_file[file_of(lsb(pos->en_passant_square))];
     }
 
     if (!m)
@@ -324,7 +324,7 @@ public:
 
     if (pos->en_passant_square)
     {
-      pos->key ^= zobrist::zobrist_ep_file[fileOf(lsb(pos->en_passant_square))];
+      pos->key ^= zobrist::zobrist_ep_file[file_of(lsb(pos->en_passant_square))];
     }
     pos->in_check = board.isAttacked(board.king_square[pos->side_to_move], pos->side_to_move ^ 1);
     return 0;
@@ -403,7 +403,7 @@ public:
     if (pos->en_passant_square)
     {
       uint64_t ep = lsb(pos->en_passant_square);
-      memcpy(p, squareToString(ep, buf), 2);
+      memcpy(p, square_to_string(ep, buf), 2);
       p += 2;
       *(p++) = ' ';
     } else
@@ -466,7 +466,7 @@ public:
 
         int rook_file = c - 'A';
 
-        if (rook_file > fileOf(board.king_square[0]))
+        if (rook_file > file_of(board.king_square[0]))
         {
           addShortCastleRights(0, rook_file);
         } else
@@ -478,7 +478,7 @@ public:
 
         int rook_file = c - 'a';
 
-        if (rook_file > fileOf(board.king_square[1]))
+        if (rook_file > file_of(board.king_square[1]))
         {
           addShortCastleRights(1, rook_file);
         } else
@@ -520,11 +520,11 @@ public:
     }
     pos->castle_rights |= side == 0 ? 1 : 4;
     castle_rights_mask[flip[side ^ 1][rook_file]] -= oo_allowed_mask[side];
-    castle_rights_mask[flip[side ^ 1][fileOf(board.king_square[side])]] -= oo_allowed_mask[side];
+    castle_rights_mask[flip[side ^ 1][file_of(board.king_square[side])]] -= oo_allowed_mask[side];
     rook_castles_from[flip[side ^ 1][g1]] = flip[side ^ 1][rook_file];
     oo_king_from[side]                    = board.king_square[side];
 
-    if (fileOf(board.king_square[side]) != 4 || rook_file != 7)
+    if (file_of(board.king_square[side]) != 4 || rook_file != 7)
     {
       chess960 = true;
     }
@@ -545,11 +545,11 @@ public:
     }
     pos->castle_rights |= side == 0 ? 2 : 8;
     castle_rights_mask[flip[side ^ 1][rook_file]] -= ooo_allowed_mask[side];
-    castle_rights_mask[flip[side ^ 1][fileOf(board.king_square[side])]] -= ooo_allowed_mask[side];
+    castle_rights_mask[flip[side ^ 1][file_of(board.king_square[side])]] -= ooo_allowed_mask[side];
     rook_castles_from[flip[side ^ 1][c1]] = flip[side ^ 1][rook_file];
     ooo_king_from[side]                   = board.king_square[side];
 
-    if (fileOf(board.king_square[side]) != 4 || rook_file != 0)
+    if (file_of(board.king_square[side]) != 4 || rook_file != 0)
     {
       chess960 = true;
     }
@@ -608,11 +608,11 @@ public:
         strcpy(buf, "O-O");
       } else
       {// shredder fen
-        sprintf(buf, "%s%s", squareToString(moveFrom(m), tmp1), squareToString(rook_castles_from[moveTo(m)], tmp2));
+        sprintf(buf, "%s%s", square_to_string(moveFrom(m), tmp1), square_to_string(rook_castles_from[moveTo(m)], tmp2));
       }
     } else
     {
-      sprintf(buf, "%s%s", squareToString(moveFrom(m), tmp1), squareToString(moveTo(m), tmp2));
+      sprintf(buf, "%s%s", square_to_string(moveFrom(m), tmp1), square_to_string(moveTo(m), tmp2));
 
       if (isPromotion(m))
       {
@@ -626,7 +626,7 @@ public:
     int i = 0;
     char buf[12];
 
-    while (const MoveData *m = pos->nextMove())
+    while (const MoveData *m = pos->next_move())
     {
       printf("%d. ", i++ + 1);
       printf("%s", moveToString(m->move, buf));

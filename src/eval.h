@@ -88,7 +88,7 @@ protected:
       uint64_t sq = lsb(bb);
 
       if (game_.board.isPawnPassed(sq, Us))
-        passed_pawn_files[Us] |= 1 << fileOf(sq);
+        passed_pawn_files[Us] |= 1 << file_of(sq);
 
       const int open_file = !game_.board.isPieceOnFile(Pawn, sq, Us ^ 1) ? 1 : 0;
 
@@ -332,7 +332,7 @@ protected:
       {
         int sq                     = lsb(bb);
         const uint64_t &front_span = pawn_front_span[Us][sq];
-        int r                      = Us == 0 ? rankOf(sq) : 7 - rankOf(sq);
+        int r                      = Us == 0 ? rank_of(sq) : 7 - rank_of(sq);
 
         int score_mg = passed_pawn_mg[r];
         int score_eg = passed_pawn_eg[r];

@@ -17,16 +17,16 @@ public:
     material.clear();
     last_move         = 0;
     null_moves_in_row = 0;
-    transposition     = 0;
+    transposition     = nullptr;
     last_move         = 0;
   }
 
-  const uint32_t *stringToMove(const char *m) {
-    int castle_type = -1;// 0 = short, 1 = long
+  const uint32_t *string_to_move(const char *m) {
+    auto castle_type = -1;// 0 = short, 1 = long
 
-    if (!isCastleMove(m, castle_type) && (m[0] < 'a' || m[0] > 'h' || m[1] < '1' || m[1] > '8' || m[2] < 'a' || m[2] > 'h' || m[3] < '1' || m[3] > '8'))
+    if (!is_castle_move(m, castle_type) && (m[0] < 'a' || m[0] > 'h' || m[1] < '1' || m[1] > '8' || m[2] < 'a' || m[2] > 'h' || m[3] < '1' || m[3] > '8'))
     {
-      return NULL;
+      return nullptr;
     }
     uint64_t from = 0;
     uint64_t to   = 0;
@@ -52,11 +52,11 @@ public:
       from = ooo_king_from[side_to_move];
       to   = ooo_king_to[side_to_move];
     }
-    generateMoves();
+    generate_moves();
 
-    while (const MoveData *move_data = nextMove())
+    while (const MoveData *move_data = next_move())
     {
-      const uint32_t *move = &move_data->move;
+      const auto *const move = &move_data->move;
 
       if (moveFrom(*move) == from && moveTo(*move) == to)
       {
@@ -75,10 +75,10 @@ public:
         return move;
       }
     }
-    return NULL;
+    return nullptr;
   }
 
-  bool isCastleMove(const char *m, int &castle_type) {
+  bool is_castle_move(const char *m, int &castle_type) const {
     if (strieq(m, "O-O") || strieq(m, "OO") || strieq(m, "0-0") || strieq(m, "00") || (strieq(m, "e1g1") && board->getPieceType(e1) == King)
         || (strieq(m, "e8g8") && board->getPieceType(e8) == King))
     {
@@ -95,7 +95,7 @@ public:
     return false;
   }
 
-  __forceinline int isDraw() { return flags & RECOGNIZEDDRAW; }
+  [[nodiscard]] bool is_draw() const { return flags & RECOGNIZEDDRAW; }
 
   int reversible_half_move_count;
   uint64_t pawn_structure_key;

@@ -290,7 +290,7 @@ public:
     int a_winning_cornersq       = a8;
     int another_winning_cornersq = h1;
 
-    if (isDark(lsb(board->bishops(side1))))
+    if (is_dark(lsb(board->bishops(side1))))
     {
       a_winning_cornersq       = a1;
       another_winning_cornersq = h8;
@@ -398,7 +398,7 @@ public:
     switch (key2 & ~all_pawns)
     {
     case kb:
-      if (!sameColor(lsb(board->bishops(0)), lsb(board->bishops(1))) && abs(pawnCount(0) - pawnCount(1)) <= 2)
+      if (!same_color(lsb(board->bishops(0)), lsb(board->bishops(1))) && abs(pawnCount(0) - pawnCount(1)) <= 2)
       {
         return eval / 2;
       }
@@ -424,9 +424,9 @@ public:
   // fen 8/6k1/8/8/3K4/5B1P/8/8 w - - 0 1
   int KBpK(int eval, int side1) {
     uint64_t pawnsq1  = lsb(board->pawns(side1));
-    uint64_t promosq1 = side1 == 1 ? fileOf(pawnsq1) : fileOf(pawnsq1) + 56;
+    uint64_t promosq1 = side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56;
 
-    if (!sameColor(promosq1, lsb(board->bishops(side1))))
+    if (!same_color(promosq1, lsb(board->bishops(side1))))
     {
       const uint64_t &bbk2 = board->king(side1 ^ 1);
 
@@ -448,7 +448,7 @@ public:
 
   int KpK(int eval, int side1) {
     uint64_t pawnsq1     = lsb(board->pawns(side1));
-    uint64_t promosq1    = side1 == 1 ? fileOf(pawnsq1) : fileOf(pawnsq1) + 56;
+    uint64_t promosq1    = side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56;
     const uint64_t &bbk2 = board->king(side1 ^ 1);
 
     if ((promosq1 == h8 && (bbk2 & corner_h8)) || (promosq1 == a8 && (bbk2 & corner_a8)) || (promosq1 == h1 && (bbk2 & corner_h1)) || (promosq1 == a1 && (bbk2 & corner_a1)))

@@ -246,7 +246,7 @@ public:
     {
       while (param < num_params)
       {
-        const auto *const move = game->pos->stringToMove(params[param++]);
+        const auto *const move = game->pos->string_to_move(params[param++]);
 
         if (move == nullptr)
           return -1;

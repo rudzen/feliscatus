@@ -53,7 +53,7 @@ public:
   void stop() override { search->stop_search = true; }
 
   virtual bool make_move(const char *m) {
-    const uint32_t *move = game->pos->stringToMove(m);
+    const uint32_t *move = game->pos->string_to_move(m);
     if (move)
     {
       return game->makeMove(*move, true, true);
@@ -136,7 +136,7 @@ public:
 
     while (quit == 0)
     {
-      game->pos->generateMoves();
+      game->pos->generate_moves();
 
       (void)fgets(line, 16384, stdin);
 

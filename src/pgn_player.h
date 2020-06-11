@@ -51,12 +51,12 @@ namespace pgn
             if (pawn_move_)
                 {
                 piece |= Pawn;
-                game_->pos->generatePawnMoves(capture_, bbSquare(to_square_));
+                game_->pos->generate_pawn_moves(capture_, bbSquare(to_square_));
                 }
             else if (castle_move_)
                 {
                 piece |= King;
-                game_->pos->generateMoves();
+                game_->pos->generate_moves();
                 }
             else if (piece_move_)
                 {
@@ -86,7 +86,7 @@ namespace pgn
                         cout << "default [" << token_str << "]" << endl;
                         exit(0);
                     }
-                game_->pos->generateMoves(piece, bbSquare(to_square_));
+                game_->pos->generate_moves(piece, bbSquare(to_square_));
                 }
             else
                 {
@@ -121,7 +121,7 @@ namespace pgn
                     }
                 }
             bool found = false;
-            int move_count = game_->pos->moveCount();
+            int move_count = game_->pos->move_count();
 
             for ( int i = 0; i < move_count; ++ i )
                 {
@@ -129,8 +129,8 @@ namespace pgn
 
                 if ((movePiece(m) != piece) || ((int)moveTo(m) != to_square_)
                     || (promoted_to != - 1 && movePromoted(m) != promoted) || (capture_ && ! isCapture(m))
-                    || (from_file_ != - 1 && fileOf(moveFrom(m)) != from_file_)
-                    || (from_rank_ != - 1 && rankOf(moveFrom(m)) != from_rank_))
+                    || (from_file_ != - 1 && file_of(moveFrom(m)) != from_file_)
+                    || (from_rank_ != - 1 && rank_of(moveFrom(m)) != from_rank_))
                     {
                     continue;
                     }
