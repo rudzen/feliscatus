@@ -926,7 +926,7 @@ protected:
   Result result_;
 
 private:
-  static const size_t bufsize = 128 * 1024;
+  static constexpr std::size_t bufsize = 128 * 1024;
 };
 }// namespace pgn
 

@@ -124,7 +124,7 @@ protected:
   uint64_t size;
   int age;
 
-  static const int NUMBER_SLOTS = 4;
+  static constexpr int NUMBER_SLOTS = 4;
 };
 
 #pragma pack(1)

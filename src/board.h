@@ -134,16 +134,16 @@ public:
     return pinned_pieces;
   }
 
-  uint64_t xrayRookAttacks(const uint64_t &occupied, uint64_t blockers, const uint64_t sq) {
-    uint64_t attacks = rookAttacks(sq, occupied);
+  uint64_t xrayRookAttacks(const uint64_t &occ, uint64_t blockers, const uint64_t sq) {
+    uint64_t attacks = rookAttacks(sq, occ);
     blockers &= attacks;
-    return attacks ^ rookAttacks(sq, occupied ^ blockers);
+    return attacks ^ rookAttacks(sq, occ ^ blockers);
   }
 
-  uint64_t xrayBishopAttacks(const uint64_t &occupied, uint64_t blockers, const uint64_t sq) {
-    uint64_t attacks = bishopAttacks(sq, occupied);
+  uint64_t xrayBishopAttacks(const uint64_t &occ, uint64_t blockers, const uint64_t sq) {
+    uint64_t attacks = bishopAttacks(sq, occ);
     blockers &= attacks;
-    return attacks ^ bishopAttacks(sq, occupied ^ blockers);
+    return attacks ^ bishopAttacks(sq, occ ^ blockers);
   }
 
   uint64_t isOccupied(uint64_t sq) { return bbSquare(sq) & occupied; }
@@ -152,8 +152,8 @@ public:
     return isAttackedBySlider(sq, side) || isAttackedByKnight(sq, side) || isAttackedByPawn(sq, side) || isAttackedByKing(sq, side);
   }
 
-  uint64_t pieceAttacks(const int piece, const uint64_t sq) const {
-    switch (piece & 7)
+  uint64_t pieceAttacks(const int pc, const uint64_t sq) const {
+    switch (pc & 7)
     {
     case Knight:
       return knightAttacks(sq);
@@ -200,7 +200,7 @@ public:
   bool isAttackedByKing(const uint64_t sq, const int side) const { return (piece[King | (side << 3)] & king_attacks[sq]) != 0; }
 
   void print() const {
-    static char piece_letter[] = "PNBRQK. pnbrqk. ";
+    constexpr std::string_view piece_letter = "PNBRQK. pnbrqk. ";
     printf("\n");
 
     for (int rank = 7; rank >= 0; rank--)

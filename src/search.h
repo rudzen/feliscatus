@@ -766,15 +766,15 @@ protected:
   uint64_t node_count;
   uint64_t num_workers_;
 
-  static const int EXACT = 1;
-  static const int BETA  = 2;
-  static const int ALPHA = 4;
+  static constexpr int EXACT = 1;
+  static constexpr int BETA  = 2;
+  static constexpr int ALPHA = 4;
 
-  static const int MAXSCORE = 0x7fff;
-  static const int MAXDEPTH = 96;
+  static constexpr int MAXSCORE = 0x7fff;
+  static constexpr int MAXDEPTH = 96;
 
-  static const int KILLERMOVESCORE    = 124900;
-  static const int PROMOTIONMOVESCORE = 50000;
+  static constexpr int KILLERMOVESCORE    = 124900;
+  static constexpr int PROMOTIONMOVESCORE = 50000;
 
   static int futility_margin[4];
   static int razor_margin[4];

@@ -16,9 +16,9 @@ public:
   virtual void sortMove(MoveData &move_data) = 0;
 };
 
-static const int LEGALMOVES     = 1;
-static const int STAGES         = 2;
-static const int QUEENPROMOTION = 4;
+static constexpr int LEGALMOVES     = 1;
+static constexpr int STAGES         = 2;
+static constexpr int QUEENPROMOTION = 4;
 
 class Moves {
 public:
