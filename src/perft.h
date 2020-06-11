@@ -13,49 +13,49 @@ struct perft_result {
 
 class Perft {
 public:
-  Perft(Game *game, int flags = LEGALMOVES) {
+  Perft(Game *game, const int flags = LEGALMOVES) {
     this->game  = game;
     this->flags = flags;
   }
 
-  void perft(int depth) {
+  void perft(const int depth) const {
     double nps = 0;
 
-    for (int i = 1; i <= depth; i++)
+    for (auto i = 1; i <= depth; i++)
     {
       perft_result result;
       Stopwatch sw;
-      perft_(i, result);
-      double time = sw.millisElapsed() / (double)1000;
+      perft(i, result);
+      const auto time = sw.millisElapsed() / static_cast<double>(1000);
       if (time)
         nps = result.nodes / time;
       printf("depth %d: %llu nodes, %.2f secs, %.0f nps\n", i, result.nodes, time, nps);
     }
   }
 
-  void perft_divide(int depth) {
+  void perft_divide(const int depth) const {
     printf("depth: %d\n", depth);
 
     perft_result result;
-    Position *pos = game->pos;
+    auto pos = game->pos;
     char buf[12];
     double time = 0;
     double nps  = 0;
 
-    pos->generate_moves(0, 0, flags);
+    pos->generate_moves(nullptr, 0, flags);
 
     while (const MoveData *move_data = pos->next_move())
     {
-      const uint32_t *m = &move_data->move;
+      const auto m = &move_data->move;
 
       if (!game->make_move(*m, flags == 0 ? true : false, true))
       {
         continue;
       }
-      uint64_t nodes_start = result.nodes;
+      const auto nodes_start = result.nodes;
       Stopwatch sw;
-      perft_(depth - 1, result);
-      time += sw.millisElapsed() / (double)1000;
+      perft(depth - 1, result);
+      time += sw.millisElapsed() / static_cast<double>(1000);
       game->unmake_move();
       printf("move %s: %llu nodes\n", game->move_to_string(*m, buf), result.nodes - nodes_start);
     }
@@ -67,13 +67,13 @@ public:
 private:
   double total_time;
 
-  int perft_(int depth, perft_result &result) {
+  int perft(int depth, perft_result &result) const {
     if (depth == 0)
     {
       result.nodes++;
       return 0;
     }
-    Position *pos = game->pos;
+    auto pos = game->pos;
     pos->generate_moves(0, 0, flags);
 
     if ((flags & STAGES) == 0 && depth == 1)
@@ -83,13 +83,13 @@ private:
     {
       while (const MoveData *move_data = pos->next_move())
       {
-        const uint32_t *m = &move_data->move;
+        const auto m = &move_data->move;
 
         if (!game->make_move(*m, (flags & LEGALMOVES) ? false : true, true))
         {
           continue;
         }
-        perft_(depth - 1, result);
+        perft(depth - 1, result);
         game->unmake_move();
       }
     }
@@ -97,7 +97,7 @@ private:
   }
 
   Game *game;
-  Search *search;
-  ProtocolListener *app;
+  Search *search{};
+  ProtocolListener *app{};
   int flags;
 };

@@ -389,7 +389,7 @@ public:
     return eval;
   }
 
-  int KBxKX(int eval, uint32_t key1, uint32_t key2, int side1) {
+  int KBxKX(const int eval, const uint32_t key1, const uint32_t key2, const int side1) {
     switch (key2 & ~all_pawns)
     {
     case kb:
@@ -431,12 +431,8 @@ public:
     return eval;
   }
 
-  int KxKx(int eval, uint32_t key1, uint32_t key2, int pc1, int pc2, int side1) {
-    if (pc1 == 1 && pc2 == 0)
-    {
-      return KpK(eval, side1);
-    }
-    return eval;
+  int KxKx(const int eval, uint32_t key1, uint32_t key2, const int pc1, const int pc2, const int side1) {
+    return pc1 == 1 && pc2 == 0 ? KpK(eval, side1) : eval;
   }
 
   int KpK(const int eval, const int side1) {
@@ -444,9 +440,7 @@ public:
     const uint64_t promosq1    = side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56;
     
     if (const uint64_t &bbk2 = board->king(side1 ^ 1); promosq1 == h8 && bbk2 & corner_h8 || promosq1 == a8 && bbk2 & corner_a8 || promosq1 == h1 && bbk2 & corner_h1 || promosq1 == a1 && bbk2 & corner_a1)
-    {
       return draw_score();
-    }
     return eval;
   }
 

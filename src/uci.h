@@ -32,19 +32,23 @@ public:
   virtual void check_input()                                            = 0;
   virtual void post_moves(const char *bestmove, const char *pondermove) = 0;
 
-  virtual void post_info(const int depth, int selective_depth, uint64_t node_count, uint64_t nodes_per_sec, uint64_t time, int hash_full) = 0;
+  virtual void post_info(int depth, int selective_depth, uint64_t node_count, uint64_t nodes_per_sec, uint64_t time, int hash_full) = 0;
 
-  virtual void post_curr_move(const uint32_t curr_move, int curr_move_number) = 0;
+  virtual void post_curr_move(uint32_t curr_move, int curr_move_number) = 0;
 
-  virtual void post_pv(const int depth, int max_ply, uint64_t node_count, uint64_t nodes_per_second, uint64_t time, int hash_full, int score, const char *pv, int node_type) = 0;
+  virtual void post_pv(int depth, int max_ply, uint64_t node_count, uint64_t nodes_per_second, uint64_t time, int hash_full, int score, const char *pv, int node_type) = 0;
 
-  [[nodiscard]] int is_analysing() const noexcept { return flags & (INFINITE_MOVE_TIME | PONDER_SEARCH); }
+  [[nodiscard]]
+  int is_analysing() const noexcept { return flags & (INFINITE_MOVE_TIME | PONDER_SEARCH); }
 
-  [[nodiscard]] int is_fixed_time() const noexcept { return flags & FIXED_MOVE_TIME; }
+  [[nodiscard]]
+  int is_fixed_time() const noexcept { return flags & FIXED_MOVE_TIME; }
 
-  [[nodiscard]] int is_fixed_depth() const noexcept { return flags & FIXED_DEPTH; }
+  [[nodiscard]]
+  int is_fixed_depth() const noexcept { return flags & FIXED_DEPTH; }
 
-  [[nodiscard]] int get_depth() const noexcept { return depth; }
+  [[nodiscard]]
+  int get_depth() const noexcept { return depth; }
 
   void set_flags(const int flags) noexcept { this->flags = flags; }
 

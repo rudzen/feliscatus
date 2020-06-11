@@ -95,7 +95,8 @@ public:
     return false;
   }
 
-  [[nodiscard]] bool is_draw() const { return flags & RECOGNIZEDDRAW; }
+  [[nodiscard]]
+  bool is_draw() const { return flags & RECOGNIZEDDRAW; }
 
   int reversible_half_move_count;
   uint64_t pawn_structure_key;

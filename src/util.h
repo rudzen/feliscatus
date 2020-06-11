@@ -99,25 +99,28 @@ public:
 
   Stopwatch() { start(); }
 
-  Stopwatch(int) { QueryPerformanceFrequency(&frequency); }
+  explicit Stopwatch(int) { QueryPerformanceFrequency(&frequency); }
 
   void start() {
     QueryPerformanceCounter(&start1);
     start2 = GetTickCount64();
   }
 
+  [[nodiscard]]
   uint64_t micros_elapsed_high_res() const {
     LARGE_INTEGER now;
     QueryPerformanceCounter(&now);
     return (now.QuadPart - start1.QuadPart) * 1000000 / frequency.QuadPart;
   }
 
+  [[nodiscard]]
   uint64_t millis_elapsed_high_res() const {
     LARGE_INTEGER now;
     QueryPerformanceCounter(&now);
     return (now.QuadPart - start1.QuadPart) * 1000 / frequency.QuadPart;
   }
 
+  [[nodiscard]]
   uint64_t millisElapsed() const { return GetTickCount64() - start2; }
 };
 

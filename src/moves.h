@@ -21,7 +21,7 @@ static constexpr int QUEENPROMOTION = 4;
 
 class Moves {
 public:
-  void generate_moves(MoveSorter *sorter = 0, const uint32_t transp_move = 0, const int flags = 0) {
+  void generate_moves(MoveSorter *sorter = nullptr, const uint32_t transp_move = 0, const int flags = 0) {
     reset(sorter, transp_move, flags);
     max_stage = 3;
 
@@ -45,7 +45,7 @@ public:
     for (auto bb = board->piece[piece]; bb; reset_lsb(bb))
     {
       const uint64_t from = lsb(bb);
-      addMoves(piece, from, board->piece_attacks(piece, from) & to_squares);
+      add_moves(piece, from, board->piece_attacks(piece, from) & to_squares);
     }
   }
 
@@ -59,7 +59,8 @@ public:
     { add_pawn_quiet_moves(to_squares); }
   }
 
-  [[nodiscard]] MoveData *next_move() {
+  [[nodiscard]]
+  MoveData *next_move() {
     while (iteration == number_moves && stage < max_stage)
     {
       switch (stage)
@@ -112,11 +113,13 @@ public:
     } while (true);
   }
 
-  [[nodiscard]] int move_count() const { return number_moves; }
+  [[nodiscard]]
+  int move_count() const { return number_moves; }
 
   void goto_move(const int pos) { iteration = pos; }
 
-  [[nodiscard]] bool is_pseudo_legal(const uint32_t m) const {
+  [[nodiscard]]
+  bool is_pseudo_legal(const uint32_t m) const {
     // TO DO en passant moves and castle moves
     if ((bb_piece[move_piece(m)] & bb_square(move_from(m))) == 0)
       return false;
@@ -245,35 +248,35 @@ private:
     for (bb = bb_piece[Queen + offset]; bb; reset_lsb(bb))
     {
       from = lsb(bb);
-      addMoves(Queen + offset, from, queenAttacks(from, board->occupied) & to_squares);
+      add_moves(Queen + offset, from, queenAttacks(from, board->occupied) & to_squares);
     }
 
     for (bb = bb_piece[Rook + offset]; bb; reset_lsb(bb))
     {
       from = lsb(bb);
-      addMoves(Rook + offset, from, rookAttacks(from, board->occupied) & to_squares);
+      add_moves(Rook + offset, from, rookAttacks(from, board->occupied) & to_squares);
     }
 
     for (bb = bb_piece[Bishop + offset]; bb; reset_lsb(bb))
     {
       from = lsb(bb);
-      addMoves(Bishop + offset, from, bishopAttacks(from, board->occupied) & to_squares);
+      add_moves(Bishop + offset, from, bishopAttacks(from, board->occupied) & to_squares);
     }
 
     for (bb = bb_piece[Knight + offset]; bb; reset_lsb(bb))
     {
       from = lsb(bb);
-      addMoves(Knight + offset, from, knightAttacks(from) & to_squares);
+      add_moves(Knight + offset, from, knightAttacks(from) & to_squares);
     }
 
     for (bb = bb_piece[King + offset]; bb; reset_lsb(bb))
     {
       from = lsb(bb);
-      addMoves(King + offset, from, kingAttacks(from) & to_squares);
+      add_moves(King + offset, from, kingAttacks(from) & to_squares);
     }
   }
 
-  void addMoves(const int piece, const uint64_t from, const uint64_t &attacks) {
+  void add_moves(const int piece, const uint64_t from, const uint64_t &attacks) {
     for (auto bb = attacks; bb; reset_lsb(bb))
     {
       const uint64_t to = lsb(bb);
@@ -318,14 +321,16 @@ private:
 
   void add_castle_move(const uint64_t from, const uint64_t to) { add_move(King | (side_to_move << 3), from, to, CASTLE); }
 
-  [[nodiscard]] bool gives_check(const uint32_t m) const {
+  [[nodiscard]]
+  bool gives_check(const uint32_t m) const {
     board->make_move(m);
     const bool is_attacked = board->is_attacked(board->king_square[side_to_move ^ 1], side_to_move);
     board->unmake_move(m);
     return is_attacked;
   }
 
-  [[nodiscard]] bool is_legal(const uint32_t m, const int piece, const uint64_t from, const uint32_t type) const {
+  [[nodiscard]]
+  bool is_legal(const uint32_t m, const int piece, const uint64_t from, const uint32_t type) const {
     if ((pinned & bb_square(from)) || in_check || (piece & 7) == King || (type & EPCAPTURE))
     {
       board->make_move(m);
@@ -340,11 +345,14 @@ private:
     return true;
   }
 
-  [[nodiscard]] bool can_castle_short() const { return (castle_rights & oo_allowed_mask[side_to_move]) && is_castle_allowed(oo_king_to[side_to_move], side_to_move); }
+  [[nodiscard]]
+  bool can_castle_short() const { return (castle_rights & oo_allowed_mask[side_to_move]) && is_castle_allowed(oo_king_to[side_to_move], side_to_move); }
 
-  [[nodiscard]] bool can_castle_long() const { return (castle_rights & ooo_allowed_mask[side_to_move]) && is_castle_allowed(ooo_king_to[side_to_move], side_to_move); }
+  [[nodiscard]]
+  bool can_castle_long() const { return (castle_rights & ooo_allowed_mask[side_to_move]) && is_castle_allowed(ooo_king_to[side_to_move], side_to_move); }
 
-  [[nodiscard]] bool is_castle_allowed(uint64_t to, const int side_to_move) const {
+  [[nodiscard]]
+  bool is_castle_allowed(uint64_t to, const int side_to_move) const {
     // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
     // The following comments were taken from that source.
 
@@ -381,15 +389,15 @@ public:
   Board *board;
 
 private:
-  uint64_t *bb_piece;
-  uint64_t *occupied_by_side;
-  uint64_t occupied;
-  int iteration;
-  int stage;
-  int max_stage;
-  int number_moves;
-  uint64_t pinned;
-  MoveSorter *sorter;
-  uint32_t transp_move;
-  int flags;
+  uint64_t *bb_piece{};
+  uint64_t *occupied_by_side{};
+  uint64_t occupied{};
+  int iteration{};
+  int stage{};
+  int max_stage{};
+  int number_moves{};
+  uint64_t pinned{};
+  MoveSorter *sorter{};
+  uint32_t transp_move{};
+  int flags{};
 };

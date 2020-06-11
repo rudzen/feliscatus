@@ -13,7 +13,7 @@ public:
     thread_ = std::jthread(&Search::run, search_);
   }
 
-  void stop() {
+  void stop() const {
     search_->stop();
     thread_.join();
     delete search_;
