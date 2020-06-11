@@ -739,8 +739,9 @@ protected:
       if (n == -1)
       {
         throw 0;
-      } else if (n == 0)
-      { break; }
+      }
+      if (n == 0)
+        break;
     }
 
     if (digits)
