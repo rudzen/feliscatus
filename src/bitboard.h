@@ -204,7 +204,7 @@ constexpr uint8_t popCount(uint64_t x) {
   return std::popcount(x);
 }
 
-constexpr lsb(uint64_t x) {
+constexpr int lsb(uint64_t x) {
   return std::countr_zero(x);
 }
 
