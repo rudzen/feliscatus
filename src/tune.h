@@ -35,7 +35,7 @@ public:
 
     if (((game_->pos - game_->position_list) >= 14) && (all_nodes_count_ % 7 == 0))
     {
-      current_game_nodes_.push_back(Node(game_->getFen()));
+      current_game_nodes_.push_back(Node(game_->get_fen()));
     }
   }
 
@@ -355,7 +355,7 @@ public:
 
     for (auto node : nodes)
     {
-      game_.setFen(node.fen_.c_str());
+      game_.set_fen(node.fen_.c_str());
       x += pow(node.result_ - sigmoid(getScore(0), K), 2);
     }
     x /= nodes.size();
@@ -376,11 +376,11 @@ public:
   void makeQuiet(std::vector<Node> &nodes) {
     for (auto &node : nodes)
     {
-      game_.setFen(node.fen_.c_str());
+      game_.set_fen(node.fen_.c_str());
       pv_length[0] = 0;
       getQuiesceScore(-32768, 32768, true, 0);
       playPV();
-      node.fen_ = game_.getFen();
+      node.fen_ = game_.get_fen();
     }
   }
 
@@ -424,7 +424,7 @@ public:
       {
         auto score = -getQuiesceScore(-beta, -alpha, storePV, ply + 1);
 
-        game_.unmakeMove();
+        game_.unmake_move();
 
         if (score > best_score)
         {
@@ -450,7 +450,7 @@ public:
   }
 
   bool makeMove(const uint32_t m, int ply) {
-    if (game_.makeMove(m, true, true))
+    if (game_.make_move(m, true, true))
     {
       ++ply;
       pv_length[ply] = ply;
@@ -459,12 +459,12 @@ public:
     return false;
   }
 
-  void unmakeMove() { game_.unmakeMove(); }
+  void unmakeMove() { game_.unmake_move(); }
 
   void playPV() {
     for (auto i = 0; i < pv_length[0]; ++i)
     {
-      game_.makeMove(pv[0][i].move, false, true);
+      game_.make_move(pv[0][i].move, false, true);
     }
   }
 

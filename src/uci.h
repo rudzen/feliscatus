@@ -118,7 +118,7 @@ public:
   void post_curr_move(const uint32_t curr_move, const int curr_move_number) override {
     char move_buf[32];
 
-    printf("info currmove %s currmovenumber %d\n", game->moveToString(curr_move, move_buf), curr_move_number);
+    printf("info currmove %s currmovenumber %d\n", game->move_to_string(curr_move, move_buf), curr_move_number);
   }
 
   void post_pv(const int depth, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const uint64_t time, const int hash_full, const int score, const char *pv, const int node_type) override {
@@ -251,7 +251,7 @@ public:
         if (move == nullptr)
           return -1;
 
-        game->makeMove(*move, true, true);
+        game->make_move(*move, true, true);
       }
     }
     return 0;

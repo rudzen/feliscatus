@@ -28,7 +28,7 @@ namespace pgn
 
         virtual void readPGNGame ()
             {
-            game_->newGame(Game::kStartPosition);
+            game_->new_game(Game::kStartPosition);
             PGNFileReader::readPGNGame();
             }
 
@@ -38,7 +38,7 @@ namespace pgn
 
             if (strieq(tag_name_, "FEN"))
                 {
-                game_->setFen(std::string(tag_value_).substr(1, strlen(tag_value_) - 2).c_str());
+                game_->set_fen(std::string(tag_value_).substr(1, strlen(tag_value_) - 2).c_str());
                 }
             }
 
@@ -135,7 +135,7 @@ namespace pgn
                     continue;
                     }
 
-                if (! game_->makeMove(m, true, true))
+                if (! game_->make_move(m, true, true))
                     {
                     continue;
                     }

@@ -229,7 +229,7 @@ protected:
   }
 
   int search_next_depth(const bool pv, const int depth, const int alpha, const int beta, const int expectedNodeType) {
-    if (pos->is_draw() || game->isRepetition())
+    if (pos->is_draw() || game->is_repetition())
     {
       if (!isNullMove(pos->last_move))
       {
@@ -436,7 +436,7 @@ protected:
   }
 
   bool make_move_and_evaluate(const uint32_t m, const int alpha, const int beta) {
-    if (game->makeMove(m, true, true))
+    if (game->make_move(m, true, true))
     {
       pos = game->pos;
       ++ply;
@@ -454,7 +454,7 @@ protected:
   }
 
   void unmake_move() {
-    game->unmakeMove();
+    game->unmake_move();
     pos = game->pos;
     ply--;
   }
@@ -510,7 +510,7 @@ protected:
 
       for (auto i = ply; i < pv_length[ply]; ++i)
       {
-        _snprintf(&buf[strlen(buf)], sizeof(buf) - strlen(buf), "%s ", game->moveToString(pv[ply][i].move, buf2));
+        _snprintf(&buf[strlen(buf)], sizeof(buf) - strlen(buf), "%s ", game->move_to_string(pv[ply][i].move, buf2));
       }
 
       if (protocol && verbosity > 0)

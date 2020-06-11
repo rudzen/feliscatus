@@ -20,13 +20,13 @@ public:
   virtual ~Felis() {}
 
   int new_game() override {
-    game->newGame(Game::kStartPosition);
+    game->new_game(Game::kStartPosition);
     pawnt->clear();
     transt->clear();
     return 0;
   }
 
-  int set_fen(const char *fen) override { return game->newGame(fen); }
+  int set_fen(const char *fen) override { return game->new_game(fen); }
 
   int go(const int wtime = 0, const int btime = 0, const int movestogo = 0, const int winc = 0, const int binc = 0, const int movetime = 5000) override {
     game->pos->pv_length = 0;
@@ -41,9 +41,9 @@ public:
       char best_move[12];
       char ponder_move[12];
 
-      protocol->post_moves(game->moveToString(search->pv[0][0].move, best_move), game->pos->pv_length > 1 ? game->moveToString(search->pv[0][1].move, ponder_move) : nullptr);
+      protocol->post_moves(game->move_to_string(search->pv[0][0].move, best_move), game->pos->pv_length > 1 ? game->move_to_string(search->pv[0][1].move, ponder_move) : nullptr);
 
-      game->makeMove(search->pv[0][0].move, true, true);
+      game->make_move(search->pv[0][0].move, true, true);
     }
     return 0;
   }
@@ -54,11 +54,7 @@ public:
 
   virtual bool make_move(const char *m) {
     const uint32_t *move = game->pos->string_to_move(m);
-    if (move)
-    {
-      return game->makeMove(*move, true, true);
-    }
-    return false;
+    return move ? game->make_move(*move, true, true) : false;
   }
 
   void go_search(const int wtime, const int btime, const int movestogo, const int winc, const int binc, const int movetime) {

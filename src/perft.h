@@ -48,7 +48,7 @@ public:
     {
       const uint32_t *m = &move_data->move;
 
-      if (!game->makeMove(*m, flags == 0 ? true : false, true))
+      if (!game->make_move(*m, flags == 0 ? true : false, true))
       {
         continue;
       }
@@ -56,8 +56,8 @@ public:
       Stopwatch sw;
       perft_(depth - 1, result);
       time += sw.millisElapsed() / (double)1000;
-      game->unmakeMove();
-      printf("move %s: %llu nodes\n", game->moveToString(*m, buf), result.nodes - nodes_start);
+      game->unmake_move();
+      printf("move %s: %llu nodes\n", game->move_to_string(*m, buf), result.nodes - nodes_start);
     }
     if (time)
       nps = result.nodes / time;
@@ -85,12 +85,12 @@ private:
       {
         const uint32_t *m = &move_data->move;
 
-        if (!game->makeMove(*m, (flags & LEGALMOVES) ? false : true, true))
+        if (!game->make_move(*m, (flags & LEGALMOVES) ? false : true, true))
         {
           continue;
         }
         perft_(depth - 1, result);
-        game->unmakeMove();
+        game->unmake_move();
       }
     }
     return 0;
