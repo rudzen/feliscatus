@@ -11,10 +11,10 @@ public:
     int score;
     board_.make_move(move);
 
-    if (!board_.is_attacked(board_.king_square[moveSide(move)], moveSide(move) ^ 1))
+    if (!board_.is_attacked(board_.king_square[move_side(move)], move_side(move) ^ 1))
     {
       init_see_move();
-      score = see_rec(material_change(move), next_to_capture(move), moveTo(move), moveSide(move) ^ 1);
+      score = see_rec(material_change(move), next_to_capture(move), move_to(move), move_side(move) ^ 1);
     } else
       score = SEE_INVALID_SCORE;
 
@@ -24,15 +24,15 @@ public:
 
   int see_last_move(const uint32_t move) {
     init_see_move();
-    return see_rec(material_change(move), next_to_capture(move), moveTo(move), moveSide(move) ^ 1);
+    return see_rec(material_change(move), next_to_capture(move), move_to(move), move_side(move) ^ 1);
   }
 
 private:
   static constexpr int material_change(const uint32_t move) {
-    return (isCapture(move) ? piece_value(moveCaptured(move)) : 0) + (isPromotion(move) ? (piece_value(movePromoted(move)) - piece_value(Pawn)) : 0);
+    return (is_capture(move) ? piece_value(moveCaptured(move)) : 0) + (is_promotion(move) ? (piece_value(move_promoted(move)) - piece_value(Pawn)) : 0);
   }
 
-  static constexpr int next_to_capture(const uint32_t move) { return isPromotion(move) ? movePromoted(move) : movePiece(move); }
+  static constexpr int next_to_capture(const uint32_t move) { return is_promotion(move) ? move_promoted(move) : move_piece(move); }
 
   int see_rec(const int mat_change, const int next_capture, const uint64_t to, const int side_to_move) {
     uint64_t from;
@@ -44,9 +44,9 @@ private:
         return mat_change;
 
       if ((current_piece[side_to_move] == Pawn) && (rank_of(to) == 0 || rank_of(to) == 7))
-        initMove(move, current_piece[side_to_move] | (side_to_move << 3), next_capture, from, to, PROMOTION | CAPTURE, Queen | (side_to_move << 3));
+        init_move(move, current_piece[side_to_move] | (side_to_move << 3), next_capture, from, to, PROMOTION | CAPTURE, Queen | (side_to_move << 3));
       else
-        initMove(move, current_piece[side_to_move] | (side_to_move << 3), next_capture, from, to, CAPTURE, 0);
+        init_move(move, current_piece[side_to_move] | (side_to_move << 3), next_capture, from, to, CAPTURE, 0);
 
       board_.make_move(move);
 
@@ -56,7 +56,7 @@ private:
       board_.unmake_move(move);
     } while (true);
 
-    const auto score = -see_rec(material_change(move), next_to_capture(move), moveTo(move), moveSide(move) ^ 1);
+    const auto score = -see_rec(material_change(move), next_to_capture(move), move_to(move), move_side(move) ^ 1);
 
     board_.unmake_move(move);
 

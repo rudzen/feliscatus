@@ -218,12 +218,12 @@ protected:
     } else if (pos->reversible_half_move_count >= 100)
     { return search_node_score(draw_score()); }
 
-    if (best_move && !isCapture(best_move) && !isPromotion(best_move))
+    if (best_move && !is_capture(best_move) && !is_promotion(best_move))
     {
       update_history_scores(best_move, depth);
       update_killer_moves(best_move);
 
-      counter_moves[movePiece(pos->last_move)][moveTo(pos->last_move)] = best_move;
+      counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] = best_move;
     }
     return store_search_node_score(best_score, depth, node_type(best_score, beta, best_move), best_move);
   }
@@ -231,7 +231,7 @@ protected:
   int search_next_depth(const bool pv, const int depth, const int alpha, const int beta, const int expectedNodeType) {
     if (pos->is_draw() || game->is_repetition())
     {
-      if (!isNullMove(pos->last_move))
+      if (!is_null_move(pos->last_move))
       {
         return search_node_score(-draw_score());
       }
@@ -258,9 +258,8 @@ protected:
     while (const auto move_data = pos->next_move())
     {
       if (move_data->move == exclude_move)
-      {
         continue;
-      }
+
       auto best_score = -MAXSCORE;// dummy
 
       if (make_move_and_evaluate(move_data->move, alpha, alpha + 1))
@@ -288,14 +287,12 @@ protected:
     }
 
     if (move_count == 0)
-    {
       return false;
-    }
     return true;
   }
 
   [[nodiscard]] bool should_try_null_move(const int depth, const int beta) const {
-    return !pos->in_check && pos->null_moves_in_row < 1 && !pos->material.isKx(pos->side_to_move) && pos->eval_score >= beta;
+    return !pos->in_check && pos->null_moves_in_row < 1 && !pos->material.is_kx(pos->side_to_move) && pos->eval_score >= beta;
   }
 
   int next_depth_not_pv(const bool pv, const int depth, const int move_count, const MoveData *move_data, const int alpha, int &best_score, const int expected_node_type) const {
@@ -304,19 +301,15 @@ protected:
     if (pos->in_check)
     {
       if (see->see_last_move(m) >= 0)
-      {
         return depth;
-      }
     }
 
-    if (!isQueenPromotion(m) && !isCapture(m) && !is_killer_move(m, ply - 1) && move_count >= (pv ? 5 : 3))
+    if (!is_queen_promotion(m) && !is_capture(m) && !is_killer_move(m, ply - 1) && move_count >= (pv ? 5 : 3))
     {
       auto next_depth = depth - 2 - depth / 8 - (move_count - 6) / 10;
 
       if (expected_node_type == BETA)
-      {
         next_depth -= 2;
-      }
 
       if (next_depth <= 3)
       {
@@ -384,7 +377,7 @@ protected:
 
     while (auto *const move_data = pos->next_move())
     {
-      if (!isPromotion(move_data->move))
+      if (!is_promotion(move_data->move))
       {
         if (move_data->score < 0)
         {
@@ -536,9 +529,9 @@ protected:
   }
 
   void update_history_scores(const uint32_t move, const int depth) {
-    history_scores[movePiece(move)][moveTo(move)] += depth * depth;
+    history_scores[move_piece(move)][move_to(move)] += depth * depth;
 
-    if (history_scores[movePiece(move)][moveTo(move)] > 2048)
+    if (history_scores[move_piece(move)][move_to(move)] > 2048)
     {
       for (auto i = 0; i < 16; ++i)
         for (auto k = 0; k < 64; ++k)
@@ -550,7 +543,7 @@ protected:
 
   void update_killer_moves(const uint32_t move) {
     // Same move can be stored twice for a ply.
-    if (!isCapture(move) && !isPromotion(move))
+    if (!is_capture(move) && !is_promotion(move))
     {
       if (move != killer_moves[0][ply])
       {
@@ -561,9 +554,11 @@ protected:
     }
   }
 
-  [[nodiscard]] bool is_killer_move(const uint32_t m, const int ply) const { return m == killer_moves[0][ply] || m == killer_moves[1][ply] || m == killer_moves[2][ply]; }
+  [[nodiscard]]
+  bool is_killer_move(const uint32_t m, const int ply) const { return m == killer_moves[0][ply] || m == killer_moves[1][ply] || m == killer_moves[2][ply]; }
 
-  [[nodiscard]] int codec_t_table_score(const int score, const int ply) const {
+  [[nodiscard]]
+  int codec_t_table_score(const int score, const int ply) const {
     if (std::abs(static_cast<int>(score)) < MAXSCORE - 128)
     {
       return score;
@@ -623,13 +618,13 @@ protected:
     if (pos->transp_move == m)
     {
       move_data.score = 890010;
-    } else if (isQueenPromotion(m))
+    } else if (is_queen_promotion(m))
     {
       move_data.score = 890000;
-    } else if (isCapture(m))
+    } else if (is_capture(m))
     {
       const auto value_captured = piece_value(moveCaptured(m));
-      auto value_piece    = piece_value(movePiece(m));
+      auto value_piece    = piece_value(move_piece(m));
 
       if (value_piece == 0)
       {
@@ -644,9 +639,9 @@ protected:
         move_data.score = 160000 + value_captured * 20 - value_piece;
       } else
       { move_data.score = -100000 + value_captured * 20 - value_piece; }
-    } else if (isPromotion(m))
+    } else if (is_promotion(m))
     {
-      move_data.score = PROMOTIONMOVESCORE + piece_value(movePromoted(m));
+      move_data.score = PROMOTIONMOVESCORE + piece_value(move_promoted(m));
     } else if (m == killer_moves[0][ply])
     {
       move_data.score = KILLERMOVESCORE + 20;
@@ -656,11 +651,11 @@ protected:
     } else if (m == killer_moves[2][ply])
     {
       move_data.score = KILLERMOVESCORE + 18;
-    } else if (pos->last_move && counter_moves[movePiece(pos->last_move)][moveTo(pos->last_move)] == m)
+    } else if (pos->last_move && counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] == m)
     {
       move_data.score = 60000;
     } else
-    { move_data.score = history_scores[movePiece(m)][moveTo(m)]; }
+    { move_data.score = history_scores[move_piece(m)][move_to(m)]; }
   }
 
   constexpr static int search_node_score(const int score) { return score; }
@@ -725,7 +720,7 @@ protected:
     return false;
   }
 
-  [[nodiscard]] bool is_passed_pawn_move(const uint32_t m) const { return movePieceType(m) == Pawn && board->is_pawn_passed(moveTo(m), moveSide(m)); }
+  [[nodiscard]] bool is_passed_pawn_move(const uint32_t m) const { return move_piece_type(m) == Pawn && board->is_pawn_passed(move_to(m), move_side(m)); }
 
 public:
   struct PVEntry {

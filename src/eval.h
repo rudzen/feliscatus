@@ -41,7 +41,7 @@ public:
     eval_king_attack<0>();
     eval_king_attack<1>();
 
-    const auto stage = (pos->material.value() - pos->material.pawnValue()) / static_cast<double>(pos->material.max_value_without_pawns);
+    const auto stage = (pos->material.value() - pos->material.pawn_value()) / static_cast<double>(pos->material.max_value_without_pawns);
 
     poseval[pos->side_to_move] += 10;
 
@@ -57,16 +57,16 @@ protected:
   void eval_pawns_both_sides() {
     pawnp = nullptr;
 
-    if (pos->material.pawnCount())
+    if (pos->material.pawn_count())
     {
       pawnp = tuning_ ? 0 : pawnt->find(pos->pawn_structure_key);
 
       if (!pawnp)
       {
-        pawn_eval_mg[0] = pawn_eval_mg[1] = 0;
-        pawn_eval_eg[0] = pawn_eval_eg[1] = 0;
+        pawn_eval_mg.fill(0);
+        pawn_eval_eg.fill(0);
 
-        passed_pawn_files[0] = passed_pawn_files[1] = 0;
+        passed_pawn_files.fill(0);
 
         eval_pawns<0>();
         eval_pawns<1>();

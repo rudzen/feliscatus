@@ -22,7 +22,7 @@ public:
 
     board.make_move(m);
 
-    if (check_legal && !(moveType(m) & CASTLE))
+    if (check_legal && !(move_type(m) & CASTLE))
     {
       if (board.is_attacked(board.king_square[pos->side_to_move], pos->side_to_move ^ 1))
       {
@@ -39,24 +39,24 @@ public:
     {
       pos->in_check = board.is_attacked(board.king_square[pos->side_to_move], pos->side_to_move ^ 1);
     }
-    pos->castle_rights     = prev->castle_rights & castle_rights_mask[moveFrom(m)] & castle_rights_mask[moveTo(m)];
+    pos->castle_rights     = prev->castle_rights & castle_rights_mask[move_from(m)] & castle_rights_mask[move_to(m)];
     pos->null_moves_in_row = 0;
 
-    if (isCapture(m) || (movePiece(m) & 7) == Pawn)
+    if (is_capture(m) || (move_piece(m) & 7) == Pawn)
     {
       pos->reversible_half_move_count = 0;
     } else
     { pos->reversible_half_move_count = prev->reversible_half_move_count + 1; }
 
-    if (moveType(m) & DOUBLEPUSH)
+    if (move_type(m) & DOUBLEPUSH)
     {
-      pos->en_passant_square = bb_square(moveTo(m) + pawn_push_dist[pos->side_to_move]);
+      pos->en_passant_square = bb_square(move_to(m) + pawn_push_dist[pos->side_to_move]);
     } else
     { pos->en_passant_square = 0; }
     pos->key                = prev->key;
     pos->pawn_structure_key = prev->pawn_structure_key;
     update_key(m);
-    pos->material.makeMove(m);
+    pos->material.make_move(m);
     return true;
   }
 
@@ -132,35 +132,35 @@ public:
     }
 
     // from and to for moving piece
-    if ((movePiece(m) & 7) == Pawn)
+    if ((move_piece(m) & 7) == Pawn)
     {
-      pos->pawn_structure_key ^= zobrist::zobrist_pst[movePiece(m)][moveFrom(m)];
+      pos->pawn_structure_key ^= zobrist::zobrist_pst[move_piece(m)][move_from(m)];
     } else
-    { pos->key ^= zobrist::zobrist_pst[movePiece(m)][moveFrom(m)]; }
+    { pos->key ^= zobrist::zobrist_pst[move_piece(m)][move_from(m)]; }
 
-    if (moveType(m) & PROMOTION)
+    if (move_type(m) & PROMOTION)
     {
-      pos->key ^= zobrist::zobrist_pst[movePromoted(m)][moveTo(m)];
+      pos->key ^= zobrist::zobrist_pst[move_promoted(m)][move_to(m)];
     } else
     {
-      if ((movePiece(m) & 7) == Pawn)
+      if ((move_piece(m) & 7) == Pawn)
       {
-        pos->pawn_structure_key ^= zobrist::zobrist_pst[movePiece(m)][moveTo(m)];
+        pos->pawn_structure_key ^= zobrist::zobrist_pst[move_piece(m)][move_to(m)];
       } else
-      { pos->key ^= zobrist::zobrist_pst[movePiece(m)][moveTo(m)]; }
+      { pos->key ^= zobrist::zobrist_pst[move_piece(m)][move_to(m)]; }
     }
 
     // remove captured piece
-    if (isEpCapture(m))
+    if (is_ep_capture(m))
     {
-      pos->pawn_structure_key ^= zobrist::zobrist_pst[moveCaptured(m)][moveTo(m) + (pos->side_to_move == 1 ? -8 : 8)];
-    } else if (isCapture(m))
+      pos->pawn_structure_key ^= zobrist::zobrist_pst[moveCaptured(m)][move_to(m) + (pos->side_to_move == 1 ? -8 : 8)];
+    } else if (is_capture(m))
     {
       if ((moveCaptured(m) & 7) == Pawn)
       {
-        pos->pawn_structure_key ^= zobrist::zobrist_pst[moveCaptured(m)][moveTo(m)];
+        pos->pawn_structure_key ^= zobrist::zobrist_pst[moveCaptured(m)][move_to(m)];
       } else
-      { pos->key ^= zobrist::zobrist_pst[moveCaptured(m)][moveTo(m)]; }
+      { pos->key ^= zobrist::zobrist_pst[moveCaptured(m)][move_to(m)]; }
     }
 
     // castling rights
@@ -171,11 +171,11 @@ public:
     }
 
     // rook move in castle
-    if (isCastleMove(m))
+    if (is_castle_move(m))
     {
-      const auto piece = Rook + sideMask(m);
-      pos->key ^= zobrist::zobrist_pst[piece][rook_castles_from[moveTo(m)]];
-      pos->key ^= zobrist::zobrist_pst[piece][rook_castles_to[moveTo(m)]];
+      const auto piece = Rook + side_mask(m);
+      pos->key ^= zobrist::zobrist_pst[piece][rook_castles_from[move_to(m)]];
+      pos->key ^= zobrist::zobrist_pst[piece][rook_castles_to[move_to(m)]];
     }
     pos->key ^= pos->pawn_structure_key;
   }
@@ -594,9 +594,9 @@ public:
     char tmp2[12];
     char tmp3[12];
 
-    if (isCastleMove(m) && chess960)
+    if (is_castle_move(m) && chess960)
     {
-      if (xfen && moveTo(m) == ooo_king_to[moveSide(m)])
+      if (xfen && move_to(m) == ooo_king_to[move_side(m)])
       {
         strcpy(buf, "O-O-O");
       } else if (xfen)
@@ -604,15 +604,15 @@ public:
         strcpy(buf, "O-O");
       } else
       {// shredder fen
-        sprintf(buf, "%s%s", square_to_string(moveFrom(m), tmp1), square_to_string(rook_castles_from[moveTo(m)], tmp2));
+        sprintf(buf, "%s%s", square_to_string(move_from(m), tmp1), square_to_string(rook_castles_from[move_to(m)], tmp2));
       }
     } else
     {
-      sprintf(buf, "%s%s", square_to_string(moveFrom(m), tmp1), square_to_string(moveTo(m), tmp2));
+      sprintf(buf, "%s%s", square_to_string(move_from(m), tmp1), square_to_string(move_to(m), tmp2));
 
-      if (isPromotion(m))
+      if (is_promotion(m))
       {
-        sprintf(&buf[strlen(buf)], "%s", pieceToString(movePromoted(m) & 7, tmp3));
+        sprintf(&buf[strlen(buf)], "%s", pieceToString(move_promoted(m) & 7, tmp3));
       }
     }
     return buf;

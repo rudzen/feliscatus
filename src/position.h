@@ -58,16 +58,16 @@ public:
     {
       const auto *const move = &move_data->move;
 
-      if (moveFrom(*move) == from && moveTo(*move) == to)
+      if (move_from(*move) == from && move_to(*move) == to)
       {
-        if (::isCastleMove(*move) && castle_type == -1)
+        if (::is_castle_move(*move) && castle_type == -1)
         {
           continue;
         }
 
-        if (isPromotion(*move))
+        if (is_promotion(*move))
         {
-          if (tolower(m[strlen(m) - 1]) != piece_notation[movePromoted(*move) & 7])
+          if (tolower(m[strlen(m) - 1]) != piece_notation[move_promoted(*move) & 7])
           {
             continue;
           }

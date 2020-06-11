@@ -118,26 +118,26 @@ public:
 
   [[nodiscard]] bool is_pseudo_legal(const uint32_t m) const {
     // TO DO en passant moves and castle moves
-    if ((bb_piece[movePiece(m)] & bb_square(moveFrom(m))) == 0)
+    if ((bb_piece[move_piece(m)] & bb_square(move_from(m))) == 0)
       return false;
 
-    if (isCapture(m))
+    if (is_capture(m))
     {
-      const auto &bb_to = bb_square(moveTo(m));
+      const auto &bb_to = bb_square(move_to(m));
 
-      if ((occupied_by_side[moveSide(m) ^ 1] & bb_to) == 0)
+      if ((occupied_by_side[move_side(m) ^ 1] & bb_to) == 0)
         return false;
 
       if ((bb_piece[moveCaptured(m)] & bb_to) == 0)
         return false;
-    } else if (occupied & bb_square(moveTo(m)))
+    } else if (occupied & bb_square(move_to(m)))
       return false;
 
-    const auto piece = movePiece(m) & 7;
+    const auto piece = move_piece(m) & 7;
 
     if (piece == Bishop || piece == Rook || piece == Queen)
     {
-      if (between_bb[moveFrom(m)][moveTo(m)] & occupied)
+      if (between_bb[move_from(m)][move_to(m)] & occupied)
         return false;
     }
     return true;
@@ -153,7 +153,7 @@ private:
 
     if (move)
     {
-      if (isCastleMove(this->transp_move) || isEpCapture(this->transp_move))
+      if (is_castle_move(this->transp_move) || is_ep_capture(this->transp_move))
       {
         // needed because isPseudoLegal() is not complete yet.
         this->transp_move = 0;
@@ -220,7 +220,7 @@ private:
     else
       captured = 0;
 
-    initMove(move, piece, captured, from, to, type, promoted);
+    init_move(move, piece, captured, from, to, type, promoted);
 
     if (transp_move == move)
       return;

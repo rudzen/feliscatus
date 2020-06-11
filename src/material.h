@@ -21,39 +21,39 @@ public:
   }
 
   void remove(const int p) {
-    updateKey(p >> 3, p & 7, -1);
+    update_key(p >> 3, p & 7, -1);
     material_value[p >> 3] -= piece_value[p & 7];
   }
 
   void add(const int p) {
-    updateKey(p >> 3, p & 7, 1);
+    update_key(p >> 3, p & 7, 1);
     material_value[p >> 3] += piece_value[p & 7];
   }
 
-  void updateKey(const int c, const int p, const int delta) {
+  void update_key(const int c, const int p, const int delta) {
     if (p == King)
       return;
-    int x = count(c, p) + delta;
+    const int x = count(c, p) + delta;
     key[c] &= ~(15 << piece_bit_shift[p]);
-    key[c] |= (x << piece_bit_shift[p]);
+    key[c] |= x << piece_bit_shift[p];
   }
 
-  int count(const int c, const int p) { return (key[c] >> piece_bit_shift[p]) & 15; }
+  int count(const int c, const int p) { return key[c] >> piece_bit_shift[p] & 15; }
 
-  void makeMove(const uint32_t m) {
-    if (isCapture(m))
+  void make_move(const uint32_t m) {
+    if (is_capture(m))
       remove(moveCaptured(m));
 
-    if (moveType(m) & PROMOTION)
+    if (move_type(m) & PROMOTION)
     {
-      remove(movePiece(m));
-      add(movePromoted(m));
+      remove(move_piece(m));
+      add(move_promoted(m));
     }
   }
 
-  bool isKx(const int c) { return key[c] == (key[c] & 15); }
+  bool is_kx(const int c) { return key[c] == (key[c] & 15); }
 
-  bool isKx() { return isKx(0) && isKx(1); }
+  bool is_kx() { return is_kx(0) && is_kx(1); }
 
   int value() { return material_value[0] + material_value[1]; }
 
@@ -61,11 +61,11 @@ public:
 
   int balance() { return material_value[0] - material_value[1]; }
 
-  int pawnValue() { return (key[0] & 15) * piece_value[Pawn] + (key[1] & 15) * piece_value[Pawn]; }
+  int pawn_value() { return (key[0] & 15) * piece_value[Pawn] + (key[1] & 15) * piece_value[Pawn]; }
 
-  int pawnCount() { return (key[0] & 15) + (key[1] & 15); }
+  int pawn_count() { return (key[0] & 15) + (key[1] & 15); }
 
-  int pawnCount(int side) { return key[side] & 15; }
+  int pawn_count(int side) { return key[side] & 15; }
 
   int evaluate(int &flags, int eval, int side_to_move, const Board *board) {
     this->flags = 0;
@@ -87,9 +87,9 @@ public:
       side1 = side_to_move ^ 1;
       score = -eval;
     }
-    int side2 = side1 ^ 1;
-    int pc1   = pawnCount(side1);
-    int pc2   = pawnCount(side2);
+    const int side2 = side1 ^ 1;
+    const int pc1   = pawn_count(side1);
+    const int pc2   = pawn_count(side2);
 
     this->board = board;
     drawish     = 0;
@@ -146,7 +146,7 @@ public:
 
     if (drawish)
     {
-      int drawish_score = score / drawish;
+      const int drawish_score = score / drawish;
 
       if (pc1 + pc2 == 0)
       {
@@ -161,7 +161,7 @@ public:
     return side1 != side_to_move ? -score : score;
   }
 
-  int KQBKX(int eval, uint32_t key2) {
+  int KQBKX(const int eval, const uint32_t key2) {
     switch (key2 & ~all_pawns)
     {
     case kq:
@@ -174,7 +174,7 @@ public:
     return eval;
   }
 
-  int KQNKX(int eval, uint32_t key2) {
+  int KQNKX(const int eval, const uint32_t key2) {
     switch (key2 & ~all_pawns)
     {
     case kq:
@@ -298,18 +298,16 @@ public:
     return eval + 175 - std::min(25 * dist[a_winning_cornersq][loosing_kingsq], 25 * dist[another_winning_cornersq][loosing_kingsq]);
   }
 
-  int KBKX(int eval, uint32_t key1, uint32_t key2, int pc1, int pc2, const int side1, const int side2, int side_to_move) {
+  int KBKX(const int eval, const uint32_t key1, const uint32_t key2, const int pc1, const int pc2, const int side1, const int side2, const int side_to_move) {
     if (pc1 > 0)
-    {
       return KBxKX(eval, key1, key2, side1);
-    }
 
     switch (key2 & ~all_pawns)
     {
     case k: {
       if (pc1 + pc2 == 0)
       {
-        return drawScore();
+        return draw_score();
       } else if (pc1 == 0 && pc2 == 1)
       {
         const uint64_t &bishopbb = board->bishops(side1);
@@ -318,7 +316,7 @@ public:
         {
           if (pawn_front_span[side2][lsb(board->pawns(side2))] & (bishopAttacks(lsb(bishopbb), board->occupied) | bishopbb))
           {
-            return drawScore();
+            return draw_score();
           }
         }
       }
@@ -337,14 +335,12 @@ public:
     return std::min(0, eval);
   }
 
-  int KNKX(int eval, uint32_t key2, int pc1, int pc2, const int side1, const int side2, int side_to_move) {
+  int KNKX(const int eval, const uint32_t key2, const int pc1, const int pc2, const int side1, const int side2, const int side_to_move) {
     switch (key2 & ~all_pawns)
     {
     case k: {
       if (pc1 + pc2 == 0)
-      {
-        return drawScore();
-      }
+        return draw_score();
 
       if (pc1 == 0 && pc2 == 1)
       {
@@ -353,9 +349,7 @@ public:
         if (side1 == side_to_move || !board->is_attacked(lsb(board->knights(side1)), side2))
         {
           if (pawn_front_span[side2][lsb(board->pawns(side2))] & (knightAttacks(lsb(knightbb)) | knightbb))
-          {
-            return drawScore();
-          }
+            return draw_score();
         }
       }
       break;
@@ -371,7 +365,7 @@ public:
     return pc1 == 0 ? std::min(0, eval) : eval;
   }
 
-  int KNNKX(int eval, uint32_t key2, int pc1) {
+  int KNNKX(const int eval, const uint32_t key2, const int pc1) {
     switch (key2 & ~all_pawns)
     {
     case k:
@@ -385,11 +379,12 @@ public:
     return pc1 == 0 ? std::min(0, eval) : eval;
   }
 
-  int KKx(int eval, uint32_t key1, uint32_t key2, int pc1, int pc2, int side1) {
+  int KKx(const int eval, const uint32_t key1, const uint32_t key2, const int pc1, const int pc2, const int side1) {
     if (pc1 + pc2 == 0)
     {
-      return drawScore();
-    } else if (pc2 > 0)
+      return draw_score();
+    }
+    if (pc2 > 0)
     { return KxKx(eval, key1, key2, pc1, pc2, side1); }
     return eval;
   }
@@ -398,7 +393,7 @@ public:
     switch (key2 & ~all_pawns)
     {
     case kb:
-      if (!same_color(lsb(board->bishops(0)), lsb(board->bishops(1))) && abs(pawnCount(0) - pawnCount(1)) <= 2)
+      if (!same_color(lsb(board->bishops(0)), lsb(board->bishops(1))) && abs(pawn_count(0) - pawn_count(1)) <= 2)
       {
         return eval / 2;
       }
@@ -413,7 +408,7 @@ public:
     return eval;
   }
 
-  int KBxKx(int eval, uint32_t key1, uint32_t key2, int side1) {
+  int KBxKx(const int eval, const uint32_t key1, const uint32_t key2, const int side1) {
     if ((key1 & all_pawns) == 1 && (key2 & all_pawns) == 0)
     {
       return KBpK(eval, side1);
@@ -422,17 +417,15 @@ public:
   }
 
   // fen 8/6k1/8/8/3K4/5B1P/8/8 w - - 0 1
-  int KBpK(int eval, int side1) {
-    uint64_t pawnsq1  = lsb(board->pawns(side1));
-    uint64_t promosq1 = side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56;
+  int KBpK(const int eval, const int side1) {
+    const uint64_t pawnsq1  = lsb(board->pawns(side1));
+    const uint64_t promosq1 = side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56;
 
     if (!same_color(promosq1, lsb(board->bishops(side1))))
     {
-      const uint64_t &bbk2 = board->king(side1 ^ 1);
-
-      if ((promosq1 == h8 && (bbk2 & corner_h8)) || (promosq1 == a8 && (bbk2 & corner_a8)) || (promosq1 == h1 && (bbk2 & corner_h1)) || (promosq1 == a1 && (bbk2 & corner_a1)))
+      if (const uint64_t &bbk2 = board->king(side1 ^ 1); promosq1 == h8 && bbk2 & corner_h8 || promosq1 == a8 && bbk2 & corner_a8 || promosq1 == h1 && bbk2 & corner_h1 || promosq1 == a1 && bbk2 & corner_a1)
       {
-        return drawScore();
+        return draw_score();
       }
     }
     return eval;
@@ -446,30 +439,29 @@ public:
     return eval;
   }
 
-  int KpK(int eval, int side1) {
-    uint64_t pawnsq1     = lsb(board->pawns(side1));
-    uint64_t promosq1    = side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56;
-    const uint64_t &bbk2 = board->king(side1 ^ 1);
-
-    if ((promosq1 == h8 && (bbk2 & corner_h8)) || (promosq1 == a8 && (bbk2 & corner_a8)) || (promosq1 == h1 && (bbk2 & corner_h1)) || (promosq1 == a1 && (bbk2 & corner_a1)))
+  int KpK(const int eval, const int side1) {
+    const uint64_t pawnsq1     = lsb(board->pawns(side1));
+    const uint64_t promosq1    = side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56;
+    
+    if (const uint64_t &bbk2 = board->king(side1 ^ 1); promosq1 == h8 && bbk2 & corner_h8 || promosq1 == a8 && bbk2 & corner_a8 || promosq1 == h1 && bbk2 & corner_h1 || promosq1 == a1 && bbk2 & corner_a1)
     {
-      return drawScore();
+      return draw_score();
     }
     return eval;
   }
 
-  int drawScore() {
+  int draw_score() {
     flags |= RECOGNIZEDDRAW;
     return 0;
   }
 
-  int drawish;
-  int flags;
-  uint32_t key[2];
-  int material_value[2];
-  const Board *board;
-  int max_value_without_pawns;
-  int max_value;
+  int drawish{};
+  int flags{};
+  std::array<uint32_t, 2> key{};
+  std::array<int, 2> material_value{};
+  const Board *board{};
+  int max_value_without_pawns{};
+  int max_value{};
 
   static constexpr std::array<int, 7> piece_bit_shift{0, 4, 8, 12, 16, 20};
   static constexpr std::array<int, 6> piece_value{100, 400, 400, 600, 1200, 0};

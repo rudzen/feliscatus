@@ -127,10 +127,10 @@ namespace pgn
                 {
                 uint32_t m = game_->pos->move_list[i].move;
 
-                if ((movePiece(m) != piece) || ((int)moveTo(m) != to_square_)
-                    || (promoted_to != - 1 && movePromoted(m) != promoted) || (capture_ && ! isCapture(m))
-                    || (from_file_ != - 1 && file_of(moveFrom(m)) != from_file_)
-                    || (from_rank_ != - 1 && rank_of(moveFrom(m)) != from_rank_))
+                if ((move_piece(m) != piece) || ((int)move_to(m) != to_square_)
+                    || (promoted_to != - 1 && move_promoted(m) != promoted) || (capture_ && ! is_capture(m))
+                    || (from_file_ != - 1 && file_of(move_from(m)) != from_file_)
+                    || (from_rank_ != - 1 && rank_of(move_from(m)) != from_rank_))
                     {
                     continue;
                     }

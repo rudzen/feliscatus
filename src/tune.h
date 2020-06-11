@@ -412,7 +412,7 @@ public:
 
     while (const auto move_data = game_.pos->next_move())
     {
-      if (!isPromotion(move_data->move))
+      if (!is_promotion(move_data->move))
       {
         if (move_data->score < 0)
         {
@@ -488,13 +488,13 @@ public:
   virtual void sort_move(MoveData &move_data) {
     const auto m = move_data.move;
 
-    if (isQueenPromotion(m))
+    if (is_queen_promotion(m))
     {
       move_data.score = 890000;
-    } else if (isCapture(m))
+    } else if (is_capture(m))
     {
       auto value_captured = piece_value(moveCaptured(m));
-      auto value_piece    = piece_value(movePiece(m));
+      auto value_piece    = piece_value(move_piece(m));
 
       if (value_piece == 0)
       {

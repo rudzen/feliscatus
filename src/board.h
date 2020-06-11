@@ -44,63 +44,63 @@ public:
   }
 
   void make_move(const uint32_t m) {
-    if (!isCastleMove(m))
+    if (!is_castle_move(m))
     {
-      remove_piece(movePiece(m), moveFrom(m));
+      remove_piece(move_piece(m), move_from(m));
 
-      if (isEpCapture(m))
+      if (is_ep_capture(m))
       {
-        if (movePiece(m) < 8)
-          remove_piece(moveCaptured(m), moveTo(m) - 8);
+        if (move_piece(m) < 8)
+          remove_piece(moveCaptured(m), move_to(m) - 8);
         else
-          remove_piece(moveCaptured(m), moveTo(m) + 8);
-      } else if (isCapture(m))
-        remove_piece(moveCaptured(m), moveTo(m));
+          remove_piece(moveCaptured(m), move_to(m) + 8);
+      } else if (is_capture(m))
+        remove_piece(moveCaptured(m), move_to(m));
 
-      if (moveType(m) & PROMOTION)
-        add_piece(movePromoted(m), moveTo(m));
+      if (move_type(m) & PROMOTION)
+        add_piece(move_promoted(m), move_to(m));
       else
-        add_piece(movePiece(m), moveTo(m));
+        add_piece(move_piece(m), move_to(m));
     } else
     {
-      remove_piece(Rook + sideMask(m), rook_castles_from[moveTo(m)]);
-      remove_piece(movePiece(m), moveFrom(m));
-      add_piece(Rook + sideMask(m), rook_castles_to[moveTo(m)]);
-      add_piece(movePiece(m), moveTo(m));
+      remove_piece(Rook + side_mask(m), rook_castles_from[move_to(m)]);
+      remove_piece(move_piece(m), move_from(m));
+      add_piece(Rook + side_mask(m), rook_castles_to[move_to(m)]);
+      add_piece(move_piece(m), move_to(m));
     }
 
-    if ((movePiece(m) & 7) == King)
-      king_square[moveSide(m)] = moveTo(m);
+    if ((move_piece(m) & 7) == King)
+      king_square[move_side(m)] = move_to(m);
   }
 
   void unmake_move(const uint32_t m) {
-    if (!isCastleMove(m))
+    if (!is_castle_move(m))
     {
-      if (moveType(m) & PROMOTION)
-        remove_piece(movePromoted(m), moveTo(m));
+      if (move_type(m) & PROMOTION)
+        remove_piece(move_promoted(m), move_to(m));
       else
-        remove_piece(movePiece(m), moveTo(m));
+        remove_piece(move_piece(m), move_to(m));
 
-      if (isEpCapture(m))
+      if (is_ep_capture(m))
       {
-        if (movePiece(m) < 8)
-          add_piece(moveCaptured(m), moveTo(m) - 8);
+        if (move_piece(m) < 8)
+          add_piece(moveCaptured(m), move_to(m) - 8);
         else
-          add_piece(moveCaptured(m), moveTo(m) + 8);
-      } else if (isCapture(m))
-        add_piece(moveCaptured(m), moveTo(m));
+          add_piece(moveCaptured(m), move_to(m) + 8);
+      } else if (is_capture(m))
+        add_piece(moveCaptured(m), move_to(m));
 
-      add_piece(movePiece(m), moveFrom(m));
+      add_piece(move_piece(m), move_from(m));
     } else
     {
-      remove_piece(movePiece(m), moveTo(m));
-      remove_piece(Rook + sideMask(m), rook_castles_to[moveTo(m)]);
-      add_piece(movePiece(m), moveFrom(m));
-      add_piece(Rook + sideMask(m), rook_castles_from[moveTo(m)]);
+      remove_piece(move_piece(m), move_to(m));
+      remove_piece(Rook + side_mask(m), rook_castles_to[move_to(m)]);
+      add_piece(move_piece(m), move_from(m));
+      add_piece(Rook + side_mask(m), rook_castles_from[move_to(m)]);
     }
 
-    if ((movePiece(m) & 7) == King)
-      king_square[moveSide(m)] = moveFrom(m);
+    if ((move_piece(m) & 7) == King)
+      king_square[move_side(m)] = move_from(m);
   }
 
   [[nodiscard]]
