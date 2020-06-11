@@ -19,13 +19,13 @@ public:
     if (m == 0)
       return makeNullMove();
 
-    board.makeMove(m);
+    board.make_move(m);
 
     if (check_legal && !(moveType(m) & CASTLE))
     {
-      if (board.isAttacked(board.king_square[pos->side_to_move], pos->side_to_move ^ 1))
+      if (board.is_attacked(board.king_square[pos->side_to_move], pos->side_to_move ^ 1))
       {
-        board.unmakeMove(m);
+        board.unmake_move(m);
         return false;
       }
     }
@@ -36,7 +36,7 @@ public:
 
     if (calculate_in_check)
     {
-      pos->in_check = board.isAttacked(board.king_square[pos->side_to_move], pos->side_to_move ^ 1);
+      pos->in_check = board.is_attacked(board.king_square[pos->side_to_move], pos->side_to_move ^ 1);
     }
     pos->castle_rights     = prev->castle_rights & castle_rights_mask[moveFrom(m)] & castle_rights_mask[moveTo(m)];
     pos->null_moves_in_row = 0;
@@ -62,7 +62,7 @@ public:
   void unmakeMove() {
     if (pos->last_move)
     {
-      board.unmakeMove(pos->last_move);
+      board.unmake_move(pos->last_move);
     }
     pos--;
   }
@@ -200,7 +200,7 @@ public:
   void addPiece(const int p, const int c, const uint64_t sq) {
     int pc = p | (c << 3);
 
-    board.addPiece(p, c, sq);
+    board.add_piece(p, c, sq);
     pos->key ^= zobrist::zobrist_pst[pc][sq];
 
     if (p == Pawn)
@@ -326,7 +326,7 @@ public:
     {
       pos->key ^= zobrist::zobrist_ep_file[file_of(lsb(pos->en_passant_square))];
     }
-    pos->in_check = board.isAttacked(board.king_square[pos->side_to_move], pos->side_to_move ^ 1);
+    pos->in_check = board.is_attacked(board.king_square[pos->side_to_move], pos->side_to_move ^ 1);
     return 0;
   }
 
@@ -345,7 +345,7 @@ public:
       for (char f = 0; f <= 7; f++)
       {
         uint64_t sq = r * 8 + f;
-        int pc      = board.getPiece(sq);
+        int pc      = board.get_piece(sq);
 
         if (pc != NoPiece)
         {
@@ -510,7 +510,7 @@ public:
     {
       for (int i = 7; i >= 0; i--)
       {
-        if (board.getPieceType(i + side * 56) == Rook)
+        if (board.get_piece_type(i + side * 56) == Rook)
         {
           rook_file = i;// right outermost rook for side
           break;
@@ -535,7 +535,7 @@ public:
     {
       for (int i = 0; i <= 7; i++)
       {
-        if (board.getPieceType(i + side * 56) == Rook)
+        if (board.get_piece_type(i + side * 56) == Rook)
         {
           rook_file = i;// left outermost rook for side
           break;
