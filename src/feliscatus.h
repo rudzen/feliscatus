@@ -1,7 +1,7 @@
 #pragma once
 
 #include <algorithm>
-#include <string_view>
+#include <memory>
 #include "zobrist.h"
 #include "uci.h"
 #include "game.h"
@@ -17,12 +17,13 @@ class Felis : public ProtocolListener {
 public:
   Felis() : num_threads(1) {}
 
-  virtual ~Felis() {}
+  virtual ~Felis() = default;
 
   int new_game() override {
     game->new_game(Game::kStartPosition);
-    pawnt->clear();
-    transt->clear();
+    // TODO : test effect of not clearing
+    //pawnt->clear();
+    //TT.clear();
     return 0;
   }
 
@@ -32,9 +33,7 @@ public:
     game->pos->pv_length = 0;
 
     if (game->pos->pv_length == 0)
-    {
       go_search(wtime, btime, movestogo, winc, binc, movetime);
-    }
 
     if (game->pos->pv_length)
     {
@@ -65,13 +64,17 @@ public:
   }
 
   void start_workers() {
-    for (int i = 0; i < num_threads - 1; i++)
-      workers[i].start(game, transt, pawnt);
+    for (auto &worker : workers)
+      worker.start(game.get(), pawnt.get());
+    //for (int i = 0; i < num_threads - 1; i++)
+    //  workers[i].start(game, transt, pawnt);
   }
 
-  void stop_workers() {
-    for (int i = 0; i < num_threads - 1; i++)
-      workers[i].stop();
+  void stop_workers() const {
+    for (const auto &worker : workers)
+      worker.stop();
+    //for (int i = 0; i < num_threads - 1; i++)
+    //  workers[i].stop();
   }
 
   int set_option(const char *name, const char *value) override {
@@ -82,12 +85,14 @@ public:
     {
       if (strieq("Hash", name))
       {
-        transt->init(std::min(65536, std::max(8, (int)strtol(value, NULL, 10))));
-        _snprintf(buf, sizeof(buf), "Hash:%d", transt->getSizeMb());
+        TT.init(std::min(65536, std::max(8, (int)strtol(value, NULL, 10))));
+        _snprintf(buf, sizeof(buf), "Hash:%d", TT.get_size_mb());
       } else if (strieq("Threads", name) || strieq("NumThreads", name))
       {
-        num_threads = std::min(64, std::max(1, (int)strtol(value, NULL, 10)));
+        num_threads = std::clamp(static_cast<int>(strtol(value, nullptr, 10)), 1, 64);
         _snprintf(buf, sizeof(buf), "Threads:%d", num_threads);
+        workers.resize(num_threads - 1);
+        workers.shrink_to_fit();
       } else if (strieq("UCI_Chess960", name))
       {
         game->chess960 = strieq(value, "true");
@@ -109,20 +114,18 @@ public:
 
   int run() {
     setbuf(stdout, nullptr);
-    // setbuf(stdin, NULL);
 
     bitboard::init();
     attacks::init();
     zobrist::init();
     squares::init();
 
-    game     = new Game();
-    protocol = new UCIProtocol(this, game);
-    transt   = new HashTable(256);
-    pawnt    = new PawnHashTable(8);
-    see      = new See(game);
-    eval     = new Eval(*game, pawnt);
-    search   = new Search(protocol, game, eval, see, transt);
+    game     = std::make_unique<Game>();
+    protocol = std::make_unique<UCIProtocol>(this, game.get());
+    pawnt    = std::make_unique<PawnHashTable>(8);
+    see      = std::make_unique<See>(game.get());
+    eval     = std::make_unique<Eval>(*game, pawnt.get());
+    search   = std::make_unique<Search>(protocol.get(), game.get(), eval.get(), see.get());
 
     new_game();
 
@@ -143,9 +146,8 @@ public:
       const int num_tokens = tokenize(trim(line), tokens, 1024);
 
       if (num_tokens == 0)
-      {
         continue;
-      }
+
       if (strieq(tokens[0], "uci") || !console_mode)
       {
         quit         = protocol->handle_input(const_cast<const char **>(tokens), num_tokens);
@@ -156,10 +158,10 @@ public:
         go();
       } else if (strieq(tokens[0], "perft"))
       {
-        Perft(game).perft(6);
+        Perft(game.get()).perft(6);
       } else if (strieq(tokens[0], "divide"))
       {
-        Perft(game).perft_divide(6);
+        Perft(game.get()).perft_divide(6);
       } else if (strieq(tokens[0], "tune"))
       {
         Stopwatch sw;
@@ -170,33 +172,27 @@ public:
       {
         quit = 1;
       } else if (strieq(tokens[0], "exit"))
-      { quit = 1; }
+      {
+        quit = 1;
+      }
 
       for (int i = 0; i < num_tokens; i++)
       {
         delete[] tokens[i];
       }
     }
-    delete game;
-    delete protocol;
-    delete pawnt;
-    delete eval;
-    delete see;
-    delete transt;
-    delete search;
     return 0;
   }
 
 public:
-  Game *game;
-  Eval *eval;
-  See *see;
-  Search *search;
-  Protocol *protocol;
-  Hash *transt;
-  PawnHash *pawnt;
-  Worker workers[64];
-  int num_threads;
+  std::unique_ptr<Game> game;
+  std::unique_ptr<Eval> eval;
+  std::unique_ptr<See> see;
+  std::unique_ptr<Search> search;
+  std::unique_ptr<Protocol> protocol;
+  std::unique_ptr<PawnHash> pawnt;
+  std::vector<Worker> workers{};
+  std::size_t num_threads;
 
   static constexpr std::string_view on = "ON";
   static constexpr std::string_view off = "OFF";

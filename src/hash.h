@@ -18,8 +18,9 @@ struct HashEntry {
 
 class HashTable {
 public:
-  HashTable(uint64_t size_mb) : table(NULL), size_mb(0) {
-    if (sizeof(HashEntry) != 16)
+  HashTable() = default;
+  explicit HashTable(uint64_t size_mb) : table(nullptr) {
+    if constexpr (sizeof(HashEntry) != 16)
     {
       printf("error sizeof(HashEntry) == %d\n", static_cast<int>(sizeof(HashEntry)));
       exit(0);
@@ -31,9 +32,8 @@ public:
     new_size_mb = pow2(std::log2(new_size_mb));
 
     if (new_size_mb == size_mb)
-    {
       return;
-    }
+
     size_mb = new_size_mb;
     size    = 1024 * 1024 * size_mb / sizeof(HashEntry);
     mask    = size - 1;
@@ -49,55 +49,55 @@ public:
     age      = 0;
   }
 
-  void initSearch() { age++; }
+  void init_search() { age++; }
 
-  HashEntry *find(const uint64_t key) {
-    HashEntry *transp = table + (key & mask);
-
-    for (int i = 0; i < NUMBER_SLOTS; i++, transp++)
+  [[nodiscard]]
+  HashEntry *find(const uint64_t key) const {
+    auto *transp = table + (key & mask);
+    const auto k32 = key32(key);
+    for (auto i = 0; i < NUMBER_SLOTS; i++, transp++)
     {
-      if (transp->key == key32(key) && transp->flags)
-      {
+      if (transp->key == k32 && transp->flags)
         return transp;
-      }
     }
     return nullptr;
   }
 
+  [[nodiscard]]
   HashEntry *insert(const uint64_t key, const int depth, const int score, const int type, const int move, int eval) {
-    HashEntry *transp = getEntryToReplace(key, depth);
+    auto *transp = get_entry_to_replace(key, depth);
 
     if (transp->flags == 0)
-    {
       occupied++;
-    }
+
     transp->move  = transp->key != key32(key) || move != 0 ? move : transp->move;
     transp->key   = key32(key);
-    transp->score = (int16_t)score;
-    transp->depth = (uint8_t)depth;
-    transp->flags = (uint8_t)type;
-    transp->age   = (uint16_t)age;
-    transp->eval  = (int16_t)eval;
+    transp->score = static_cast<int16_t>(score);
+    transp->depth = static_cast<uint8_t>(depth);
+    transp->flags = static_cast<uint8_t>(type);
+    transp->age   = static_cast<uint16_t>(age);
+    transp->eval  = static_cast<int16_t>(eval);
     return transp;
   }
 
-  HashEntry *getEntryToReplace(uint64_t key, int depth) {
-    HashEntry *transp = table + (key & mask);
+  [[nodiscard]]
+  HashEntry *get_entry_to_replace(const uint64_t key, int depth) const {
+    auto *transp = table + (key & mask);
+    const auto k32 = key32(key);
 
-    if (transp->flags == 0 || transp->key == key32(key))
+    if (transp->flags == 0 || transp->key == k32)
     {
       return transp;
     }
-    HashEntry *replace = transp++;
+    auto *replace = transp++;
     int replace_score  = (replace->age << 9) + replace->depth;
 
     for (int i = 1; i < NUMBER_SLOTS; i++, transp++)
     {
-      if (transp->flags == 0 || transp->key == key32(key))
-      {
+      if (transp->flags == 0 || transp->key == k32)
         return transp;
-      }
-      int score = (transp->age << 9) + transp->depth;
+
+      const auto score = (transp->age << 9) + transp->depth;
 
       if (score < replace_score)
       {
@@ -108,21 +108,23 @@ public:
     return replace;
   }
 
-  int getLoad() { return (int)((double)occupied / size * 1000); }
+  [[nodiscard]]
+  int get_load() const { return static_cast<int>(static_cast<double>(occupied) / size * 1000); }
 
-  int getSizeMb() { return (int)size_mb; }
+  [[nodiscard]]
+  int get_size_mb() const { return static_cast<int>(size_mb); }
 
-  static uint32_t key32(const uint64_t key) {
+  static constexpr uint32_t key32(const uint64_t key) {
     return key >> 32;
   }
 
 protected:
   HashEntry *table;
-  uint64_t mask;
-  uint64_t occupied;
-  uint64_t size_mb;
-  uint64_t size;
-  int age;
+  uint64_t mask{};
+  uint64_t occupied{};
+  uint64_t size_mb{};
+  uint64_t size{};
+  int age{};
 
   static constexpr int NUMBER_SLOTS = 4;
 };
@@ -140,8 +142,8 @@ struct PawnHashEntry {
 
 class PawnHashTable {
 public:
-  PawnHashTable(uint64_t size_mb) : table(NULL) {
-    if (sizeof(PawnHashEntry) != 16)
+  PawnHashTable(const uint64_t size_mb) : table(nullptr) {
+    if constexpr (sizeof(PawnHashEntry) != 16)
     {
       printf("error sizeof(PawnHashEntry) == %d\n", static_cast<int>(sizeof(PawnHashEntry)));
       exit(0);
@@ -149,7 +151,7 @@ public:
     init(size_mb);
   }
 
-  void init(uint64_t size_mb) {
+  void init(const uint64_t size_mb) {
     size = 1024 * 1024 * pow2(log2(size_mb)) / sizeof(PawnHashEntry);
     mask = size - 1;
     delete[] table;
@@ -157,33 +159,33 @@ public:
     clear();
   }
 
-  void clear() { memset(table, 0, size * sizeof(PawnHashEntry)); }
+  void clear() const { memset(table, 0, size * sizeof(PawnHashEntry)); }
 
-  PawnHashEntry *find(const uint64_t key) {
-    PawnHashEntry *pawnp = table + (key & mask);
+  PawnHashEntry *find(const uint64_t key) const {
+    auto *pawnp = table + (key & mask);
 
     if (pawnp->zkey != key || pawnp->zkey == 0)
-    {
-      return 0;
-    }
+      return nullptr;
     return pawnp;
   }
 
-  PawnHashEntry *insert(const uint64_t key, int score_mg, int score_eg, const std::array<int, 2> &passed_pawn_files) {
-    PawnHashEntry *pawnp        = table + (key & mask);
+  PawnHashEntry *insert(const uint64_t key, const int score_mg, const int score_eg, const std::array<int, 2> &passed_pawn_files) const {
+    auto *pawnp        = table + (key & mask);
     pawnp->zkey                 = key;
-    pawnp->eval_mg              = (int16_t)score_mg;
-    pawnp->eval_eg              = (int16_t)score_eg;
-    pawnp->passed_pawn_files[0] = (uint8_t)passed_pawn_files[0];
-    pawnp->passed_pawn_files[1] = (uint8_t)passed_pawn_files[1];
+    pawnp->eval_mg              = static_cast<int16_t>(score_mg);
+    pawnp->eval_eg              = static_cast<int16_t>(score_eg);
+    pawnp->passed_pawn_files[0] = static_cast<uint8_t>(passed_pawn_files[0]);
+    pawnp->passed_pawn_files[1] = static_cast<uint8_t>(passed_pawn_files[1]);
     return pawnp;
   }
 
 protected:
-  PawnHashEntry *table;
-  uint64_t size;
-  uint64_t mask;
+  PawnHashEntry *table{};
+  uint64_t size{};
+  uint64_t mask{};
 };
 
-typedef HashTable Hash;
-typedef PawnHashTable PawnHash;
+using Hash = HashTable;
+using PawnHash = PawnHashTable;
+
+inline HashTable TT;

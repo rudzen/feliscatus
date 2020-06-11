@@ -4,12 +4,12 @@
 
 class Worker {
 public:
-  void start(Game *master, Hash *transt, PawnHash *pawnt) {
+  void start(Game *master, PawnHash *pawnt) {
     game_ = new Game();
     game_->copy(master);
     see_    = new See(game_);
     eval_   = new Eval(*game_, pawnt);
-    search_ = new Search(game_, eval_, see_, transt);
+    search_ = new Search(game_, eval_, see_);
     thread_ = std::jthread(&Search::run, search_);
   }
 

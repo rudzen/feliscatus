@@ -470,21 +470,17 @@ protected:
   [[nodiscard]]
   bool start_of_game_termination() {
     if (token_ != Symbol)
-    {
       return false;
-    }
 
     if (strcmp(token_str, "1-0") == 0)
-    {
       result_ = WhiteWin;
-    } else if (strcmp(token_str, "1/2-1/2") == 0)
-    {
+    else if (strcmp(token_str, "1/2-1/2") == 0)
       result_ = Draw;
-    } else if (strcmp(token_str, "0-1") == 0)
-    {
+    else if (strcmp(token_str, "0-1") == 0)
       result_ = BlackWin;
-    } else
-    { return false; }
+    else
+      return false;
+
     return true;
   }
 

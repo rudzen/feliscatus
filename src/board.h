@@ -111,8 +111,8 @@ public:
 
   [[nodiscard]]
   uint64_t get_pinned_pieces(const int side, const uint64_t sq) {
-    uint64_t pinned_pieces = 0;
-    const auto opp                = side ^ 1;
+    uint64_t pinned_pieces           = 0;
+    const auto opp           = side ^ 1;
     auto pinners       = xray_bishop_attacks(occupied, occupied_by_side[side], sq) & (piece[Bishop + (opp << 3)] | piece[Queen | opp << 3]);
 
     while (pinners)

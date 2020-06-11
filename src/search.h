@@ -11,13 +11,12 @@
 #include "see.h"
 #include "hash.h"
 
-
 class Search : public MoveSorter {
 public:
-  Search(Protocol *protocol, Game *game, Eval *eval, See *see, HashTable *transt) { init(protocol, game, eval, see, transt); }
+  Search(Protocol *protocol, Game *game, Eval *eval, See *see) { init(protocol, game, eval, see); }
 
-  Search(Game *game, Eval *eval, See *see, HashTable *transt) {
-    init(nullptr, game, eval, see, transt);
+  Search(Game *game, Eval *eval, See *see) {
+    init(nullptr, game, eval, see);
     stop_search.store(false);
   }
 
@@ -86,12 +85,11 @@ public:
   virtual void run() { go(0, 0, 0, 0, 0, 0, 0); }
 
 protected:
-  void init(Protocol *protocol, Game *game, Eval *eval, See *see, HashTable *transt) {
+  void init(Protocol *protocol, Game *game, Eval *eval, See *see) {
     this->protocol = protocol;
     this->game     = game;
     this->eval     = eval;
     this->see      = see;
-    this->transt   = transt;
     board          = game->pos->board;
     verbosity      = 1;
     lag_buffer     = -1;
@@ -337,7 +335,8 @@ protected:
     return depth - 1;
   }
 
-  [[nodiscard]] static constexpr int null_move_reduction(const int depth) { return 4 + depth / 4; }
+  [[nodiscard]]
+  static constexpr int null_move_reduction(const int depth) { return 4 + depth / 4; }
 
   int search_quiesce(int alpha, const int beta, const int qs_ply, const bool search_pv) {
     if (!search_pv && is_hash_score_valid(0, alpha, beta))
@@ -480,7 +479,7 @@ protected:
         _snprintf(&buf[strlen(buf)], sizeof buf - strlen(buf), "%s ", game->move_to_string(pv[ply][i].move, buf2));
 
       if (protocol && verbosity > 0)
-        protocol->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), std::max(1ull, start_time.millisElapsed()), transt->getLoad(), score, buf, node_type);
+        protocol->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), std::max(1ull, start_time.millisElapsed()), TT.get_load(), score, buf, node_type);
     }
   }
 
@@ -490,7 +489,7 @@ protected:
     for (auto i = 0; i < pv_length[0]; ++i)
     {
       const auto &entry = pv[0][i];
-      transt->insert(entry.key, entry.depth, entry.score, entry.node_type, entry.move, entry.eval);
+      TT.insert(entry.key, entry.depth, entry.score, entry.node_type, entry.move, entry.eval);
     }
   }
 
@@ -567,7 +566,7 @@ protected:
         }
         search_time = std::max(0, std::min(search_time, time_left - time_reserve));
       }
-      transt->initSearch();
+      TT.init_search();
       stop_search = false;
       start_time.start();
     }
@@ -639,11 +638,11 @@ protected:
       pos->eval_score = std::min(pos->eval_score, score);
     } else if (node_type == EXACT)
     { pos->eval_score = score; }
-    pos->transposition = transt->insert(pos->key, depth, score, node_type, move, pos->eval_score);
+    pos->transposition = TT.insert(pos->key, depth, score, node_type, move, pos->eval_score);
   }
 
   void get_hash_and_evaluate(const int alpha, const int beta) const {
-    if ((pos->transposition = transt->find(pos->key)) == nullptr)
+    if ((pos->transposition = TT.find(pos->key)) == nullptr)
     {
       pos->eval_score  = eval->evaluate(alpha, beta);
       pos->transp_type = 0;
@@ -721,7 +720,6 @@ protected:
   Board *board;
   See *see;
   Position *pos;
-  Hash *transt;
 
   uint64_t node_count;
   uint64_t num_workers_;
