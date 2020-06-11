@@ -725,7 +725,7 @@ protected:
     return false;
   }
 
-  [[nodiscard]] bool is_passed_pawn_move(const uint32_t m) const { return movePieceType(m) == Pawn && board->isPawnPassed(moveTo(m), moveSide(m)); }
+  [[nodiscard]] bool is_passed_pawn_move(const uint32_t m) const { return movePieceType(m) == Pawn && board->is_pawn_passed(moveTo(m), moveSide(m)); }
 
 public:
   struct PVEntry {

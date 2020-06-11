@@ -87,16 +87,16 @@ protected:
     {
       uint64_t sq = lsb(bb);
 
-      if (game_.board.isPawnPassed(sq, Us))
+      if (game_.board.is_pawn_passed(sq, Us))
         passed_pawn_files[Us] |= 1 << file_of(sq);
 
-      const int open_file = !game_.board.isPieceOnFile(Pawn, sq, Us ^ 1) ? 1 : 0;
+      const int open_file = !game_.board.is_piece_on_file(Pawn, sq, Us ^ 1) ? 1 : 0;
 
-      if (game_.board.isPawnIsolated(sq, Us))
+      if (game_.board.is_pawn_isolated(sq, Us))
       {
         score_mg += pawn_isolated_mg[open_file];
         score_eg += pawn_isolated_eg[open_file];
-      } else if (game_.board.isPawnBehind(sq, Us))
+      } else if (game_.board.is_pawn_behind(sq, Us))
       {
         score_mg += pawn_behind_mg[open_file];
         score_eg += pawn_behind_eg[open_file];

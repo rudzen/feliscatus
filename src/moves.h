@@ -45,7 +45,7 @@ public:
     for (auto bb = board->piece[piece]; bb; reset_lsb(bb))
     {
       const uint64_t from = lsb(bb);
-      addMoves(piece, from, board->pieceAttacks(piece, from) & to_squares);
+      addMoves(piece, from, board->piece_attacks(piece, from) & to_squares);
     }
   }
 
@@ -166,7 +166,7 @@ private:
     stage        = 0;
 
     if (flags & LEGALMOVES)
-      pinned = board->getPinnedPieces(side_to_move, board->king_square[side_to_move]);
+      pinned = board->get_pinned_pieces(side_to_move, board->king_square[side_to_move]);
 
     occupied         = board->occupied;
     occupied_by_side = board->occupied_by_side.data();
@@ -214,7 +214,7 @@ private:
     int captured;
 
     if (type & CAPTURE)
-      captured = board->getPiece(to);
+      captured = board->get_piece(to);
     else if (type & EPCAPTURE)
       captured = Pawn | ((side_to_move ^ 1) << 3);
     else
@@ -277,7 +277,7 @@ private:
     for (auto bb = attacks; bb; reset_lsb(bb))
     {
       const uint64_t to = lsb(bb);
-      add_move(piece | (side_to_move << 3), from, to, board->getPiece(to) == NoPiece ? QUIET : CAPTURE);
+      add_move(piece | (side_to_move << 3), from, to, board->get_piece(to) == NoPiece ? QUIET : CAPTURE);
     }
   }
 
@@ -319,23 +319,23 @@ private:
   void add_castle_move(const uint64_t from, const uint64_t to) { add_move(King | (side_to_move << 3), from, to, CASTLE); }
 
   [[nodiscard]] bool gives_check(const uint32_t m) const {
-    board->makeMove(m);
-    const bool is_attacked = board->isAttacked(board->king_square[side_to_move ^ 1], side_to_move);
-    board->unmakeMove(m);
+    board->make_move(m);
+    const bool is_attacked = board->is_attacked(board->king_square[side_to_move ^ 1], side_to_move);
+    board->unmake_move(m);
     return is_attacked;
   }
 
   [[nodiscard]] bool is_legal(const uint32_t m, const int piece, const uint64_t from, const uint32_t type) const {
     if ((pinned & bb_square(from)) || in_check || (piece & 7) == King || (type & EPCAPTURE))
     {
-      board->makeMove(m);
+      board->make_move(m);
 
-      if (board->isAttacked(board->king_square[side_to_move], side_to_move ^ 1))
+      if (board->is_attacked(board->king_square[side_to_move], side_to_move ^ 1))
       {
-        board->unmakeMove(m);
+        board->unmake_move(m);
         return false;
       }
-      board->unmakeMove(m);
+      board->unmake_move(m);
     }
     return true;
   }
@@ -367,7 +367,7 @@ private:
 
     for (auto bb = between_bb[king_square][to] | bb_square(to); bb; reset_lsb(bb))
     {
-      if (board->isAttacked(lsb(bb), side_to_move ^ 1))
+      if (board->is_attacked(lsb(bb), side_to_move ^ 1))
         return false;
     }
     return true;

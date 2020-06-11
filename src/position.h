@@ -37,7 +37,7 @@ public:
       to   = square(m[2] - 'a', m[3] - '1');
 
       // chess 960 - shredder fen
-      if ((board->getPiece(from) == King && board->getPiece(to) == Rook) || (board->getPiece(from) == King + 8 && board->getPiece(to) == Rook + 8))
+      if ((board->get_piece(from) == King && board->get_piece(to) == Rook) || (board->get_piece(from) == King + 8 && board->get_piece(to) == Rook + 8))
       {
         castle_type = to > from ? 0 : 1;// ga na
       }
@@ -79,15 +79,15 @@ public:
   }
 
   bool is_castle_move(const char *m, int &castle_type) const {
-    if (strieq(m, "O-O") || strieq(m, "OO") || strieq(m, "0-0") || strieq(m, "00") || (strieq(m, "e1g1") && board->getPieceType(e1) == King)
-        || (strieq(m, "e8g8") && board->getPieceType(e8) == King))
+    if (strieq(m, "O-O") || strieq(m, "OO") || strieq(m, "0-0") || strieq(m, "00") || (strieq(m, "e1g1") && board->get_piece_type(e1) == King)
+        || (strieq(m, "e8g8") && board->get_piece_type(e8) == King))
     {
       castle_type = 0;
       return true;
     }
 
-    if (strieq(m, "O-O-O") || strieq(m, "OOO") || strieq(m, "0-0-0") || strieq(m, "000") || (strieq(m, "e1c1") && board->getPieceType(e1) == King)
-        || (strieq(m, "e8c8") && board->getPieceType(e8) == King))
+    if (strieq(m, "O-O-O") || strieq(m, "OOO") || strieq(m, "0-0-0") || strieq(m, "000") || (strieq(m, "e1c1") && board->get_piece_type(e1) == King)
+        || (strieq(m, "e8c8") && board->get_piece_type(e8) == King))
     {
       castle_type = 1;
       return true;

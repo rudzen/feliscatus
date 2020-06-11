@@ -9,16 +9,16 @@ public:
 
   int see_move(const uint32_t move) {
     int score;
-    board_.makeMove(move);
+    board_.make_move(move);
 
-    if (!board_.isAttacked(board_.king_square[moveSide(move)], moveSide(move) ^ 1))
+    if (!board_.is_attacked(board_.king_square[moveSide(move)], moveSide(move) ^ 1))
     {
       init_see_move();
       score = see_rec(material_change(move), next_to_capture(move), moveTo(move), moveSide(move) ^ 1);
     } else
       score = SEE_INVALID_SCORE;
 
-    board_.unmakeMove(move);
+    board_.unmake_move(move);
     return score;
   }
 
@@ -48,17 +48,17 @@ private:
       else
         initMove(move, current_piece[side_to_move] | (side_to_move << 3), next_capture, from, to, CAPTURE, 0);
 
-      board_.makeMove(move);
+      board_.make_move(move);
 
-      if (!board_.isAttacked(board_.king_square[side_to_move], side_to_move ^ 1))
+      if (!board_.is_attacked(board_.king_square[side_to_move], side_to_move ^ 1))
         break;
 
-      board_.unmakeMove(move);
+      board_.unmake_move(move);
     } while (true);
 
     const auto score = -see_rec(material_change(move), next_to_capture(move), moveTo(move), moveSide(move) ^ 1);
 
-    board_.unmakeMove(move);
+    board_.unmake_move(move);
 
     return (score < 0) ? mat_change + score : mat_change;
   }

@@ -314,7 +314,7 @@ public:
       {
         const uint64_t &bishopbb = board->bishops(side1);
 
-        if (side1 == side_to_move || !board->isAttacked(lsb(board->bishops(side1)), side2))
+        if (side1 == side_to_move || !board->is_attacked(lsb(board->bishops(side1)), side2))
         {
           if (pawn_front_span[side2][lsb(board->pawns(side2))] & (bishopAttacks(lsb(bishopbb), board->occupied) | bishopbb))
           {
@@ -350,7 +350,7 @@ public:
       {
         const uint64_t &knightbb = board->knights(side1);
 
-        if (side1 == side_to_move || !board->isAttacked(lsb(board->knights(side1)), side2))
+        if (side1 == side_to_move || !board->is_attacked(lsb(board->knights(side1)), side2))
         {
           if (pawn_front_span[side2][lsb(board->pawns(side2))] & (knightAttacks(lsb(knightbb)) | knightbb))
           {

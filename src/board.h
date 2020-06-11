@@ -17,7 +17,7 @@ public:
     occupied = 0;
   }
 
-  void addPiece(const int p, const int side, const uint64_t sq) {
+  void add_piece(const int p, const int side, const uint64_t sq) {
     piece[p + (side << 3)] |= bb_square(sq);
     occupied_by_side[side] |= bb_square(sq);
     occupied |= bb_square(sq);
@@ -29,102 +29,98 @@ public:
     }
   }
 
-  void removePiece(const int p, const int sq) {
+  void remove_piece(const int p, const int sq) {
     piece[p] &= ~bb_square(sq);
     occupied_by_side[p >> 3] &= ~bb_square(sq);
     occupied &= ~bb_square(sq);
     board[sq] = NoPiece;
   }
 
-  void addPiece(const int p, const int sq) {
+  void add_piece(const int p, const int sq) {
     piece[p] |= bb_square(sq);
     occupied_by_side[p >> 3] |= bb_square(sq);
     occupied |= bb_square(sq);
     board[sq] = p;
   }
 
-  void makeMove(const uint32_t m) {
+  void make_move(const uint32_t m) {
     if (!isCastleMove(m))
     {
-      removePiece(movePiece(m), moveFrom(m));
+      remove_piece(movePiece(m), moveFrom(m));
 
       if (isEpCapture(m))
       {
         if (movePiece(m) < 8)
-        {
-          removePiece(moveCaptured(m), moveTo(m) - 8);
-        } else
-        { removePiece(moveCaptured(m), moveTo(m) + 8); }
+          remove_piece(moveCaptured(m), moveTo(m) - 8);
+        else
+          remove_piece(moveCaptured(m), moveTo(m) + 8);
       } else if (isCapture(m))
-      { removePiece(moveCaptured(m), moveTo(m)); }
+        remove_piece(moveCaptured(m), moveTo(m));
 
       if (moveType(m) & PROMOTION)
-      {
-        addPiece(movePromoted(m), moveTo(m));
-      } else
-      { addPiece(movePiece(m), moveTo(m)); }
+        add_piece(movePromoted(m), moveTo(m));
+      else
+        add_piece(movePiece(m), moveTo(m));
     } else
     {
-      removePiece(Rook + sideMask(m), rook_castles_from[moveTo(m)]);
-      removePiece(movePiece(m), moveFrom(m));
-      addPiece(Rook + sideMask(m), rook_castles_to[moveTo(m)]);
-      addPiece(movePiece(m), moveTo(m));
+      remove_piece(Rook + sideMask(m), rook_castles_from[moveTo(m)]);
+      remove_piece(movePiece(m), moveFrom(m));
+      add_piece(Rook + sideMask(m), rook_castles_to[moveTo(m)]);
+      add_piece(movePiece(m), moveTo(m));
     }
 
     if ((movePiece(m) & 7) == King)
-    {
       king_square[moveSide(m)] = moveTo(m);
-    }
   }
 
-  void unmakeMove(const uint32_t m) {
+  void unmake_move(const uint32_t m) {
     if (!isCastleMove(m))
     {
       if (moveType(m) & PROMOTION)
-      {
-        removePiece(movePromoted(m), moveTo(m));
-      } else
-      { removePiece(movePiece(m), moveTo(m)); }
+        remove_piece(movePromoted(m), moveTo(m));
+      else
+        remove_piece(movePiece(m), moveTo(m));
 
       if (isEpCapture(m))
       {
         if (movePiece(m) < 8)
-        {
-          addPiece(moveCaptured(m), moveTo(m) - 8);
-        } else
-        { addPiece(moveCaptured(m), moveTo(m) + 8); }
+          add_piece(moveCaptured(m), moveTo(m) - 8);
+        else
+          add_piece(moveCaptured(m), moveTo(m) + 8);
       } else if (isCapture(m))
-      { addPiece(moveCaptured(m), moveTo(m)); }
-      addPiece(movePiece(m), moveFrom(m));
+        add_piece(moveCaptured(m), moveTo(m));
+
+      add_piece(movePiece(m), moveFrom(m));
     } else
     {
-      removePiece(movePiece(m), moveTo(m));
-      removePiece(Rook + sideMask(m), rook_castles_to[moveTo(m)]);
-      addPiece(movePiece(m), moveFrom(m));
-      addPiece(Rook + sideMask(m), rook_castles_from[moveTo(m)]);
+      remove_piece(movePiece(m), moveTo(m));
+      remove_piece(Rook + sideMask(m), rook_castles_to[moveTo(m)]);
+      add_piece(movePiece(m), moveFrom(m));
+      add_piece(Rook + sideMask(m), rook_castles_from[moveTo(m)]);
     }
 
     if ((movePiece(m) & 7) == King)
-    {
       king_square[moveSide(m)] = moveFrom(m);
-    }
   }
 
-  int getPiece(const uint64_t sq) const { return board[sq]; }
+  [[nodiscard]]
+  int get_piece(const uint64_t sq) const { return board[sq]; }
 
-  int getPieceType(const uint64_t sq) const { return board[sq] & 7; }
+  [[nodiscard]]
+  int get_piece_type(const uint64_t sq) const { return board[sq] & 7; }
 
-  uint64_t getPinnedPieces(const int side, const uint64_t sq) {
+  [[nodiscard]]
+  uint64_t get_pinned_pieces(const int side, const uint64_t sq) {
     uint64_t pinned_pieces = 0;
-    int opp                = side ^ 1;
-    uint64_t pinners       = xrayBishopAttacks(occupied, occupied_by_side[side], sq) & (piece[Bishop + ((opp) << 3)] | piece[Queen | ((opp) << 3)]);
+    const auto opp                = side ^ 1;
+    auto pinners       = xray_bishop_attacks(occupied, occupied_by_side[side], sq) & (piece[Bishop + (opp << 3)] | piece[Queen | opp << 3]);
 
     while (pinners)
     {
       pinned_pieces |= between_bb[lsb(pinners)][sq] & occupied_by_side[side];
       reset_lsb(pinners);
     }
-    pinners = xrayRookAttacks(occupied, occupied_by_side[side], sq) & (piece[Rook + (opp << 3)] | piece[Queen | (opp << 3)]);
+    pinners = xray_rook_attacks(occupied, occupied_by_side[side], sq) & (piece[Rook + (opp << 3)] | piece[Queen | opp << 3]);
 
     while (pinners)
     {
@@ -134,25 +130,28 @@ public:
     return pinned_pieces;
   }
 
-  uint64_t xrayRookAttacks(const uint64_t &occ, uint64_t blockers, const uint64_t sq) {
-    uint64_t attacks = rookAttacks(sq, occ);
+  static uint64_t xray_rook_attacks(const uint64_t &occ, uint64_t blockers, const uint64_t sq) {
+    const auto attacks = rookAttacks(sq, occ);
     blockers &= attacks;
     return attacks ^ rookAttacks(sq, occ ^ blockers);
   }
 
-  uint64_t xrayBishopAttacks(const uint64_t &occ, uint64_t blockers, const uint64_t sq) {
-    uint64_t attacks = bishopAttacks(sq, occ);
+  static uint64_t xray_bishop_attacks(const uint64_t &occ, uint64_t blockers, const uint64_t sq) {
+    const auto attacks = bishopAttacks(sq, occ);
     blockers &= attacks;
     return attacks ^ bishopAttacks(sq, occ ^ blockers);
   }
 
-  uint64_t isOccupied(uint64_t sq) { return bb_square(sq) & occupied; }
+  [[nodiscard]]
+  uint64_t is_occupied(const uint64_t sq) const { return bb_square(sq) & occupied; }
 
-  bool isAttacked(const uint64_t sq, const int side) const {
-    return isAttackedBySlider(sq, side) || isAttackedByKnight(sq, side) || isAttackedByPawn(sq, side) || isAttackedByKing(sq, side);
+  [[nodiscard]]
+  bool is_attacked(const uint64_t sq, const int side) const {
+    return is_attacked_by_slider(sq, side) || is_attacked_by_knight(sq, side) || is_attacked_by_pawn(sq, side) || is_attacked_by_king(sq, side);
   }
 
-  uint64_t pieceAttacks(const int pc, const uint64_t sq) const {
+  [[nodiscard]]
+  uint64_t piece_attacks(const int pc, const uint64_t sq) const {
     switch (pc & 7)
     {
     case Knight:
@@ -176,40 +175,43 @@ public:
     return 0;
   }
 
-  bool isAttackedBySlider(const uint64_t sq, const int side) const {
-    uint64_t r_attacks = rookAttacks(sq, occupied);
+  [[nodiscard]]
+  bool is_attacked_by_slider(const uint64_t sq, const int side) const {
+    const auto r_attacks = rookAttacks(sq, occupied);
 
     if (piece[Rook + (side << 3)] & r_attacks)
-    {
       return true;
-    }
-    uint64_t b_attacks = bishopAttacks(sq, occupied);
+
+    const auto b_attacks = bishopAttacks(sq, occupied);
 
     if (piece[Bishop + (side << 3)] & b_attacks)
-    {
       return true;
-    } else if (piece[Queen + (side << 3)] & (b_attacks | r_attacks))
+
+    if (piece[Queen + (side << 3)] & (b_attacks | r_attacks))
     { return true; }
     return false;
   }
 
-  bool isAttackedByKnight(const uint64_t sq, const int side) const { return (piece[Knight + (side << 3)] & knight_attacks[sq]) != 0; }
+  [[nodiscard]]
+  bool is_attacked_by_knight(const uint64_t sq, const int side) const { return (piece[Knight + (side << 3)] & knight_attacks[sq]) != 0; }
 
-  bool isAttackedByPawn(const uint64_t sq, const int side) const { return (piece[Pawn | (side << 3)] & pawn_captures[sq | ((side ^ 1) << 6)]) != 0; }
+  [[nodiscard]]
+  bool is_attacked_by_pawn(const uint64_t sq, const int side) const { return (piece[Pawn | side << 3] & pawn_captures[sq | (side ^ 1) << 6]) != 0; }
 
-  bool isAttackedByKing(const uint64_t sq, const int side) const { return (piece[King | (side << 3)] & king_attacks[sq]) != 0; }
+  [[nodiscard]]
+  bool is_attacked_by_king(const uint64_t sq, const int side) const { return (piece[King | side << 3] & king_attacks[sq]) != 0; }
 
   void print() const {
     constexpr std::string_view piece_letter = "PNBRQK. pnbrqk. ";
     printf("\n");
 
-    for (int rank = 7; rank >= 0; rank--)
+    for (auto rank = 7; rank >= 0; rank--)
     {
       printf("%d  ", rank + 1);
 
-      for (int file = 0; file <= 7; file++)
+      for (auto file = 0; file <= 7; file++)
       {
-        int p_and_c = getPiece(rank * 8 + file);
+        const auto p_and_c = get_piece(rank * 8 + file);
         printf("%c ", piece_letter[p_and_c]);
       }
       printf("\n");
@@ -217,41 +219,53 @@ public:
     printf("   a b c d e f g h\n");
   }
 
-  const uint64_t &pieces(int p, int side) const { return piece[p | (side << 3)]; }
+  [[nodiscard]]
+  const uint64_t &pieces(const int p, const int side) const { return piece[p | side << 3]; }
 
-  const uint64_t &pawns(int side) const { return piece[Pawn | (side << 3)]; }
+  [[nodiscard]]
+  const uint64_t &pawns(const int side) const { return piece[Pawn | side << 3]; }
 
-  const uint64_t &knights(int side) const { return piece[Knight | (side << 3)]; }
+  [[nodiscard]]
+  const uint64_t &knights(const int side) const { return piece[Knight | side << 3]; }
 
-  const uint64_t &bishops(int side) const { return piece[Bishop | (side << 3)]; }
+  [[nodiscard]]
+  const uint64_t &bishops(const int side) const { return piece[Bishop | side << 3]; }
 
-  const uint64_t &rooks(int side) const { return piece[Rook | (side << 3)]; }
+  [[nodiscard]]
+  const uint64_t &rooks(const int side) const { return piece[Rook | side << 3]; }
 
-  const uint64_t &queens(int side) const { return piece[Queen | (side << 3)]; }
+  [[nodiscard]]
+  const uint64_t &queens(const int side) const { return piece[Queen | side << 3]; }
 
-  const uint64_t &king(int side) const { return piece[King | (side << 3)]; }
+  [[nodiscard]]
+  const uint64_t &king(const int side) const { return piece[King | side << 3]; }
 
   std::array<uint64_t, 2 << 3> piece{};
   std::array<uint64_t, 2> occupied_by_side{};
   std::array<int, 64> board{};
   std::array<uint64_t, 2> king_square{};
-  uint64_t queen_attacks;
+  uint64_t queen_attacks{};
   uint64_t occupied{};
 
-  bool isPawnPassed(const uint64_t sq, const int side) const { return (passed_pawn_front_span[side][sq] & pawns(side ^ 1)) == 0; }
+  [[nodiscard]]
+  bool is_pawn_passed(const uint64_t sq, const int side) const { return (passed_pawn_front_span[side][sq] & pawns(side ^ 1)) == 0; }
 
-  bool isPieceOnSquare(const int p, const uint64_t sq, const int side) { return ((bb_square(sq) & piece[p + (side << 3)]) != 0); }
+  [[nodiscard]]
+  bool is_piece_on_square(const int p, const uint64_t sq, const int side) { return (bb_square(sq) & piece[p + (side << 3)]) != 0; }
 
-  bool isPieceOnFile(const int p, const uint64_t sq, const int side) const { return ((bb_file(sq) & piece[p + (side << 3)]) != 0); }
+  [[nodiscard]]
+  bool is_piece_on_file(const int p, const uint64_t sq, const int side) const { return (bb_file(sq) & piece[p + (side << 3)]) != 0; }
 
-  bool isPawnIsolated(const uint64_t sq, const int side) const {
-    const uint64_t &bb      = bb_square(sq);
-    uint64_t neighbourFiles = north_fill(south_fill(west_one(bb) | east_one(bb)));
-    return (pawns(side) & neighbourFiles) == 0;
+  [[nodiscard]]
+  bool is_pawn_isolated(const uint64_t sq, const int side) const {
+    const auto &bb      = bb_square(sq);
+    const auto neighbour_files = north_fill(south_fill(west_one(bb) | east_one(bb)));
+    return (pawns(side) & neighbour_files) == 0;
   }
 
-  bool isPawnBehind(const uint64_t sq, const int side) const {
-    const uint64_t &bbsq = bb_square(sq);
-    return (pawns(side) & (pawn_fill[side ^ 1](west_one(bbsq) | east_one(bbsq)))) == 0;
+  [[nodiscard]]
+  bool is_pawn_behind(const uint64_t sq, const int side) const {
+    const auto &bbsq = bb_square(sq);
+    return (pawns(side) & pawn_fill[side ^ 1](west_one(bbsq) | east_one(bbsq))) == 0;
   }
 };
