@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include "zobrist.h"
 #include "uci.h"
 #include "game.h"
 #include "eval.h"
@@ -8,7 +9,6 @@
 #include "search.h"
 #include "hash.h"
 #include "worker.h"
-#include "zobrist.h"
 #include "perft.h"
 #include "tune.h"
 

@@ -17,9 +17,8 @@ public:
 
   bool makeMove(const uint32_t m, bool check_legal, bool calculate_in_check) {
     if (m == 0)
-    {
       return makeNullMove();
-    }
+
     board.makeMove(m);
 
     if (check_legal && !(moveType(m) & CASTLE))
@@ -93,36 +92,36 @@ public:
       {
         for (uint64_t bb = board.piece[piece | (side << 3)]; bb != 0; resetLSB(bb))
         {
-          key ^= zobrist_pst[piece | (side << 3)][lsb(bb)];
+          key ^= zobrist::zobrist_pst[piece | (side << 3)][lsb(bb)];
         }
       }
     }
-    key ^= zobrist_castling[pos->castle_rights];
+    key ^= zobrist::zobrist_castling[pos->castle_rights];
 
     if (pos->en_passant_square)
     {
-      key ^= zobrist_ep_file[fileOf(lsb(pos->en_passant_square))];
+      key ^= zobrist::zobrist_ep_file[fileOf(lsb(pos->en_passant_square))];
     }
 
     if (pos->side_to_move == 1)
     {
-      key ^= zobrist_side;
+      key ^= zobrist::zobrist_side;
     }
     return key;
   }
 
   void updateKey(const uint32_t m) {
     pos->key ^= pos->pawn_structure_key;
-    pos->pawn_structure_key ^= zobrist_side;
+    pos->pawn_structure_key ^= zobrist::zobrist_side;
 
     if ((pos - 1)->en_passant_square)
     {
-      pos->key ^= zobrist_ep_file[fileOf(lsb((pos - 1)->en_passant_square))];
+      pos->key ^= zobrist::zobrist_ep_file[fileOf(lsb((pos - 1)->en_passant_square))];
     }
 
     if (pos->en_passant_square)
     {
-      pos->key ^= zobrist_ep_file[fileOf(lsb(pos->en_passant_square))];
+      pos->key ^= zobrist::zobrist_ep_file[fileOf(lsb(pos->en_passant_square))];
     }
 
     if (!m)
@@ -134,48 +133,48 @@ public:
     // from and to for moving piece
     if ((movePiece(m) & 7) == Pawn)
     {
-      pos->pawn_structure_key ^= zobrist_pst[movePiece(m)][moveFrom(m)];
+      pos->pawn_structure_key ^= zobrist::zobrist_pst[movePiece(m)][moveFrom(m)];
     } else
-    { pos->key ^= zobrist_pst[movePiece(m)][moveFrom(m)]; }
+    { pos->key ^= zobrist::zobrist_pst[movePiece(m)][moveFrom(m)]; }
 
     if (moveType(m) & PROMOTION)
     {
-      pos->key ^= zobrist_pst[movePromoted(m)][moveTo(m)];
+      pos->key ^= zobrist::zobrist_pst[movePromoted(m)][moveTo(m)];
     } else
     {
       if ((movePiece(m) & 7) == Pawn)
       {
-        pos->pawn_structure_key ^= zobrist_pst[movePiece(m)][moveTo(m)];
+        pos->pawn_structure_key ^= zobrist::zobrist_pst[movePiece(m)][moveTo(m)];
       } else
-      { pos->key ^= zobrist_pst[movePiece(m)][moveTo(m)]; }
+      { pos->key ^= zobrist::zobrist_pst[movePiece(m)][moveTo(m)]; }
     }
 
     // remove captured piece
     if (isEpCapture(m))
     {
-      pos->pawn_structure_key ^= zobrist_pst[moveCaptured(m)][moveTo(m) + (pos->side_to_move == 1 ? -8 : 8)];
+      pos->pawn_structure_key ^= zobrist::zobrist_pst[moveCaptured(m)][moveTo(m) + (pos->side_to_move == 1 ? -8 : 8)];
     } else if (isCapture(m))
     {
       if ((moveCaptured(m) & 7) == Pawn)
       {
-        pos->pawn_structure_key ^= zobrist_pst[moveCaptured(m)][moveTo(m)];
+        pos->pawn_structure_key ^= zobrist::zobrist_pst[moveCaptured(m)][moveTo(m)];
       } else
-      { pos->key ^= zobrist_pst[moveCaptured(m)][moveTo(m)]; }
+      { pos->key ^= zobrist::zobrist_pst[moveCaptured(m)][moveTo(m)]; }
     }
 
     // castling rights
     if ((pos - 1)->castle_rights != pos->castle_rights)
     {
-      pos->key ^= zobrist_castling[(pos - 1)->castle_rights];
-      pos->key ^= zobrist_castling[pos->castle_rights];
+      pos->key ^= zobrist::zobrist_castling[(pos - 1)->castle_rights];
+      pos->key ^= zobrist::zobrist_castling[pos->castle_rights];
     }
 
     // rook move in castle
     if (isCastleMove(m))
     {
       int piece = Rook + sideMask(m);
-      pos->key ^= zobrist_pst[piece][rook_castles_from[moveTo(m)]];
-      pos->key ^= zobrist_pst[piece][rook_castles_to[moveTo(m)]];
+      pos->key ^= zobrist::zobrist_pst[piece][rook_castles_from[moveTo(m)]];
+      pos->key ^= zobrist::zobrist_pst[piece][rook_castles_to[moveTo(m)]];
     }
     pos->key ^= pos->pawn_structure_key;
   }
@@ -202,11 +201,11 @@ public:
     int pc = p | (c << 3);
 
     board.addPiece(p, c, sq);
-    pos->key ^= zobrist_pst[pc][sq];
+    pos->key ^= zobrist::zobrist_pst[pc][sq];
 
     if (p == Pawn)
     {
-      pos->pawn_structure_key ^= zobrist_pst[pc][sq];
+      pos->pawn_structure_key ^= zobrist::zobrist_pst[pc][sq];
     }
     pos->material.add(pc);
   }
@@ -318,14 +317,14 @@ public:
 
     if (pos->side_to_move == 1)
     {
-      pos->key ^= zobrist_side;
-      pos->pawn_structure_key ^= zobrist_side;
+      pos->key ^= zobrist::zobrist_side;
+      pos->pawn_structure_key ^= zobrist::zobrist_side;
     }
-    pos->key ^= zobrist_castling[pos->castle_rights];
+    pos->key ^= zobrist::zobrist_castling[pos->castle_rights];
 
     if (pos->en_passant_square)
     {
-      pos->key ^= zobrist_ep_file[fileOf(lsb(pos->en_passant_square))];
+      pos->key ^= zobrist::zobrist_ep_file[fileOf(lsb(pos->en_passant_square))];
     }
     pos->in_check = board.isAttacked(board.king_square[pos->side_to_move], pos->side_to_move ^ 1);
     return 0;
