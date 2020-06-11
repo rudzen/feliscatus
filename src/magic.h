@@ -116,12 +116,12 @@ namespace attacks
 
     inline uint64_t bishopAttacks (const uint32_t square, const uint64_t occupied)
         {
-        return magic_bishop_db[square][(((occupied) & magicmoves_b_mask[square])* magicmoves_b_magics[square]) >> 55];
+        return magic_bishop_db[square][(occupied & magicmoves_b_mask[square])* magicmoves_b_magics[square] >> 55];
         }
 
     inline uint64_t rookAttacks (const uint32_t square, const uint64_t occupied)
         {
-        return magic_rook_db[square][(((occupied) & magicmoves_r_mask[square])* magicmoves_r_magics[square]) >> 52];
+        return magic_rook_db[square][(occupied & magicmoves_r_mask[square])* magicmoves_r_magics[square] >> 52];
         }
 
     inline uint64_t queenAttacks (const uint32_t square, const uint64_t occupied)
@@ -141,21 +141,20 @@ namespace attacks
 
     uint64_t initmagicmoves_occ (const int * squares, const int numSquares, const uint64_t linocc)
         {
-        int i;
-        uint64_t ret = 0;
+          uint64_t ret = 0;
 
-        for ( i = 0; i < numSquares; i++ )
-            if (linocc &(((uint64_t)(1)) << i))
-                ret |= (((uint64_t)(1)) << squares[i]);
+        for (int i = 0; i < numSquares; i++ )
+            if (linocc &static_cast<uint64_t>(1) << i)
+                ret |= static_cast<uint64_t>(1) << squares[i];
         return ret;
         }
 
     uint64_t initmagicmoves_Rmoves (const int square, const uint64_t occ)
         {
         uint64_t ret = 0;
-        uint64_t rowbits = (((uint64_t)0xFF) << (8 * (square / 8)));
+        const auto rowbits = static_cast<uint64_t>(0xFF) << 8 * (square / 8);
 
-        uint64_t bit = (((uint64_t)(1)) << square);
+        auto bit = static_cast<uint64_t>(1) << square;
 
         do
             {
@@ -163,7 +162,7 @@ namespace attacks
             ret |= bit;
             } while (bit && ! (bit & occ));
 
-        bit = (((uint64_t)(1)) << square);
+        bit = static_cast<uint64_t>(1) << square;
 
         do
             {
@@ -171,7 +170,7 @@ namespace attacks
             ret |= bit;
             } while (bit && ! (bit & occ));
 
-        bit = (((uint64_t)(1)) << square);
+        bit = static_cast<uint64_t>(1) << square;
 
         do
             {
@@ -183,7 +182,7 @@ namespace attacks
                 break;
             } while (! (bit & occ));
 
-        bit = (((uint64_t)(1)) << square);
+        bit = static_cast<uint64_t>(1) << square;
 
         do
             {
@@ -201,10 +200,10 @@ namespace attacks
     uint64_t initmagicmoves_Bmoves (const int square, const uint64_t occ)
         {
         uint64_t ret = 0;
-        uint64_t rowbits = (((uint64_t)0xFF) << (8 * (square / 8)));
+        const auto rowbits = static_cast<uint64_t>(0xFF) << 8 * (square / 8);
 
-        uint64_t bit = (((uint64_t)(1)) << square);
-        uint64_t bit2 = bit;
+        auto bit = static_cast<uint64_t>(1) << square;
+        auto bit2 = bit;
 
         do
             {
@@ -217,7 +216,7 @@ namespace attacks
                 break;
             } while (bit && ! (bit & occ));
 
-        bit = (((uint64_t)(1)) << square);
+        bit = static_cast<uint64_t>(1) << square;
         bit2 = bit;
 
         do
@@ -231,7 +230,7 @@ namespace attacks
                 break;
             } while (bit && ! (bit & occ));
 
-        bit = (((uint64_t)(1)) << square);
+        bit = static_cast<uint64_t>(1) << square;
         bit2 = bit;
 
         do
@@ -245,7 +244,7 @@ namespace attacks
                 break;
             } while (bit && ! (bit & occ));
 
-        bit = (((uint64_t)(1)) << square);
+        bit = static_cast<uint64_t>(1) << square;
         bit2 = bit;
 
         do
@@ -281,41 +280,40 @@ namespace attacks
         for ( i = 0; i < 64; i++ )
             {
             int squares[64];
-            int numsquares = 0;
-            uint64_t temp = magicmoves_b_mask[i];
+            auto numsquares = 0;
+            auto temp = magicmoves_b_mask[i];
 
             while (temp)
                 {
-                uint64_t bit = temp & - (__int64)temp;
-                squares[numsquares++] = initmagicmoves_bitpos64_database[(bit * 0x07EDD5E59A4E28C2ULL) >> 58];
+                  const auto bit = temp & - static_cast<__int64>(temp);
+                squares[numsquares++] = initmagicmoves_bitpos64_database[bit * 0x07EDD5E59A4E28C2ULL >> 58];
                 temp ^= bit;
                 }
 
-            for ( temp = 0; temp < (((uint64_t)(1)) << numsquares); temp++ )
+            for ( temp = 0; temp < static_cast<uint64_t>(1) << numsquares; temp++ )
                 {
-
-                uint64_t tempocc = initmagicmoves_occ(squares, numsquares, temp);
-                magic_bishop_db[i][((tempocc) * magicmoves_b_magics[i]) >> 55] = initmagicmoves_Bmoves(i, tempocc);
+                  const auto tempocc = initmagicmoves_occ(squares, numsquares, temp);
+                magic_bishop_db[i][tempocc * magicmoves_b_magics[i] >> 55] = initmagicmoves_Bmoves(i, tempocc);
                 }
             }
 
         for ( i = 0; i < 64; i++ )
             {
             int squares[64];
-            int numsquares = 0;
-            uint64_t temp = magicmoves_r_mask[i];
+            auto numsquares = 0;
+            auto temp = magicmoves_r_mask[i];
 
             while (temp)
                 {
-                uint64_t bit = temp & - (__int64)temp;
-                squares[numsquares++] = initmagicmoves_bitpos64_database[(bit * 0x07EDD5E59A4E28C2ULL) >> 58];
+                  const auto bit = temp & - static_cast<__int64>(temp);
+                squares[numsquares++] = initmagicmoves_bitpos64_database[bit * 0x07EDD5E59A4E28C2ULL >> 58];
                 temp ^= bit;
                 }
 
-            for ( temp = 0; temp < (((uint64_t)(1)) << numsquares); temp++ )
+            for ( temp = 0; temp < static_cast<uint64_t>(1) << numsquares; temp++ )
                 {
-                uint64_t tempocc = initmagicmoves_occ(squares, numsquares, temp);
-                magic_rook_db[i][((tempocc) * magicmoves_r_magics[i]) >> 52] = initmagicmoves_Rmoves(i, tempocc);
+                  const auto tempocc = initmagicmoves_occ(squares, numsquares, temp);
+                magic_rook_db[i][tempocc * magicmoves_r_magics[i] >> 52] = initmagicmoves_Rmoves(i, tempocc);
                 }
             }
         }
