@@ -19,21 +19,21 @@ public:
 
   virtual ~Felis() {}
 
-  virtual int newGame() {
+  int new_game() override {
     game->newGame(Game::kStartPosition);
     pawnt->clear();
     transt->clear();
     return 0;
   }
 
-  virtual int setFen(const char *fen) { return game->newGame(fen); }
+  int set_fen(const char *fen) override { return game->newGame(fen); }
 
-  virtual int go(int wtime = 0, int btime = 0, int movestogo = 0, int winc = 0, int binc = 0, int movetime = 5000) {
+  int go(const int wtime = 0, const int btime = 0, const int movestogo = 0, const int winc = 0, const int binc = 0, const int movetime = 5000) override {
     game->pos->pv_length = 0;
 
     if (game->pos->pv_length == 0)
     {
-      goSearch(wtime, btime, movestogo, winc, binc, movetime);
+      go_search(wtime, btime, movestogo, winc, binc, movetime);
     }
 
     if (game->pos->pv_length)
@@ -41,18 +41,18 @@ public:
       char best_move[12];
       char ponder_move[12];
 
-      protocol->postMoves(game->moveToString(search->pv[0][0].move, best_move), game->pos->pv_length > 1 ? game->moveToString(search->pv[0][1].move, ponder_move) : 0);
+      protocol->post_moves(game->moveToString(search->pv[0][0].move, best_move), game->pos->pv_length > 1 ? game->moveToString(search->pv[0][1].move, ponder_move) : nullptr);
 
       game->makeMove(search->pv[0][0].move, true, true);
     }
     return 0;
   }
 
-  virtual void ponderHit() { search->search_time += search->start_time.millisElapsed(); }
+  void ponder_hit() override { search->search_time += search->start_time.millisElapsed(); }
 
-  virtual void stop() { search->stop_search = true; }
+  void stop() override { search->stop_search = true; }
 
-  virtual bool makeMove(const char *m) {
+  virtual bool make_move(const char *m) {
     const uint32_t *move = game->pos->stringToMove(m);
     if (move)
     {
@@ -61,32 +61,28 @@ public:
     return false;
   }
 
-  void goSearch(int wtime, int btime, int movestogo, int winc, int binc, int movetime) {
+  void go_search(const int wtime, const int btime, const int movestogo, const int winc, const int binc, const int movetime) {
     // Shared transposition table
-    startWorkers();
+    start_workers();
     search->go(wtime, btime, movestogo, winc, binc, movetime, num_threads);
-    stopWorkers();
+    stop_workers();
   }
 
-  void startWorkers() {
+  void start_workers() {
     for (int i = 0; i < num_threads - 1; i++)
-    {
       workers[i].start(game, transt, pawnt);
-    }
   }
 
-  void stopWorkers() {
+  void stop_workers() {
     for (int i = 0; i < num_threads - 1; i++)
-    {
       workers[i].stop();
-    }
   }
 
-  virtual int setOption(const char *name, const char *value) {
+  int set_option(const char *name, const char *value) override {
     char buf[1024];
     strcpy(buf, "");
 
-    if (value != NULL)
+    if (value != nullptr)
     {
       if (strieq("Hash", name))
       {
@@ -108,7 +104,7 @@ public:
     return 0;
   }
 
-  void init() {
+  static void init() {
     bitboard::init();
     attacks::init();
     zobrist::init();
@@ -116,7 +112,7 @@ public:
   }
 
   int run() {
-    setbuf(stdout, NULL);
+    setbuf(stdout, nullptr);
     // setbuf(stdin, NULL);
 
     bitboard::init();
@@ -132,10 +128,10 @@ public:
     eval     = new Eval(*game, pawnt);
     search   = new Search(protocol, game, eval, see, transt);
 
-    newGame();
+    new_game();
 
-    bool console_mode = true;
-    int quit          = 0;
+    auto console_mode = true;
+    auto quit         = 0;
     char line[16384];
 
     while (quit == 0)
@@ -148,7 +144,7 @@ public:
         exit(0);
 
       char *tokens[1024];
-      int num_tokens = tokenize(trim(line), tokens, 1024);
+      const int num_tokens = tokenize(trim(line), tokens, 1024);
 
       if (num_tokens == 0)
       {
@@ -156,11 +152,11 @@ public:
       }
       if (strieq(tokens[0], "uci") || !console_mode)
       {
-        quit         = protocol->handleInput((const char **)tokens, num_tokens);
+        quit         = protocol->handle_input(const_cast<const char **>(tokens), num_tokens);
         console_mode = false;
       } else if (strieq(tokens[0], "go"))
       {
-        protocol->setFlags(INFINITE_MOVE_TIME);
+        protocol->set_flags(INFINITE_MOVE_TIME);
         go();
       } else if (strieq(tokens[0], "perft"))
       {
@@ -172,7 +168,7 @@ public:
       {
         Stopwatch sw;
         eval::Tune(*game, *see, *eval);
-        double seconds = sw.millisElapsed() / 1000.;
+        const double seconds = sw.millisElapsed() / 1000.;
         printf("%f\n", seconds);
       } else if (strieq(tokens[0], "quit"))
       {
