@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <atomic>
 
 #include "moves.h"
 #include "uci.h"
@@ -17,10 +18,10 @@ public:
 
   Search(Game *game, Eval *eval, See *see, HashTable *transt) {
     init(0, game, eval, see, transt);
-    stop_search = false;
+    stop_search.store(false);
   }
 
-  virtual ~Search() {}
+  virtual ~Search() = default;
 
   int go(const int wtime, const int btime, const int movestogo, const int winc, const int binc, const int movetime, const int num_workers) {
     num_workers_ = num_workers;
@@ -80,7 +81,7 @@ public:
     return 0;
   }
 
-  void stop() { stop_search = true; }
+  void stop() { stop_search.store(true); }
 
   virtual void run() { go(0, 0, 0, 0, 0, 0, 0); }
 
@@ -475,7 +476,7 @@ protected:
       { protocol->check_input(); }
     }
 
-    if (stop_search)
+    if (stop_search.load())
     {
       throw 1;
     }
@@ -746,7 +747,7 @@ public:
   int time_left;
   int time_inc;
   int lag_buffer;
-  volatile bool stop_search;
+  std::atomic_bool stop_search;
   int verbosity;
   Protocol *protocol;
 
