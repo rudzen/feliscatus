@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <string_view>
 #include "zobrist.h"
 #include "uci.h"
 #include "game.h"
@@ -53,7 +54,6 @@ public:
 
   virtual bool makeMove(const char *m) {
     const uint32_t *move = game->pos->stringToMove(m);
-
     if (move)
     {
       return game->makeMove(*move, true, true);
@@ -85,7 +85,6 @@ public:
   virtual int setOption(const char *name, const char *value) {
     char buf[1024];
     strcpy(buf, "");
-    ;
 
     if (value != NULL)
     {
@@ -99,18 +98,11 @@ public:
         _snprintf(buf, sizeof(buf), "Threads:%d", num_threads);
       } else if (strieq("UCI_Chess960", name))
       {
-        if (strieq(value, "true"))
-        {
-          game->chess960 = true;
-        }
-        _snprintf(buf, sizeof(buf), "UCI_Chess960 ", game->chess960 ? on : off);
+        game->chess960 = strieq(value, "true");
+        _snprintf(buf, sizeof(buf), "UCI_Chess960 ", game->chess960 ? on.data() : off.data());
       } else if (strieq("UCI_Chess960_Arena", name))
       {
-        if (strieq(value, "true"))
-        {
-          game->chess960 = true;
-          game->xfen     = true;
-        }
+        game->chess960 = game->xfen = strieq(value, "true");
       }
     }
     return 0;
@@ -214,9 +206,6 @@ public:
   Worker workers[64];
   int num_threads;
 
-  static const char *on;
-  static const char *off;
+  static constexpr std::string_view on = "ON";
+  static constexpr std::string_view off = "OFF";
 };
-
-const char *Felis::on  = "ON";
-const char *Felis::off = "OFF";

@@ -19,7 +19,6 @@ public:
   }
 
   void perft(int depth) {
-    perft_result result;
     double nps = 0;
 
     for (int i = 1; i <= depth; i++)

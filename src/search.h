@@ -530,7 +530,7 @@ protected:
   }
 
   uint64_t nodesPerSecond() const {
-    uint64_t micros = start_time.microsElapsedHighRes();
+    uint64_t micros = start_time.micros_elapsed_high_res();
     return micros == 0 ? node_count * num_workers_ : node_count * num_workers_ * 1000000 / micros;
   }
 
@@ -716,7 +716,7 @@ protected:
         return true;
       }
 
-      if (!isAnalysing() && !protocol->isFixedDepth() && search_time < start_time.millisElapsedHighRes() * n_)
+      if (!isAnalysing() && !protocol->isFixedDepth() && search_time < start_time.millis_elapsed_high_res() * n_)
       {
         return true;
       }

@@ -3,6 +3,10 @@
 #include <string_view>
 #include <cstdio>
 
+// enum PieceType {
+//   Pawn, Knight, Bishop, Rook, Queen, King, NoPiece
+// };
+
 constexpr int Pawn    = 0;
 constexpr int Knight  = 1;
 constexpr int Bishop  = 2;
