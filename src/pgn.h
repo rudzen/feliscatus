@@ -7,6 +7,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cctype>
+#include <exception>
 
 namespace pgn {
 
@@ -43,12 +44,13 @@ static const char token_string[][12] = {"Symbol", "Integer", "String", "NAG", "A
 
 enum Result { WhiteWin, Draw, BlackWin };
 
-class UnexpectedToken {
+class UnexpectedToken : std::exception {
 public:
   UnexpectedToken(const Token expected, const char *found, const size_t line) { sprintf(buf, "Expected <%s> but found '%s', line=%llu", token_string[expected], found, line); }
 
   UnexpectedToken(const char *expected, const char *found, const size_t line) { sprintf(buf, "Expected %s but found '%s', line=%llu", expected, found, line); }
 
+  [[nodiscard]]
   const char *str() const { return buf; }
 
 private:

@@ -105,13 +105,6 @@ public:
     return 0;
   }
 
-  static void init() {
-    bitboard::init();
-    attacks::init();
-    zobrist::init();
-    squares::init();
-  }
-
   int run() {
     setbuf(stdout, nullptr);
 
@@ -166,20 +159,15 @@ public:
       {
         Stopwatch sw;
         eval::Tune(*game, *see, *eval);
-        const double seconds = sw.millisElapsed() / 1000.;
+        const auto seconds = sw.millisElapsed() / 1000.;
         printf("%f\n", seconds);
-      } else if (strieq(tokens[0], "quit"))
-      {
-        quit = 1;
-      } else if (strieq(tokens[0], "exit"))
+      } else if (strieq(tokens[0], "quit") || strieq(tokens[0], "exit"))
       {
         quit = 1;
       }
 
-      for (int i = 0; i < num_tokens; i++)
-      {
+      for (auto i = 0; i < num_tokens; i++)
         delete[] tokens[i];
-      }
     }
     return 0;
   }

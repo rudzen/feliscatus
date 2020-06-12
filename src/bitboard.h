@@ -22,21 +22,21 @@ constexpr Bitboard RANK6    = 0x0000ff0000000000;
 constexpr Bitboard RANK7    = 0x00ff000000000000;
 constexpr Bitboard RANK8    = 0xff00000000000000;
 
-Bitboard square_bb[64];
-Bitboard rank_bb[64];
-Bitboard file_bb[64];
-Bitboard between_bb[64][64];
-Bitboard passed_pawn_front_span[2][64];
-Bitboard pawn_front_span[2][64];
-Bitboard pawn_east_attack_span[2][64];
-Bitboard pawn_west_attack_span[2][64];
-Bitboard pawn_captures[128];
-Bitboard knight_attacks[64];
-Bitboard king_attacks[64];
-Bitboard corner_a1;
-Bitboard corner_a8;
-Bitboard corner_h1;
-Bitboard corner_h8;
+inline Bitboard square_bb[64];
+inline Bitboard rank_bb[64];
+inline Bitboard file_bb[64];
+inline Bitboard between_bb[64][64];
+inline Bitboard passed_pawn_front_span[2][64];
+inline Bitboard pawn_front_span[2][64];
+inline Bitboard pawn_east_attack_span[2][64];
+inline Bitboard pawn_west_attack_span[2][64];
+inline Bitboard pawn_captures[128];
+inline Bitboard knight_attacks[64];
+inline Bitboard king_attacks[64];
+inline Bitboard corner_a1;
+inline Bitboard corner_a8;
+inline Bitboard corner_h1;
+inline Bitboard corner_h8;
 
 inline const Bitboard &bb_square(const Square sq) {
   return square_bb[sq];
@@ -115,7 +115,7 @@ inline void init_between_bitboards(const Square from, Bitboard (*step_func)(cons
   }
 }
 
-void init() {
+inline void init() {
   for (const auto sq : Squares)
   {
     square_bb[sq] = static_cast<uint64_t>(1) << sq;

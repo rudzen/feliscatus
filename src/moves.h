@@ -386,11 +386,11 @@ private:
   }
 
 public:
-  int side_to_move;
-  int castle_rights;
-  bool in_check;
-  Square en_passant_square;
-  Board *board;
+  int side_to_move{};
+  int castle_rights{};
+  bool in_check{};
+  Square en_passant_square{};
+  Board *board{};
 
 private:
   Bitboard *bb_piece{};

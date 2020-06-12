@@ -19,7 +19,7 @@ struct HashEntry {
 class HashTable {
 public:
   HashTable() = default;
-  explicit HashTable(uint64_t size_mb) : table(nullptr) {
+  explicit HashTable(uint64_t size_mb) {
     if constexpr (sizeof(HashEntry) != 16)
     {
       printf("error sizeof(HashEntry) == %d\n", static_cast<int>(sizeof(HashEntry)));
@@ -63,15 +63,16 @@ public:
     return nullptr;
   }
 
-  [[nodiscard]]
   HashEntry *insert(const uint64_t key, const int depth, const int score, const int type, const int move, int eval) {
     auto *transp = get_entry_to_replace(key, depth);
 
     if (transp->flags == 0)
       occupied++;
 
-    transp->move  = transp->key != key32(key) || move != 0 ? move : transp->move;
-    transp->key   = key32(key);
+    const auto k32 = key32(key);
+
+    transp->move  = transp->key != k32 || move != 0 ? move : transp->move;
+    transp->key   = k32;
     transp->score = static_cast<int16_t>(score);
     transp->depth = static_cast<uint8_t>(depth);
     transp->flags = static_cast<uint8_t>(type);
@@ -86,13 +87,12 @@ public:
     const auto k32 = key32(key);
 
     if (transp->flags == 0 || transp->key == k32)
-    {
       return transp;
-    }
-    auto *replace = transp++;
-    int replace_score  = (replace->age << 9) + replace->depth;
 
-    for (int i = 1; i < NUMBER_SLOTS; i++, transp++)
+    auto *replace = transp++;
+    auto replace_score  = (replace->age << 9) + replace->depth;
+
+    for (auto i = 1; i < NUMBER_SLOTS; i++, transp++)
     {
       if (transp->flags == 0 || transp->key == k32)
         return transp;
@@ -119,7 +119,7 @@ public:
   }
 
 protected:
-  HashEntry *table;
+  HashEntry *table{};
   uint64_t mask{};
   uint64_t occupied{};
   uint64_t size_mb{};
@@ -142,7 +142,7 @@ struct PawnHashEntry {
 
 class PawnHashTable {
 public:
-  PawnHashTable(const uint64_t size_mb) : table(nullptr) {
+  explicit PawnHashTable(const uint64_t size_mb) {
     if constexpr (sizeof(PawnHashEntry) != 16)
     {
       printf("error sizeof(PawnHashEntry) == %d\n", static_cast<int>(sizeof(PawnHashEntry)));
@@ -161,6 +161,7 @@ public:
 
   void clear() const { memset(table, 0, size * sizeof(PawnHashEntry)); }
 
+  [[nodiscard]]
   PawnHashEntry *find(const uint64_t key) const {
     auto *pawnp = table + (key & mask);
 
@@ -169,6 +170,7 @@ public:
     return pawnp;
   }
 
+  [[nodiscard]]
   PawnHashEntry *insert(const uint64_t key, const int score_mg, const int score_eg, const std::array<int, 2> &passed_pawn_files) const {
     auto *pawnp        = table + (key & mask);
     pawnp->zkey                 = key;

@@ -5,9 +5,10 @@
 #include <ctime>
 #include <cstdint>
 #include <cstring>
+#include <cmath>
 
 constexpr double sigmoid(const double x, const double k) {
-  return 1 / (1 + pow(10, -k * x / 400));
+  return 1 / (1 + std::pow(10, -k * x / 400));
 }
 
 constexpr bool iswhitespace(const char c) {
@@ -44,7 +45,7 @@ inline int tokenize(char *input, char *tokens[], const int max_tokens) {
 }
 
 constexpr static int pow2(const int x) {
-  return static_cast<int>(std::pow(2.0, x));
+  return x * x;
 }
 
 inline bool strieq(const char *s1, const char *s2) {

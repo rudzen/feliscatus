@@ -206,19 +206,17 @@ public:
 
     if (p == Pawn)
       pos->pawn_structure_key ^= zobrist::zobrist_pst[pc][sq];
+
     pos->material.add(pc);
   }
 
-  [[nodiscard]]
   int new_game(const char *fen) {
     if (set_fen(fen) == 0)
-    {
       return 0;
-    }
+
     return set_fen(kStartPosition);
   }
 
-  [[nodiscard]]
   int set_fen(const char *fen) {
     pos = position_list;
     pos->clear();
@@ -291,7 +289,7 @@ public:
       default:
         return 3;
       }
-      add_piece(piece, color, f - 1 + (r - 1) * 8);
+      add_piece(piece, color, static_cast<Square>(f - 1 + (r - 1) * 8));
       f++;
       p++;
       continue;

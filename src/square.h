@@ -42,7 +42,7 @@ constexpr std::array<Square, 2> ooo_king_to{c1, c8};
 
 static Square rook_castles_to[64];  // indexed by position of the king
 static Square rook_castles_from[64];// also
-static uint32_t castle_rights_mask[64];
+static std::array<int, 64> castle_rights_mask{};
 static uint32_t dist[64][64];// chebyshev distance
 static Square flip[2][64];
 
@@ -70,7 +70,7 @@ constexpr bool same_color(const Square sq1, const Square sq2) {
 static void init() {
   for (const auto sq : Squares)
   {
-    flip[0][sq] = static_cast<Square>(file_of(sq) + (7 - rank_of(sq) << 3));
+    flip[0][sq] = static_cast<Square>(file_of(sq) + ((7 - rank_of(sq)) << 3));
     flip[1][sq] = static_cast<Square>(file_of(sq) + (rank_of(sq) << 3));
   }
 

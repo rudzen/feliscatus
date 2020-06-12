@@ -41,7 +41,7 @@ public:
     eval_king_attack<0>();
     eval_king_attack<1>();
 
-    const auto stage = (pos->material.value() - pos->material.pawn_value()) / static_cast<double>(pos->material.max_value_without_pawns);
+    const auto stage = (pos->material.value() - pos->material.pawn_value()) / static_cast<double>(Material::max_value_without_pawns);
 
     poseval[pos->side_to_move] += 10;
 
@@ -59,7 +59,7 @@ protected:
 
     if (pos->material.pawn_count())
     {
-      pawnp = tuning_ ? 0 : pawnt->find(pos->pawn_structure_key);
+      pawnp = tuning_ ? nullptr : pawnt->find(pos->pawn_structure_key);
 
       if (!pawnp)
       {

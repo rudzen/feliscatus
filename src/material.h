@@ -7,14 +7,13 @@
 
 constexpr int RECOGNIZEDDRAW = 1;
 
+constexpr std::array<int, 7> piece_bit_shift{0, 4, 8, 12, 16, 20};
+constexpr std::array<int, 6> piece_values{100, 400, 400, 600, 1200, 0};
+
+constexpr int piece_value(const int p) { return piece_values[p & 7]; }
+
 class Material {
 public:
-  Material() {
-    max_value_without_pawns = 2 * (2 * piece_value[Knight] + 2 * piece_value[Bishop] + 2 * piece_value[Rook] + piece_value[Queen]);
-
-    max_value = max_value_without_pawns + 2 * 8 * piece_value[Pawn];
-  }
-
   void clear() {
     key[0] = key[1]   = 0;
     material_value[0] = material_value[1] = 0;
@@ -22,12 +21,12 @@ public:
 
   void remove(const int p) {
     update_key(p >> 3, p & 7, -1);
-    material_value[p >> 3] -= piece_value[p & 7];
+    material_value[p >> 3] -= piece_values[p & 7];
   }
 
   void add(const int p) {
     update_key(p >> 3, p & 7, 1);
-    material_value[p >> 3] += piece_value[p & 7];
+    material_value[p >> 3] += piece_values[p & 7];
   }
 
   void update_key(const int c, const int p, const int delta) {
@@ -61,13 +60,13 @@ public:
 
   int balance() { return material_value[0] - material_value[1]; }
 
-  int pawn_value() { return (key[0] & 15) * piece_value[Pawn] + (key[1] & 15) * piece_value[Pawn]; }
+  int pawn_value() { return (key[0] & 15) * piece_values[Pawn] + (key[1] & 15) * piece_values[Pawn]; }
 
   int pawn_count() { return (key[0] & 15) + (key[1] & 15); }
 
-  int pawn_count(int side) { return key[side] & 15; }
+  int pawn_count(const int side) { return key[side] & 15; }
 
-  int evaluate(int &flags, int eval, int side_to_move, const Board *board) {
+  int evaluate(int &flags, const int eval, const int side_to_move, const Board *board) {
     this->flags = 0;
     uint32_t key1;
     uint32_t key2;
@@ -149,14 +148,13 @@ public:
       const int drawish_score = score / drawish;
 
       if (pc1 + pc2 == 0)
-      {
         score = drawish_score;
-      } else if (pc1 == 0)
-      {
+      else if (pc1 == 0)
         score = std::min(drawish_score, score);
-      } else if (pc2 == 0)
-      { score = std::max(drawish_score, score); }
+      else if (pc2 == 0)
+        score = std::max(drawish_score, score);
     }
+
     flags = this->flags;
     return side1 != side_to_move ? -score : score;
   }
@@ -187,7 +185,7 @@ public:
     return eval;
   }
 
-  int KRBKX(int eval, uint32_t key2) {
+  int KRBKX(const int eval, const uint32_t key2) {
     switch (key2 & ~all_pawns)
     {
     case kr:
@@ -206,7 +204,7 @@ public:
     return eval;
   }
 
-  int KRNKX(int eval, uint32_t key2) {
+  int KRNKX(const int eval, const uint32_t key2) {
     switch (key2 & ~all_pawns)
     {
     case kr:
@@ -225,7 +223,7 @@ public:
     return eval;
   }
 
-  int KRKX(int eval, uint32_t key2) {
+  int KRKX(const int eval, const uint32_t key2) {
     switch (key2 & ~all_pawns)
     {
     case kbb:
@@ -245,15 +243,15 @@ public:
     return eval;
   }
 
-  int KBBKX(int eval, uint32_t key2) {
+  int KBBKX(const int eval, const uint32_t key2) {
     switch (key2 & ~all_pawns)
     {
     case kb:
       drawish = 16;
       break;
 
-    case kn:
-      break;
+    //case kn:
+    //  break;
 
     default:
       break;
@@ -261,7 +259,7 @@ public:
     return eval;
   }
 
-  int KBNKX(int eval, uint32_t key2, int pc1, int pc2, int side1) {
+  int KBNKX(const int eval, const uint32_t key2, const int pc1, const int pc2, const int side1) {
     switch (key2 & ~all_pawns)
     {
     case k:
@@ -285,8 +283,9 @@ public:
     return eval;
   }
 
-  int KBNK(int eval, int side1) {
-    int loosing_kingsq           = board->king_square[side1 ^ 1];
+  [[nodiscard]]
+  int KBNK(const int eval, const int side1) const {
+    const int loosing_kingsq     = board->king_square[side1 ^ 1];
     int a_winning_cornersq       = a8;
     int another_winning_cornersq = h1;
 
@@ -454,11 +453,9 @@ public:
   std::array<uint32_t, 2> key{};
   std::array<int, 2> material_value{};
   const Board *board{};
-  int max_value_without_pawns{};
-  int max_value{};
 
-  static constexpr std::array<int, 7> piece_bit_shift{0, 4, 8, 12, 16, 20};
-  static constexpr std::array<int, 6> piece_value{100, 400, 400, 600, 1200, 0};
+  constexpr static int max_value_without_pawns = 2 * (2 * piece_values[Knight] + 2 * piece_values[Bishop] + 2 * piece_values[Rook] + piece_values[Queen]);
+  constexpr static int max_value                 = max_value_without_pawns + 2 * 8 * piece_values[Pawn];
 
   static constexpr uint32_t k   = 0x00000;
   static constexpr uint32_t kp  = 0x00001;
@@ -477,6 +474,3 @@ public:
 
   static constexpr uint32_t all_pawns = 0xf;
 };
-
-
-#define piece_value(p) (Material::piece_value[p & 7])

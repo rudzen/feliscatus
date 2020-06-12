@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fstream>
+#include <utility>
 #include <vector>
 #include <map>
 #include <fmt/format.h>
@@ -20,7 +21,7 @@ class PGNPlayer : public pgn::PGNPlayer {
 public:
   PGNPlayer() : pgn::PGNPlayer(), all_nodes_count_(0) {}
 
-  virtual ~PGNPlayer() {}
+  virtual ~PGNPlayer() = default;
 
   void read_pgn_database() override {
     PGNFileReader::read_pgn_database();
@@ -69,7 +70,7 @@ private:
 static bool x_;
 
 struct Param {
-  Param(std::string name, int &value, const int initial_value, const int step) : name_(name), initial_value_(initial_value), value_(value), step_(step) {
+  Param(std::string name, int &value, const int initial_value, const int step) : name_(std::move(name)), initial_value_(initial_value), value_(value), step_(step) {
     if (x_)
       value = initial_value;
   }
@@ -93,7 +94,7 @@ class Tune : public MoveSorter {
 public:
   Tune(Game &game, See &see, Eval &eval) : game_(game), see_(see), eval_(eval), score_static_(false) {
     PGNPlayer pgn;
-    pgn.read("d:\\tomcat\\x64\\result.pgn");
+    pgn.read(R"(d:\tomcat\x64\result.pgn)");
 
     // Tuning as described in https://chessprogramming.wikispaces.com/Texel%27s+Tuning+Method
 
@@ -116,7 +117,7 @@ public:
     double bestE  = e(pgn.all_selected_nodes_, params, params_index, K);
     bool improved = true;
 
-    ofstream out("d:\\tomcat\\x64\\tune.txt");
+    ofstream out(R"(d:\tomcat\x64\tune.txt)");
     out << fmt::format("Old E:{}\n", bestE);
     out << fmt::format("Old Values:\n{}\n", emit_code(params, true));
 
