@@ -98,7 +98,7 @@ constexpr Bitboard south_fill(const Bitboard bb) {
   return fill;
 }
 
-inline void init_between_bitboards(const Square from, Bitboard (*step_func)(const Bitboard), const int step) {
+inline void init_between_bitboards(const Square from, Bitboard (*step_func)(Bitboard), const int step) {
   auto bb          = step_func(bb_square(from));
   auto to          = from + step;
   Bitboard between = 0;
@@ -174,10 +174,10 @@ inline void init() {
   corner_h8 = bb_square(h8) | bb_square(g8) | bb_square(h7) | bb_square(g7);
 }
 
-constexpr Bitboard (*pawn_push[2])(const Bitboard)         = {north_one, south_one};
-constexpr Bitboard (*pawn_east_attacks[2])(const Bitboard) = {north_west_one, south_west_one};
-constexpr Bitboard (*pawn_west_attacks[2])(const Bitboard) = {north_east_one, south_east_one};
-constexpr Bitboard (*pawn_fill[2])(const Bitboard)         = {north_fill, south_fill};
+constexpr Bitboard (*pawn_push[2])(Bitboard)         = {north_one, south_one};
+constexpr Bitboard (*pawn_east_attacks[2])(Bitboard) = {north_west_one, south_west_one};
+constexpr Bitboard (*pawn_west_attacks[2])(Bitboard) = {north_east_one, south_east_one};
+constexpr Bitboard (*pawn_fill[2])(Bitboard)         = {north_fill, south_fill};
 
 constexpr std::array<Bitboard, 2> rank_1{RANK1, RANK8};
 

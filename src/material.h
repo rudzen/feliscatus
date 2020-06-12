@@ -64,7 +64,7 @@ public:
 
   int pawn_count() { return (key[0] & 15) + (key[1] & 15); }
 
-  int pawn_count(const int side) { return key[side] & 15; }
+  int pawn_count(const int side) { return static_cast<int>(key[side] & 15); }
 
   int evaluate(int &flags, const int eval, const int side_to_move, const Board *b) {
     material_flags = 0;

@@ -195,6 +195,7 @@ public:
     return false;
   }
 
+  // TODO : fix implementation defined behaviour
   [[nodiscard]]
   int half_move_count() const { return pos - position_list; }
 
