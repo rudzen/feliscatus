@@ -114,36 +114,36 @@ namespace attacks
         0x6E10101010101000ULL, 0x5E20202020202000ULL, 0x3E40404040404000ULL, 0x7E80808080808000ULL
         };
 
-    inline uint64_t bishopAttacks (const uint32_t square, const uint64_t occupied)
+    inline uint64_t bishopAttacks(const Square square, const uint64_t occupied)
         {
         return magic_bishop_db[square][(occupied & magicmoves_b_mask[square])* magicmoves_b_magics[square] >> 55];
         }
 
-    inline uint64_t rookAttacks (const uint32_t square, const uint64_t occupied)
+    inline uint64_t rookAttacks(const Square square, const uint64_t occupied)
         {
         return magic_rook_db[square][(occupied & magicmoves_r_mask[square])* magicmoves_r_magics[square] >> 52];
         }
 
-    inline uint64_t queenAttacks (const uint32_t square, const uint64_t occupied)
+    inline uint64_t queenAttacks(const Square square, const uint64_t occupied)
         {
         return bishopAttacks(square, occupied) | rookAttacks(square, occupied);
         }
 
-    inline uint64_t knightAttacks (const uint64_t sq)
+    inline uint64_t knightAttacks(const Square sq)
         {
         return knight_attacks[sq];
         }
 
-    inline uint64_t kingAttacks (const uint64_t sq)
+    inline uint64_t kingAttacks(const Square sq)
         {
         return king_attacks[sq];
         }
 
-    uint64_t initmagicmoves_occ (const int * squares, const int numSquares, const uint64_t linocc)
+    uint64_t initmagicmoves_occ (const int * squares, const int num_squares, const uint64_t linocc)
         {
           uint64_t ret = 0;
 
-        for (int i = 0; i < numSquares; i++ )
+        for (int i = 0; i < num_squares; i++ )
             if (linocc &static_cast<uint64_t>(1) << i)
                 ret |= static_cast<uint64_t>(1) << squares[i];
         return ret;

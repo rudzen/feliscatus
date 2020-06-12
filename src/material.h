@@ -418,12 +418,12 @@ public:
 
   // fen 8/6k1/8/8/3K4/5B1P/8/8 w - - 0 1
   int KBpK(const int eval, const int side1) {
-    const uint64_t pawnsq1  = lsb(board->pawns(side1));
-    const uint64_t promosq1 = side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56;
+    const auto pawnsq1    = lsb(board->pawns(side1));
+    const auto promosq1 = static_cast<Square>(side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
 
     if (!same_color(promosq1, lsb(board->bishops(side1))))
     {
-      if (const uint64_t &bbk2 = board->king(side1 ^ 1); promosq1 == h8 && bbk2 & corner_h8 || promosq1 == a8 && bbk2 & corner_a8 || promosq1 == h1 && bbk2 & corner_h1 || promosq1 == a1 && bbk2 & corner_a1)
+      if (const auto &bbk2 = board->king(side1 ^ 1); promosq1 == h8 && bbk2 & corner_h8 || promosq1 == a8 && bbk2 & corner_a8 || promosq1 == h1 && bbk2 & corner_h1 || promosq1 == a1 && bbk2 & corner_a1)
       {
         return draw_score();
       }
@@ -436,10 +436,10 @@ public:
   }
 
   int KpK(const int eval, const int side1) {
-    const uint64_t pawnsq1     = lsb(board->pawns(side1));
-    const uint64_t promosq1    = side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56;
+    const auto pawnsq1  = lsb(board->pawns(side1));
+    const auto promosq1 = static_cast<Square>(side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
     
-    if (const uint64_t &bbk2 = board->king(side1 ^ 1); promosq1 == h8 && bbk2 & corner_h8 || promosq1 == a8 && bbk2 & corner_a8 || promosq1 == h1 && bbk2 & corner_h1 || promosq1 == a1 && bbk2 & corner_a1)
+    if (const auto &bbk2 = board->king(side1 ^ 1); promosq1 == h8 && bbk2 & corner_h8 || promosq1 == a8 && bbk2 & corner_a8 || promosq1 == h1 && bbk2 & corner_h1 || promosq1 == a1 && bbk2 & corner_a1)
       return draw_score();
     return eval;
   }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include "move.h"
 #include "board.h"
@@ -25,7 +26,7 @@ public:
     reset(sorter, transp_move, flags);
     max_stage = 3;
 
-    if ((this->flags & STAGES) == 0)
+    if ((this->move_flags & STAGES) == 0)
     {
       generate_hash_move();
       generate_captures_and_promotions();
@@ -40,11 +41,11 @@ public:
   }
 
   void generate_moves(const int piece, const uint64_t &to_squares) {
-    reset(0, 0, 0);
+    reset(nullptr, 0, 0);
 
     for (auto bb = board->piece[piece]; bb; reset_lsb(bb))
     {
-      const uint64_t from = lsb(bb);
+      const auto from = lsb(bb);
       add_moves(piece, from, board->piece_attacks(piece, from) & to_squares);
     }
   }
@@ -53,10 +54,9 @@ public:
     reset(nullptr, 0, 0);
 
     if (capture)
-    {
       add_pawn_capture_moves(to_squares);
-    } else
-    { add_pawn_quiet_moves(to_squares); }
+    else
+      add_pawn_quiet_moves(to_squares);
   }
 
   [[nodiscard]]
@@ -83,9 +83,7 @@ public:
     }
 
     if (iteration == number_moves)
-    {
       return nullptr;
-    }
 
     do
     {
@@ -146,13 +144,13 @@ public:
     return true;
   }
 
-  MoveData move_list[256];
+  std::array<MoveData, 256> move_list{};
 
 private:
   void reset(MoveSorter *sorter, const uint32_t move, const int flags) {
-    this->sorter      = sorter;
-    this->transp_move = move;
-    this->flags       = flags;
+    move_sorter = sorter;
+    transp_move = move;
+    move_flags  = flags;
 
     if (move)
     {
@@ -160,7 +158,7 @@ private:
       {
         // needed because isPseudoLegal() is not complete yet.
         this->transp_move = 0;
-        this->flags &= ~STAGES;
+        this->move_flags &= ~STAGES;
       }
     }
 
@@ -215,7 +213,7 @@ private:
     stage++;
   }
 
-  void add_move(const int piece, const uint64_t from, const uint64_t to, const uint32_t type, const int promoted = 0) {
+  void add_move(const int piece, const Square from, const Square to, const uint32_t type, const int promoted = 0) {
     uint32_t move;
     int captured;
 
@@ -231,14 +229,14 @@ private:
     if (transp_move == move)
       return;
 
-    if ((flags & LEGALMOVES) && !is_legal(move, piece, from, type))
+    if ((move_flags & LEGALMOVES) && !is_legal(move, piece, from, type))
       return;
 
     auto &move_data = move_list[number_moves++];
     move_data.move  = move;
 
-    if (sorter)
-      sorter->sort_move(move_data);
+    if (move_sorter)
+      move_sorter->sort_move(move_data);
     else
       move_data.score = 0;
   }
@@ -246,7 +244,7 @@ private:
   void add_moves(const uint64_t &to_squares) {
     uint64_t bb;
     const auto offset = side_to_move << 3;
-    uint64_t from;
+    Square from;
 
     for (bb = bb_piece[Queen + offset]; bb; reset_lsb(bb))
     {
@@ -279,10 +277,10 @@ private:
     }
   }
 
-  void add_moves(const int piece, const uint64_t from, const uint64_t &attacks) {
+  void add_moves(const int piece, const Square from, const uint64_t &attacks) {
     for (auto bb = attacks; bb; reset_lsb(bb))
     {
-      const uint64_t to = lsb(bb);
+      const auto to = lsb(bb);
       add_move(piece | (side_to_move << 3), from, to, board->get_piece(to) == NoPiece ? QUIET : CAPTURE);
     }
   }
@@ -307,12 +305,12 @@ private:
   void add_pawn_moves(const uint64_t &to_squares, const std::array<int, 2> &dist, const uint32_t type) {
     for (auto bb = to_squares; bb; reset_lsb(bb))
     {
-      const uint64_t to = lsb(bb);
-      const auto from   = to - dist[side_to_move];
+      const auto to = lsb(bb);
+      const auto from = static_cast<Square>(to - dist[side_to_move]);
 
       if (rank_of(to) == 0 || rank_of(to) == 7)
       {
-        if (flags & QUEENPROMOTION)
+        if (move_flags & QUEENPROMOTION)
         {
           add_move(Pawn | (side_to_move << 3), from, to, type | PROMOTION, Queen | (side_to_move << 3));
           return;
@@ -325,7 +323,7 @@ private:
     }
   }
 
-  void add_castle_move(const uint64_t from, const uint64_t to) { add_move(King | (side_to_move << 3), from, to, CASTLE); }
+  void add_castle_move(const Square from, const Square to) { add_move(King | (side_to_move << 3), from, to, CASTLE); }
 
   [[nodiscard]]
   bool gives_check(const uint32_t m) const {
@@ -336,7 +334,7 @@ private:
   }
 
   [[nodiscard]]
-  bool is_legal(const uint32_t m, const int piece, const uint64_t from, const uint32_t type) const {
+  bool is_legal(const uint32_t m, const int piece, const Square from, const uint32_t type) const {
     if ((pinned & bb_square(from)) || in_check || (piece & 7) == King || (type & EPCAPTURE))
     {
       board->make_move(m);
@@ -358,15 +356,15 @@ private:
   bool can_castle_long() const { return (castle_rights & ooo_allowed_mask[side_to_move]) && is_castle_allowed(ooo_king_to[side_to_move], side_to_move); }
 
   [[nodiscard]]
-  bool is_castle_allowed(uint64_t to, const int side_to_move) const {
+  bool is_castle_allowed(const Square to, const int side_to_move) const {
     // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
     // The following comments were taken from that source.
 
     // Check that the smallest back rank interval containing the king, the castling rook, and their
     // destination squares, contains no pieces other than the king and castling rook.
 
-    const uint64_t rook_to   = rook_castles_to[to];
-    const uint64_t rook_from = rook_castles_from[to];
+    const auto rook_to   = rook_castles_to[to];
+    const auto rook_from = rook_castles_from[to];
     const auto king_square   = board->king_square[side_to_move];
 
     const auto bb_castle_pieces = bb_square(rook_from) | bb_square(king_square);
@@ -403,7 +401,7 @@ private:
   int max_stage{};
   int number_moves{};
   Bitboard pinned{};
-  MoveSorter *sorter{};
+  MoveSorter *move_sorter{};
   uint32_t transp_move{};
-  int flags{};
+  int move_flags{};
 };

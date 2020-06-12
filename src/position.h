@@ -25,11 +25,10 @@ public:
     auto castle_type = -1;// 0 = short, 1 = long
 
     if (!is_castle_move(m, castle_type) && (m[0] < 'a' || m[0] > 'h' || m[1] < '1' || m[1] > '8' || m[2] < 'a' || m[2] > 'h' || m[3] < '1' || m[3] > '8'))
-    {
       return nullptr;
-    }
-    uint64_t from = 0;
-    uint64_t to   = 0;
+
+    auto from = no_square;
+    auto to   = no_square;
 
     if (castle_type == -1)
     {
@@ -61,17 +60,12 @@ public:
       if (move_from(*move) == from && move_to(*move) == to)
       {
         if (::is_castle_move(*move) && castle_type == -1)
-        {
           continue;
-        }
 
         if (is_promotion(*move))
-        {
           if (tolower(m[strlen(m) - 1]) != piece_notation[move_promoted(*move) & 7])
-          {
             continue;
-          }
-        }
+
         return move;
       }
     }
@@ -92,6 +86,7 @@ public:
       castle_type = 1;
       return true;
     }
+
     return false;
   }
 

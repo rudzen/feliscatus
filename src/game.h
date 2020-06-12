@@ -198,7 +198,7 @@ public:
   [[nodiscard]]
   int half_move_count() const { return pos - position_list; }
 
-  void add_piece(const int p, const int c, const uint64_t sq) {
+  void add_piece(const int p, const int c, const Square sq) {
     const auto pc = p | c << 3;
 
     board.add_piece(p, c, sq);
@@ -350,7 +350,7 @@ public:
 
       for (char f = 0; f <= 7; f++)
       {
-        const uint64_t sq = r * 8 + f;
+        const auto sq = static_cast<Square>(r * 8 + f);
         const auto pc      = board.get_piece(sq);
 
         if (pc != NoPiece)

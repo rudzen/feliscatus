@@ -74,33 +74,38 @@ public:
   }
 
   void unmake_move(const uint32_t m) {
+
+    const auto from = move_from(m);
+    const auto to   = move_to(m);
+    const auto pc   = move_piece(m);
+
     if (!is_castle_move(m))
     {
-      if (move_type(m) & PROMOTION)
-        remove_piece(move_promoted(m), move_to(m));
+      if (is_promotion(m))
+        remove_piece(move_promoted(m), to);
       else
-        remove_piece(move_piece(m), move_to(m));
+        remove_piece(pc, to);
 
       if (is_ep_capture(m))
       {
-        if (move_piece(m) < 8)
-          add_piece(moveCaptured(m), move_to(m) - 8);
+        if (pc < 8)
+          add_piece(moveCaptured(m), static_cast<Square>(to - 8));
         else
-          add_piece(moveCaptured(m), move_to(m) + 8);
+          add_piece(moveCaptured(m), static_cast<Square>(to + 8));
       } else if (is_capture(m))
-        add_piece(moveCaptured(m), move_to(m));
+        add_piece(moveCaptured(m), to);
 
-      add_piece(move_piece(m), move_from(m));
+      add_piece(pc, from);
     } else
     {
-      remove_piece(move_piece(m), move_to(m));
-      remove_piece(Rook + side_mask(m), rook_castles_to[move_to(m)]);
-      add_piece(move_piece(m), move_from(m));
-      add_piece(Rook + side_mask(m), rook_castles_from[move_to(m)]);
+      remove_piece(pc, to);
+      remove_piece(Rook + side_mask(m), rook_castles_to[to]);
+      add_piece(pc, from);
+      add_piece(Rook + side_mask(m), rook_castles_from[to]);
     }
 
-    if ((move_piece(m) & 7) == King)
-      king_square[move_side(m)] = move_from(m);
+    if ((pc & 7) == King)
+      king_square[move_side(m)] = from;
   }
 
   [[nodiscard]]
@@ -151,7 +156,7 @@ public:
   }
 
   [[nodiscard]]
-  uint64_t piece_attacks(const int pc, const uint64_t sq) const {
+  uint64_t piece_attacks(const int pc, const Square sq) const {
     switch (pc & 7)
     {
     case Knight:

@@ -353,7 +353,7 @@ protected:
   const uint64_t &pawns(const int side) const { return game_.board.pawns(side); }
 
   [[nodiscard]]
-  uint64_t king_sq(const int side) const { return game_.board.king_square[side]; }
+  Square king_sq(const int side) const { return game_.board.king_square[side]; }
 
   void init_evaluate() {
     pos        = game_.pos;
