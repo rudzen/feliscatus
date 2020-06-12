@@ -13,7 +13,7 @@ public:
     piece.fill(0);
     occupied_by_side.fill(0);
     board.fill(NoPiece);
-    king_square.fill(64);
+    king_square.fill(no_square);
     occupied = 0;
   }
 
@@ -24,9 +24,7 @@ public:
     board[sq] = p + (side << 3);
 
     if (p == King)
-    {
       king_square[side] = sq;
-    }
   }
 
   void remove_piece(const int p, const Square sq) {
@@ -44,29 +42,34 @@ public:
   }
 
   void make_move(const uint32_t m) {
+
+    const auto from = move_from(m);
+    const auto to   = move_to(m);
+    const auto pc   = move_piece(m);
+
     if (!is_castle_move(m))
     {
-      remove_piece(move_piece(m), move_from(m));
+      remove_piece(pc, from);
 
       if (is_ep_capture(m))
       {
-        if (move_piece(m) < 8)
-          remove_piece(moveCaptured(m), move_to(m) - 8);
+        if (pc < 8)
+          remove_piece(moveCaptured(m), static_cast<Square>(to - 8));
         else
-          remove_piece(moveCaptured(m), move_to(m) + 8);
+          remove_piece(moveCaptured(m), static_cast<Square>(to + 8));
       } else if (is_capture(m))
-        remove_piece(moveCaptured(m), move_to(m));
+        remove_piece(moveCaptured(m), to);
 
-      if (move_type(m) & PROMOTION)
-        add_piece(move_promoted(m), move_to(m));
+      if (is_promotion(m))
+        add_piece(move_promoted(m), to);
       else
-        add_piece(move_piece(m), move_to(m));
+        add_piece(pc, to);
     } else
     {
-      remove_piece(Rook + side_mask(m), rook_castles_from[move_to(m)]);
-      remove_piece(move_piece(m), move_from(m));
-      add_piece(Rook + side_mask(m), rook_castles_to[move_to(m)]);
-      add_piece(move_piece(m), move_to(m));
+      remove_piece(Rook + side_mask(m), rook_castles_from[to]);
+      remove_piece(pc, from);
+      add_piece(Rook + side_mask(m), rook_castles_to[to]);
+      add_piece(pc, to);
     }
 
     if ((move_piece(m) & 7) == King)
