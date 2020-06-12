@@ -5,83 +5,84 @@
 #include <bit>
 #include <algorithm>
 #include "square.h"
+#include "types.h"
 
 namespace bitboard {
 
-constexpr uint64_t AFILE_BB = 0x0101010101010101;
-constexpr uint64_t HFILE_BB = 0x8080808080808080;
-constexpr uint64_t BFILE_BB = 0x0202020202020202;
-constexpr uint64_t GFILE_BB = 0x4040404040404040;
-constexpr uint64_t RANK1    = 0x00000000000000ff;
-constexpr uint64_t RANK2    = 0x000000000000ff00;
-constexpr uint64_t RANK3    = 0x0000000000ff0000;
-constexpr uint64_t RANK4    = 0x00000000ff000000;
-constexpr uint64_t RANK5    = 0x000000ff00000000;
-constexpr uint64_t RANK6    = 0x0000ff0000000000;
-constexpr uint64_t RANK7    = 0x00ff000000000000;
-constexpr uint64_t RANK8    = 0xff00000000000000;
+constexpr Bitboard AFILE_BB = 0x0101010101010101;
+constexpr Bitboard HFILE_BB = 0x8080808080808080;
+constexpr Bitboard BFILE_BB = 0x0202020202020202;
+constexpr Bitboard GFILE_BB = 0x4040404040404040;
+constexpr Bitboard RANK1    = 0x00000000000000ff;
+constexpr Bitboard RANK2    = 0x000000000000ff00;
+constexpr Bitboard RANK3    = 0x0000000000ff0000;
+constexpr Bitboard RANK4    = 0x00000000ff000000;
+constexpr Bitboard RANK5    = 0x000000ff00000000;
+constexpr Bitboard RANK6    = 0x0000ff0000000000;
+constexpr Bitboard RANK7    = 0x00ff000000000000;
+constexpr Bitboard RANK8    = 0xff00000000000000;
 
-uint64_t square_bb[64];
-uint64_t rank_bb[64];
-uint64_t file_bb[64];
-uint64_t between_bb[64][64];
-uint64_t passed_pawn_front_span[2][64];
-uint64_t pawn_front_span[2][64];
-uint64_t pawn_east_attack_span[2][64];
-uint64_t pawn_west_attack_span[2][64];
-uint64_t pawn_captures[128];
-uint64_t knight_attacks[64];
-uint64_t king_attacks[64];
-uint64_t corner_a1;
-uint64_t corner_a8;
-uint64_t corner_h1;
-uint64_t corner_h8;
+Bitboard square_bb[64];
+Bitboard rank_bb[64];
+Bitboard file_bb[64];
+Bitboard between_bb[64][64];
+Bitboard passed_pawn_front_span[2][64];
+Bitboard pawn_front_span[2][64];
+Bitboard pawn_east_attack_span[2][64];
+Bitboard pawn_west_attack_span[2][64];
+Bitboard pawn_captures[128];
+Bitboard knight_attacks[64];
+Bitboard king_attacks[64];
+Bitboard corner_a1;
+Bitboard corner_a8;
+Bitboard corner_h1;
+Bitboard corner_h8;
 
-inline const uint64_t &bb_square(const int sq) {
+inline const Bitboard &bb_square(const Square sq) {
   return square_bb[sq];
 }
 
-inline const uint64_t &bb_rank(const int rank) {
+inline const Bitboard &bb_rank(const int rank) {
   return rank_bb[rank];
 }
 
-inline const uint64_t &bb_file(const int sq) {
+inline const Bitboard &bb_file(const Square sq) {
   return file_bb[sq];
 }
 
-constexpr uint64_t north_one(const uint64_t &bb) {
+constexpr Bitboard north_one(const Bitboard &bb) {
   return bb << 8;
 }
 
-constexpr uint64_t south_one(const uint64_t &bb) {
+constexpr Bitboard south_one(const Bitboard &bb) {
   return bb >> 8;
 }
 
-constexpr uint64_t east_one(const uint64_t &bb) {
+constexpr Bitboard east_one(const Bitboard &bb) {
   return (bb & ~HFILE_BB) << 1;
 }
 
-constexpr uint64_t west_one(const uint64_t &bb) {
+constexpr Bitboard west_one(const Bitboard &bb) {
   return (bb & ~AFILE_BB) >> 1;
 }
 
-constexpr uint64_t north_east_one(const uint64_t &bb) {
+constexpr Bitboard north_east_one(const Bitboard &bb) {
   return (bb & ~HFILE_BB) << 9;
 }
 
-constexpr uint64_t south_east_one(const uint64_t &bb) {
+constexpr Bitboard south_east_one(const Bitboard &bb) {
   return (bb & ~HFILE_BB) >> 7;
 }
 
-constexpr uint64_t south_west_one(const uint64_t &bb) {
+constexpr Bitboard south_west_one(const uint64_t &bb) {
   return (bb & ~AFILE_BB) >> 9;
 }
 
-inline uint64_t north_west_one(const uint64_t &bb) {
+constexpr Bitboard north_west_one(const Bitboard &bb) {
   return (bb & ~AFILE_BB) << 7;
 }
 
-inline uint64_t north_fill(const uint64_t &bb) {
+inline Bitboard north_fill(const Bitboard &bb) {
   auto fill = bb;
   fill |= (fill << 8);
   fill |= (fill << 16);
@@ -89,7 +90,7 @@ inline uint64_t north_fill(const uint64_t &bb) {
   return fill;
 }
 
-inline uint64_t south_fill(const uint64_t &bb) {
+inline Bitboard south_fill(const Bitboard &bb) {
   auto fill = bb;
   fill |= (fill >> 8);
   fill |= (fill >> 16);
@@ -97,10 +98,10 @@ inline uint64_t south_fill(const uint64_t &bb) {
   return fill;
 }
 
-inline void init_between_bitboards(const uint64_t from, uint64_t (*step_func)(const uint64_t &), int step) {
+inline void init_between_bitboards(const Square from, Bitboard (*step_func)(const Bitboard &), const int step) {
   auto bb          = step_func(bb_square(from));
   auto to          = from + step;
-  uint64_t between = 0;
+  Bitboard between = 0;
 
   while (bb)
   {
@@ -173,20 +174,20 @@ void init() {
   corner_h8 = bb_square(h8) | bb_square(g8) | bb_square(h7) | bb_square(g7);
 }
 
-inline uint64_t (*pawn_push[2])(const uint64_t &)         = {north_one, south_one};
-inline uint64_t (*pawn_east_attacks[2])(const uint64_t &) = {north_west_one, south_west_one};
-inline uint64_t (*pawn_west_attacks[2])(const uint64_t &) = {north_east_one, south_east_one};
-inline uint64_t (*pawn_fill[2])(const uint64_t &)         = {north_fill, south_fill};
+inline Bitboard (*pawn_push[2])(const Bitboard &)         = {north_one, south_one};
+inline Bitboard (*pawn_east_attacks[2])(const Bitboard &) = {north_west_one, south_west_one};
+inline Bitboard (*pawn_west_attacks[2])(const Bitboard &) = {north_east_one, south_east_one};
+inline Bitboard (*pawn_fill[2])(const Bitboard &)         = {north_fill, south_fill};
 
-constexpr std::array<uint64_t, 2> rank_1{RANK1, RANK8};
+constexpr std::array<Bitboard, 2> rank_1{RANK1, RANK8};
 
-constexpr std::array<uint64_t, 2> rank_3{RANK3, RANK6};
+constexpr std::array<Bitboard, 2> rank_3{RANK3, RANK6};
 
-constexpr std::array<uint64_t, 2> rank_7{RANK7, RANK2};
+constexpr std::array<Bitboard, 2> rank_7{RANK7, RANK2};
 
-constexpr std::array<uint64_t, 2> rank_6_and_7{RANK6 | RANK7, RANK2 | RANK3};
+constexpr std::array<Bitboard, 2> rank_6_and_7{RANK6 | RANK7, RANK2 | RANK3};
 
-constexpr std::array<uint64_t, 2> rank_7_and_8{RANK7 | RANK8, RANK1 | RANK2};
+constexpr std::array<Bitboard, 2> rank_7_and_8{RANK7 | RANK8, RANK1 | RANK2};
 
 constexpr std::array<int, 2> pawn_push_dist{8, -8};
 
@@ -196,16 +197,16 @@ constexpr std::array<int, 2> pawn_west_attack_dist{9, -7};
 
 constexpr std::array<int, 2> pawn_east_attack_dist{7, -9};
 
-constexpr void reset_lsb(uint64_t &x) {
+constexpr void reset_lsb(Bitboard &x) {
   x &= (x - 1);
 }
 
-constexpr uint8_t pop_count(const uint64_t x) {
+constexpr uint8_t pop_count(const Bitboard x) {
   return std::popcount(x);
 }
 
-constexpr int lsb(const uint64_t x) {
-  return std::countr_zero(x);
+constexpr Square lsb(const Bitboard x) {
+  return static_cast<Square>(std::countr_zero(x));
 }
 
 }// namespace bitboard

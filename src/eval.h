@@ -13,8 +13,8 @@ public:
   int evaluate(const int alpha, const int beta) {
     init_evaluate();
 
-    evalMaterial<0>();
-    evalMaterial<1>();
+    eval_material<0>();
+    eval_material<1>();
 
     const auto mat_eval    = poseval[0] - poseval[1];
     const auto lazy_margin = 500;
@@ -71,7 +71,7 @@ protected:
         eval_pawns<0>();
         eval_pawns<1>();
 
-        pawnp = pawnt->insert(pos->pawn_structure_key, (int)(pawn_eval_mg[0] - pawn_eval_mg[1]), (int)(pawn_eval_eg[0] - pawn_eval_eg[1]), passed_pawn_files);
+        pawnp = pawnt->insert(pos->pawn_structure_key,  pawn_eval_mg[0] - pawn_eval_mg[1], pawn_eval_eg[0] - pawn_eval_eg[1], passed_pawn_files);
       }
       poseval_mg[0] += pawnp->eval_mg;
       poseval_eg[0] += pawnp->eval_eg;
@@ -85,7 +85,7 @@ protected:
 
     for (auto bb = pawns(Us); bb;)
     {
-      const uint64_t sq = lsb(bb);
+      const auto sq = lsb(bb);
 
       if (game_.board.is_pawn_passed(sq, Us))
         passed_pawn_files[Us] |= 1 << file_of(sq);
@@ -124,7 +124,7 @@ protected:
 
     for (auto knights = game_.board.knights(Us); knights; reset_lsb(knights))
     {
-      const uint64_t sq     = lsb(knights);
+      const Square sq       = lsb(knights);
       const uint64_t flipsq = flip[Us][sq];
 
       score_mg += knight_pst_mg[flipsq];
@@ -167,8 +167,8 @@ protected:
 
     for (auto bishops = game_.board.bishops(Us); bishops; reset_lsb(bishops))
     {
-      const uint64_t sq     = lsb(bishops);
-      const uint64_t flipsq = flip[Us][sq];
+      const auto sq     = lsb(bishops);
+      const auto flipsq = flip[Us][sq];
 
       score_mg += bishop_pst_mg[flipsq];
       score_eg += bishop_pst_eg[flipsq];
@@ -209,8 +209,8 @@ protected:
 
     for (auto rooks = game_.board.rooks(Us); rooks; reset_lsb(rooks))
     {
-      const uint64_t sq     = lsb(rooks);
-      const uint64_t flipsq = flip[Us][sq];
+      const auto sq     = lsb(rooks);
+      const auto flipsq = flip[Us][sq];
 
       score_mg += rook_pst_mg[flipsq];
       score_eg += rook_pst_eg[flipsq];
@@ -252,8 +252,8 @@ protected:
 
     for (auto queens = game_.board.queens(Us); queens; reset_lsb(queens))
     {
-      const uint64_t sq     = lsb(queens);
-      const uint64_t flipsq = flip[Us][sq];
+      const auto sq     = lsb(queens);
+      const auto flipsq = flip[Us][sq];
 
       score_mg += queen_pst_mg[flipsq];
       score_eg += queen_pst_eg[flipsq];
@@ -282,7 +282,7 @@ protected:
   }
 
   template<int Us>
-  void evalMaterial() {
+  void eval_material() {
     poseval[Us] = pos->material.material_value[Us];
 
     if (pos->material.count(Us, Bishop) == 2)
@@ -294,7 +294,7 @@ protected:
 
   template<int Us>
   void eval_king() {
-    const uint64_t sq = lsb(game_.board.king(Us));
+    const auto sq = lsb(game_.board.king(Us));
     const auto &bbsq  = bb_square(sq);
 
     auto score_mg       = king_pst_mg[flip[Us][sq]];
@@ -311,7 +311,7 @@ protected:
         || ((Us == 1) && (((sq == f8 || sq == g8) && (bb_square(h8) & game_.board.rooks(1))) || ((sq == c8 || sq == b8) && (bb_square(a8) & game_.board.rooks(1))))))
       score_mg += king_obstructs_rook;
 
-    all_attacks[Us] |= king_attacks[kingSq(Us)];
+    all_attacks[Us] |= king_attacks[king_sq(Us)];
     poseval_mg[Us] += score_mg;
     poseval_eg[Us] += score_eg;
   }
@@ -334,8 +334,8 @@ protected:
         score_eg += passed_pawn_no_us[r] * (front_span & game_.board.occupied_by_side[Us] ? 0 : 1);
         score_eg += passed_pawn_no_them[r] * (front_span & game_.board.occupied_by_side[Them] ? 0 : 1);
         score_eg += passed_pawn_no_attacks[r] * (front_span & all_attacks[Them] ? 0 : 1);
-        score_eg += passed_pawn_king_dist_them[dist[sq][kingSq(Them)]];
-        score_eg += passed_pawn_king_dist_us[dist[sq][kingSq(Us)]];
+        score_eg += passed_pawn_king_dist_them[dist[sq][king_sq(Them)]];
+        score_eg += passed_pawn_king_dist_us[dist[sq][king_sq(Us)]];
 
         poseval_mg[Us] += score_mg;
         poseval_eg[Us] += score_eg;
@@ -349,9 +349,11 @@ protected:
       poseval_mg[Us] += attack_counter[Us] * (attack_count[Us] - 1);
   }
 
-  [[nodiscard]] const uint64_t &pawns(const int side) const { return game_.board.pawns(side); }
+  [[nodiscard]]
+  const uint64_t &pawns(const int side) const { return game_.board.pawns(side); }
 
-  [[nodiscard]] uint64_t kingSq(const int side) const { return game_.board.king_square[side]; }
+  [[nodiscard]]
+  uint64_t king_sq(const int side) const { return game_.board.king_square[side]; }
 
   void init_evaluate() {
     pos        = game_.pos;
@@ -364,8 +366,8 @@ protected:
     attack_count.fill(0);
     attack_counter.fill(0);
 
-    king_area[0] = king_attacks[kingSq(0)] | game_.board.king(0);
-    king_area[1] = king_attacks[kingSq(1)] | game_.board.king(1);
+    king_area[0] = king_attacks[king_sq(0)] | game_.board.king(0);
+    king_area[1] = king_attacks[king_sq(1)] | game_.board.king(1);
 
     occupied     = game_.board.occupied;
     not_occupied = ~occupied;

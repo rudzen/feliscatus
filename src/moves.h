@@ -395,14 +395,14 @@ public:
   Board *board;
 
 private:
-  uint64_t *bb_piece{};
-  uint64_t *occupied_by_side{};
-  uint64_t occupied{};
+  Bitboard *bb_piece{};
+  Bitboard *occupied_by_side{};
+  Bitboard occupied{};
   int iteration{};
   int stage{};
   int max_stage{};
   int number_moves{};
-  uint64_t pinned{};
+  Bitboard pinned{};
   MoveSorter *sorter{};
   uint32_t transp_move{};
   int flags{};
