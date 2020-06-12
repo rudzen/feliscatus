@@ -191,8 +191,11 @@ private:
     add_pawn_moves(pawn_push[side_to_move](pawns & rank_7[side_to_move]) & ~occupied, pawn_push_dist, QUIET);
     add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1], pawn_west_attack_dist, CAPTURE);
     add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1], pawn_east_attack_dist, CAPTURE);
-    add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & en_passant_square, pawn_west_attack_dist, EPCAPTURE);
-    add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & en_passant_square, pawn_east_attack_dist, EPCAPTURE);
+    if (en_passant_square != no_square)
+    {
+      add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & bb_square(en_passant_square), pawn_west_attack_dist, EPCAPTURE);
+      add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & bb_square(en_passant_square), pawn_east_attack_dist, EPCAPTURE);
+    }
     stage++;
   }
 
@@ -294,8 +297,11 @@ private:
     const auto &pawns = board->pawns(side_to_move);
     add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1] & to_squares, pawn_west_attack_dist, CAPTURE);
     add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1] & to_squares, pawn_east_attack_dist, CAPTURE);
-    add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & en_passant_square & to_squares, pawn_west_attack_dist, EPCAPTURE);
-    add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & en_passant_square & to_squares, pawn_east_attack_dist, EPCAPTURE);
+    if (en_passant_square != no_square)
+    {
+      add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & bb_square(en_passant_square) & to_squares, pawn_west_attack_dist, EPCAPTURE);
+      add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & bb_square(en_passant_square) & to_squares, pawn_east_attack_dist, EPCAPTURE);
+    }
   }
 
   void add_pawn_moves(const uint64_t &to_squares, const std::array<int, 2> &dist, const uint32_t type) {
@@ -385,7 +391,7 @@ public:
   int side_to_move;
   int castle_rights;
   bool in_check;
-  uint64_t en_passant_square;
+  Square en_passant_square;
   Board *board;
 
 private:

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <fmt/format-inl.h>
 
 struct perft_result {
   perft_result() { nodes = enpassants = castles = captures = promotions = 0; }
@@ -19,7 +20,7 @@ public:
   }
 
   void perft(const int depth) const {
-    double nps = 0;
+    std::size_t nps = 0;
 
     for (auto i = 1; i <= depth; i++)
     {
@@ -29,15 +30,15 @@ public:
       const auto time = sw.millisElapsed() / static_cast<double>(1000);
       if (time)
         nps = result.nodes / time;
-      printf("depth %d: %llu nodes, %.2f secs, %.0f nps\n", i, result.nodes, time, nps);
+      fmt::print("depth {}: {} nodes, {} secs, {} nps\n", i, result.nodes, time, nps);
     }
   }
 
   void perft_divide(const int depth) const {
-    printf("depth: %d\n", depth);
+    fmt::print("depth: {}\n", depth);
 
     perft_result result;
-    auto pos = game->pos;
+    auto *pos = game->pos;
     char buf[12];
     double time = 0;
     double nps  = 0;
@@ -46,49 +47,47 @@ public:
 
     while (const MoveData *move_data = pos->next_move())
     {
-      const auto m = &move_data->move;
+      const auto *const m = &move_data->move;
 
       if (!game->make_move(*m, flags == 0 ? true : false, true))
-      {
         continue;
-      }
+
       const auto nodes_start = result.nodes;
       Stopwatch sw;
       perft(depth - 1, result);
       time += sw.millisElapsed() / static_cast<double>(1000);
       game->unmake_move();
-      printf("move %s: %llu nodes\n", game->move_to_string(*m, buf), result.nodes - nodes_start);
+      fmt::print("move {}: {} nodes\n", game->move_to_string(*m, buf), result.nodes - nodes_start);
     }
     if (time)
       nps = result.nodes / time;
-    printf("%llu nodes, %.0f nps\n", result.nodes, nps);
+
+    fmt::print("{} nodes, {} nps", result.nodes, nps);
   }
 
 private:
   double total_time;
 
-  int perft(int depth, perft_result &result) const {
+  int perft(const int depth, perft_result &result) const {
     if (depth == 0)
     {
       result.nodes++;
       return 0;
     }
-    auto pos = game->pos;
-    pos->generate_moves(0, 0, flags);
+    auto *pos = game->pos;
+    pos->generate_moves(nullptr, 0, flags);
 
     if ((flags & STAGES) == 0 && depth == 1)
-    {
       result.nodes += pos->move_count();
-    } else
+    else
     {
       while (const MoveData *move_data = pos->next_move())
       {
-        const auto m = &move_data->move;
+        const auto *m = &move_data->move;
 
         if (!game->make_move(*m, (flags & LEGALMOVES) ? false : true, true))
-        {
           continue;
-        }
+
         perft(depth - 1, result);
         game->unmake_move();
       }

@@ -85,7 +85,7 @@ public:
     {
       if (strieq("Hash", name))
       {
-        TT.init(std::min(65536, std::max(8, (int)strtol(value, NULL, 10))));
+        TT.init(std::clamp(static_cast<int>(strtol(value, nullptr, 10)), 8, 65536));
         _snprintf(buf, sizeof(buf), "Hash:%d", TT.get_size_mb());
       } else if (strieq("Threads", name) || strieq("NumThreads", name))
       {

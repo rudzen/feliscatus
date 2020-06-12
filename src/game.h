@@ -30,7 +30,7 @@ public:
         return false;
       }
     }
-    const auto prev    = pos++;
+    auto *const prev    = pos++;
     pos->side_to_move = prev->side_to_move ^ 1;
     pos->material     = prev->material;
     pos->last_move    = m;
@@ -50,9 +50,9 @@ public:
 
     if (move_type(m) & DOUBLEPUSH)
     {
-      pos->en_passant_square = bb_square(move_to(m) + pawn_push_dist[pos->side_to_move]);
+      pos->en_passant_square = static_cast<Square>(move_to(m) + pawn_push_dist[pos->side_to_move]);
     } else
-    { pos->en_passant_square = 0; }
+    { pos->en_passant_square = no_square; }
     pos->key                = prev->key;
     pos->pawn_structure_key = prev->pawn_structure_key;
     update_key(m);
@@ -77,7 +77,7 @@ public:
     pos->castle_rights              = prev->castle_rights;
     pos->null_moves_in_row          = prev->null_moves_in_row + 1;
     pos->reversible_half_move_count = 0;
-    pos->en_passant_square          = 0;
+    pos->en_passant_square          = no_square;
     pos->key                        = prev->key;
     pos->pawn_structure_key         = prev->pawn_structure_key;
     update_key(0);
@@ -99,9 +99,9 @@ public:
     }
     key ^= zobrist::zobrist_castling[pos->castle_rights];
 
-    if (pos->en_passant_square)
+    if (pos->en_passant_square != no_square)
     {
-      key ^= zobrist::zobrist_ep_file[file_of(lsb(pos->en_passant_square))];
+      key ^= zobrist::zobrist_ep_file[file_of(pos->en_passant_square)];
     }
 
     if (pos->side_to_move == 1)
@@ -115,14 +115,14 @@ public:
     pos->key ^= pos->pawn_structure_key;
     pos->pawn_structure_key ^= zobrist::zobrist_side;
 
-    if ((pos - 1)->en_passant_square)
+    if ((pos - 1)->en_passant_square != no_square)
     {
-      pos->key ^= zobrist::zobrist_ep_file[file_of(lsb((pos - 1)->en_passant_square))];
+      pos->key ^= zobrist::zobrist_ep_file[file_of((pos - 1)->en_passant_square)];
     }
 
-    if (pos->en_passant_square)
+    if (pos->en_passant_square != no_square)
     {
-      pos->key ^= zobrist::zobrist_ep_file[file_of(lsb(pos->en_passant_square))];
+      pos->key ^= zobrist::zobrist_ep_file[file_of(pos->en_passant_square)];
     }
 
     if (!m)
@@ -307,13 +307,17 @@ public:
     {
       return 5;
     }
-    uint64_t sq;
 
-    if (!get_delimiter(&p) || static_cast<int>(sq = get_ep_square(&p)) == -1)
+    if (!get_delimiter(&p))
     {
       return 6;
     }
-    pos->en_passant_square          = sq < 64 ? bb_square(sq) : 0;
+
+    Square sq;
+    if (!get_ep_square(&p, sq))
+      return 6;
+
+    pos->en_passant_square          = sq; // < 64 ? sq : no_square;
     pos->reversible_half_move_count = 0;
 
     if (pos->side_to_move == 1)
@@ -323,9 +327,9 @@ public:
     }
     pos->key ^= zobrist::zobrist_castling[pos->castle_rights];
 
-    if (pos->en_passant_square)
+    if (pos->en_passant_square != no_square)
     {
-      pos->key ^= zobrist::zobrist_ep_file[file_of(lsb(pos->en_passant_square))];
+      pos->key ^= zobrist::zobrist_ep_file[file_of(pos->en_passant_square)];
     }
     pos->in_check = board.is_attacked(board.king_square[pos->side_to_move], pos->side_to_move ^ 1);
     return 0;
@@ -402,10 +406,9 @@ public:
       *p++ = ' ';
     }
 
-    if (pos->en_passant_square)
+    if (pos->en_passant_square != no_square)
     {
-      uint64_t ep = lsb(pos->en_passant_square);
-      memcpy(p, square_to_string(ep, buf), 2);
+      memcpy(p, square_to_string(pos->en_passant_square, buf), 2);
       p += 2;
       *p++ = ' ';
     } else
@@ -414,31 +417,34 @@ public:
       p += 2;
     }
     memset(buf, 0, 12);
-    memcpy(p, itoa(pos->reversible_half_move_count, buf, 10), 12);
+    memcpy(p, _itoa(pos->reversible_half_move_count, buf, 10), 12);
     p[strlen(p)] = ' ';
     memset(buf, 0, 12);
-    memcpy(p + strlen(p), itoa(static_cast<int>((pos - position_list) / 2 + 1), buf, 10), 12);
+    memcpy(p + strlen(p), _itoa(static_cast<int>((pos - position_list) / 2 + 1), buf, 10), 12);
     return fen;
   }
 
   [[nodiscard]]
-  static char get_ep_square(const char **p) {
+  static bool get_ep_square(const char **p, Square &sq) {
     if (**p == '-')
     {
-      return 64;// 64 = no en passant square
+      sq = no_square;// 64 = no en passant square
+      return true;
     }
 
     if (**p < 'a' || **p > 'h')
     {
-      return -1;
+      return false;
     }
     (*p)++;
 
     if (**p != '3' && **p != '6')
     {
-      return -1;
+      return false;
     }
-    return *(*p - 1) - 'a' + (**p - '1') * 8;
+
+    sq = static_cast<Square>(*(*p - 1) - 'a' + (**p - '1') * 8);
+    return true;
   }
 
   [[nodiscard]]
