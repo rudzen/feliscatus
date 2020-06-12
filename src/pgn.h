@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#include <cctype>
 
 namespace pgn {
 
@@ -110,7 +111,7 @@ protected:
     while (start_of_pgn_game())
     {
       try
-      { readPGNGame(); } catch (...)
+      { read_pgn_game(); } catch (...)
       {
         do
         {
@@ -125,13 +126,13 @@ protected:
     }
   }
 
-  virtual void readPGNGame() {
-    readTagSection();
-    readMoveTextSection();
+  virtual void read_pgn_game() {
+    read_tag_section();
+    read_move_text_section();
     ++game_count_;
   }
 
-  virtual void readTagSection() {
+  virtual void read_tag_section() {
     while (start_of_tag_pair())
     {
       read_tag_pair();
@@ -159,7 +160,7 @@ protected:
     {
       throw UnexpectedToken(String, token_str, line_);
     }
-    readTagValue();
+    read_tag_value();
   }
 
   virtual void read_tag_name() {
@@ -167,13 +168,13 @@ protected:
     read_token(token_);
   }
 
-  virtual void readTagValue() {
+  virtual void read_tag_value() {
     strcpy(tag_value_, token_str);
     read_token(token_);
   }
 
-  virtual void readMoveTextSection() {
-    readElementSequence();
+  virtual void read_move_text_section() {
+    read_element_sequence();
 
     if (start_of_game_termination())
     {
@@ -182,7 +183,7 @@ protected:
     { throw UnexpectedToken("<game-termination>", token_str, line_); }
   }
 
-  virtual void readElementSequence() {
+  virtual void read_element_sequence() {
     for (;;)
     {
       if (start_of_element())
@@ -214,7 +215,7 @@ protected:
   virtual void read_move_number_indication() {
     move_number_ = strtol(token_str, nullptr, 10);
 
-    int periods = 0;
+    auto periods = 0;
 
     for (;;)
     {
@@ -325,9 +326,8 @@ protected:
     p += 2;
 
     if (!is_square(p, to_square_))
-    {
       exit(0);
-    }
+
     p += 2;
     capture_ = true;
   }
@@ -338,19 +338,17 @@ protected:
     p += 1;
 
     if (strlen(p) && is_non_pawn_piece_letter(p, promoted_to))
-    {
       p += 1;
-    } else
-    { throw UnexpectedToken("<piece-letter>", p, line_); }
+    else
+      throw UnexpectedToken("<piece-letter>", p, line_);
   }
 
   virtual void read_move(char *&p) {
     p += 1;
 
     if (!start_of_capture_or_quiet_move(p))
-    {
       exit(0);
-    }
+
     read_capture_or_quiet_move(p);
     piece_move_ = true;
   }
@@ -435,7 +433,7 @@ protected:
 
   virtual void read_recursive_variation() {
     read_token(token_);
-    readElementSequence();
+    read_element_sequence();
 
     if (token_ != RParen)
     {
@@ -591,12 +589,12 @@ protected:
 
     if (get || is_white_space(ch_) || ch_ == '{' || ch_ == ';')
     {
-      int n = getChar(ch_, get, true, true);
+      const auto n = get_char(ch_, get, true, true);
 
       if (n == -1)
-      {
         throw 0;
-      } else if (n == 0)
+
+      if (n == 0)
       {
         token        = None;
         token_str[0] = '\0';
@@ -605,13 +603,11 @@ protected:
     }
 
     if (read_symbol())
-    {
       return;
-    } else if (readNAG())
-    {
+    if (read_nag())
       return;
-    } else if (readString())
-    { return; }
+    if (read_string())
+      return;
 
     switch (ch_)
     {
@@ -657,7 +653,7 @@ protected:
 
   [[nodiscard]]
   int get_char(unsigned char &c) {
-    bool escape = false;
+    auto escape = false;
 
     for (;;)
     {
@@ -665,13 +661,12 @@ protected:
       {
         fillpos_ = fillpos_ % bufsize;
 
-        int n = file_->read(buffer_ + fillpos_, bufsize - fillpos_);
+        const int n = file_->read(buffer_ + fillpos_, bufsize - fillpos_);
 
         if (n > 0)
-        {
           fillpos_ = fillpos_ + n;
-        } else
-        { return n; }
+        else
+          return n;
       }
       readpos_ = readpos_ % bufsize;
       c        = buffer_[readpos_++];
@@ -684,45 +679,37 @@ protected:
       } else
       {
         if (++pos_ == 2 && c == '%')
-        {
           escape = true;
-        }
       }
 
       if (escape == false)
-      {
         break;
-      }
     }
     return 1;
   }
 
   [[nodiscard]]
   bool read_symbol() {
-    if (!isAlNum(ch_))
-    {
+    if (!is_al_num(ch_))
       return false;
-    }
+
     int len     = 0;
     bool digits = true;
 
     for (;;)
     {
-      digits           = digits && isDigit(ch_) != 0;
+      digits           = digits && is_digit(ch_) != 0;
       token_str[len++] = ch_;
 
-      int n = getChar(ch_, true, false, false);
+      const int n = get_char(ch_, true, false, false);
 
       if (n == -1)
-      {
         throw 0;
-      } else if (n == 0)
-      { break; }
-
-      if (!isAlNum(ch_) && ch_ != '_' && ch_ != '+' && ch_ != '/' && ch_ != '#' && ch_ != '=' && ch_ != ':' && ch_ != '-')
-      {
+      if (n == 0)
         break;
-      }
+
+      if (!is_al_num(ch_) && ch_ != '_' && ch_ != '+' && ch_ != '/' && ch_ != '#' && ch_ != '=' && ch_ != ':' && ch_ != '-')
+        break;
     }
 
     while (ch_ == '!' || ch_ == '?')
@@ -730,37 +717,30 @@ protected:
       digits           = false;
       token_str[len++] = ch_;
 
-      int n = getChar(ch_, true, false, false);
+      const int n = get_char(ch_, true, false, false);
 
       if (n == -1)
-      {
         throw 0;
-      }
       if (n == 0)
         break;
     }
 
-    if (digits)
-    {
-      token_ = Integer;
-    } else
-    { token_ = Symbol; }
+    token_ = digits ? Integer : Symbol;
     token_str[len] = '\0';
     return true;
   }
 
-  bool readNAG() {
+  bool read_nag() {
     if (ch_ != '$')
-    {
       return false;
-    }
+
     int len = 0;
 
     for (;;)
     {
       token_str[len++] = ch_;
 
-      int n = getChar(ch_, true, false, false);
+      const int n = get_char(ch_, true, false, false);
 
       if (n == -1)
       {
@@ -768,7 +748,7 @@ protected:
       } else if (n == 0)
       { break; }
 
-      if (!isDigit(ch_))
+      if (!is_digit(ch_))
       {
         break;
       }
@@ -783,7 +763,7 @@ protected:
     return true;
   }
 
-  bool readString() {
+  bool read_string() {
     if (ch_ != '\"')
     {
       return false;
@@ -797,18 +777,16 @@ protected:
       token_str[len++] = ch_;
 
       if (ch_ == '\"' && prev != '\\')
-      {
         i++;
-      }
+
       prev = ch_;
 
-      int n = getChar(ch_, true, false, false);
+      const int n = get_char(ch_, true, false, false);
 
       if (n == -1)
-      {
         throw 0;
-      } else if (n == 0)
-      { break; }
+      if (n == 0)
+        break;
 
       if (i == 2)
       {
@@ -820,53 +798,46 @@ protected:
     return true;
   }
 
-  int getChar(unsigned char &c, bool get, bool skip_ws, bool skip_comment) {
+  int get_char(unsigned char &c, bool get, const bool skip_ws, const bool skip_comment) {
     for (;;)
     {
       if (get)
       {
-        int n = get_char(c);
+        const auto n = get_char(c);
 
         if (n <= 0)
-        {
           return n;
-        }
       } else
-      { get = true; }
+        get = true;
 
       if (skip_ws && is_white_space(c))
-      {
         continue;
-      } else if (skip_comment && c == '{')
+
+      if (skip_comment && c == '{')
+        read_comment1();
+      else if (skip_comment && c == ';')
       {
-        readComment1();
-      } else if (skip_comment && c == ';')
-      {
-        readComment2(c);
+        read_comment2(c);
         get = false;
       } else
-      { break; }
+        break;
     }
     return 1;
   }
 
-  virtual void readComment1() {
+  virtual void read_comment1() {
     unsigned char c;
     char *p = comment_;
 
     for (;;)
     {
-      int n = get_char(c);
+      const int n = get_char(c);
 
       if (n <= 0)
-      {
         return;
-      }
 
       if (c == '}')
-      {
         break;
-      }
 
       if (p - comment_ <= 2047)
       {
@@ -877,31 +848,25 @@ protected:
     *p = '\0';
   }
 
-  virtual void readComment2(unsigned char &c) {
+  virtual void read_comment2(unsigned char &c) {
     for (;;)
     {
       int n = get_char(c);
 
       if (n <= 0)
-      {
         return;
-      }
 
       if (c == 0x0a || c == 0x0d)
       {
         for (;;)
         {
-          int n = get_char(c);
+          n = get_char(c);
 
           if (n <= 0)
-          {
             return;
-          }
 
           if (c != 0x0a && c != 0x0d)
-          {
             break;
-          }
         }
         break;
       }
@@ -912,13 +877,15 @@ protected:
 
   static constexpr bool is_white_space(const char c) { return c == ' ' || c == '\t' || c == 0x0a || c == 0x0d; }
 
-  bool isDigit(const char c) { return c >= '0' && c <= '9'; }
+  [[nodiscard]]
+  bool is_digit(const char c) const { return std::isdigit(c); }
 
-  bool isAlpha(const char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
+  [[nodiscard]]
+  bool is_alpha(const char c) const { return std::isalpha(c); }
 
-  bool isAlNum(const char c) { return isAlpha(c) || isDigit(c); }
+  [[nodiscard]]
+  bool is_al_num(const char c) const { return std::isalnum(c); }
 
-protected:
   File *file_;
   unsigned char *buffer_;
   size_t readpos_;

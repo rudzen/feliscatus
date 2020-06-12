@@ -1,10 +1,9 @@
 #pragma once
 
 #include <fstream>
-#include <sstream>
 #include <vector>
 #include <map>
-#include <iomanip>
+#include <fmt/format.h>
 
 #include "pgn_player.h"
 
@@ -49,17 +48,16 @@ public:
     print_progress(false);
   }
 
-  void readComment1() override {
-    pgn::PGNPlayer::readComment1();
+  void read_comment1() override {
+    pgn::PGNPlayer::read_comment1();
     // cout << comment_ << endl;
   }
 
   void print_progress(const bool force) const {
     if (!force && game_count_ % 100 != 0)
-    {
       return;
-    }
-    cout << "game_count_:" << game_count_ << " position_count_:" << all_nodes_count_ << " all_nodes_.size:" << all_selected_nodes_.size() << endl;
+
+    fmt::print("game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_ , all_nodes_count_, all_selected_nodes_.size());
   }
 
   std::vector<Node> all_selected_nodes_;
@@ -107,44 +105,40 @@ public:
     init_eval(params);
 
     if (score_static_)
-    {
-      makeQuiet(pgn.all_selected_nodes_);
-    }
+      make_quiet(pgn.all_selected_nodes_);
+
     std::vector<ParamIndexRecord> params_index(params.size());
 
     for (size_t i = 0; i < params.size(); ++i)
-    {
       params_index.emplace_back(ParamIndexRecord{i, 0});
-    }
 
     double K      = bestK();
     double bestE  = e(pgn.all_selected_nodes_, params, params_index, K);
     bool improved = true;
 
     ofstream out("d:\\tomcat\\x64\\tune.txt");
-    out << "Old E:" << bestE << "\n";
-    out << "Old Values:\n" << emit_code(params, true) << "\n";
+    out << fmt::format("Old E:{}\n", bestE);
+    out << fmt::format("Old Values:\n{}\n", emit_code(params, true));
 
     while (improved)
     {
       print_best_values(bestE, params);
       improved = false;
 
-      for (size_t i = 0; i < params_index.size(); ++i)
+      for (std::size_t i = 0; i < params_index.size(); ++i)
       {
-        size_t idx  = params_index[i].idx_;
+        auto idx  = params_index[i].idx_;
         auto &step  = params[idx].step_;
         auto &value = params[idx].value_;
 
         if (step == 0)
-        {
           continue;
-        }
+
         value += step;
 
-        std::cout << "Tuning prm[" << idx << "] " << params[idx].name_ << " i:" << i << " current:" << value - step << " trying:" << value << "..." << std::endl;
+        fmt::print("Tuning prm[{}] {} i:{}  current:{}  trying:{}...\n", idx, params[idx].name_, i, value - step, value);
 
-        double newE = e(pgn.all_selected_nodes_, params, params_index, K);
+        auto newE = e(pgn.all_selected_nodes_, params, params_index, K);
 
         if (newE < bestE)
         {
@@ -158,7 +152,7 @@ public:
           step = -step;
           value += 2 * step;
 
-          std::cout << "Tuning prm[" << idx << "] " << params[idx].name_ << " i:" << i << " current:" << value - step << " trying:" << value << "..." << std::endl;
+          fmt::print("Tuning prm[{}] {} i:{}  current:{}  trying:{}...\n", idx, params[idx].name_, i, value - step, value);
 
           newE = e(pgn.all_selected_nodes_, params, params_index, K);
 
@@ -189,16 +183,17 @@ public:
       }
     }
     print_best_values(bestE, params);
-    out << "New E:" << bestE << "\n";
-    out << "\nNew:\n" << emit_code(params, false) << "\n";
-    std::cout << emit_code(params, true) << "\n";
+    out << fmt::format("New E:{}\n", bestE);
+    out << fmt::format("\nNew:\n{}\n", emit_code(params, false));
+
+    fmt::print("{}\n", emit_code(params, true));
   }
 
   virtual ~Tune() { eval_.tuning_ = false; }
 
   static void init_eval(std::vector<Param> &params) {
     auto step = 1;
-    x_        = 0;
+    x_        = false;
     /*
                     for (auto i = 0; i < 9; ++i)
                             {
@@ -237,37 +232,37 @@ public:
                             }
     */
     //----------------------------------
-    for (auto i = 0; i < 64; ++i)
+    for (const auto i : Squares)
     {
       auto istep = i > 7 && i < 56 ? step : 0;
       params.emplace_back("pawn_pst_mg", Eval::pawn_pst_mg[i], 0, istep);
       params.emplace_back("pawn_pst_eg", Eval::pawn_pst_eg[i], 0, istep);
     }
 
-    for (auto i = 0; i < 64; ++i)
+    for (const auto i : Squares)
     {
       params.emplace_back("knight_pst_mg", Eval::knight_pst_mg[i], 0, step);
       params.emplace_back("knight_pst_eg", Eval::knight_pst_eg[i], 0, step);
     }
 
-    for (auto i = 0; i < 64; ++i)
+    for (const auto i : Squares)
     {
       params.emplace_back("bishop_pst_mg", Eval::bishop_pst_mg[i], 0, step);
       params.emplace_back("bishop_pst_eg", Eval::bishop_pst_eg[i], 0, step);
     }
 
-    for (auto i = 0; i < 64; ++i)
+    for (const auto i : Squares)
     {
       params.emplace_back("rook_pst_mg", Eval::rook_pst_mg[i], 0, step);
       params.emplace_back("rook_pst_eg", Eval::rook_pst_eg[i], 0, step);
     }
 
-    for (auto i = 0; i < 64; ++i)
+    for (const auto i : Squares)
     {
       params.emplace_back("queen_pst_mg", Eval::queen_pst_mg[i], 0, step);
       params.emplace_back("queen_pst_eg", Eval::queen_pst_eg[i], 0, step);
     }
-    for (auto i = 0; i < 64; ++i)
+    for (const auto i : Squares)
     {
       params.emplace_back("king_pst_mg", Eval::king_pst_mg[i], 0, step);
       params.emplace_back("king_pst_eg", Eval::king_pst_eg[i], 0, step);
@@ -350,76 +345,69 @@ public:
   double e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, double K) {
     double x = 0;
 
-    for (auto &node : nodes)
+    for (const auto &node : nodes)
     {
       game_.set_fen(node.fen_.c_str());
-      x += pow(node.result_ - sigmoid(getScore(0), K), 2);
+      x += pow(node.result_ - sigmoid(get_score(0), K), 2);
     }
     x /= nodes.size();
 
-    cout << "x:" << std::setprecision(12) << x;
+    fmt::print("x:{:.{}f}", x, 12);
 
-    for (size_t i = 0; i < params_index.size(); ++i)
-    {
+    for (std::size_t i = 0; i < params_index.size(); ++i)
       if (params[params_index[i].idx_].step_)
-      {
-        cout << " prm[" << i << "]:" << params[params_index[i].idx_].value_;
-      }
-    }
-    cout << endl;
+        fmt::print(" prm[{}]:{}", i, params[params_index[i].idx_].value_);
+
+    fmt::print("\n");
     return x;
   }
 
-  void makeQuiet(std::vector<Node> &nodes) {
+  void make_quiet(std::vector<Node> &nodes) {
     for (auto &node : nodes)
     {
       game_.set_fen(node.fen_.c_str());
       pv_length[0] = 0;
       get_quiesce_score(-32768, 32768, true, 0);
-      playPV();
+      play_pv();
       node.fen_ = game_.get_fen();
     }
   }
 
-  int getScore(int side) {
+  int get_score(const int side) {
     auto score = 0;
 
     if (score_static_)
-    {
       score = eval_.evaluate(-100000, 100000);
-    } else
-    { score = get_quiesce_score(-32768, 32768, false, 0); }
+    else
+      score = get_quiesce_score(-32768, 32768, false, 0);
+
     return game_.pos->side_to_move == side ? score : -score;
   }
 
-  int get_quiesce_score(int alpha, const int beta, const bool storePV, const int ply) {
+  int get_quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) {
     const auto score = eval_.evaluate(-100000, 100000);
 
     if (score >= beta)
-    {
       return score;
-    }
+
     auto best_score = score;
 
     if (best_score > alpha)
-    {
       alpha = best_score;
-    }
+
     game_.pos->generate_captures_and_promotions(this);
 
-    while (const auto move_data = game_.pos->next_move())
+    while (auto *const move_data = game_.pos->next_move())
     {
       if (!is_promotion(move_data->move))
       {
         if (move_data->score < 0)
-        {
           break;
-        }
       }
 
       if (make_move(move_data->move, ply))
       {
-        auto score = -get_quiesce_score(-beta, -alpha, storePV, ply + 1);
+        auto score = -get_quiesce_score(-beta, -alpha, store_pv, ply + 1);
 
         game_.unmake_move();
 
@@ -430,14 +418,11 @@ public:
           if (best_score > alpha)
           {
             if (score >= beta)
-            {
               break;
-            }
 
-            if (storePV)
-            {
-              updatePV(move_data->move, best_score, ply);
-            }
+            if (store_pv)
+              update_pv(move_data->move, best_score, ply);
+
             alpha = best_score;
           }
         }
@@ -458,17 +443,15 @@ public:
 
   void unmake_move() const { game_.unmake_move(); }
 
-  void playPV() {
+  void play_pv() {
     for (auto i = 0; i < pv_length[0]; ++i)
-    {
       game_.make_move(pv[0][i].move, false, true);
-    }
   }
 
-  void updatePV(const uint32_t move, const int score, int ply) {
+  void update_pv(const uint32_t move, const int score, const int ply) {
     assert(ply < 128);
     assert(pv_length[ply] < 128);
-    Search::PVEntry *entry = &pv[ply][ply];
+    auto *entry = &pv[ply][ply];
 
     entry->score = score;
     entry->move  = move;
@@ -477,101 +460,88 @@ public:
     pv_length[ply] = pv_length[ply + 1];
 
     for (auto i = ply + 1; i < pv_length[ply]; ++i)
-    {
       pv[ply][i] = pv[ply + 1][i];
-    }
   }
 
   void sort_move(MoveData &move_data) override {
     const auto m = move_data.move;
 
     if (is_queen_promotion(m))
-    {
       move_data.score = 890000;
-    } else if (is_capture(m))
+    else if (is_capture(m))
     {
       const auto value_captured = piece_value(moveCaptured(m));
       auto value_piece    = piece_value(move_piece(m));
 
       if (value_piece == 0)
-      {
         value_piece = 1800;
-      }
 
       if (value_piece <= value_captured)
-      {
         move_data.score = 300000 + value_captured * 20 - value_piece;
-      } else if (see_.see_move(m) >= 0)
-      {
+      else if (see_.see_move(m) >= 0)
         move_data.score = 160000 + value_captured * 20 - value_piece;
-      } else
-      { move_data.score = -100000 + value_captured * 20 - value_piece; }
+      else
+        move_data.score = -100000 + value_captured * 20 - value_piece;
     } else
-    { exit(0); }
+      exit(0);
   }
 
   static std::string emit_code(const std::vector<Param> &params0, const bool hr) {
     std::map<std::string, std::vector<Param>> params1;
 
     for (const auto &param : params0)
-    {
       params1[param.name_].emplace_back(param);
-    }
-    std::stringstream s;
+
+    fmt::memory_buffer s;
 
     for (auto &params2 : params1)
     {
       const auto n = params2.second.size();
 
-      s << "int Eval::" << params2.first;
+      fmt::format_to(s, "int Eval::{}", params2.first);
 
       if (n > 1)
-      {
-        s << "[" << n << "] = { ";
-      } else
-      { s << " = "; }
+        fmt::format_to(s, "[{}] = { ", n);
+      else
+        fmt::format_to(s, " = ");
 
       for (size_t i = 0; i < n; ++i)
       {
         if (hr && n == 64)
         {
           if (i % 8 == 0)
-          {
-            s << "\n ";
-          }
-          s << setw(4) << params2.second[i].value_;
+            fmt::format_to(s, "\n ");
+
+          fmt::format_to(s, "{:<{}}", params2.second[i].value_, 4);
         } else
-        { s << params2.second[i].value_; }
+          fmt::format_to(s, "{}", params2.second[i].value_);
 
         if (n > 1 && i < n - 1)
-        {
-          s << ", ";
-        }
+          fmt::format_to(s, ", ");
       }
 
       if (n > 1)
-      {
-        s << " }";
-      }
-      s << ";\n";
+        fmt::format_to(s, " }");
+
+      fmt::format_to(s, ";\n");
     }
-    return s.str();
+
+    return fmt::to_string(s);
   }
 
   static void print_best_values(double E, const std::vector<Param> &params) {
     auto finished = 0;
 
-    for (size_t i = 0; i < params.size(); ++i)
+    for (std::size_t i = 0; i < params.size(); ++i)
     {
       if (params[i].step_ == 0)
-      {
         finished++;
-      }
-      std::cout << i << ":" << params[i].name_ << ":" << params[i].value_ << "  step:" << params[i].step_ << std::endl;
+
+      fmt::print("{}:{}:{}  step:{}\n", i, params[i].name_, params[i].value_, params[i].step_);
     }
 
-    std::cout << "Best E:" << std::setprecision(12) << E << "  " << std::endl;
-    std::cout << "Finished:" << finished * 100.0 / params.size() << "%" << std::endl;
+    fmt::print("Best E:{:.{}f}  \n", E);
+    fmt::print("Finished:{}%\n", finished * 100.0 / params.size());
   }
 
   constexpr static double bestK() {

@@ -14,9 +14,9 @@ public:
 
   virtual ~PGNPlayer() { delete game_; }
 
-  void readPGNGame() override {
+  void read_pgn_game() override {
     game_->new_game(Game::kStartPosition);
-    PGNFileReader::readPGNGame();
+    PGNFileReader::read_pgn_game();
   }
 
   void read_tag_pair() override {
