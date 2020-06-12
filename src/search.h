@@ -199,13 +199,13 @@ protected:
     return store_search_node_score(best_score, depth, node_type(best_score, beta, best_move), best_move);
   }
 
-  int search_next_depth(const bool is_pv, const int depth, const int alpha, const int beta, const int expectedNodeType) {
+  int search_next_depth(const bool is_pv, const int depth, const int alpha, const int beta, const HashNodeType expected_node_type) {
     if (pos->is_draw() || game->is_repetition())
     {
       if (!is_null_move(pos->last_move))
         return search_node_score(-draw_score());
     }
-    return depth <= 0 ? -search_quiesce(alpha, beta, 0, is_pv) : -search(is_pv, depth, alpha, beta, expectedNodeType);
+    return depth <= 0 ? -search_quiesce(alpha, beta, 0, is_pv) : -search(is_pv, depth, alpha, beta, expected_node_type);
   }
 
   uint32_t get_singular_move(const int depth, const bool is_pv) {
@@ -422,7 +422,7 @@ protected:
 
   [[nodiscard]] int is_analysing() const { return protocol ? protocol->is_analysing() : true; }
 
-  void update_pv(const uint32_t move, const int score, const int depth, const int node_type) {
+  void update_pv(const uint32_t move, const int score, const int depth, const HashNodeType node_type) {
     auto *const entry = &pv[ply][ply];
 
     entry->score     = score;
@@ -588,7 +588,7 @@ protected:
   constexpr static int search_node_score(const int score) { return score; }
 
   [[nodiscard]]
-  int store_search_node_score(const int score, const int depth, const int node_type, const uint32_t move) const {
+  int store_search_node_score(const int score, const int depth, const HashNodeType node_type, const uint32_t move) const {
     store_hash(depth, score, node_type, move);
     return search_node_score(score);
   }
@@ -596,17 +596,16 @@ protected:
   [[nodiscard]]
   int draw_score() const { return drawScore_[pos->side_to_move]; }
 
-  void store_hash(const int depth, int score, const int node_type, const uint32_t move) const {
+  void store_hash(const int depth, int score, const HashNodeType node_type, const uint32_t move) const {
     score = codec_t_table_score(score, ply);
 
     if (node_type == BETA)
-    {
       pos->eval_score = std::max<int>(pos->eval_score, score);
-    } else if (node_type == ALPHA)
-    {
+    else if (node_type == ALPHA)
       pos->eval_score = std::min<int>(pos->eval_score, score);
-    } else if (node_type == EXACT)
-    { pos->eval_score = score; }
+    else if (node_type == EXACT)
+      pos->eval_score = score;
+
     pos->transposition = TT.insert(pos->key, depth, score, node_type, move, pos->eval_score);
   }
 
@@ -614,14 +613,14 @@ protected:
     if ((pos->transposition = TT.find(pos->key)) == nullptr)
     {
       pos->eval_score  = eval->evaluate(alpha, beta);
-      pos->transp_type = 0;
+      pos->transp_type = Void;
       pos->transp_move = 0;
       return;
     }
     pos->transp_score = codec_t_table_score(pos->transposition->score, -ply);
     pos->eval_score   = codec_t_table_score(pos->transposition->eval, -ply);
     pos->transp_depth = pos->transposition->depth;
-    pos->transp_type  = pos->transposition->flags & 7;
+    pos->transp_type  = static_cast<HashNodeType>(pos->transposition->flags & 7);
     pos->transp_move  = pos->transposition->move;
     pos->flags        = 0;
   }
@@ -632,21 +631,17 @@ protected:
            && (pos->transp_type & EXACT || (pos->transp_type & BETA && pos->transp_score >= beta) || (pos->transp_type & ALPHA && pos->transp_score <= alpha));
   }
 
-  static constexpr int node_type(const int score, const int beta, const uint32_t move) { return move ? (score >= beta ? BETA : EXACT) : ALPHA; }
+  static constexpr HashNodeType node_type(const int score, const int beta, const uint32_t move) { return move ? (score >= beta ? BETA : EXACT) : ALPHA; }
 
   [[nodiscard]]
   bool move_is_easy() const {
     if (protocol)
     {
       if ((pos->move_count() == 1 && search_depth > 9) || (protocol->is_fixed_depth() && protocol->get_depth() == search_depth) || pv[0][0].score == MAXSCORE - 1)
-      {
         return true;
-      }
 
       if (!is_analysing() && !protocol->is_fixed_depth() && search_time < start_time.millis_elapsed_high_res() * n_)
-      {
         return true;
-      }
     }
     return false;
   }
@@ -660,7 +655,7 @@ public:
     int depth;
     int score;
     uint32_t move;
-    int node_type;
+    HashNodeType node_type;
     int eval;
   };
 
@@ -692,10 +687,6 @@ protected:
 
   uint64_t node_count{};
   uint64_t num_workers_{};
-
-  static constexpr int EXACT = 1;
-  static constexpr int BETA  = 2;
-  static constexpr int ALPHA = 4;
 
   static constexpr int MAXSCORE = 0x7fff;
   static constexpr int MAXDEPTH = 96;
