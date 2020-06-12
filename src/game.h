@@ -214,7 +214,7 @@ public:
     if (set_fen(fen) == 0)
       return 0;
 
-    return set_fen(kStartPosition);
+    return set_fen(kStartPosition.data());
   }
 
   int set_fen(const char *fen) {
@@ -243,10 +243,8 @@ public:
       if (*p == '/')
       {
         if (f != 9)
-        {
           return 2;
-          break;
-        }
+
         r--;
         f = 1;
         p++;
@@ -511,7 +509,7 @@ public:
     {
       for (auto i = 7; i >= 0; i--)
       {
-        if (board.get_piece_type(i + side * 56) == Rook)
+        if (board.get_piece_type(static_cast<Square>(i + side * 56)) == Rook)
         {
           rook_file = i;// right outermost rook for side
           break;
@@ -536,7 +534,7 @@ public:
     {
       for (auto i = 0; i <= 7; i++)
       {
-        if (board.get_piece_type(i + side * 56) == Rook)
+        if (board.get_piece_type(static_cast<Square>(i + side * 56)) == Rook)
         {
           rook_file = i;// left outermost rook for side
           break;
@@ -551,9 +549,7 @@ public:
     ooo_king_from[side]                   = board.king_square[side];
 
     if (file_of(board.king_square[side]) != 4 || rook_file != 0)
-    {
       chess960 = true;
-    }
   }
 
   static char get_side_to_move(const char **p) {
@@ -641,7 +637,5 @@ public:
   bool chess960;
   bool xfen;
 
-  static const char kStartPosition[];
+  static constexpr std::string_view kStartPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 };
-
-const char Game::kStartPosition[] = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

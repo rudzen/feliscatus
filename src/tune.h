@@ -375,18 +375,15 @@ public:
   }
 
   int get_score(const int side) {
-    auto score = 0;
-
-    if (score_static_)
-      score = eval_.evaluate(-100000, 100000);
-    else
-      score = get_quiesce_score(-32768, 32768, false, 0);
+    const auto score = score_static_
+               ? eval_.evaluate(-100000, 100000)
+               : get_quiesce_score(-32768, 32768, false, 0);
 
     return game_.pos->side_to_move == side ? score : -score;
   }
 
   int get_quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) {
-    const auto score = eval_.evaluate(-100000, 100000);
+    auto score = eval_.evaluate(-100000, 100000);
 
     if (score >= beta)
       return score;
@@ -408,7 +405,7 @@ public:
 
       if (make_move(move_data->move, ply))
       {
-        auto score = -get_quiesce_score(-beta, -alpha, store_pv, ply + 1);
+        score = -get_quiesce_score(-beta, -alpha, store_pv, ply + 1);
 
         game_.unmake_move();
 

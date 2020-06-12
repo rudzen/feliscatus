@@ -66,8 +66,8 @@ public:
 
   int pawn_count(const int side) { return key[side] & 15; }
 
-  int evaluate(int &flags, const int eval, const int side_to_move, const Board *board) {
-    this->flags = 0;
+  int evaluate(int &flags, const int eval, const int side_to_move, const Board *b) {
+    material_flags = 0;
     uint32_t key1;
     uint32_t key2;
     int score;
@@ -90,7 +90,7 @@ public:
     const int pc1   = pawn_count(side1);
     const int pc2   = pawn_count(side2);
 
-    this->board = board;
+    this->board = b;
     drawish     = 0;
 
     switch (key1 & ~all_pawns)
@@ -155,7 +155,7 @@ public:
         score = std::max(drawish_score, score);
     }
 
-    flags = this->flags;
+    flags = material_flags;
     return side1 != side_to_move ? -score : score;
   }
 
@@ -422,34 +422,32 @@ public:
 
     if (!same_color(promosq1, lsb(board->bishops(side1))))
     {
-      if (const auto &bbk2 = board->king(side1 ^ 1); promosq1 == h8 && bbk2 & corner_h8 || promosq1 == a8 && bbk2 & corner_a8 || promosq1 == h1 && bbk2 & corner_h1 || promosq1 == a1 && bbk2 & corner_a1)
-      {
+      if (const auto &bbk2 = board->king(side1 ^ 1); (promosq1 == h8 && bbk2 & corner_h8) || (promosq1 == a8 && bbk2 & corner_a8) || (promosq1 == h1 && bbk2 & corner_h1) || (promosq1 == a1 && bbk2 & corner_a1))
         return draw_score();
-      }
     }
     return eval;
   }
 
-  int KxKx(const int eval, uint32_t key1, uint32_t key2, const int pc1, const int pc2, const int side1) {
+  int KxKx(const int eval, [[maybe_unused]] const uint32_t key1, [[maybe_unused]] const uint32_t key2, const int pc1, const int pc2, const int side1) {
     return pc1 == 1 && pc2 == 0 ? KpK(eval, side1) : eval;
   }
 
   int KpK(const int eval, const int side1) {
     const auto pawnsq1  = lsb(board->pawns(side1));
     const auto promosq1 = static_cast<Square>(side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
-    
-    if (const auto &bbk2 = board->king(side1 ^ 1); promosq1 == h8 && bbk2 & corner_h8 || promosq1 == a8 && bbk2 & corner_a8 || promosq1 == h1 && bbk2 & corner_h1 || promosq1 == a1 && bbk2 & corner_a1)
+
+    if (const auto &bbk2 = board->king(side1 ^ 1); (promosq1 == h8 && bbk2 & corner_h8) || (promosq1 == a8 && bbk2 & corner_a8) || (promosq1 == h1 && bbk2 & corner_h1) || (promosq1 == a1 && bbk2 & corner_a1))
       return draw_score();
     return eval;
   }
 
   int draw_score() {
-    flags |= RECOGNIZEDDRAW;
+    material_flags |= RECOGNIZEDDRAW;
     return 0;
   }
 
   int drawish{};
-  int flags{};
+  int material_flags{};
   std::array<uint32_t, 2> key{};
   std::array<int, 2> material_value{};
   const Board *board{};

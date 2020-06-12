@@ -20,7 +20,7 @@ public:
   virtual ~Felis() = default;
 
   int new_game() override {
-    game->new_game(Game::kStartPosition);
+    game->new_game(Game::kStartPosition.data());
     // TODO : test effect of not clearing
     //pawnt->clear();
     //TT.clear();
@@ -70,11 +70,9 @@ public:
     //  workers[i].start(game, transt, pawnt);
   }
 
-  void stop_workers() const {
-    for (const auto &worker : workers)
+  void stop_workers() {
+    for (auto &worker : workers)
       worker.stop();
-    //for (int i = 0; i < num_threads - 1; i++)
-    //  workers[i].stop();
   }
 
   int set_option(const char *name, const char *value) override {
@@ -90,13 +88,13 @@ public:
       } else if (strieq("Threads", name) || strieq("NumThreads", name))
       {
         num_threads = std::clamp(static_cast<int>(strtol(value, nullptr, 10)), 1, 64);
-        _snprintf(buf, sizeof(buf), "Threads:%d", num_threads);
+        _snprintf(buf, sizeof(buf), "Threads:%d", static_cast<int>(num_threads));
         workers.resize(num_threads - 1);
         workers.shrink_to_fit();
       } else if (strieq("UCI_Chess960", name))
       {
         game->chess960 = strieq(value, "true");
-        _snprintf(buf, sizeof(buf), "UCI_Chess960 ", game->chess960 ? on.data() : off.data());
+        _snprintf(buf, sizeof(buf), "UCI_Chess960 %s", (game->chess960 ? on.data() : off.data()));
       } else if (strieq("UCI_Chess960_Arena", name))
       {
         game->chess960 = game->xfen = strieq(value, "true");

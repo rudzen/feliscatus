@@ -139,7 +139,7 @@ namespace attacks
         return king_attacks[sq];
         }
 
-    uint64_t initmagicmoves_occ (const int * squares, const int num_squares, const uint64_t linocc)
+    inline uint64_t initmagicmoves_occ (const std::array<int, 64> &squares, const int num_squares, const uint64_t linocc)
         {
           uint64_t ret = 0;
 
@@ -149,7 +149,7 @@ namespace attacks
         return ret;
         }
 
-    uint64_t initmagicmoves_Rmoves (const int square, const uint64_t occ)
+    inline uint64_t initmagicmoves_Rmoves (const int square, const uint64_t occ)
         {
         uint64_t ret = 0;
         const auto rowbits = static_cast<uint64_t>(0xFF) << 8 * (square / 8);
@@ -197,7 +197,7 @@ namespace attacks
         return ret;
         }
 
-    uint64_t initmagicmoves_Bmoves (const int square, const uint64_t occ)
+    inline uint64_t initmagicmoves_Bmoves (const int square, const uint64_t occ)
         {
         uint64_t ret = 0;
         const auto rowbits = static_cast<uint64_t>(0xFF) << 8 * (square / 8);
@@ -261,11 +261,9 @@ namespace attacks
         return ret;
         }
 
-    void init ()
+    inline void init ()
         {
-        int i;
-
-        int initmagicmoves_bitpos64_database[64] =
+        constexpr std::array<int, 64> initmagicmoves_bitpos64_database
             {
             63, 0, 58, 1, 59, 47, 53, 2,
 			60, 39, 48, 27, 54, 33, 42, 3,
@@ -277,15 +275,16 @@ namespace attacks
 			44, 24, 15, 8, 23, 7, 6, 5
             };
 
-        for ( i = 0; i < 64; i++ )
+        std::array<int, 64> squares{};
+
+        for (const auto i : Squares)
             {
-            int squares[64];
             auto numsquares = 0;
             auto temp = magicmoves_b_mask[i];
 
             while (temp)
                 {
-                  const auto bit = temp & - static_cast<__int64>(temp);
+              const auto bit        = temp & -static_cast<int64_t>(temp);
                 squares[numsquares++] = initmagicmoves_bitpos64_database[bit * 0x07EDD5E59A4E28C2ULL >> 58];
                 temp ^= bit;
                 }
@@ -297,15 +296,16 @@ namespace attacks
                 }
             }
 
-        for ( i = 0; i < 64; i++ )
+        squares.fill(0);
+
+        for (const auto i : Squares)
             {
-            int squares[64];
             auto numsquares = 0;
             auto temp = magicmoves_r_mask[i];
 
             while (temp)
                 {
-                  const auto bit = temp & - static_cast<__int64>(temp);
+                  const auto bit = temp & - static_cast<int64_t>(temp);
                 squares[numsquares++] = initmagicmoves_bitpos64_database[bit * 0x07EDD5E59A4E28C2ULL >> 58];
                 temp ^= bit;
                 }

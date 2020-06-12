@@ -2,8 +2,7 @@
 
 #include <thread>
 
-class Worker {
-public:
+struct Worker {
   void start(Game *master, PawnHash *pawnt) {
     game_ = new Game();
     game_->copy(master);
@@ -13,8 +12,9 @@ public:
     thread_ = std::jthread(&Search::run, search_);
   }
 
-  void stop() const {
+  void stop() {
     search_->stop();
+    thread_.request_stop();
     thread_.join();
     delete search_;
     delete eval_;

@@ -34,8 +34,8 @@ private:
 
   static constexpr int next_to_capture(const uint32_t move) { return is_promotion(move) ? move_promoted(move) : move_piece(move); }
 
-  int see_rec(const int mat_change, const int next_capture, const uint64_t to, const int side_to_move) {
-    uint64_t from;
+  int see_rec(const int mat_change, const int next_capture, const Square to, const int side_to_move) {
+    Square from;
     uint32_t move;
 
     do
@@ -63,7 +63,7 @@ private:
     return (score < 0) ? mat_change + score : mat_change;
   }
 
-  bool lookup_best_attacker(const uint64_t to, const int side, uint64_t &from) {// "Best" == "Lowest piece value"
+  bool lookup_best_attacker(const Square to, const int side, Square &from) {// "Best" == "Lowest piece value"
     switch (current_piece[side])
     {
     case Pawn:

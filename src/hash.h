@@ -19,13 +19,13 @@ struct HashEntry {
 class HashTable {
 public:
   HashTable() = default;
-  explicit HashTable(uint64_t size_mb) {
+  explicit HashTable(uint64_t mb) {
     if constexpr (sizeof(HashEntry) != 16)
     {
       printf("error sizeof(HashEntry) == %d\n", static_cast<int>(sizeof(HashEntry)));
       exit(0);
     }
-    init(size_mb);
+    init(mb);
   }
 
   void init(uint64_t new_size_mb) {
@@ -82,7 +82,7 @@ public:
   }
 
   [[nodiscard]]
-  HashEntry *get_entry_to_replace(const uint64_t key, int depth) const {
+  HashEntry *get_entry_to_replace(const uint64_t key, [[maybe_unused]] int depth) const {
     auto *transp = table + (key & mask);
     const auto k32 = key32(key);
 

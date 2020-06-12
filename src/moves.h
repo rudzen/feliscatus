@@ -11,8 +11,8 @@ struct MoveData {
   int score;
 };
 
-class MoveSorter {
-public:
+struct MoveSorter {
+  virtual ~MoveSorter() = default;
   virtual void sort_move(MoveData &move_data) = 0;
 };
 
@@ -22,8 +22,8 @@ static constexpr int QUEENPROMOTION = 4;
 
 class Moves {
 public:
-  void generate_moves(MoveSorter *sorter = nullptr, const uint32_t transp_move = 0, const int flags = 0) {
-    reset(sorter, transp_move, flags);
+  void generate_moves(MoveSorter *sorter = nullptr, const uint32_t ttMove = 0, const int flags = 0) {
+    reset(sorter, ttMove, flags);
     max_stage = 3;
 
     if ((this->move_flags & STAGES) == 0)
@@ -40,7 +40,7 @@ public:
     stage     = 1;
   }
 
-  void generate_moves(const int piece, const uint64_t &to_squares) {
+  void generate_moves(const int piece, const uint64_t to_squares) {
     reset(nullptr, 0, 0);
 
     for (auto bb = board->piece[piece]; bb; reset_lsb(bb))
@@ -50,7 +50,7 @@ public:
     }
   }
 
-  void generate_pawn_moves(const bool capture, const uint64_t &to_squares) {
+  void generate_pawn_moves(const bool capture, const uint64_t to_squares) {
     reset(nullptr, 0, 0);
 
     if (capture)
@@ -277,7 +277,7 @@ private:
     }
   }
 
-  void add_moves(const int piece, const Square from, const uint64_t &attacks) {
+  void add_moves(const int piece, const Square from, const uint64_t attacks) {
     for (auto bb = attacks; bb; reset_lsb(bb))
     {
       const auto to = lsb(bb);
@@ -285,13 +285,13 @@ private:
     }
   }
 
-  void add_pawn_quiet_moves(const uint64_t &to_squares) {
+  void add_pawn_quiet_moves(const uint64_t to_squares) {
     const auto pushed = pawn_push[side_to_move](board->pawns(side_to_move)) & ~occupied;
     add_pawn_moves(pushed & to_squares, pawn_push_dist, QUIET);
     add_pawn_moves(pawn_push[side_to_move](pushed & rank_3[side_to_move]) & ~occupied & to_squares, pawn_double_push_dist, DOUBLEPUSH);
   }
 
-  void add_pawn_capture_moves(const uint64_t &to_squares) {
+  void add_pawn_capture_moves(const uint64_t to_squares) {
     const auto &pawns = board->pawns(side_to_move);
     add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1] & to_squares, pawn_west_attack_dist, CAPTURE);
     add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1] & to_squares, pawn_east_attack_dist, CAPTURE);
@@ -302,7 +302,7 @@ private:
     }
   }
 
-  void add_pawn_moves(const uint64_t &to_squares, const std::array<int, 2> &dist, const uint32_t type) {
+  void add_pawn_moves(const uint64_t to_squares, const std::array<int, 2> &dist, const uint32_t type) {
     for (auto bb = to_squares; bb; reset_lsb(bb))
     {
       const auto to = lsb(bb);
@@ -356,7 +356,7 @@ private:
   bool can_castle_long() const { return (castle_rights & ooo_allowed_mask[side_to_move]) && is_castle_allowed(ooo_king_to[side_to_move], side_to_move); }
 
   [[nodiscard]]
-  bool is_castle_allowed(const Square to, const int side_to_move) const {
+  bool is_castle_allowed(const Square to, const int stm) const {
     // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
     // The following comments were taken from that source.
 
@@ -365,7 +365,7 @@ private:
 
     const auto rook_to   = rook_castles_to[to];
     const auto rook_from = rook_castles_from[to];
-    const auto king_square   = board->king_square[side_to_move];
+    const auto king_square   = board->king_square[stm];
 
     const auto bb_castle_pieces = bb_square(rook_from) | bb_square(king_square);
 
@@ -379,7 +379,7 @@ private:
 
     for (auto bb = between_bb[king_square][to] | bb_square(to); bb; reset_lsb(bb))
     {
-      if (board->is_attacked(lsb(bb), side_to_move ^ 1))
+      if (board->is_attacked(lsb(bb), stm ^ 1))
         return false;
     }
     return true;

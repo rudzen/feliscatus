@@ -14,10 +14,7 @@ struct perft_result {
 
 class Perft {
 public:
-  Perft(Game *game, const int flags = LEGALMOVES) {
-    this->game  = game;
-    this->flags = flags;
-  }
+  Perft(Game *game, const int flags = LEGALMOVES) : g(game), perft_flags(flags) { }
 
   void perft(const int depth) const {
     std::size_t nps = 0;
@@ -38,26 +35,26 @@ public:
     fmt::print("depth: {}\n", depth);
 
     perft_result result;
-    auto *pos = game->pos;
+    auto *pos = g->pos;
     char buf[12];
     double time = 0;
     double nps  = 0;
 
-    pos->generate_moves(nullptr, 0, flags);
+    pos->generate_moves(nullptr, 0, perft_flags);
 
     while (const MoveData *move_data = pos->next_move())
     {
       const auto *const m = &move_data->move;
 
-      if (!game->make_move(*m, flags == 0 ? true : false, true))
+      if (!g->make_move(*m, perft_flags == 0, true))
         continue;
 
       const auto nodes_start = result.nodes;
       Stopwatch sw;
       perft(depth - 1, result);
       time += sw.millisElapsed() / static_cast<double>(1000);
-      game->unmake_move();
-      fmt::print("move {}: {} nodes\n", game->move_to_string(*m, buf), result.nodes - nodes_start);
+      g->unmake_move();
+      fmt::print("move {}: {} nodes\n", g->move_to_string(*m, buf), result.nodes - nodes_start);
     }
     if (time)
       nps = result.nodes / time;
@@ -74,10 +71,10 @@ private:
       result.nodes++;
       return 0;
     }
-    auto *pos = game->pos;
-    pos->generate_moves(nullptr, 0, flags);
+    auto *pos = g->pos;
+    pos->generate_moves(nullptr, 0, perft_flags);
 
-    if ((flags & STAGES) == 0 && depth == 1)
+    if ((perft_flags & STAGES) == 0 && depth == 1)
       result.nodes += pos->move_count();
     else
     {
@@ -85,18 +82,18 @@ private:
       {
         const auto *m = &move_data->move;
 
-        if (!game->make_move(*m, (flags & LEGALMOVES) ? false : true, true))
+        if (!g->make_move(*m, (perft_flags & LEGALMOVES) ? false : true, true))
           continue;
 
         perft(depth - 1, result);
-        game->unmake_move();
+        g->unmake_move();
       }
     }
     return 0;
   }
 
-  Game *game;
+  Game *g{};
   Search *search{};
   ProtocolListener *app{};
-  int flags;
+  int perft_flags;
 };

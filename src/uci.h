@@ -12,8 +12,8 @@ constexpr int FIXED_DEPTH        = 2;
 constexpr int INFINITE_MOVE_TIME = 4;
 constexpr int PONDER_SEARCH      = 8;
 
-class ProtocolListener {
-public:
+struct ProtocolListener {
+  virtual ~ProtocolListener() = default;
   virtual int new_game()                                                                = 0;
   virtual int set_fen(const char *fen)                                                  = 0;
   virtual int go(int wtime, int btime, int movestogo, int winc, int binc, int movetime) = 0;
@@ -50,7 +50,7 @@ public:
   [[nodiscard]]
   int get_depth() const noexcept { return depth; }
 
-  void set_flags(const int flags) noexcept { this->flags = flags; }
+  void set_flags(const int f) noexcept { this->flags = f; }
 
 protected:
   int flags{};
@@ -61,7 +61,7 @@ protected:
 
 class UCIProtocol final : public Protocol {
 public:
-  UCIProtocol(ProtocolListener *callback, Game *game) : Protocol(callback, game) {}
+  UCIProtocol(ProtocolListener *cb, Game *g) : Protocol(cb, g) {}
 
   static int input_available() {
     //	if (stdin->cnt > 0) return 1;
@@ -115,8 +115,8 @@ public:
     printf("\n");
   }
 
-  void post_info(const int depth, const int selective_depth, const uint64_t node_count, const uint64_t nodes_per_sec, const uint64_t time, const int hash_full) override {
-    printf("info depth %d seldepth %d hashfull %d nodes %llu nps %llu time %llu\n", depth, selective_depth, hash_full, node_count, nodes_per_sec, time);
+  void post_info(const int d, const int selective_depth, const uint64_t node_count, const uint64_t nodes_per_sec, const uint64_t time, const int hash_full) override {
+    printf("info depth %d seldepth %d hashfull %d nodes %llu nps %llu time %llu\n", d, selective_depth, hash_full, node_count, nodes_per_sec, time);
   }
 
   void post_curr_move(const uint32_t curr_move, const int curr_move_number) override {
@@ -125,7 +125,7 @@ public:
     printf("info currmove %s currmovenumber %d\n", game->move_to_string(curr_move, move_buf), curr_move_number);
   }
 
-  void post_pv(const int depth, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const uint64_t time, const int hash_full, const int score, const char *pv, const int node_type) override {
+  void post_pv(const int d, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const uint64_t time, const int hash_full, const int score, const char *pv, const int node_type) override {
     char bound[24];
 
     if (node_type == 4)
@@ -135,7 +135,7 @@ public:
     else
       bound[0] = 0;
 
-    printf("info depth %d seldepth %d score cp %d %s hashfull %d nodes %llu nps %llu time %llu pv %s\n", depth, max_ply, score, bound, hash_full, node_count, nodes_per_second, time, pv);
+    printf("info depth %d seldepth %d score cp %d %s hashfull %d nodes %llu nps %llu time %llu pv %s\n", d, max_ply, score, bound, hash_full, node_count, nodes_per_second, time, pv);
   }
 
   int handle_input(const char *params[], const int num_params) override {
@@ -172,7 +172,7 @@ public:
     return 0;
   }
 
-  int handle_go(const char *params[], const int num_params, ProtocolListener *callback) {
+  int handle_go(const char *params[], const int num_params, ProtocolListener *cb) {
     auto wtime     = 0;
     auto btime     = 0;
     auto winc      = 0;
@@ -221,7 +221,7 @@ public:
       else if (strieq(params[param], "ponder"))
         flags |= PONDER_SEARCH;
     }
-    callback->go(wtime, btime, movestogo, winc, binc, movetime);
+    cb->go(wtime, btime, movestogo, winc, binc, movetime);
     return 0;
   }
 
@@ -235,7 +235,7 @@ public:
 
     if (strieq(params[param], "startpos"))
     {
-      strcpy(fen, Game::kStartPosition);
+      strcpy(fen, Game::kStartPosition.data());
       param++;
     } else if (strieq(params[param], "fen"))
     {
@@ -243,7 +243,8 @@ public:
         return -1;
       param++;
     } else
-    { return -1; }
+      return -1;
+
     callback->set_fen(fen);
 
     if ((num_params > param) && (strieq(params[param++], "moves")))
@@ -267,9 +268,8 @@ public:
     const char *option_value;
 
     if (parse_option_name(param, params, num_params, &option_name) && parse_option_value(param, params, num_params, &option_value))
-    {
       return callback->set_option(option_name, option_value) == 0;
-    }
+
     return false;
   }
 

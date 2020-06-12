@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "piece.h"
+#include "square.h"
 
 constexpr int QUIET      = 1;
 constexpr int DOUBLEPUSH = 2;

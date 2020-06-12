@@ -67,7 +67,7 @@ public:
     }
   }
 
-  ~PGNFileReader() {
+  virtual ~PGNFileReader() {
     delete file_;
     delete[] buffer_;
   }
@@ -241,8 +241,8 @@ protected:
     from_piece_  = -1;
     from_file_   = -1;
     from_rank_   = -1;
-    from_square_ = -1;
-    to_square_   = -1;
+    from_square_ = no_square;
+    to_square_   = no_square;
     promoted_to  = -1;
     pawn_move_   = false;
     castle_move_ = false;
@@ -389,11 +389,11 @@ protected:
 
     if (len > 4 && strncmp(p, "O-O-O", 5) == 0)
     {
-      to_square_ = side_to_move == 0 ? 2 : 58;
+      to_square_ = static_cast<Square>(side_to_move == 0 ? 2 : 58);
       p += 5;
     } else if (len > 2 && strncmp(p, "O-O", 3) == 0)
     {
-      to_square_ = side_to_move == 0 ? 6 : 62;
+      to_square_ = static_cast<Square>(side_to_move == 0 ? 6 : 62);
       p += 3;
     } else
     {
@@ -503,7 +503,7 @@ protected:
   bool start_of_pawn_capture(const char *p) { return (strlen(p) > 1 && p[1] == 'x' && is_file_letter(p, from_file_)); }
 
   [[nodiscard]]
-  static bool start_of_pawn_quiet_move(const char *p, int &to_square) { return strlen(p) > 1 && is_square(p, to_square); }
+  static bool start_of_pawn_quiet_move(const char *p, Square &to_square) { return strlen(p) > 1 && is_square(p, to_square); }
 
   [[nodiscard]]
   static bool is_file_letter(const char *p, int &file) {
@@ -526,10 +526,10 @@ protected:
   }
 
   [[nodiscard]]
-  static bool is_square(const char *p, int &square) {
+  static bool is_square(const char *p, Square &square) {
     if (strlen(p) > 1 && p[0] >= 'a' && p[0] <= 'h' && p[1] >= '0' && p[1] <= '9')
     {
-      square = ((p[1] - '1') << 3) + p[0] - 'a';
+      square = static_cast<Square>(((p[1] - '1') << 3) + p[0] - 'a');
       return true;
     }
     return false;
@@ -904,8 +904,8 @@ protected:
   int from_file_;
   int from_rank_;
   int from_piece_;
-  int from_square_;
-  int to_square_;
+  Square from_square_;
+  Square to_square_;
   int promoted_to;
   int side_to_move;
   int move_number_;

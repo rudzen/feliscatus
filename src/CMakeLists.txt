@@ -1,13 +1,12 @@
 file(GLOB files
-        "*.h"
-		"*.hpp"
         "*.cpp"
+        "*.h"
         )
 
-list(REMOVE_ITEM files "feliscatus.h")
+#list(REMOVE_ITEM files "feliscatus.h")
 list(REMOVE_ITEM files "feliscatus.cpp")
 
-add_library(logic STATIC ${files})
+add_library(logic ${files})
 
 add_executable(Feliscatus feliscatus.cpp)
 

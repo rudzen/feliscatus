@@ -10,12 +10,12 @@ namespace pgn {
 
 class PGNPlayer : public PGNFileReader {
 public:
-  PGNPlayer(bool check_legal = true) : PGNFileReader(), game_(nullptr) { game_ = new Game(); }
+  PGNPlayer([[maybe_unused]] bool check_legal = true) : PGNFileReader(), game_(nullptr) { game_ = new Game(); }
 
   virtual ~PGNPlayer() { delete game_; }
 
   void read_pgn_game() override {
-    game_->new_game(Game::kStartPosition);
+    game_->new_game(Game::kStartPosition.data());
     PGNFileReader::read_pgn_game();
   }
 
@@ -23,9 +23,7 @@ public:
     PGNFileReader::read_tag_pair();
 
     if (strieq(tag_name_, "FEN"))
-    {
       game_->set_fen(std::string(tag_value_).substr(1, strlen(tag_value_) - 2).c_str());
-    }
   }
 
   void read_san_move() override {
@@ -109,7 +107,7 @@ public:
     {
       const uint32_t m = game_->pos->move_list[i].move;
 
-      if ((move_piece(m) != piece) || (static_cast<int>(move_to(m)) != to_square_) || (promoted_to != -1 && move_promoted(m) != promoted) || (capture_ && !is_capture(m))
+      if (move_piece(m) != piece || move_to(m) != to_square_ || (promoted_to != -1 && move_promoted(m) != promoted) || (capture_ && !is_capture(m))
           || (from_file_ != -1 && file_of(move_from(m)) != from_file_) || (from_rank_ != -1 && rank_of(move_from(m)) != from_rank_))
       {
         continue;
