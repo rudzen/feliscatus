@@ -10,6 +10,7 @@
 #include "eval.h"
 #include "see.h"
 #include "hash.h"
+#include "stopwatch.h"
 
 class Search : public MoveSorter {
 public:
@@ -411,7 +412,7 @@ protected:
     if (protocol)
     {
       if (!is_analysing() && !protocol->is_fixed_depth())
-        stop_search = search_depth > 1 && start_time.millisElapsed() > static_cast<unsigned>(search_time);
+        stop_search = search_depth > 1 && start_time.elapsed_milliseconds() > static_cast<unsigned>(search_time);
       else
         protocol->check_input();
     }
@@ -448,7 +449,7 @@ protected:
         _snprintf(&buf[strlen(buf)], sizeof buf - strlen(buf), "%s ", game->move_to_string(pv[ply][i].move, buf2));
 
       if (protocol && verbosity > 0)
-        protocol->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), std::max<int>(1ull, start_time.millisElapsed()), TT.get_load(), score, buf, node_type);
+        protocol->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), std::max<int>(1ull, start_time.elapsed_milliseconds()), TT.get_load(), score, buf, node_type);
     }
   }
 
@@ -463,7 +464,7 @@ protected:
   }
 
   [[nodiscard]] uint64_t nodes_per_second() const {
-    const uint64_t micros = start_time.micros_elapsed_high_res();
+    const uint64_t micros = start_time.elapsed_microseconds();
     return micros == 0 ? node_count * num_workers_ : node_count * num_workers_ * 1000000 / micros;
   }
 
@@ -536,7 +537,7 @@ protected:
         search_time = std::max<int>(0, std::min<int>(search_time, time_left - time_reserve));
       }
       TT.init_search();
-      stop_search = false;
+      stop_search.store(false);
       start_time.start();
     }
     ply            = 0;
@@ -640,7 +641,7 @@ protected:
       if ((pos->move_count() == 1 && search_depth > 9) || (protocol->is_fixed_depth() && protocol->get_depth() == search_depth) || pv[0][0].score == MAXSCORE - 1)
         return true;
 
-      if (!is_analysing() && !protocol->is_fixed_depth() && search_time < start_time.millis_elapsed_high_res() * n_)
+      if (!is_analysing() && !protocol->is_fixed_depth() && search_time < start_time.elapsed_milliseconds() * n_)
         return true;
     }
     return false;

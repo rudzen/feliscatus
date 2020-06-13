@@ -1,7 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include <fmt/format-inl.h>
+#include <fmt/format.h>
+#include "stopwatch.h"
 
 struct perft_result {
   perft_result() { nodes = enpassants = castles = captures = promotions = 0; }
@@ -24,10 +25,10 @@ public:
       perft_result result;
       Stopwatch sw;
       perft(i, result);
-      const auto time = sw.millisElapsed() / static_cast<double>(1000);
+      const auto time = sw.elapsed_milliseconds();
       if (time)
-        nps = result.nodes / time;
-      fmt::print("depth {}: {} nodes, {} secs, {} nps\n", i, result.nodes, time, nps);
+        nps = result.nodes / time * 1000;
+      fmt::print("depth {}: {} nodes, {} ms, {} nps\n", i, result.nodes, time, nps);
     }
   }
 
@@ -52,12 +53,12 @@ public:
       const auto nodes_start = result.nodes;
       Stopwatch sw;
       perft(depth - 1, result);
-      time += sw.millisElapsed() / static_cast<double>(1000);
+      time += sw.elapsed_milliseconds();
       g->unmake_move();
       fmt::print("move {}: {} nodes\n", g->move_to_string(*m, buf), result.nodes - nodes_start);
     }
     if (time)
-      nps = result.nodes / time;
+      nps = result.nodes / time * 1000;
 
     fmt::print("{} nodes, {} nps", result.nodes, nps);
   }
