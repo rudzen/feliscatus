@@ -107,11 +107,6 @@ public:
   int run() {
     setbuf(stdout, nullptr);
 
-    bitboard::init();
-    attacks::init();
-    zobrist::init();
-    squares::init();
-
     game     = std::make_unique<Game>();
     protocol = std::make_unique<UCIProtocol>(this, game.get());
     pawnt    = std::make_unique<PawnHashTable>(8);
