@@ -44,7 +44,7 @@ public:
   }
 
   void clear() {
-    memset(table, 0, size * sizeof(HashEntry));
+    std::memset(table, 0, size * sizeof(HashEntry));
     occupied = 0;
     age      = 0;
   }
@@ -159,7 +159,7 @@ public:
     clear();
   }
 
-  void clear() const { memset(table, 0, size * sizeof(PawnHashEntry)); }
+  void clear() const { std::memset(table, 0, size * sizeof(PawnHashEntry)); }
 
   [[nodiscard]]
   PawnHashEntry *find(const uint64_t key) const {

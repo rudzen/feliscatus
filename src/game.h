@@ -322,7 +322,7 @@ public:
     auto *p = fen;
     char buf[12];
 
-    memset(p, 0, 128);
+    std::memset(p, 0, 128);
 
     for (char r = 7; r >= 0; r--)
     {
@@ -396,10 +396,10 @@ public:
       memcpy(p, "- ", 2);
       p += 2;
     }
-    memset(buf, 0, 12);
+    std::memset(buf, 0, 12);
     memcpy(p, _itoa(pos->reversible_half_move_count, buf, 10), 12);
     p[strlen(p)] = ' ';
-    memset(buf, 0, 12);
+    std::memset(buf, 0, 12);
     memcpy(p + strlen(p), _itoa(static_cast<int>((pos - position_list) / 2 + 1), buf, 10), 12);
     return fen;
   }
