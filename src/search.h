@@ -442,14 +442,16 @@ protected:
     {
       pos->pv_length = pv_length[0];
 
-      char buf[2048], buf2[16];
-      buf[0] = 0;
-
-      for (auto i = plies; i < pv_length[plies]; ++i)
-        _snprintf(&buf[strlen(buf)], sizeof buf - strlen(buf), "%s ", game->move_to_string(pv[plies][i].move, buf2));
-
       if (protocol && verbosity > 0)
+      {
+        char buf[2048], buf2[16];
+        buf[0] = 0;
+
+        for (auto i = plies; i < pv_length[plies]; ++i)
+          _snprintf(&buf[strlen(buf)], sizeof buf - strlen(buf), "%s ", game->move_to_string(pv[plies][i].move, buf2));
+
         protocol->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), std::max<int>(1ull, start_time.elapsed_milliseconds()), TT.get_load(), score, buf, node_type);
+      }
     }
   }
 

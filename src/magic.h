@@ -129,12 +129,12 @@ namespace attacks
         return bishopAttacks(square, occupied) | rookAttacks(square, occupied);
         }
 
-    inline Bitboard knightAttacks(const Square sq)
+    constexpr Bitboard knightAttacks(const Square sq)
         {
         return knight_attacks[sq];
         }
 
-    inline Bitboard kingAttacks(const Square sq)
+    constexpr Bitboard kingAttacks(const Square sq)
         {
         return king_attacks[sq];
         }
