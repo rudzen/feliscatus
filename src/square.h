@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <array>
+#include "types.h"
 
 namespace squares {
 
@@ -66,7 +67,6 @@ constexpr bool same_color(const Square sq1, const Square sq2) {
   return is_dark(sq1) == is_dark(sq2);
 }
 
-
 static void init() {
   for (const auto sq : Squares)
   {
@@ -84,7 +84,7 @@ static void init() {
     }
   }
 
-  for (auto side = 0; side <= 1; side++)
+  for (const auto side : Colors)
   {
     rook_castles_to[flip[side][g1]] = flip[side][f1];
     rook_castles_to[flip[side][c1]] = flip[side][d1];

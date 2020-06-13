@@ -11,10 +11,10 @@ public:
     int score;
     board_.make_move(move);
 
-    if (!board_.is_attacked(board_.king_square[move_side(move)], move_side(move) ^ 1))
+    if (!board_.is_attacked(board_.king_square[move_side(move)], ~move_side(move)))
     {
       init_see_move();
-      score = see_rec(material_change(move), next_to_capture(move), move_to(move), move_side(move) ^ 1);
+      score = see_rec(material_change(move), next_to_capture(move), move_to(move), ~move_side(move));
     } else
       score = SEE_INVALID_SCORE;
 
@@ -24,7 +24,7 @@ public:
 
   int see_last_move(const uint32_t move) {
     init_see_move();
-    return see_rec(material_change(move), next_to_capture(move), move_to(move), move_side(move) ^ 1);
+    return see_rec(material_change(move), next_to_capture(move), move_to(move), ~move_side(move));
   }
 
 private:
@@ -34,7 +34,7 @@ private:
 
   static constexpr int next_to_capture(const uint32_t move) { return is_promotion(move) ? move_promoted(move) : move_piece(move); }
 
-  int see_rec(const int mat_change, const int next_capture, const Square to, const int side_to_move) {
+  int see_rec(const int mat_change, const int next_capture, const Square to, const Color side_to_move) {
     Square from;
     uint32_t move;
 
@@ -50,26 +50,26 @@ private:
 
       board_.make_move(move);
 
-      if (!board_.is_attacked(board_.king_square[side_to_move], side_to_move ^ 1))
+      if (!board_.is_attacked(board_.king_square[side_to_move], ~side_to_move))
         break;
 
       board_.unmake_move(move);
     } while (true);
 
-    const auto score = -see_rec(material_change(move), next_to_capture(move), move_to(move), move_side(move) ^ 1);
+    const auto score = -see_rec(material_change(move), next_to_capture(move), move_to(move), ~move_side(move));
 
     board_.unmake_move(move);
 
     return (score < 0) ? mat_change + score : mat_change;
   }
 
-  bool lookup_best_attacker(const Square to, const int side, Square &from) {// "Best" == "Lowest piece value"
+  bool lookup_best_attacker(const Square to, const Color side, Square &from) {// "Best" == "Lowest piece value"
     switch (current_piece[side])
     {
     case Pawn:
-      if (current_piece_bitboard[side] & pawn_captures[to | ((side ^ 1) << 6)])
+      if (current_piece_bitboard[side] & pawn_captures[to | ((~side) << 6)])
       {
-        from = lsb(current_piece_bitboard[side] & pawn_captures[to | ((side ^ 1) << 6)]);
+        from = lsb(current_piece_bitboard[side] & pawn_captures[to | ((~side) << 6)]);
         current_piece_bitboard[side] &= ~bb_square(from);
         return true;
       }
@@ -143,7 +143,7 @@ protected:
     current_piece_bitboard[1] = board_.piece[Pawn | 8];
   }
 
-  std::array<uint64_t, 2> current_piece_bitboard{};
+  std::array<Bitboard, 2> current_piece_bitboard{};
   std::array<int, 2> current_piece{};
   Board &board_;
 

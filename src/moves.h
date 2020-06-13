@@ -40,7 +40,7 @@ public:
     stage     = 1;
   }
 
-  void generate_moves(const int piece, const uint64_t to_squares) {
+  void generate_moves(const int piece, const Bitboard to_squares) {
     reset(nullptr, 0, 0);
 
     for (auto bb = board->piece[piece]; bb; reset_lsb(bb))
@@ -50,7 +50,7 @@ public:
     }
   }
 
-  void generate_pawn_moves(const bool capture, const uint64_t to_squares) {
+  void generate_pawn_moves(const bool capture, const Bitboard to_squares) {
     reset(nullptr, 0, 0);
 
     if (capture)
@@ -124,9 +124,9 @@ public:
 
     if (is_capture(m))
     {
-      const auto &bb_to = bb_square(move_to(m));
+      const auto bb_to = bb_square(move_to(m));
 
-      if ((occupied_by_side[move_side(m) ^ 1] & bb_to) == 0)
+      if ((occupied_by_side[~move_side(m)] & bb_to) == 0)
         return false;
 
       if ((bb_piece[moveCaptured(m)] & bb_to) == 0)
@@ -184,11 +184,11 @@ private:
   }
 
   void generate_captures_and_promotions() {
-    add_moves(occupied_by_side[side_to_move ^ 1]);
+    add_moves(occupied_by_side[~side_to_move]);
     const auto &pawns = board->pawns(side_to_move);
     add_pawn_moves(pawn_push[side_to_move](pawns & rank_7[side_to_move]) & ~occupied, pawn_push_dist, QUIET);
-    add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1], pawn_west_attack_dist, CAPTURE);
-    add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1], pawn_east_attack_dist, CAPTURE);
+    add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & occupied_by_side[~side_to_move], pawn_west_attack_dist, CAPTURE);
+    add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & occupied_by_side[~side_to_move], pawn_east_attack_dist, CAPTURE);
     if (en_passant_square != no_square)
     {
       add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & bb_square(en_passant_square), pawn_west_attack_dist, EPCAPTURE);
@@ -220,7 +220,7 @@ private:
     if (type & CAPTURE)
       captured = board->get_piece(to);
     else if (type & EPCAPTURE)
-      captured = Pawn | ((side_to_move ^ 1) << 3);
+      captured = Pawn | ((~side_to_move) << 3);
     else
       captured = 0;
 
@@ -241,8 +241,8 @@ private:
       move_data.score = 0;
   }
 
-  void add_moves(const uint64_t &to_squares) {
-    uint64_t bb;
+  void add_moves(const Bitboard to_squares) {
+    Bitboard bb;
     const auto offset = side_to_move << 3;
     Square from;
 
@@ -277,7 +277,7 @@ private:
     }
   }
 
-  void add_moves(const int piece, const Square from, const uint64_t attacks) {
+  void add_moves(const int piece, const Square from, const Bitboard attacks) {
     for (auto bb = attacks; bb; reset_lsb(bb))
     {
       const auto to = lsb(bb);
@@ -285,16 +285,16 @@ private:
     }
   }
 
-  void add_pawn_quiet_moves(const uint64_t to_squares) {
+  void add_pawn_quiet_moves(const Bitboard to_squares) {
     const auto pushed = pawn_push[side_to_move](board->pawns(side_to_move)) & ~occupied;
     add_pawn_moves(pushed & to_squares, pawn_push_dist, QUIET);
     add_pawn_moves(pawn_push[side_to_move](pushed & rank_3[side_to_move]) & ~occupied & to_squares, pawn_double_push_dist, DOUBLEPUSH);
   }
 
-  void add_pawn_capture_moves(const uint64_t to_squares) {
+  void add_pawn_capture_moves(const Bitboard to_squares) {
     const auto &pawns = board->pawns(side_to_move);
-    add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1] & to_squares, pawn_west_attack_dist, CAPTURE);
-    add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & occupied_by_side[side_to_move ^ 1] & to_squares, pawn_east_attack_dist, CAPTURE);
+    add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & occupied_by_side[~side_to_move] & to_squares, pawn_west_attack_dist, CAPTURE);
+    add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & occupied_by_side[~side_to_move] & to_squares, pawn_east_attack_dist, CAPTURE);
     if (en_passant_square != no_square)
     {
       add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & bb_square(en_passant_square) & to_squares, pawn_west_attack_dist, EPCAPTURE);
@@ -302,7 +302,7 @@ private:
     }
   }
 
-  void add_pawn_moves(const uint64_t to_squares, const std::array<int, 2> &dist, const uint32_t type) {
+  void add_pawn_moves(const Bitboard to_squares, const std::array<int, 2> &dist, const uint32_t type) {
     for (auto bb = to_squares; bb; reset_lsb(bb))
     {
       const auto to = lsb(bb);
@@ -328,7 +328,7 @@ private:
   [[nodiscard]]
   bool gives_check(const uint32_t m) const {
     board->make_move(m);
-    const bool is_attacked = board->is_attacked(board->king_square[side_to_move ^ 1], side_to_move);
+    const bool is_attacked = board->is_attacked(board->king_square[~side_to_move], side_to_move);
     board->unmake_move(m);
     return is_attacked;
   }
@@ -339,7 +339,7 @@ private:
     {
       board->make_move(m);
 
-      if (board->is_attacked(board->king_square[side_to_move], side_to_move ^ 1))
+      if (board->is_attacked(board->king_square[side_to_move], ~side_to_move))
       {
         board->unmake_move(m);
         return false;
@@ -356,16 +356,16 @@ private:
   bool can_castle_long() const { return (castle_rights & ooo_allowed_mask[side_to_move]) && is_castle_allowed(ooo_king_to[side_to_move], side_to_move); }
 
   [[nodiscard]]
-  bool is_castle_allowed(const Square to, const int stm) const {
+  bool is_castle_allowed(const Square to, const Color stm) const {
     // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
     // The following comments were taken from that source.
 
     // Check that the smallest back rank interval containing the king, the castling rook, and their
     // destination squares, contains no pieces other than the king and castling rook.
 
-    const auto rook_to   = rook_castles_to[to];
-    const auto rook_from = rook_castles_from[to];
-    const auto king_square   = board->king_square[stm];
+    const auto rook_to     = rook_castles_to[to];
+    const auto rook_from   = rook_castles_from[to];
+    const auto king_square = board->king_square[stm];
 
     const auto bb_castle_pieces = bb_square(rook_from) | bb_square(king_square);
 
@@ -379,14 +379,14 @@ private:
 
     for (auto bb = between_bb[king_square][to] | bb_square(to); bb; reset_lsb(bb))
     {
-      if (board->is_attacked(lsb(bb), stm ^ 1))
+      if (board->is_attacked(lsb(bb), ~stm))
         return false;
     }
     return true;
   }
 
 public:
-  int side_to_move{};
+  Color side_to_move{};
   int castle_rights{};
   bool in_check{};
   Square en_passant_square{};
