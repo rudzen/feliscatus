@@ -66,7 +66,7 @@ public:
         beta  = std::min<int>(MAXSCORE, pv[0][0].score + 20);
       } catch (const int)
       {
-        while (ply)
+        while (plies)
         {
           unmake_move();
         }
@@ -89,7 +89,7 @@ protected:
     if (!is_pv && is_hash_score_valid(depth, alpha, beta))
       return search_node_score(pos->transp_score);
 
-    if (ply >= MAXDEPTH - 1)
+    if (plies >= MAXDEPTH - 1)
       return search_node_score(pos->eval_score);
 
     if (!is_pv && should_try_null_move(depth, beta))
@@ -132,7 +132,7 @@ protected:
       {
         ++move_count;
 
-        if (protocol && ply == 1 && search_depth >= 20 && (search_time > 5000 || is_analysing()))
+        if (protocol && plies == 1 && search_depth >= 20 && (search_time > 5000 || is_analysing()))
         {
           protocol->post_curr_move(move_data->move, move_count);
         }
@@ -170,7 +170,7 @@ protected:
 
             if (score >= beta)
             {
-              if (ply == 0)
+              if (plies == 0)
                 update_pv(best_move, best_score, depth, BETA);
 
               break;
@@ -186,7 +186,7 @@ protected:
     }
 
     if (move_count == 0)
-      return search_node_score(pos->in_check ? -MAXSCORE + ply : draw_score());
+      return search_node_score(pos->in_check ? -MAXSCORE + plies : draw_score());
     else if (pos->reversible_half_move_count >= 100)
       return search_node_score(draw_score());
 
@@ -272,7 +272,7 @@ protected:
         return depth;
     }
 
-    if (!is_queen_promotion(m) && !is_capture(m) && !is_killer_move(m, ply - 1) && move_count >= (is_pv ? 5 : 3))
+    if (!is_queen_promotion(m) && !is_capture(m) && !is_killer_move(m, plies - 1) && move_count >= (is_pv ? 5 : 3))
     {
       auto next_depth = depth - 2 - depth / 8 - (move_count - 6) / 10;
 
@@ -319,7 +319,7 @@ protected:
              : search_node_score(pos->eval_score);
     }
 
-    if (ply >= MAXDEPTH - 1 || qs_ply > 6)
+    if (plies >= MAXDEPTH - 1 || qs_ply > 6)
       return search_node_score(pos->eval_score);
 
     auto best_move  = 0;
@@ -383,15 +383,15 @@ protected:
     if (game->make_move(m, true, true))
     {
       pos = game->pos;
-      ++ply;
-      pv_length[ply] = ply;
+      ++plies;
+      pv_length[plies] = plies;
       ++node_count;
 
       check_sometimes();
 
       get_hash_and_evaluate(-beta, -alpha);
 
-      max_ply = std::max<int>(max_ply, ply);
+      max_ply = std::max<int>(max_ply, plies);
       return true;
     }
     return false;
@@ -400,7 +400,7 @@ protected:
   void unmake_move() {
     game->unmake_move();
     pos = game->pos;
-    ply--;
+    plies--;
   }
 
   void check_sometimes() {
@@ -424,7 +424,7 @@ protected:
   [[nodiscard]] int is_analysing() const { return protocol ? protocol->is_analysing() : true; }
 
   void update_pv(const uint32_t move, const int score, const int depth, const HashNodeType node_type) {
-    auto *const entry = &pv[ply][ply];
+    auto *const entry = &pv[plies][plies];
 
     entry->score     = score;
     entry->depth     = depth;
@@ -433,20 +433,20 @@ protected:
     entry->node_type = node_type;
     entry->eval      = pos->eval_score;
 
-    pv_length[ply] = pv_length[ply + 1];
+    pv_length[plies] = pv_length[plies + 1];
 
-    for (auto i = ply + 1; i < pv_length[ply]; ++i)
-      pv[ply][i] = pv[ply + 1][i];
+    for (auto i = plies + 1; i < pv_length[plies]; ++i)
+      pv[plies][i] = pv[plies + 1][i];
 
-    if (ply == 0)
+    if (plies == 0)
     {
       pos->pv_length = pv_length[0];
 
       char buf[2048], buf2[16];
       buf[0] = 0;
 
-      for (auto i = ply; i < pv_length[ply]; ++i)
-        _snprintf(&buf[strlen(buf)], sizeof buf - strlen(buf), "%s ", game->move_to_string(pv[ply][i].move, buf2));
+      for (auto i = plies; i < pv_length[plies]; ++i)
+        _snprintf(&buf[strlen(buf)], sizeof buf - strlen(buf), "%s ", game->move_to_string(pv[plies][i].move, buf2));
 
       if (protocol && verbosity > 0)
         protocol->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), std::max<int>(1ull, start_time.elapsed_milliseconds()), TT.get_load(), score, buf, node_type);
@@ -483,11 +483,11 @@ protected:
     // Same move can be stored twice for a ply.
     if (!is_capture(move) && !is_promotion(move))
     {
-      if (move != killer_moves[0][ply])
+      if (move != killer_moves[0][plies])
       {
-        killer_moves[2][ply] = killer_moves[1][ply];
-        killer_moves[1][ply] = killer_moves[0][ply];
-        killer_moves[0][ply] = move;
+        killer_moves[2][plies] = killer_moves[1][plies];
+        killer_moves[1][plies] = killer_moves[0][plies];
+        killer_moves[0][plies] = move;
       }
     }
   }
@@ -540,15 +540,15 @@ protected:
       stop_search.store(false);
       start_time.start();
     }
-    ply            = 0;
+    plies            = 0;
     search_depth   = 0;
     node_count     = 1;
     max_ply        = 0;
     pos->pv_length = 0;
-    memset(pv, 0, sizeof pv);
-    memset(killer_moves, 0, sizeof killer_moves);
-    memset(history_scores, 0, sizeof history_scores);
-    memset(counter_moves, 0, sizeof counter_moves);
+    std::memset(pv, 0, sizeof pv);
+    std::memset(killer_moves, 0, sizeof killer_moves);
+    std::memset(history_scores, 0, sizeof history_scores);
+    std::memset(counter_moves, 0, sizeof counter_moves);
   }
 
   void sort_move(MoveData &move_data) override {
@@ -574,11 +574,11 @@ protected:
         move_data.score = -100000 + value_captured * 20 - value_piece;
     } else if (is_promotion(m))
       move_data.score = PROMOTIONMOVESCORE + piece_value(move_promoted(m));
-    else if (m == killer_moves[0][ply])
+    else if (m == killer_moves[0][plies])
       move_data.score = KILLERMOVESCORE + 20;
-    else if (m == killer_moves[1][ply])
+    else if (m == killer_moves[1][plies])
       move_data.score = KILLERMOVESCORE + 19;
-    else if (m == killer_moves[2][ply])
+    else if (m == killer_moves[2][plies])
       move_data.score = KILLERMOVESCORE + 18;
     else if (pos->last_move && counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] == m)
       move_data.score = 60000;
@@ -598,7 +598,7 @@ protected:
   int draw_score() const { return drawScore_[pos->side_to_move]; }
 
   void store_hash(const int depth, int score, const HashNodeType node_type, const uint32_t move) const {
-    score = codec_t_table_score(score, ply);
+    score = codec_t_table_score(score, plies);
 
     if (node_type == BETA)
       pos->eval_score = std::max<int>(pos->eval_score, score);
@@ -618,8 +618,8 @@ protected:
       pos->transp_move = 0;
       return;
     }
-    pos->transp_score = codec_t_table_score(pos->transposition->score, -ply);
-    pos->eval_score   = codec_t_table_score(pos->transposition->eval, -ply);
+    pos->transp_score = codec_t_table_score(pos->transposition->score, -plies);
+    pos->eval_score   = codec_t_table_score(pos->transposition->eval, -plies);
     pos->transp_depth = pos->transposition->depth;
     pos->transp_type  = static_cast<HashNodeType>(pos->transposition->flags & 7);
     pos->transp_move  = pos->transposition->move;
@@ -661,7 +661,7 @@ public:
   };
 
   double n_{};
-  int ply{};
+  int plies{};
   int max_ply{};
   PVEntry pv[128][128]{};
   int pv_length[128]{};
