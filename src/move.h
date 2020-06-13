@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "piece.h"
 #include "square.h"
+#include "types.h"
 
 constexpr int QUIET      = 1;
 constexpr int DOUBLEPUSH = 2;
@@ -63,8 +64,8 @@ constexpr int move_piece_type(const uint32_t move) {
   return move >> 26 & 7;
 }
 
-constexpr int move_side(const uint32_t m) {
-  return m >> 29 & 1;
+constexpr Color move_side(const uint32_t m) {
+  return static_cast<Color>(m >> 29 & 1);
 }
 
 constexpr int side_mask(const uint32_t m) {

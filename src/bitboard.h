@@ -74,7 +74,7 @@ constexpr Bitboard south_east_one(const Bitboard bb) {
   return (bb & ~HFILE_BB) >> 7;
 }
 
-constexpr Bitboard south_west_one(const uint64_t bb) {
+constexpr Bitboard south_west_one(const Bitboard bb) {
   return (bb & ~AFILE_BB) >> 9;
 }
 
@@ -125,12 +125,14 @@ inline void init() {
 
   for (const auto sq : Squares)
   {
-    pawn_front_span[0][sq]        = north_fill(north_one(bb_square(sq)));
-    pawn_front_span[1][sq]        = south_fill(south_one(bb_square(sq)));
-    pawn_east_attack_span[0][sq]  = north_fill(north_east_one(bb_square(sq)));
-    pawn_east_attack_span[1][sq]  = south_fill(south_east_one(bb_square(sq)));
-    pawn_west_attack_span[0][sq]  = north_fill(north_west_one(bb_square(sq)));
-    pawn_west_attack_span[1][sq]  = south_fill(south_west_one(bb_square(sq)));
+    const auto bbsq = bb_square(sq);
+
+    pawn_front_span[0][sq]        = north_fill(north_one(bbsq));
+    pawn_front_span[1][sq]        = south_fill(south_one(bbsq));
+    pawn_east_attack_span[0][sq]  = north_fill(north_east_one(bbsq));
+    pawn_east_attack_span[1][sq]  = south_fill(south_east_one(bbsq));
+    pawn_west_attack_span[0][sq]  = north_fill(north_west_one(bbsq));
+    pawn_west_attack_span[1][sq]  = south_fill(south_west_one(bbsq));
     passed_pawn_front_span[0][sq] = pawn_east_attack_span[0][sq] | pawn_front_span[0][sq] | pawn_west_attack_span[0][sq];
     passed_pawn_front_span[1][sq] = pawn_east_attack_span[1][sq] | pawn_front_span[1][sq] | pawn_west_attack_span[1][sq];
 
@@ -145,28 +147,28 @@ inline void init() {
     init_between_bitboards(sq, west_one, -1);
     init_between_bitboards(sq, north_west_one, 7);
 
-    pawn_captures[sq] = (bb_square(sq) & ~HFILE_BB) << 9;
-    pawn_captures[sq] |= (bb_square(sq) & ~AFILE_BB) << 7;
-    pawn_captures[sq + 64] = (bb_square(sq) & ~AFILE_BB) >> 9;
-    pawn_captures[sq + 64] |= (bb_square(sq) & ~HFILE_BB) >> 7;
+    pawn_captures[sq] = (bbsq & ~HFILE_BB) << 9;
+    pawn_captures[sq] |= (bbsq & ~AFILE_BB) << 7;
+    pawn_captures[sq + 64] = (bbsq & ~AFILE_BB) >> 9;
+    pawn_captures[sq + 64] |= (bbsq & ~HFILE_BB) >> 7;
 
-    knight_attacks[sq] = (bb_square(sq) & ~(AFILE_BB | BFILE_BB)) << 6;
-    knight_attacks[sq] |= (bb_square(sq) & ~AFILE_BB) << 15;
-    knight_attacks[sq] |= (bb_square(sq) & ~HFILE_BB) << 17;
-    knight_attacks[sq] |= (bb_square(sq) & ~(GFILE_BB | HFILE_BB)) << 10;
-    knight_attacks[sq] |= (bb_square(sq) & ~(GFILE_BB | HFILE_BB)) >> 6;
-    knight_attacks[sq] |= (bb_square(sq) & ~HFILE_BB) >> 15;
-    knight_attacks[sq] |= (bb_square(sq) & ~AFILE_BB) >> 17;
-    knight_attacks[sq] |= (bb_square(sq) & ~(AFILE_BB | BFILE_BB)) >> 10;
+    knight_attacks[sq] = (bbsq & ~(AFILE_BB | BFILE_BB)) << 6;
+    knight_attacks[sq] |= (bbsq & ~AFILE_BB) << 15;
+    knight_attacks[sq] |= (bbsq & ~HFILE_BB) << 17;
+    knight_attacks[sq] |= (bbsq & ~(GFILE_BB | HFILE_BB)) << 10;
+    knight_attacks[sq] |= (bbsq & ~(GFILE_BB | HFILE_BB)) >> 6;
+    knight_attacks[sq] |= (bbsq & ~HFILE_BB) >> 15;
+    knight_attacks[sq] |= (bbsq & ~AFILE_BB) >> 17;
+    knight_attacks[sq] |= (bbsq & ~(AFILE_BB | BFILE_BB)) >> 10;
 
-    king_attacks[sq] = (bb_square(sq) & ~AFILE_BB) >> 1;
-    king_attacks[sq] |= (bb_square(sq) & ~AFILE_BB) << 7;
-    king_attacks[sq] |= bb_square(sq) << 8;
-    king_attacks[sq] |= (bb_square(sq) & ~HFILE_BB) << 9;
-    king_attacks[sq] |= (bb_square(sq) & ~HFILE_BB) << 1;
-    king_attacks[sq] |= (bb_square(sq) & ~HFILE_BB) >> 7;
-    king_attacks[sq] |= bb_square(sq) >> 8;
-    king_attacks[sq] |= (bb_square(sq) & ~AFILE_BB) >> 9;
+    king_attacks[sq] = (bbsq & ~AFILE_BB) >> 1;
+    king_attacks[sq] |= (bbsq & ~AFILE_BB) << 7;
+    king_attacks[sq] |= bbsq << 8;
+    king_attacks[sq] |= (bbsq & ~HFILE_BB) << 9;
+    king_attacks[sq] |= (bbsq & ~HFILE_BB) << 1;
+    king_attacks[sq] |= (bbsq & ~HFILE_BB) >> 7;
+    king_attacks[sq] |= bbsq >> 8;
+    king_attacks[sq] |= (bbsq & ~AFILE_BB) >> 9;
   }
   corner_a1 = bb_square(a1) | bb_square(b1) | bb_square(a2) | bb_square(b2);
   corner_a8 = bb_square(a8) | bb_square(b8) | bb_square(a7) | bb_square(b7);

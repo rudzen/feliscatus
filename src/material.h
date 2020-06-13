@@ -64,29 +64,29 @@ public:
 
   int pawn_count() { return (key[0] & 15) + (key[1] & 15); }
 
-  int pawn_count(const int side) { return static_cast<int>(key[side] & 15); }
+  int pawn_count(const Color side) { return static_cast<int>(key[side] & 15); }
 
-  int evaluate(int &flags, const int eval, const int side_to_move, const Board *b) {
+  int evaluate(int &flags, const int eval, const Color side_to_move, const Board *b) {
     material_flags = 0;
     uint32_t key1;
     uint32_t key2;
     int score;
-    int side1;
+    Color side1;
 
-    if (key[side_to_move] >= key[side_to_move ^ 1])
+    if (key[side_to_move] >= key[~side_to_move])
     {
       key1  = key[side_to_move];
-      key2  = key[side_to_move ^ 1];
+      key2  = key[~side_to_move];
       side1 = side_to_move;
       score = eval;
     } else
     {
-      key1  = key[side_to_move ^ 1];
+      key1  = key[~side_to_move];
       key2  = key[side_to_move];
-      side1 = side_to_move ^ 1;
+      side1 = ~side_to_move;
       score = -eval;
     }
-    const int side2 = side1 ^ 1;
+    const Color side2 = ~side1;
     const int pc1   = pawn_count(side1);
     const int pc2   = pawn_count(side2);
 
@@ -259,7 +259,7 @@ public:
     return eval;
   }
 
-  int KBNKX(const int eval, const uint32_t key2, const int pc1, const int pc2, const int side1) {
+  int KBNKX(const int eval, const uint32_t key2, const int pc1, const int pc2, const Color side1) {
     switch (key2 & ~all_pawns)
     {
     case k:
@@ -284,8 +284,8 @@ public:
   }
 
   [[nodiscard]]
-  int KBNK(const int eval, const int side1) const {
-    const int loosing_kingsq     = board->king_square[side1 ^ 1];
+  int KBNK(const int eval, const Color side1) const {
+    const int loosing_kingsq     = board->king_square[~side1];
     int a_winning_cornersq       = a8;
     int another_winning_cornersq = h1;
 
@@ -297,7 +297,7 @@ public:
     return eval + 175 - std::min(25 * dist[a_winning_cornersq][loosing_kingsq], 25 * dist[another_winning_cornersq][loosing_kingsq]);
   }
 
-  int KBKX(const int eval, const uint32_t key1, const uint32_t key2, const int pc1, const int pc2, const int side1, const int side2, const int side_to_move) {
+  int KBKX(const int eval, const uint32_t key1, const uint32_t key2, const int pc1, const int pc2, const Color side1, const Color side2, const Color side_to_move) {
     if (pc1 > 0)
       return KBxKX(eval, key1, key2, side1);
 
@@ -309,14 +309,12 @@ public:
         return draw_score();
       } else if (pc1 == 0 && pc2 == 1)
       {
-        const uint64_t &bishopbb = board->bishops(side1);
+        const Bitboard bishopbb = board->bishops(side1);
 
         if (side1 == side_to_move || !board->is_attacked(lsb(board->bishops(side1)), side2))
         {
           if (pawn_front_span[side2][lsb(board->pawns(side2))] & (bishopAttacks(lsb(bishopbb), board->occupied) | bishopbb))
-          {
             return draw_score();
-          }
         }
       }
       break;
@@ -334,7 +332,7 @@ public:
     return std::min(0, eval);
   }
 
-  int KNKX(const int eval, const uint32_t key2, const int pc1, const int pc2, const int side1, const int side2, const int side_to_move) {
+  int KNKX(const int eval, const uint32_t key2, const int pc1, const int pc2, const Color side1, const Color side2, const Color side_to_move) {
     switch (key2 & ~all_pawns)
     {
     case k: {
@@ -343,7 +341,7 @@ public:
 
       if (pc1 == 0 && pc2 == 1)
       {
-        const uint64_t &knightbb = board->knights(side1);
+        const Bitboard knightbb = board->knights(side1);
 
         if (side1 == side_to_move || !board->is_attacked(lsb(board->knights(side1)), side2))
         {
@@ -378,21 +376,19 @@ public:
     return pc1 == 0 ? std::min(0, eval) : eval;
   }
 
-  int KKx(const int eval, const uint32_t key1, const uint32_t key2, const int pc1, const int pc2, const int side1) {
+  int KKx(const int eval, const uint32_t key1, const uint32_t key2, const int pc1, const int pc2, const Color side1) {
     if (pc1 + pc2 == 0)
-    {
       return draw_score();
-    }
     if (pc2 > 0)
-    { return KxKx(eval, key1, key2, pc1, pc2, side1); }
+      return KxKx(eval, key1, key2, pc1, pc2, side1);
     return eval;
   }
 
-  int KBxKX(const int eval, const uint32_t key1, const uint32_t key2, const int side1) {
+  int KBxKX(const int eval, const uint32_t key1, const uint32_t key2, const Color side1) {
     switch (key2 & ~all_pawns)
     {
     case kb:
-      if (!same_color(lsb(board->bishops(0)), lsb(board->bishops(1))) && abs(pawn_count(0) - pawn_count(1)) <= 2)
+      if (!same_color(lsb(board->bishops(WHITE)), lsb(board->bishops(BLACK))) && abs(pawn_count(WHITE) - pawn_count(BLACK)) <= 2)
       {
         return eval / 2;
       }
@@ -407,7 +403,7 @@ public:
     return eval;
   }
 
-  int KBxKx(const int eval, const uint32_t key1, const uint32_t key2, const int side1) {
+  int KBxKx(const int eval, const uint32_t key1, const uint32_t key2, const Color side1) {
     if ((key1 & all_pawns) == 1 && (key2 & all_pawns) == 0)
     {
       return KBpK(eval, side1);
@@ -416,27 +412,27 @@ public:
   }
 
   // fen 8/6k1/8/8/3K4/5B1P/8/8 w - - 0 1
-  int KBpK(const int eval, const int side1) {
+  int KBpK(const int eval, const Color side1) {
     const auto pawnsq1    = lsb(board->pawns(side1));
-    const auto promosq1 = static_cast<Square>(side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
+    const auto promosq1 = static_cast<Square>(side1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
 
     if (!same_color(promosq1, lsb(board->bishops(side1))))
     {
-      if (const auto &bbk2 = board->king(side1 ^ 1); (promosq1 == h8 && bbk2 & corner_h8) || (promosq1 == a8 && bbk2 & corner_a8) || (promosq1 == h1 && bbk2 & corner_h1) || (promosq1 == a1 && bbk2 & corner_a1))
+      if (const auto &bbk2 = board->king(~side1); (promosq1 == h8 && bbk2 & corner_h8) || (promosq1 == a8 && bbk2 & corner_a8) || (promosq1 == h1 && bbk2 & corner_h1) || (promosq1 == a1 && bbk2 & corner_a1))
         return draw_score();
     }
     return eval;
   }
 
-  int KxKx(const int eval, [[maybe_unused]] const uint32_t key1, [[maybe_unused]] const uint32_t key2, const int pc1, const int pc2, const int side1) {
+  int KxKx(const int eval, [[maybe_unused]] const uint32_t key1, [[maybe_unused]] const uint32_t key2, const int pc1, const int pc2, const Color side1) {
     return pc1 == 1 && pc2 == 0 ? KpK(eval, side1) : eval;
   }
 
-  int KpK(const int eval, const int side1) {
+  int KpK(const int eval, const Color side1) {
     const auto pawnsq1  = lsb(board->pawns(side1));
-    const auto promosq1 = static_cast<Square>(side1 == 1 ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
+    const auto promosq1 = static_cast<Square>(side1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
 
-    if (const auto &bbk2 = board->king(side1 ^ 1); (promosq1 == h8 && bbk2 & corner_h8) || (promosq1 == a8 && bbk2 & corner_a8) || (promosq1 == h1 && bbk2 & corner_h1) || (promosq1 == a1 && bbk2 & corner_a1))
+    if (const auto &bbk2 = board->king(~side1); (promosq1 == h8 && bbk2 & corner_h8) || (promosq1 == a8 && bbk2 & corner_a8) || (promosq1 == h1 && bbk2 & corner_h1) || (promosq1 == a1 && bbk2 & corner_a1))
       return draw_score();
     return eval;
   }

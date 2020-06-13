@@ -13,33 +13,33 @@ public:
   int evaluate(const int alpha, const int beta) {
     init_evaluate();
 
-    eval_material<0>();
-    eval_material<1>();
+    eval_material<WHITE>();
+    eval_material<BLACK>();
 
     const auto mat_eval    = poseval[0] - poseval[1];
     const auto lazy_margin = 500;
 
-    if (const auto lazy_eval = pos->side_to_move == 0 ? mat_eval : -mat_eval; lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
+    if (const auto lazy_eval = pos->side_to_move == WHITE ? mat_eval : -mat_eval; lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
       return pos->material.evaluate(pos->flags, lazy_eval, pos->side_to_move, &game_.board);
 
     // Pass 1.
     eval_pawns_both_sides();
-    eval_knights<0>();
-    eval_knights<1>();
-    eval_bishops<0>();
-    eval_bishops<1>();
-    eval_rooks<0>();
-    eval_rooks<1>();
-    eval_queens<0>();
-    eval_queens<1>();
-    eval_king<0>();
-    eval_king<1>();
+    eval_knights<WHITE>();
+    eval_knights<BLACK>();
+    eval_bishops<WHITE>();
+    eval_bishops<BLACK>();
+    eval_rooks<WHITE>();
+    eval_rooks<BLACK>();
+    eval_queens<WHITE>();
+    eval_queens<BLACK>();
+    eval_king<WHITE>();
+    eval_king<BLACK>();
 
     // Pass 2.
-    eval_passed_pawns<0>();
-    eval_passed_pawns<1>();
-    eval_king_attack<0>();
-    eval_king_attack<1>();
+    eval_passed_pawns<WHITE>();
+    eval_passed_pawns<BLACK>();
+    eval_king_attack<WHITE>();
+    eval_king_attack<BLACK>();
 
     const auto stage = (pos->material.value() - pos->material.pawn_value()) / static_cast<double>(Material::max_value_without_pawns);
 
@@ -68,20 +68,22 @@ protected:
 
         passed_pawn_files.fill(0);
 
-        eval_pawns<0>();
-        eval_pawns<1>();
+        eval_pawns<WHITE>();
+        eval_pawns<BLACK>();
 
-        pawnp = pawnt->insert(pos->pawn_structure_key,  pawn_eval_mg[0] - pawn_eval_mg[1], pawn_eval_eg[0] - pawn_eval_eg[1], passed_pawn_files);
+        pawnp = pawnt->insert(pos->pawn_structure_key,  pawn_eval_mg[WHITE] - pawn_eval_mg[BLACK], pawn_eval_eg[WHITE] - pawn_eval_eg[BLACK], passed_pawn_files);
       }
       poseval_mg[0] += pawnp->eval_mg;
       poseval_eg[0] += pawnp->eval_eg;
     }
   }
 
-  template<int Us>
+  template<Color Us>
   void eval_pawns() {
-    auto score_mg = 0;
-    auto score_eg = 0;
+
+    constexpr auto Them = ~Us;
+    auto score_mg       = 0;
+    auto score_eg       = 0;
 
     for (auto bb = pawns(Us); bb;)
     {
@@ -90,7 +92,7 @@ protected:
       if (game_.board.is_pawn_passed(sq, Us))
         passed_pawn_files[Us] |= 1 << file_of(sq);
 
-      const auto open_file = !game_.board.is_piece_on_file(Pawn, sq, Us ^ 1) ? 1 : 0;
+      const auto open_file = !game_.board.is_piece_on_file(Pawn, sq, Them) ? 1 : 0;
 
       if (game_.board.is_pawn_isolated(sq, Us))
       {
@@ -115,9 +117,9 @@ protected:
     pawn_eval_eg[Us] += score_eg;
   }
 
-  template<int Us>
+  template<Color Us>
   void eval_knights() {
-    constexpr auto Them = Us ^ 1;
+    constexpr auto Them = ~Us;
     auto score_mg       = 0;
     auto score_eg       = 0;
     auto score          = 0;
@@ -158,9 +160,9 @@ protected:
     poseval_eg[Us] += score_eg;
   }
 
-  template<int Us>
+  template<Color Us>
   void eval_bishops() {
-    constexpr auto Them = Us ^ 1;
+    constexpr auto Them = ~Us;
     auto score_mg       = 0;
     auto score_eg       = 0;
     auto score          = 0;
@@ -200,9 +202,9 @@ protected:
     poseval_eg[Us] += score_eg;
   }
 
-  template<int Us>
+  template<Color Us>
   void eval_rooks() {
-    constexpr auto Them = Us ^ 1;
+    constexpr auto Them = ~Us;
     auto score_mg       = 0;
     auto score_eg       = 0;
     auto score          = 0;
@@ -243,9 +245,9 @@ protected:
     poseval_eg[Us] += score_eg;
   }
 
-  template<int Us>
+  template<Color Us>
   void eval_queens() {
-    constexpr auto Them = Us ^ 1;
+    constexpr auto Them = ~Us;
     auto score_mg       = 0;
     auto score_eg       = 0;
     auto score          = 0;
@@ -281,7 +283,7 @@ protected:
     poseval_eg[Us] += score_eg;
   }
 
-  template<int Us>
+  template<Color Us>
   void eval_material() {
     poseval[Us] = pos->material.material_value[Us];
 
@@ -292,10 +294,10 @@ protected:
     }
   }
 
-  template<int Us>
+  template<Color Us>
   void eval_king() {
-    const auto sq = lsb(game_.board.king(Us));
-    const auto &bbsq  = bb_square(sq);
+    const auto sq    = lsb(game_.board.king(Us));
+    const auto bbsq  = bb_square(sq);
 
     auto score_mg       = king_pst_mg[flip[Us][sq]];
     const auto score_eg = king_pst_eg[flip[Us][sq]];
@@ -307,8 +309,8 @@ protected:
     score_mg += king_on_open[pop_count(open_files & eastwest)];
     score_mg += king_on_half_open[pop_count(half_open_files[Us] & eastwest)];
 
-    if (((Us == 0) && (((sq == f1 || sq == g1) && (bb_square(h1) & game_.board.rooks(0))) || ((sq == c1 || sq == b1) && (bb_square(a1) & game_.board.rooks(0)))))
-        || ((Us == 1) && (((sq == f8 || sq == g8) && (bb_square(h8) & game_.board.rooks(1))) || ((sq == c8 || sq == b8) && (bb_square(a8) & game_.board.rooks(1))))))
+    if (((Us == 0) && (((sq == f1 || sq == g1) && (bb_square(h1) & game_.board.rooks(WHITE))) || ((sq == c1 || sq == b1) && (bb_square(a1) & game_.board.rooks(WHITE)))))
+        || ((Us == 1) && (((sq == f8 || sq == g8) && (bb_square(h8) & game_.board.rooks(BLACK))) || ((sq == c8 || sq == b8) && (bb_square(a8) & game_.board.rooks(BLACK))))))
       score_mg += king_obstructs_rook;
 
     all_attacks[Us] |= king_attacks[king_sq(Us)];
@@ -316,16 +318,16 @@ protected:
     poseval_eg[Us] += score_eg;
   }
 
-  template<int Us>
+  template<Color Us>
   void eval_passed_pawns() {
-    constexpr const auto Them = Us ^ 1;
+    constexpr const auto Them = ~Us;
 
     for (uint64_t files = pawnp ? pawnp->passed_pawn_files[Us] : 0; files; reset_lsb(files))
     {
       for (auto bb = bb_file(lsb(files)) & pawns(Us); bb; reset_lsb(bb))
       {
         const auto sq          = lsb(bb);
-        const auto &front_span = pawn_front_span[Us][sq];
+        const auto front_span  = pawn_front_span[Us][sq];
         const auto r           = Us == 0 ? rank_of(sq) : 7 - rank_of(sq);
 
         const auto score_mg = passed_pawn_mg[r];
@@ -343,17 +345,17 @@ protected:
     }
   }
 
-  template<int Us>
+  template<Color Us>
   void eval_king_attack() {
     if (attack_count[Us] > 1)
       poseval_mg[Us] += attack_counter[Us] * (attack_count[Us] - 1);
   }
 
   [[nodiscard]]
-  const uint64_t &pawns(const int side) const { return game_.board.pawns(side); }
+  Bitboard pawns(const Color side) const { return game_.board.pawns(side); }
 
   [[nodiscard]]
-  Square king_sq(const int side) const { return game_.board.king_square[side]; }
+  Square king_sq(const Color side) const { return game_.board.king_square[side]; }
 
   void init_evaluate() {
     pos        = game_.pos;
@@ -366,14 +368,14 @@ protected:
     attack_count.fill(0);
     attack_counter.fill(0);
 
-    king_area[0] = king_attacks[king_sq(0)] | game_.board.king(0);
-    king_area[1] = king_attacks[king_sq(1)] | game_.board.king(1);
+    king_area[0] = king_attacks[king_sq(WHITE)] | game_.board.king(WHITE);
+    king_area[1] = king_attacks[king_sq(BLACK)] | game_.board.king(BLACK);
 
     occupied     = game_.board.occupied;
     not_occupied = ~occupied;
 
-    const auto white_pawns = pawns(0);
-    const auto black_pawns = pawns(1);
+    const auto white_pawns = pawns(WHITE);
+    const auto black_pawns = pawns(BLACK);
 
     open_files         = ~(north_fill(south_fill(white_pawns)) | north_fill(south_fill(black_pawns)));
     half_open_files[0] = ~north_fill(south_fill(white_pawns)) & ~open_files;
@@ -402,17 +404,17 @@ protected:
   std::array<int, 2> attack_counter{};
   std::array<int, 2> attack_count{};
 
-  std::array<uint64_t, 2> pawn_attacks{};
-  std::array<uint64_t, 2> all_attacks{};
-  std::array<uint64_t, 2> _knight_attacks{};
-  std::array<uint64_t, 2> bishop_attacks{};
-  std::array<uint64_t, 2> rook_attacks{};
-  std::array<uint64_t, 2> queen_attacks{};
-  std::array<uint64_t, 2> king_area{};
-  uint64_t occupied{};
-  uint64_t not_occupied{};
-  uint64_t open_files{};
-  std::array<uint64_t, 2> half_open_files{};
+  std::array<Bitboard, 2> pawn_attacks{};
+  std::array<Bitboard, 2> all_attacks{};
+  std::array<Bitboard, 2> _knight_attacks{};
+  std::array<Bitboard, 2> bishop_attacks{};
+  std::array<Bitboard, 2> rook_attacks{};
+  std::array<Bitboard, 2> queen_attacks{};
+  std::array<Bitboard, 2> king_area{};
+  Bitboard occupied{};
+  Bitboard not_occupied{};
+  Bitboard open_files{};
+  std::array<Bitboard, 2> half_open_files{};
 
 public:
   static int knight_mob_mg[9];
