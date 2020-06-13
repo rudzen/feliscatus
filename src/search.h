@@ -540,7 +540,7 @@ protected:
       stop_search.store(false);
       start_time.start();
     }
-    plies            = 0;
+    plies          = 0;
     search_depth   = 0;
     node_count     = 1;
     max_ply        = 0;

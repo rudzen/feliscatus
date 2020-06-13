@@ -32,8 +32,8 @@ public:
 
     if (castle_type == -1)
     {
-      from = square(m[0] - 'a', m[1] - '1');
-      to   = square(m[2] - 'a', m[3] - '1');
+      from = make_square(static_cast<File>(m[0] - 'a'), static_cast<Rank>(m[1] - '1'));
+      to   = make_square(static_cast<File>(m[2] - 'a'), static_cast<Rank>(m[3] - '1'));
 
       // chess 960 - shredder fen
       if ((board->get_piece(from) == King && board->get_piece(to) == Rook) || (board->get_piece(from) == King + 8 && board->get_piece(to) == Rook + 8))

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <array>
+#include <ranges>
 
 using Bitboard = uint64_t;
 
@@ -20,3 +21,45 @@ enum HashNodeType : uint8_t {
   BETA = 2,
   ALPHA = 4
 };
+
+enum File : int { FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE_NB };
+
+constexpr std::array<File, 8> Files{FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H};
+
+constexpr std::ranges::reverse_view ReverseFiles {Files};
+
+enum Rank : int { RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_NB };
+
+constexpr std::array<Rank, 8> Ranks{RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8};
+
+constexpr std::ranges::reverse_view ReverseRanks {Ranks};
+
+#define ENABLE_BASE_OPERATORS_ON(T)                                \
+constexpr T operator+(const T d1, const T d2) noexcept { return static_cast<T>(static_cast<int>(d1) + static_cast<int>(d2)); } \
+constexpr T operator-(const T d1, const T d2) noexcept { return static_cast<T>(static_cast<int>(d1) - static_cast<int>(d2)); } \
+constexpr T operator-(const T d) noexcept { return static_cast<T>(-static_cast<int>(d)); }                  \
+constexpr inline T& operator+=(T& d1, const T d2) noexcept { return d1 = d1 + d2; }         \
+constexpr inline T& operator-=(T& d1, const T d2) noexcept { return d1 = d1 - d2; }
+
+#define ENABLE_INCR_OPERATORS_ON(T)                                                                     \
+  constexpr inline T &operator++(T &d) noexcept { return d = static_cast<T>(static_cast<int>(d) + 1); } \
+  constexpr inline T &operator--(T &d) noexcept { return d = static_cast<T>(static_cast<int>(d) - 1); }
+
+#define ENABLE_FULL_OPERATORS_ON(T)                                                                                  \
+  ENABLE_BASE_OPERATORS_ON(T)                                                                                        \
+  constexpr T operator*(const int i, const T d) noexcept { return static_cast<T>(i * static_cast<int>(d)); }         \
+  constexpr T operator*(const T d, const int i) noexcept { return static_cast<T>(static_cast<int>(d) * i); }         \
+  constexpr T operator/(const T d, const int i) noexcept { return static_cast<T>(static_cast<int>(d) / i); }         \
+  constexpr int operator/(const T d1, const T d2) noexcept { return static_cast<int>(d1) / static_cast<int>(d2); }   \
+  constexpr inline T &operator*=(T &d, const int i) noexcept { return d = static_cast<T>(static_cast<int>(d) * i); } \
+  constexpr inline T &operator/=(T &d, const int i) noexcept { return d = static_cast<T>(static_cast<int>(d) / i); }
+
+ENABLE_INCR_OPERATORS_ON(File)
+ENABLE_INCR_OPERATORS_ON(Rank)
+
+#undef ENABLE_FULL_OPERATORS_ON
+#undef ENABLE_INCR_OPERATORS_ON
+#undef ENABLE_BASE_OPERATORS_ON
+
+
+constexpr Rank relative_rank(const Color c, const Rank r) { return static_cast<Rank>(r ^ (c * 7)); }
