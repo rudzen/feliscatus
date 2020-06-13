@@ -12,6 +12,7 @@
 #include "worker.h"
 #include "perft.h"
 #include "tune.h"
+#include "stopwatch.h"
 
 class Felis : public ProtocolListener {
 public:
@@ -47,7 +48,7 @@ public:
     return 0;
   }
 
-  void ponder_hit() override { search->search_time += search->start_time.millisElapsed(); }
+  void ponder_hit() override { search->search_time += search->start_time.elapsed_milliseconds(); }
 
   void stop() override { search->stop_search = true; }
 
@@ -157,7 +158,7 @@ public:
       {
         Stopwatch sw;
         eval::Tune(*game, *see, *eval);
-        const auto seconds = sw.millisElapsed() / 1000.;
+        const auto seconds = sw.elapsed_seconds();
         printf("%f\n", seconds);
       } else if (strieq(tokens[0], "quit") || strieq(tokens[0], "exit"))
       {

@@ -7,7 +7,7 @@
 #include <cstring>
 #include <cmath>
 
-constexpr double sigmoid(const double x, const double k) {
+inline double sigmoid(const double x, const double k) {
   return 1 / (1 + std::pow(10, -k * x / 400));
 }
 
@@ -74,56 +74,3 @@ inline const char *FENfromParams(const char *params[], const int num_params, int
   }
   return fen;
 }
-
-//#if defined(_MSC_VER)
-
-const char *dateAndTimeString(char *buf) {
-  auto now      = time(nullptr);
-  auto *const time = localtime(&now);
-  sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d", time->tm_year + 1900, time->tm_mon + 1, time->tm_mday, time->tm_hour, time->tm_min, time->tm_sec);
-  return buf;
-}
-
-const char *timeString(char *buf) {
-  struct _timeb tb;
-  _ftime(&tb);
-  auto *const time = localtime(&tb.time);
-  sprintf(buf, "%02d:%02d:%02d.%03d", time->tm_hour, time->tm_min, time->tm_sec, tb.millitm);
-  return buf;
-}
-
-class Stopwatch {
-public:
-  LARGE_INTEGER start1;
-  static LARGE_INTEGER frequency;
-  uint64_t start2;
-
-  Stopwatch() { start(); }
-
-  explicit Stopwatch(int) { QueryPerformanceFrequency(&frequency); }
-
-  void start() {
-    QueryPerformanceCounter(&start1);
-    start2 = GetTickCount64();
-  }
-
-  [[nodiscard]]
-  uint64_t micros_elapsed_high_res() const {
-    LARGE_INTEGER now;
-    QueryPerformanceCounter(&now);
-    return (now.QuadPart - start1.QuadPart) * 1000000 / frequency.QuadPart;
-  }
-
-  [[nodiscard]]
-  uint64_t millis_elapsed_high_res() const {
-    LARGE_INTEGER now;
-    QueryPerformanceCounter(&now);
-    return (now.QuadPart - start1.QuadPart) * 1000 / frequency.QuadPart;
-  }
-
-  [[nodiscard]]
-  uint64_t millisElapsed() const { return GetTickCount64() - start2; }
-};
-
-LARGE_INTEGER Stopwatch::frequency;
-inline Stopwatch stopwatch_init(1);

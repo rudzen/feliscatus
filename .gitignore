@@ -99,3 +99,5 @@ cmake-build-relwithdebinfo/
 build/
 
 \.vscode/ipch/
+
+.idea/
