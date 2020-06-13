@@ -17,7 +17,8 @@ enum Square {
   a6, b6, c6, d6, e6, f6, g6, h6,
   a7, b7, c7, d7, e7, f7, g7, h7,
   a8, b8, c8, d8, e8, f8, g8, h8,
-  no_square
+  no_square,
+  sq_nb = 64
 };
 
 constexpr std::array<Square, 64> Squares
@@ -35,43 +36,37 @@ constexpr std::array<uint32_t, 2> oo_allowed_mask{1, 4};
 
 constexpr std::array<uint32_t, 2> ooo_allowed_mask{2, 8};
 
-static Square oo_king_from[2];
+inline std::array<Square, 2> oo_king_from{};
 constexpr std::array<Square, 2> oo_king_to{g1, g8};
 
-static Square ooo_king_from[2];
+inline std::array<Square, 2> ooo_king_from{};
 constexpr std::array<Square, 2> ooo_king_to{c1, c8};
 
-static Square rook_castles_to[64];  // indexed by position of the king
-static Square rook_castles_from[64];// also
-static std::array<int, 64> castle_rights_mask{};
-static uint32_t dist[64][64];// chebyshev distance
-static Square flip[2][64];
+inline std::array<Square, sq_nb> rook_castles_to{};  // indexed by position of the king
+inline std::array<Square, sq_nb> rook_castles_from{};// also
+inline std::array<int, sq_nb> castle_rights_mask{};
+inline uint32_t dist[64][64];// chebyshev distance
+inline Square flip[2][64];
 
-constexpr int rank_of(const Square sq) {
-  return sq >> 3;
-}
+constexpr Rank rank_of(const Square sq) { return static_cast<Rank>(sq >> 3); }
 
-constexpr int file_of(const Square sq) {
-  return sq & 7;
-}
+constexpr File file_of(const Square sq) { return static_cast<File>(sq & 7); }
 
-constexpr Square square(const int f, const int r) {
-  return static_cast<Square>((r << 3) + f);
-}
+constexpr bool is_dark(const Square sq) { return ((9 * sq) & 8) == 0; }
 
-constexpr bool is_dark(const Square sq) {
-  return ((9 * sq) & 8) == 0;
-}
+constexpr bool same_color(const Square sq1, const Square sq2) { return is_dark(sq1) == is_dark(sq2); }
 
-constexpr bool same_color(const Square sq1, const Square sq2) {
-  return is_dark(sq1) == is_dark(sq2);
-}
+constexpr Square make_square(const File f, const Rank r) { return static_cast<Square>((r << 3) + f); }
+
+constexpr Square relative_square(const Color c, const Square s) { return static_cast<Square>(s ^ (c * 56)); }
+
+constexpr Rank relative_rank(const Color c, const Square s) { return relative_rank(c, rank_of(s)); }
 
 static void init() {
   for (const auto sq : Squares)
   {
-    flip[0][sq] = static_cast<Square>(file_of(sq) + ((7 - rank_of(sq)) << 3));
-    flip[1][sq] = static_cast<Square>(file_of(sq) + (rank_of(sq) << 3));
+    flip[WHITE][sq] = static_cast<Square>(file_of(sq) + ((7 - rank_of(sq)) << 3));
+    flip[BLACK][sq] = static_cast<Square>(file_of(sq) + (rank_of(sq) << 3));
   }
 
   for (const auto sq1 : Squares)

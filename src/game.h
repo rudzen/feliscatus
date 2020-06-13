@@ -4,6 +4,7 @@
 #include <string_view>
 #include "position.h"
 #include "zobrist.h"
+#include "types.h"
 
 class Game {
 public:
@@ -324,14 +325,14 @@ public:
 
     std::memset(p, 0, 128);
 
-    for (char r = 7; r >= 0; r--)
+    for (const Rank r : ReverseRanks)
     {
       auto empty = 0;
 
-      for (char f = 0; f <= 7; f++)
+      for (const File f : Files)
       {
-        const auto sq = static_cast<Square>(r * 8 + f);
-        const auto pc      = board.get_piece(sq);
+        const auto sq = make_square(f, r);
+        const auto pc = board.get_piece(sq);
 
         if (pc != NoPiece)
         {

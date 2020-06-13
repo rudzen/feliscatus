@@ -213,14 +213,15 @@ public:
     constexpr std::string_view piece_letter = "PNBRQK. pnbrqk. ";
     printf("\n");
 
-    for (auto rank = 7; rank >= 0; rank--)
+    for (const Rank rank : ReverseRanks)
     {
       printf("%d  ", rank + 1);
 
-      for (auto file = 0; file <= 7; file++)
+      for (const auto file : Files)
       {
-        const auto p_and_c = get_piece(static_cast<Square>(rank * 8 + file));
-        printf("%c ", piece_letter[p_and_c]);
+        const auto sq = make_square(file, rank);
+        const auto pc = get_piece(sq);
+        printf("%c ", piece_letter[pc]);
       }
       printf("\n");
     }

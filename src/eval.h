@@ -328,7 +328,7 @@ protected:
       {
         const auto sq          = lsb(bb);
         const auto front_span  = pawn_front_span[Us][sq];
-        const auto r           = Us == 0 ? rank_of(sq) : 7 - rank_of(sq);
+        const auto r           = relative_rank(Us, sq);
 
         const auto score_mg = passed_pawn_mg[r];
         auto score_eg       = passed_pawn_eg[r];

@@ -413,7 +413,7 @@ public:
 
   // fen 8/6k1/8/8/3K4/5B1P/8/8 w - - 0 1
   int KBpK(const int eval, const Color side1) {
-    const auto pawnsq1    = lsb(board->pawns(side1));
+    const auto pawnsq1  = lsb(board->pawns(side1));
     const auto promosq1 = static_cast<Square>(side1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
 
     if (!same_color(promosq1, lsb(board->bishops(side1))))
