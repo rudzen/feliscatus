@@ -5,7 +5,6 @@
 #include <vector>
 #include <map>
 #include <fmt/format.h>
-
 #include "pgn_player.h"
 
 namespace eval {
@@ -117,7 +116,7 @@ public:
     double bestE  = e(pgn.all_selected_nodes_, params, params_index, K);
     bool improved = true;
 
-    ofstream out(R"(d:\tomcat\x64\tune.txt)");
+    std::ofstream out(R"(d:\tomcat\x64\tune.txt)");
     out << fmt::format("Old E:{}\n", bestE);
     out << fmt::format("Old Values:\n{}\n", emit_code(params, true));
 
@@ -198,38 +197,38 @@ public:
     /*
                     for (auto i = 0; i < 9; ++i)
                             {
-                            params.push_back(Param("knight_mob_mg", eval_.knight_mob_mg[i], 0, step));
-                            params.push_back(Param("knight_mob_eg", eval_.knight_mob_eg[i], 0, step));
+                            params.emplace_back(Param("knight_mob_mg", eval_.knight_mob_mg[i], 0, step));
+                            params.emplace_back(Param("knight_mob_eg", eval_.knight_mob_eg[i], 0, step));
                             }
 
                     for (auto i = 0; i < 14; ++i)
                             {
-                            params.push_back(Param("bishop_mob_mg", eval_.bishop_mob_mg[i], 0, step));
-                            params.push_back(Param("bishop_mob_eg", eval_.bishop_mob_eg[i], 0, step));
+                            params.emplace_back(Param("bishop_mob_mg", eval_.bishop_mob_mg[i], 0, step));
+                            params.emplace_back(Param("bishop_mob_eg", eval_.bishop_mob_eg[i], 0, step));
                             }
 
                     for (auto i = 0; i < 15; ++i)
                             {
-                            params.push_back(Param("rook_mob_mg", eval_.rook_mob_mg[i], 0, step));
-                            params.push_back(Param("rook_mob_eg", eval_.rook_mob_eg[i], 0, step));
+                            params.emplace_back(Param("rook_mob_mg", eval_.rook_mob_mg[i], 0, step));
+                            params.emplace_back(Param("rook_mob_eg", eval_.rook_mob_eg[i], 0, step));
                             }
 
                     for (auto i = 0; i < 28; ++i)
                             {
-                            params.push_back(Param("queen_mob_mg", eval_.queen_mob_mg[i], 0, step));
-                            params.push_back(Param("queen_mob_eg", eval_.queen_mob_eg[i], 0, step));
+                            params.emplace_back(Param("queen_mob_mg", eval_.queen_mob_mg[i], 0, step));
+                            params.emplace_back(Param("queen_mob_eg", eval_.queen_mob_eg[i], 0, step));
                             }
 
                     for (auto i = 0; i < 9; ++i)
                             {
-                            params.push_back(Param("knight_mob2_mg", eval_.knight_mob2_mg[i], 0, step));
-                            params.push_back(Param("knight_mob2_eg", eval_.knight_mob2_eg[i], 0, step));
+                            params.emplace_back(Param("knight_mob2_mg", eval_.knight_mob2_mg[i], 0, step));
+                            params.emplace_back(Param("knight_mob2_eg", eval_.knight_mob2_eg[i], 0, step));
                             }
 
                     for (auto i = 0; i < 14; ++i)
                             {
-                            params.push_back(Param("bishop_mob2_mg", eval_.bishop_mob2_mg[i], 0, step));
-                            params.push_back(Param("bishop_mob2_eg", eval_.bishop_mob2_eg[i], 0, step));
+                            params.emplace_back(Param("bishop_mob2_mg", eval_.bishop_mob2_mg[i], 0, step));
+                            params.emplace_back(Param("bishop_mob2_eg", eval_.bishop_mob2_eg[i], 0, step));
                             }
     */
     //----------------------------------
@@ -271,75 +270,75 @@ public:
     /*
                     //----------------------------------
                     for (auto i = 0; i < 2; ++i)
-                            params.push_back(Param("pawn_isolated_mg", eval_.pawn_isolated_mg[i], 0, step));
+                            params.emplace_back(Param("pawn_isolated_mg", eval_.pawn_isolated_mg[i], 0, step));
 
                     for (auto i = 0; i < 2; ++i)
-                            params.push_back(Param("pawn_isolated_eg", eval_.pawn_isolated_eg[i], 0, step));
+                            params.emplace_back(Param("pawn_isolated_eg", eval_.pawn_isolated_eg[i], 0, step));
 
                     for (auto i = 0; i < 2; ++i)
-                            params.push_back(Param("pawn_behind_mg", eval_.pawn_behind_mg[i], 0, step));
+                            params.emplace_back(Param("pawn_behind_mg", eval_.pawn_behind_mg[i], 0, step));
 
                     for (auto i = 0; i < 2; ++i)
-                            params.push_back(Param("pawn_behind_eg", eval_.pawn_behind_eg[i], 0, step));
+                            params.emplace_back(Param("pawn_behind_eg", eval_.pawn_behind_eg[i], 0, step));
 
                     for (auto i = 0; i < 2; ++i)
-                            params.push_back(Param("pawn_doubled_mg", eval_.pawn_doubled_mg[i], 0, step));
+                            params.emplace_back(Param("pawn_doubled_mg", eval_.pawn_doubled_mg[i], 0, step));
 
                     for (auto i = 0; i < 2; ++i)
-                            params.push_back(Param("pawn_doubled_eg", eval_.pawn_doubled_eg[i], 0, step));
+                            params.emplace_back(Param("pawn_doubled_eg", eval_.pawn_doubled_eg[i], 0, step));
 
                     //----------------------------------
                     for (auto i = 0; i < 8; ++i)
-                            params.push_back(Param("passed_pawn_mg", eval_.passed_pawn_mg[i], 0, step));
+                            params.emplace_back(Param("passed_pawn_mg", eval_.passed_pawn_mg[i], 0, step));
 
                     for (auto i = 0; i < 8; ++i)
-                            params.push_back(Param("passed_pawn_eg", eval_.passed_pawn_eg[i], 0, step));
+                            params.emplace_back(Param("passed_pawn_eg", eval_.passed_pawn_eg[i], 0, step));
 
                     for (auto i = 0; i < 8; ++i)
-                            params.push_back(Param("passed_pawn_no_us", eval_.passed_pawn_no_us[i], 0, step));
+                            params.emplace_back(Param("passed_pawn_no_us", eval_.passed_pawn_no_us[i], 0, step));
 
                     for (auto i = 0; i < 8; ++i)
-                            params.push_back(Param("passed_pawn_no_them", eval_.passed_pawn_no_them[i], 0, step));
+                            params.emplace_back(Param("passed_pawn_no_them", eval_.passed_pawn_no_them[i], 0, step));
 
                     for (auto i = 0; i < 8; ++i)
-                            params.push_back(Param("passed_pawn_no_attacks", eval_.passed_pawn_no_attacks[i], 0, step));
+                            params.emplace_back(Param("passed_pawn_no_attacks", eval_.passed_pawn_no_attacks[i], 0, step));
 
                     for (auto i = 0; i < 8; ++i)
-                            params.push_back(Param("passed_pawn_king_dist_us", eval_.passed_pawn_king_dist_us[i], 0, step));
+                            params.emplace_back(Param("passed_pawn_king_dist_us", eval_.passed_pawn_king_dist_us[i], 0, step));
 
                     for (auto i = 0; i < 8; ++i)
-                            params.push_back(Param("passed_pawn_king_dist_them", eval_.passed_pawn_king_dist_them[i], 0, step));
+                            params.emplace_back(Param("passed_pawn_king_dist_them", eval_.passed_pawn_king_dist_them[i], 0, step));
 
                     //----------------------------------
                     for (auto i = 0; i < 4; ++i)
-                            params.push_back(Param("king_pawn_shelter", eval_.king_pawn_shelter[i], 0, step));
+                            params.emplace_back(Param("king_pawn_shelter", eval_.king_pawn_shelter[i], 0, step));
 
                     for (auto i = 0; i < 4; ++i)
-                            params.push_back(Param("king_on_open", eval_.king_on_open[i], 0, step));
+                            params.emplace_back(Param("king_on_open", eval_.king_on_open[i], 0, step));
 
                     for (auto i = 0; i < 4; ++i)
-                            params.push_back(Param("king_on_half_open", eval_.king_on_half_open[i], 0, step));
+                            params.emplace_back(Param("king_on_half_open", eval_.king_on_half_open[i], 0, step));
 
                     //----------------------------------
-                    params.push_back(Param("bishop_pair_mg", eval_.bishop_pair_mg, 0, step));
-                    params.push_back(Param("bishop_pair_eg", eval_.bishop_pair_eg, 0, step));
+                    params.emplace_back(Param("bishop_pair_mg", eval_.bishop_pair_mg, 0, step));
+                    params.emplace_back(Param("bishop_pair_eg", eval_.bishop_pair_eg, 0, step));
 
                     //----------------------------------
-                    params.push_back(Param("king_obstructs_rook", eval_.king_obstructs_rook, 0, step));
+                    params.emplace_back(Param("king_obstructs_rook", eval_.king_obstructs_rook, 0, step));
 
-                    params.push_back(Param("rook_open_file", eval_.rook_open_file, 0, step));
-
-                    //----------------------------------
-                    params.push_back(Param("knight_in_danger", eval_.knight_in_danger, 0, step));
-                    params.push_back(Param("bishop_in_danger", eval_.bishop_in_danger, 0, step));
-                    params.push_back(Param("rook_in_danger", eval_.rook_in_danger, 0, step));
-                    params.push_back(Param("queen_in_danger", eval_.queen_in_danger, 0, step));
+                    params.emplace_back(Param("rook_open_file", eval_.rook_open_file, 0, step));
 
                     //----------------------------------
-                    params.push_back(Param("knight_attack_king", eval_.knight_attack_king, 0, step));
-                    params.push_back(Param("bishop_attack_king", eval_.bishop_attack_king, 0, step));
-                    params.push_back(Param("rook_attack_king", eval_.rook_attack_king, 0, step));
-                    params.push_back(Param("queen_attack_king", eval_.queen_attack_king, 0, step));
+                    params.emplace_back(Param("knight_in_danger", eval_.knight_in_danger, 0, step));
+                    params.emplace_back(Param("bishop_in_danger", eval_.bishop_in_danger, 0, step));
+                    params.emplace_back(Param("rook_in_danger", eval_.rook_in_danger, 0, step));
+                    params.emplace_back(Param("queen_in_danger", eval_.queen_in_danger, 0, step));
+
+                    //----------------------------------
+                    params.emplace_back(Param("knight_attack_king", eval_.knight_attack_king, 0, step));
+                    params.emplace_back(Param("bishop_attack_king", eval_.bishop_attack_king, 0, step));
+                    params.emplace_back(Param("rook_attack_king", eval_.rook_attack_king, 0, step));
+                    params.emplace_back(Param("queen_attack_king", eval_.queen_attack_king, 0, step));
     */
   }
 
