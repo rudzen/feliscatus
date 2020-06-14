@@ -37,13 +37,14 @@ private:
   int see_rec(const int mat_change, const int next_capture, const Square to, const Color side_to_move) {
     Square from;
     uint32_t move;
+    const auto rr = relative_rank(side_to_move, to);
 
     do
     {
       if (!lookup_best_attacker(to, side_to_move, from))
         return mat_change;
 
-      if ((current_piece[side_to_move] == Pawn) && (rank_of(to) == 0 || rank_of(to) == 7))
+      if (current_piece[side_to_move] == Pawn && rr == RANK_8)
         init_move(move, current_piece[side_to_move] | (side_to_move << 3), next_capture, from, to, PROMOTION | CAPTURE, Queen | (side_to_move << 3));
       else
         init_move(move, current_piece[side_to_move] | (side_to_move << 3), next_capture, from, to, CAPTURE, 0);
@@ -139,8 +140,8 @@ private:
 protected:
   void init_see_move() {
     current_piece.fill(Pawn);
-    current_piece_bitboard[0] = board_.piece[Pawn];
-    current_piece_bitboard[1] = board_.piece[Pawn | 8];
+    current_piece_bitboard[WHITE] = board_.piece[Pawn];
+    current_piece_bitboard[BLACK] = board_.piece[Pawn | 8];
   }
 
   std::array<Bitboard, 2> current_piece_bitboard{};

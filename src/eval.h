@@ -296,13 +296,14 @@ protected:
 
   template<Color Us>
   void eval_king() {
+    constexpr Direction Up = Us == WHITE ? NORTH : SOUTH;
     const auto sq    = lsb(game_.board.king(Us));
     const auto bbsq  = bb_square(sq);
 
     auto score_mg       = king_pst_mg[flip[Us][sq]];
     const auto score_eg = king_pst_eg[flip[Us][sq]];
 
-    score_mg += king_pawn_shelter[pop_count((pawn_push[Us](bbsq) | pawn_west_attacks[Us](bbsq) | pawn_east_attacks[Us](bbsq)) & pawns(Us))];
+    score_mg += king_pawn_shelter[pop_count((pawn_push<Up>(bbsq) | pawn_west_attacks[Us](bbsq) | pawn_east_attacks[Us](bbsq)) & pawns(Us))];
 
     const auto eastwest = bbsq | west_one(bbsq) | east_one(bbsq);
 
