@@ -9,45 +9,118 @@
 
 namespace bitboard {
 
-constexpr Bitboard AFILE_BB = 0x0101010101010101;
-constexpr Bitboard HFILE_BB = 0x8080808080808080;
-constexpr Bitboard BFILE_BB = 0x0202020202020202;
-constexpr Bitboard GFILE_BB = 0x4040404040404040;
-constexpr Bitboard RANK1    = 0x00000000000000ff;
-constexpr Bitboard RANK2    = 0x000000000000ff00;
-constexpr Bitboard RANK3    = 0x0000000000ff0000;
-constexpr Bitboard RANK4    = 0x00000000ff000000;
-constexpr Bitboard RANK5    = 0x000000ff00000000;
-constexpr Bitboard RANK6    = 0x0000ff0000000000;
-constexpr Bitboard RANK7    = 0x00ff000000000000;
-constexpr Bitboard RANK8    = 0xff00000000000000;
+constexpr static Bitboard AllSquares  = ~Bitboard(0);
+constexpr static Bitboard DarkSquares = 0xAA55AA55AA55AA55ULL;
+constexpr static Bitboard ZeroBB      = ~AllSquares;
+constexpr static Bitboard OneBB       = 0x1ULL;
 
-inline Bitboard square_bb[64];
-inline Bitboard rank_bb[64];
-inline Bitboard file_bb[64];
+//------------------------------------------------
+// constexpr generate functions
+//------------------------------------------------
+template<typename... Squares>
+constexpr Bitboard make_bitboard(Squares... squares) {
+  return (... | (OneBB << squares));
+}
+
+constexpr Bitboard FileABB = 0x0101010101010101ULL;
+constexpr Bitboard FileBBB = FileABB << 1;
+constexpr Bitboard FileCBB = FileABB << 2;
+constexpr Bitboard FileDBB = FileABB << 3;
+constexpr Bitboard FileEBB = FileABB << 4;
+constexpr Bitboard FileFBB = FileABB << 5;
+constexpr Bitboard FileGBB = FileABB << 6;
+constexpr Bitboard FileHBB = FileABB << 7;
+
+constexpr Bitboard Rank1BB = 0xFF;
+constexpr Bitboard Rank2BB = Rank1BB << (8 * 1);
+constexpr Bitboard Rank3BB = Rank1BB << (8 * 2);
+constexpr Bitboard Rank4BB = Rank1BB << (8 * 3);
+constexpr Bitboard Rank5BB = Rank1BB << (8 * 4);
+constexpr Bitboard Rank6BB = Rank1BB << (8 * 5);
+constexpr Bitboard Rank7BB = Rank1BB << (8 * 6);
+constexpr Bitboard Rank8BB = Rank1BB << (8 * 7);
+
+constexpr Bitboard corner_a1 = make_bitboard(a1, b1, a2, b2);
+constexpr Bitboard corner_a8 = make_bitboard(a8, b8, a7, b7);
+constexpr Bitboard corner_h1 = make_bitboard(h1, g1, h2, g2);
+constexpr Bitboard corner_h8 = make_bitboard(h8, g8, h7, g7);
+
+constexpr std::array<Bitboard, sq_nb> square_bb{
+  make_bitboard(a1), make_bitboard(b1), make_bitboard(c1), make_bitboard(d1), make_bitboard(e1), make_bitboard(f1), make_bitboard(g1), make_bitboard(h1),
+  make_bitboard(a2), make_bitboard(b2), make_bitboard(c2), make_bitboard(d2), make_bitboard(e2), make_bitboard(f2), make_bitboard(g2), make_bitboard(h2),
+  make_bitboard(a3), make_bitboard(b3), make_bitboard(c3), make_bitboard(d3), make_bitboard(e3), make_bitboard(f3), make_bitboard(g3), make_bitboard(h3),
+  make_bitboard(a4), make_bitboard(b4), make_bitboard(c4), make_bitboard(d4), make_bitboard(e4), make_bitboard(f4), make_bitboard(g4), make_bitboard(h4),
+  make_bitboard(a5), make_bitboard(b5), make_bitboard(c5), make_bitboard(d5), make_bitboard(e5), make_bitboard(f5), make_bitboard(g5), make_bitboard(h5),
+  make_bitboard(a6), make_bitboard(b6), make_bitboard(c6), make_bitboard(d6), make_bitboard(e6), make_bitboard(f6), make_bitboard(g6), make_bitboard(h6),
+  make_bitboard(a7), make_bitboard(b7), make_bitboard(c7), make_bitboard(d7), make_bitboard(e7), make_bitboard(f7), make_bitboard(g7), make_bitboard(h7),
+  make_bitboard(a8), make_bitboard(b8), make_bitboard(c8), make_bitboard(d8), make_bitboard(e8), make_bitboard(f8), make_bitboard(g8), make_bitboard(h8)};
+
+constexpr std::array<Bitboard, 8> RankBB{Rank1BB, Rank2BB, Rank3BB, Rank4BB, Rank5BB, Rank6BB, Rank7BB, Rank8BB};
+constexpr std::array<Bitboard, 8> FileBB{FileABB, FileBBB, FileCBB, FileDBB, FileEBB, FileFBB, FileGBB, FileHBB};
+
+constexpr std::array<Bitboard, sq_nb> make_knight_attacks()
+{
+  std::array<Bitboard, sq_nb> result{};
+  for (const Square sq : Squares)
+  {
+    const auto bbsq = square_bb[sq];
+    result[sq] =  (bbsq & ~(FileABB | FileBBB)) << 6;
+    result[sq] |= (bbsq & ~FileABB) << 15;
+    result[sq] |= (bbsq & ~FileHBB) << 17;
+    result[sq] |= (bbsq & ~(FileGBB | FileHBB)) << 10;
+    result[sq] |= (bbsq & ~(FileGBB | FileHBB)) >> 6;
+    result[sq] |= (bbsq & ~FileHBB) >> 15;
+    result[sq] |= (bbsq & ~FileABB) >> 17;
+    result[sq] |= (bbsq & ~(FileABB | FileBBB)) >> 10;
+  }
+
+  return result;
+}
+
+constexpr std::array<Bitboard, sq_nb> knight_attacks = make_knight_attacks();
+
+constexpr std::array<Bitboard, sq_nb> make_king_attacks()
+{
+  std::array<Bitboard, sq_nb> result{};
+  for (const Square sq : Squares)
+  {
+    const auto bbsq = square_bb[sq];
+    result[sq] =  (bbsq & ~FileABB) >> 1;
+    result[sq] |= (bbsq & ~FileABB) << 7;
+    result[sq] |= bbsq << 8;
+    result[sq] |= (bbsq & ~FileHBB) << 9;
+    result[sq] |= (bbsq & ~FileHBB) << 1;
+    result[sq] |= (bbsq & ~FileHBB) >> 7;
+    result[sq] |= bbsq >> 8;
+    result[sq] |= (bbsq & ~FileABB) >> 9;
+  }
+
+  return result;
+}
+
+constexpr std::array<Bitboard, sq_nb> king_attacks = make_king_attacks();
+
 inline Bitboard between_bb[64][64];
 inline Bitboard passed_pawn_front_span[2][64];
 inline Bitboard pawn_front_span[2][64];
 inline Bitboard pawn_east_attack_span[2][64];
 inline Bitboard pawn_west_attack_span[2][64];
 inline Bitboard pawn_captures[128];
-inline Bitboard knight_attacks[64];
-inline Bitboard king_attacks[64];
-inline Bitboard corner_a1;
-inline Bitboard corner_a8;
-inline Bitboard corner_h1;
-inline Bitboard corner_h8;
 
-inline Bitboard bb_square(const Square sq) {
+constexpr Bitboard bb_square(const Square sq) {
   return square_bb[sq];
 }
 
-inline Bitboard bb_rank(const int rank) {
-  return rank_bb[rank];
+constexpr Bitboard bb_rank(const Rank rank) {
+  return RankBB[rank];
 }
 
-inline Bitboard bb_file(const Square sq) {
-  return file_bb[sq];
+constexpr Bitboard bb_file(const File file) {
+  return FileBB[file];
+}
+
+constexpr Bitboard bb_file(const Square s) {
+  return bb_file(file_of(s));
 }
 
 constexpr Bitboard north_one(const Bitboard bb) {
@@ -59,27 +132,27 @@ constexpr Bitboard south_one(const Bitboard bb) {
 }
 
 constexpr Bitboard east_one(const Bitboard bb) {
-  return (bb & ~HFILE_BB) << 1;
+  return (bb & ~FileHBB) << 1;
 }
 
 constexpr Bitboard west_one(const Bitboard bb) {
-  return (bb & ~AFILE_BB) >> 1;
+  return (bb & ~FileABB) >> 1;
 }
 
 constexpr Bitboard north_east_one(const Bitboard bb) {
-  return (bb & ~HFILE_BB) << 9;
+  return (bb & ~FileHBB) << 9;
 }
 
 constexpr Bitboard south_east_one(const Bitboard bb) {
-  return (bb & ~HFILE_BB) >> 7;
+  return (bb & ~FileHBB) >> 7;
 }
 
 constexpr Bitboard south_west_one(const Bitboard bb) {
-  return (bb & ~AFILE_BB) >> 9;
+  return (bb & ~FileABB) >> 9;
 }
 
 constexpr Bitboard north_west_one(const Bitboard bb) {
-  return (bb & ~AFILE_BB) << 7;
+  return (bb & ~FileABB) << 7;
 }
 
 constexpr Bitboard north_fill(const Bitboard bb) {
@@ -98,10 +171,10 @@ constexpr Bitboard south_fill(const Bitboard bb) {
   return fill;
 }
 
-inline void init_between_bitboards(const Square from, Bitboard (*step_func)(Bitboard), const int step) {
+constexpr void init_between_bitboards(const Square from, Bitboard (*step_func)(Bitboard), const int step) {
   auto bb          = step_func(bb_square(from));
   auto to          = from + step;
-  Bitboard between = 0;
+  Bitboard between = ZeroBB;
 
   while (bb)
   {
@@ -115,26 +188,20 @@ inline void init_between_bitboards(const Square from, Bitboard (*step_func)(Bitb
   }
 }
 
-inline void init() {
-  for (const auto sq : Squares)
-  {
-    square_bb[sq] = static_cast<uint64_t>(1) << sq;
-    rank_bb[sq]   = RANK1 << (sq & 56);
-    file_bb[sq]   = AFILE_BB << (sq & 7);
-  }
+constexpr void init() {
 
   for (const auto sq : Squares)
   {
-    const auto bbsq = bb_square(sq);
+    const auto bbsq = square_bb[sq];
 
-    pawn_front_span[0][sq]        = north_fill(north_one(bbsq));
-    pawn_front_span[1][sq]        = south_fill(south_one(bbsq));
-    pawn_east_attack_span[0][sq]  = north_fill(north_east_one(bbsq));
-    pawn_east_attack_span[1][sq]  = south_fill(south_east_one(bbsq));
-    pawn_west_attack_span[0][sq]  = north_fill(north_west_one(bbsq));
-    pawn_west_attack_span[1][sq]  = south_fill(south_west_one(bbsq));
-    passed_pawn_front_span[0][sq] = pawn_east_attack_span[0][sq] | pawn_front_span[0][sq] | pawn_west_attack_span[0][sq];
-    passed_pawn_front_span[1][sq] = pawn_east_attack_span[1][sq] | pawn_front_span[1][sq] | pawn_west_attack_span[1][sq];
+    pawn_front_span[WHITE][sq]        = north_fill(north_one(bbsq));
+    pawn_front_span[BLACK][sq]        = south_fill(south_one(bbsq));
+    pawn_east_attack_span[WHITE][sq]  = north_fill(north_east_one(bbsq));
+    pawn_east_attack_span[BLACK][sq]  = south_fill(south_east_one(bbsq));
+    pawn_west_attack_span[WHITE][sq]  = north_fill(north_west_one(bbsq));
+    pawn_west_attack_span[BLACK][sq]  = south_fill(south_west_one(bbsq));
+    passed_pawn_front_span[WHITE][sq] = pawn_east_attack_span[WHITE][sq] | pawn_front_span[WHITE][sq] | pawn_west_attack_span[WHITE][sq];
+    passed_pawn_front_span[BLACK][sq] = pawn_east_attack_span[BLACK][sq] | pawn_front_span[BLACK][sq] | pawn_west_attack_span[BLACK][sq];
 
     std::fill(std::begin(between_bb[sq]), std::end(between_bb[sq]), 0);
 
@@ -147,33 +214,11 @@ inline void init() {
     init_between_bitboards(sq, west_one, -1);
     init_between_bitboards(sq, north_west_one, 7);
 
-    pawn_captures[sq] = (bbsq & ~HFILE_BB) << 9;
-    pawn_captures[sq] |= (bbsq & ~AFILE_BB) << 7;
-    pawn_captures[sq + 64] = (bbsq & ~AFILE_BB) >> 9;
-    pawn_captures[sq + 64] |= (bbsq & ~HFILE_BB) >> 7;
-
-    knight_attacks[sq] = (bbsq & ~(AFILE_BB | BFILE_BB)) << 6;
-    knight_attacks[sq] |= (bbsq & ~AFILE_BB) << 15;
-    knight_attacks[sq] |= (bbsq & ~HFILE_BB) << 17;
-    knight_attacks[sq] |= (bbsq & ~(GFILE_BB | HFILE_BB)) << 10;
-    knight_attacks[sq] |= (bbsq & ~(GFILE_BB | HFILE_BB)) >> 6;
-    knight_attacks[sq] |= (bbsq & ~HFILE_BB) >> 15;
-    knight_attacks[sq] |= (bbsq & ~AFILE_BB) >> 17;
-    knight_attacks[sq] |= (bbsq & ~(AFILE_BB | BFILE_BB)) >> 10;
-
-    king_attacks[sq] = (bbsq & ~AFILE_BB) >> 1;
-    king_attacks[sq] |= (bbsq & ~AFILE_BB) << 7;
-    king_attacks[sq] |= bbsq << 8;
-    king_attacks[sq] |= (bbsq & ~HFILE_BB) << 9;
-    king_attacks[sq] |= (bbsq & ~HFILE_BB) << 1;
-    king_attacks[sq] |= (bbsq & ~HFILE_BB) >> 7;
-    king_attacks[sq] |= bbsq >> 8;
-    king_attacks[sq] |= (bbsq & ~AFILE_BB) >> 9;
+    pawn_captures[sq] = (bbsq & ~FileHBB) << 9;
+    pawn_captures[sq] |= (bbsq & ~FileABB) << 7;
+    pawn_captures[sq + 64] = (bbsq & ~FileABB) >> 9;
+    pawn_captures[sq + 64] |= (bbsq & ~FileHBB) >> 7;
   }
-  corner_a1 = bb_square(a1) | bb_square(b1) | bb_square(a2) | bb_square(b2);
-  corner_a8 = bb_square(a8) | bb_square(b8) | bb_square(a7) | bb_square(b7);
-  corner_h1 = bb_square(h1) | bb_square(g1) | bb_square(h2) | bb_square(g2);
-  corner_h8 = bb_square(h8) | bb_square(g8) | bb_square(h7) | bb_square(g7);
 }
 
 constexpr Bitboard (*pawn_push[2])(Bitboard)         = {north_one, south_one};
@@ -181,15 +226,15 @@ constexpr Bitboard (*pawn_east_attacks[2])(Bitboard) = {north_west_one, south_we
 constexpr Bitboard (*pawn_west_attacks[2])(Bitboard) = {north_east_one, south_east_one};
 constexpr Bitboard (*pawn_fill[2])(Bitboard)         = {north_fill, south_fill};
 
-constexpr std::array<Bitboard, 2> rank_1{RANK1, RANK8};
+constexpr std::array<Bitboard, 2> rank_1{Rank1BB, Rank8BB};
 
-constexpr std::array<Bitboard, 2> rank_3{RANK3, RANK6};
+constexpr std::array<Bitboard, 2> rank_3{Rank3BB, Rank6BB};
 
-constexpr std::array<Bitboard, 2> rank_7{RANK7, RANK2};
+constexpr std::array<Bitboard, 2> rank_7{Rank7BB, Rank2BB};
 
-constexpr std::array<Bitboard, 2> rank_6_and_7{RANK6 | RANK7, RANK2 | RANK3};
+constexpr std::array<Bitboard, 2> rank_6_and_7{Rank6BB | Rank7BB, Rank2BB | Rank3BB};
 
-constexpr std::array<Bitboard, 2> rank_7_and_8{RANK7 | RANK8, RANK1 | RANK2};
+constexpr std::array<Bitboard, 2> rank_7_and_8{Rank7BB | Rank8BB, Rank1BB | Rank2BB};
 
 constexpr std::array<int, 2> pawn_push_dist{8, -8};
 
