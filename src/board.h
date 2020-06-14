@@ -197,7 +197,7 @@ public:
       return true;
 
     if (piece[Queen + (side << 3)] & (b_attacks | r_attacks))
-    { return true; }
+      return true;
     return false;
   }
 

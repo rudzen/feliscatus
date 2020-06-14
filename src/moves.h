@@ -26,7 +26,7 @@ public:
     reset(sorter, ttMove, flags);
     max_stage = 3;
 
-    if ((this->move_flags & STAGES) == 0)
+    if ((move_flags & STAGES) == 0)
     {
       generate_hash_move();
       generate_captures_and_promotions();
@@ -155,8 +155,8 @@ private:
       if (is_castle_move(this->transp_move) || is_ep_capture(this->transp_move))
       {
         // needed because isPseudoLegal() is not complete yet.
-        this->transp_move = 0;
-        this->move_flags &= ~STAGES;
+        transp_move = 0;
+        move_flags &= ~STAGES;
       }
     }
 
@@ -290,7 +290,7 @@ private:
   }
 
   void add_pawn_capture_moves(const Bitboard to_squares) {
-    const auto &pawns = board->pawns(side_to_move);
+    const auto pawns = board->pawns(side_to_move);
     add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & occupied_by_side[~side_to_move] & to_squares, pawn_west_attack_dist[side_to_move], CAPTURE);
     add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & occupied_by_side[~side_to_move] & to_squares, pawn_east_attack_dist[side_to_move], CAPTURE);
     if (en_passant_square != no_square)
@@ -305,9 +305,8 @@ private:
     {
       const auto to = lsb(bb);
       const auto from = to - dist;
-      const auto rr = relative_rank(side_to_move, to);
 
-      if (rr == RANK_8)
+      if (const auto rr = relative_rank(side_to_move, to); rr == RANK_8)
       {
         if (move_flags & QUEENPROMOTION)
         {
@@ -366,9 +365,8 @@ private:
     const auto rook_from        = rook_castles_from[to];
     const auto king_square      = board->king_square[stm];
     const auto bb_castle_pieces = bit(rook_from, king_square);
-    const auto bb_castle_span   = bb_castle_pieces | between_bb[king_square][rook_from] | between_bb[rook_from][rook_to] | bit(rook_to, to);
 
-    if ((bb_castle_span & occupied) != bb_castle_pieces)
+    if (const auto bb_castle_span = bb_castle_pieces | between_bb[king_square][rook_from] | between_bb[rook_from][rook_to] | bit(rook_to, to); (bb_castle_span & occupied) != bb_castle_pieces)
       return false;
 
     // Check that no square between the king's initial and final squares (including the initial and final

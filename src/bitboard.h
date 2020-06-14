@@ -105,7 +105,7 @@ inline Bitboard passed_pawn_front_span[2][64];
 inline Bitboard pawn_front_span[2][64];
 inline Bitboard pawn_east_attack_span[2][64];
 inline Bitboard pawn_west_attack_span[2][64];
-inline Bitboard pawn_captures[128];
+inline std::array<Bitboard, 128> pawn_captures{};
 
 template<Square sq>
 constexpr Bitboard bit() {
@@ -302,10 +302,10 @@ constexpr void init() {
   }
 }
 
-constexpr Bitboard (*pawn_push_shift[2])(Bitboard)         = {north_one, south_one};
-constexpr Bitboard (*pawn_east_attacks[2])(Bitboard) = {north_west_one, south_west_one};
-constexpr Bitboard (*pawn_west_attacks[2])(Bitboard) = {north_east_one, south_east_one};
-constexpr Bitboard (*pawn_fill[2])(Bitboard)         = {north_fill, south_fill};
+constexpr Bitboard (*pawn_push_shift[COL_NB])(Bitboard)   = {north_one, south_one};
+constexpr Bitboard (*pawn_east_attacks[COL_NB])(Bitboard) = {north_west_one, south_west_one};
+constexpr Bitboard (*pawn_west_attacks[COL_NB])(Bitboard) = {north_east_one, south_east_one};
+constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard)         = {north_fill, south_fill};
 
 constexpr Bitboard pawn_push(const Color c, const Bitboard bb) { return pawn_push_shift[c](bb); }
 
