@@ -44,7 +44,7 @@ static const char token_string[][12] = {"Symbol", "Integer", "String", "NAG", "A
 
 enum Result { WhiteWin, Draw, BlackWin };
 
-class UnexpectedToken : std::exception {
+class UnexpectedToken final : std::exception {
 public:
   UnexpectedToken(const Token expected, const char *found, const size_t line) { sprintf(buf, "Expected <%s> but found '%s', line=%llu", token_string[expected], found, line); }
 
@@ -102,11 +102,12 @@ protected:
       read_pgn_database();
 
       if (token_ != None)
-      {
         throw UnexpectedToken("no more tokens", token_str, line_);
-      }
+
     } catch (const UnexpectedToken &e)
-    { fprintf(stderr, "%s\n", e.str()); }
+    {
+      fprintf(stderr, "%s\n", e.str());
+    }
   }
 
   virtual void read_pgn_database() {
@@ -120,9 +121,8 @@ protected:
           read_token(token_);
 
           if (token_ == None)
-          {
             break;
-          }
+
         } while (!start_of_pgn_game());
       }
     }
@@ -140,9 +140,7 @@ protected:
       read_tag_pair();
 
       if (token_ != RBracket)
-      {
         throw UnexpectedToken(RBracket, token_str, line_);
-      }
 
       read_token(token_);
     }
@@ -152,16 +150,13 @@ protected:
     read_token(token_);
 
     if (token_ != Symbol)
-    {
       throw UnexpectedToken(Symbol, token_str, line_);
-    }
 
     read_tag_name();
 
     if (token_ != String)
-    {
       throw UnexpectedToken(String, token_str, line_);
-    }
+
     read_tag_value();
   }
 
@@ -179,37 +174,33 @@ protected:
     read_element_sequence();
 
     if (start_of_game_termination())
-    {
       read_game_termination();
-    } else
-    { throw UnexpectedToken("<game-termination>", token_str, line_); }
+    else
+      throw UnexpectedToken("<game-termination>", token_str, line_);
   }
 
   virtual void read_element_sequence() {
-    for (;;)
+    do
     {
       if (start_of_element())
-      {
         read_element();
-      } else if (start_of_recursive_variation())
-      {
+      else if (start_of_recursive_variation())
         read_recursive_variation();
-      } else
-      { break; }
-    }
+      else
+        break;
+    } while (true);
   }
 
   virtual void read_element() {
     if (start_of_move_number_indication())
-    {
       read_move_number_indication();
-    } else if (start_of_san_move())
+    else if (start_of_san_move())
     {
       read_san_move();
-      side_to_move ^= 1;
+      side_to_move = ~side_to_move;
       read_token(token_);
     } else if (start_of_numeric_annotation_glyph())
-    { read_numeric_annotation_glyph(); }
+      read_numeric_annotation_glyph();
   }
 
   virtual void read_game_termination() { read_token(token_); }
@@ -219,22 +210,17 @@ protected:
 
     auto periods = 0;
 
-    for (;;)
+    do
     {
       read_token(token_);
 
       if (token_ != Period)
-      {
         break;
-      }
-      periods++;
-    }
 
-    if (periods >= 3)
-    {
-      side_to_move = 1;
-    } else
-    { side_to_move = 0; }
+      periods++;
+    } while (true);
+
+    side_to_move = periods >= 3 ? BLACK : WHITE;
   }
 
   virtual void read_san_move() {
@@ -252,52 +238,31 @@ protected:
     char *p = token_str;
 
     if (start_of_pawn_move(p))
-    {
       read_pawn_move(p);
-    } else if (start_of_castle_move(p))
-    {
+    else if (start_of_castle_move(p))
       read_castle_move(p);
-    } else if (start_of_move(p))
-    { read_move(p); }
+    else if (start_of_move(p))
+      read_move(p);
 
     while (read_san_move_suffix(p))
       ;// may be too relaxed
 
     if (strlen(token_str) != reinterpret_cast<size_t>(p) - reinterpret_cast<size_t>(token_str))
-    {
       throw UnexpectedToken("<end-of-san-move>", p, line_);
-    }
   }
 
   virtual bool read_san_move_suffix(char *&p) {
-    const size_t len = strlen(p);
+    const auto len = strlen(p);
 
-    if (len && p[0] == '+')
-    {
+    if (len && (p[0] == '+' || p[0] == '#'))
       p += 1;
-    } else if (len && p[0] == '#')
-    {
+    else if (len > 1 && (strncmp(p, "!!", 2) == 0 || strncmp(p, "!?", 2) == 0 || strncmp(p, "?!", 2) == 0 || strncmp(p, "??", 2) == 0))
+      p += 2;
+    else if ((len && p[0] == '!') || (strlen(p) && p[0] == '?'))
       p += 1;
-    } else if (len > 1 && strncmp(p, "!!", 2) == 0)
-    {
-      p += 2;
-    } else if (len > 1 && strncmp(p, "!?", 2) == 0)
-    {
-      p += 2;
-    } else if (len > 1 && strncmp(p, "?!", 2) == 0)
-    {
-      p += 2;
-    } else if (len > 1 && strncmp(p, "??", 2) == 0)
-    {
-      p += 2;
-    } else if (len && p[0] == '!')
-    {
-      p += 1;
-    } else if (strlen(p) && p[0] == '?')
-    {
-      p += 1;
-    } else
-    { return false; }
+    else
+      return false;
+
     return true;
   }
 
@@ -305,12 +270,13 @@ protected:
     if (is_pawn_piece_letter(p))
     {
       if (start_of_pawn_capture_or_quiet_move(++p))
-      {
         read_pawn_capture_or_quiet_move(p);
-      } else
-      { throw UnexpectedToken("start-of-pawn-capture-or-quiet-move", token_str, line_); }
+      else
+        throw UnexpectedToken("start-of-pawn-capture-or-quiet-move", token_str, line_);
+
     } else if (start_of_pawn_capture_or_quiet_move(p))
-    { read_pawn_capture_or_quiet_move(p); }
+      read_pawn_capture_or_quiet_move(p);
+
     pawn_move_ = true;
   }
 
@@ -356,45 +322,42 @@ protected:
   }
 
   virtual void read_capture_or_quiet_move(char *&p) {
-    if (startOfCapture(p))
-    {
+    if (start_of_capture(p))
       read_capture(p);
-    } else if (start_of_quiet_move(p))
-    { read_quiet_move(p); }
+    else if (start_of_quiet_move(p))
+      read_quiet_move(p);
   }
 
   virtual void read_capture(char *&p) {
     if (p[0] == 'x')
-    {
       p += 1;
-    } else if (p[1] == 'x' && is_rank_digit(p, from_rank_))
-    {
+    else if (p[1] == 'x' && (is_rank_digit(p, from_rank_) || is_file_letter(p, from_file_)))
       p += 2;
-    } else if (p[1] == 'x' && is_file_letter(p, from_file_))
-    {
-      p += 2;
-    } else if (p[2] == 'x' && is_square(p, from_square_))
-    { p += 4; }
+    else if (p[2] == 'x' && is_square(p, from_square_))
+      p += 4;
 
     if (is_square(p, to_square_))
-    {
       p += 2;
-    } else
-    { throw UnexpectedToken("<to-square>", token_str, line_); }
+    else
+      throw UnexpectedToken("<to-square>", token_str, line_);
+
     capture_ = true;
   }
 
   virtual void read_castle_move(char *&p) {
     const int len = strlen(p);
 
-    if (len > 4 && strncmp(p, "O-O-O", 5) == 0)
+    constexpr auto queen_side_length = 5;
+    constexpr auto king_side_length = 3;
+
+    if (len >= queen_side_length && strncmp(p, "O-O-O", queen_side_length) == 0)
     {
-      to_square_ = static_cast<Square>(side_to_move == 0 ? 2 : 58);
-      p += 5;
-    } else if (len > 2 && strncmp(p, "O-O", 3) == 0)
+      to_square_ = ooo_king_to[side_to_move];
+      p += queen_side_length;
+    } else if (len >= king_side_length && strncmp(p, "O-O", king_side_length) == 0)
     {
-      to_square_ = static_cast<Square>(side_to_move == 0 ? 6 : 62);
-      p += 3;
+      to_square_ = oo_king_to[side_to_move];
+      p += king_side_length;
     } else
     {
       // error
@@ -405,26 +368,15 @@ protected:
 
   virtual void read_quiet_move(char *&p) {
     if (is_square(p, to_square_))
-    {
       p += 2;
-    } else if (is_rank_digit(p, from_rank_))
+    else if (is_rank_digit(p, from_rank_) || is_file_letter(p, from_file_))
     {
       p += 1;
 
       if (is_square(p, to_square_))
-      {
         p += 2;
-      } else
-      { throw UnexpectedToken("<to-square>", token_str, line_); }
-    } else if (is_file_letter(p, from_file_))
-    {
-      p += 1;
-
-      if (is_square(p, to_square_))
-      {
-        p += 2;
-      } else
-      { throw UnexpectedToken("<to-square>", token_str, line_); }
+      else
+        throw UnexpectedToken("<to-square>", token_str, line_);
     } else
     {
       // error
@@ -438,9 +390,8 @@ protected:
     read_element_sequence();
 
     if (token_ != RParen)
-    {
       throw UnexpectedToken(RParen, token_str, line_);
-    }
+
     read_token(token_);
   }
 
@@ -552,10 +503,10 @@ protected:
   }
 
   [[nodiscard]]
-  bool start_of_capture_or_quiet_move(const char *p) { return startOfCapture(p) || start_of_quiet_move(p); }
+  bool start_of_capture_or_quiet_move(const char *p) { return start_of_capture(p) || start_of_quiet_move(p); }
 
   [[nodiscard]]
-  bool startOfCapture(const char *p) {
+  bool start_of_capture(const char *p) {
     return (strlen(p) && p[0] == 'x') || (strlen(p) > 1 && p[1] == 'x' && is_rank_digit(p, from_rank_)) || (strlen(p) > 1 && p[1] == 'x' && is_file_letter(p, from_file_))
            || (strlen(p) > 2 && p[2] == 'x' && is_square(p, from_square_));
   }
@@ -575,19 +526,17 @@ protected:
   // scan for tokens
   //
   virtual void read_token(Token &token) {
-    for (;;)
+    do
     {
       read_next_token(token);
 
       if (strict_ || (token != Invalid && token != LT && token != GT))
-      {
         break;
-      }
-    }
+    } while (true);
   }
 
   virtual void read_next_token(Token &token) {
-    const bool get = (token != Symbol && token != Integer && token != String && token != NAG);
+    const auto get = (token != Symbol && token != Integer && token != String && token != NAG);
 
     if (get || is_white_space(ch_) || ch_ == '{' || ch_ == ';')
     {
@@ -657,7 +606,7 @@ protected:
   int get_char(unsigned char &c) {
     auto escape = false;
 
-    for (;;)
+    do
     {
       if (fillpos_ <= readpos_)
       {
@@ -684,9 +633,7 @@ protected:
           escape = true;
       }
 
-      if (escape == false)
-        break;
-    }
+    } while (escape);
     return 1;
   }
 
@@ -695,15 +642,15 @@ protected:
     if (!is_al_num(ch_))
       return false;
 
-    int len     = 0;
-    bool digits = true;
+    auto len    = 0;
+    auto digits = true;
 
-    for (;;)
+    do
     {
       digits           = digits && is_digit(ch_) != 0;
       token_str[len++] = ch_;
 
-      const int n = get_char(ch_, true, false, false);
+      const auto n = get_char(ch_, true, false, false);
 
       if (n == -1)
         throw 0;
@@ -712,7 +659,7 @@ protected:
 
       if (!is_al_num(ch_) && ch_ != '_' && ch_ != '+' && ch_ != '/' && ch_ != '#' && ch_ != '=' && ch_ != ':' && ch_ != '-')
         break;
-    }
+    } while (true);
 
     while (ch_ == '!' || ch_ == '?')
     {
@@ -738,43 +685,38 @@ protected:
 
     int len = 0;
 
-    for (;;)
+    do
     {
       token_str[len++] = ch_;
 
-      const int n = get_char(ch_, true, false, false);
+      const auto n = get_char(ch_, true, false, false);
 
       if (n == -1)
-      {
         throw 0;
-      } else if (n == 0)
-      { break; }
 
-      if (!is_digit(ch_))
-      {
+      if (n == 0)
         break;
-      }
-    }
+
+    } while (is_digit(ch_));
+
     token_str[len] = '\0';
 
     if (len < 2)
-    {
       return false;
-    }
+
     token_ = NAG;
     return true;
   }
 
   bool read_string() {
     if (ch_ != '\"')
-    {
       return false;
-    }
-    int len   = 0;
-    int i     = 0;
+
+    auto len  = 0;
+    auto i    = 0;
     char prev = 0;
 
-    for (;;)
+    do
     {
       token_str[len++] = ch_;
 
@@ -783,7 +725,7 @@ protected:
 
       prev = ch_;
 
-      const int n = get_char(ch_, true, false, false);
+      const auto n = get_char(ch_, true, false, false);
 
       if (n == -1)
         throw 0;
@@ -795,13 +737,13 @@ protected:
         token_ = String;
         break;
       }
-    }
+    } while (true);
     token_str[len] = '\0';
     return true;
   }
 
   int get_char(unsigned char &c, bool get, const bool skip_ws, const bool skip_comment) {
-    for (;;)
+    do
     {
       if (get)
       {
@@ -823,7 +765,8 @@ protected:
         get = false;
       } else
         break;
-    }
+    } while (true);
+
     return 1;
   }
 
@@ -831,9 +774,9 @@ protected:
     unsigned char c;
     char *p = comment_;
 
-    for (;;)
+    do
     {
-      const int n = get_char(c);
+      const auto n = get_char(c);
 
       if (n <= 0)
         return;
@@ -846,12 +789,13 @@ protected:
         *p = c;
         ++p;
       }
-    }
+    } while (true);
+
     *p = '\0';
   }
 
   virtual void read_comment2(unsigned char &c) {
-    for (;;)
+    do
     {
       int n = get_char(c);
 
@@ -860,7 +804,7 @@ protected:
 
       if (c == 0x0a || c == 0x0d)
       {
-        for (;;)
+        do
         {
           n = get_char(c);
 
@@ -869,24 +813,22 @@ protected:
 
           if (c != 0x0a && c != 0x0d)
             break;
-        }
+        } while (true);
         break;
       }
-    }
+    } while (true);
   }
-
-  // TODO : replace with std
 
   static constexpr bool is_white_space(const char c) { return c == ' ' || c == '\t' || c == 0x0a || c == 0x0d; }
 
   [[nodiscard]]
-  bool is_digit(const char c) const { return std::isdigit(c); }
+  static bool is_digit(const char c) { return std::isdigit(c); }
 
   [[nodiscard]]
-  bool is_alpha(const char c) const { return std::isalpha(c); }
+  static bool is_alpha(const char c) { return std::isalpha(c); }
 
   [[nodiscard]]
-  bool is_al_num(const char c) const { return std::isalnum(c); }
+  static bool is_al_num(const char c) { return std::isalnum(c); }
 
   File *file_;
   unsigned char *buffer_;
@@ -907,7 +849,7 @@ protected:
   Square from_square_;
   Square to_square_;
   int promoted_to;
-  int side_to_move;
+  Color side_to_move;
   int move_number_;
   bool pawn_move_;
   bool castle_move_;
