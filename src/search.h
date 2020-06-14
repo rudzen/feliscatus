@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <atomic>
-
+#include <optional>
 #include "moves.h"
 #include "uci.h"
 #include "game.h"
@@ -12,7 +12,7 @@
 #include "hash.h"
 #include "stopwatch.h"
 
-class Search : public MoveSorter {
+class Search final : public MoveSorter {
 public:
   Search(Protocol *p, Game *g, Eval *e, See *s) : lag_buffer(-1), verbosity(true), protocol(p), game(g), eval(e), board(g->pos->board), see(s) { }
 
@@ -44,7 +44,7 @@ public:
 
           get_hash_and_evaluate(alpha, beta);
 
-          const auto score = search(true, search_depth, alpha, beta, EXACT);
+          const auto score = search<EXACT, true>(search_depth, alpha, beta);
 
           if (score > alpha && score < beta)
             break;
@@ -79,38 +79,46 @@ public:
   virtual void run() { go(0, 0, 0, 0, 0, 0, 0); }
 
 protected:
-  int search(const bool is_pv, const int depth, int alpha, const int beta, const int expected_node_type) {
-    if (!is_pv && is_hash_score_valid(depth, alpha, beta))
-      return search_node_score(pos->transp_score);
+  template<NodeType NT, bool PV>
+  int search(const int depth, int alpha, const int beta) {
+    if constexpr (!PV)
+    {
+      if (is_hash_score_valid(depth, alpha, beta))
+        return search_node_score(pos->transp_score);
+    }
 
     if (plies >= MAXDEPTH - 1)
       return search_node_score(pos->eval_score);
 
-    if (!is_pv && should_try_null_move(depth, beta))
+    if constexpr (!PV)
     {
-      if (depth <= 5)
+      if (should_try_null_move(depth, beta))
       {
-        const auto score = pos->eval_score - 50 - 100 * (depth / 2);
+        if (depth <= 5)
+        {
+          const auto score = pos->eval_score - 50 - 100 * (depth / 2);
+
+          if (score >= beta)
+            return score;
+        }
+        make_move_and_evaluate(0, alpha, beta);
+        const auto score = search_next_depth<ALPHA, false>(depth - null_move_reduction(depth), -beta, -beta + 1);
+        unmake_move();
 
         if (score >= beta)
-          return score;
+          return search_node_score(score);
       }
-      make_move_and_evaluate(0, alpha, beta);
-      const auto score = search_next_depth(false, depth - null_move_reduction(depth), -beta, -beta + 1, ALPHA);
-      unmake_move();
 
-      if (score >= beta)
-        return search_node_score(score);
+      if (depth <= 3 && pos->eval_score + razor_margin[depth] < beta)
+      {
+        const auto score = search_quiesce<false>(beta - 1, beta, 0);
+
+        if (score < beta)
+          return search_node_score(std::max<int>(score, pos->eval_score + razor_margin[depth]));
+      }
     }
 
-    if (!is_pv && depth <= 3 && pos->eval_score + razor_margin[depth] < beta)
-    {
-      const auto score = search_quiesce(beta - 1, beta, 0, false);
-
-      if (score < beta)
-        return search_node_score(std::max<int>(score, pos->eval_score + razor_margin[depth]));
-    }
-    const auto singular_move = get_singular_move(depth, is_pv);
+    const auto singular_move = get_singular_move<PV>(depth);
 
     pos->generate_moves(this, pos->transp_move, STAGES);
 
@@ -129,26 +137,29 @@ protected:
         if (protocol && plies == 1 && search_depth >= 20 && (search_time > 5000 || is_analysing()))
           protocol->post_curr_move(move_data->move, move_count);
 
-        if (move_count == 1 && is_pv)
-          score = search_next_depth(true, next_depth_pv(singular_move, depth, move_data), -beta, -alpha, EXACT);
+        if (PV && move_count == 1)
+          score = search_next_depth<EXACT, true>(next_depth_pv(singular_move, depth, move_data), -beta, -alpha);
         else
         {
-          const auto next_depth           = next_depth_not_pv(is_pv, depth, move_count, move_data, alpha, best_score, expected_node_type);
-          const auto next_expected_node_type = expected_node_type & (EXACT | ALPHA) ? BETA : ALPHA;
+          const auto next_depth = next_depth_not_pv<NT, PV>(depth, move_count, move_data, alpha, best_score);
 
-          if (next_depth == -999)
+          if (!next_depth.has_value())
           {
             unmake_move();
             continue;
           }
-          score = search_next_depth(false, next_depth, -alpha - 1, -alpha, next_expected_node_type);
 
-          if (score > alpha && depth > 1 && next_depth < depth - 1)
-            score = search_next_depth(false, depth - 1, -alpha - 1, -alpha, next_expected_node_type);
+          constexpr auto next_expected_node_type = NT & (EXACT | ALPHA) ? BETA : ALPHA;
+
+          score = search_next_depth<next_expected_node_type, false>(next_depth.value(), -alpha - 1, -alpha);
+
+          if (score > alpha && depth > 1 && next_depth.value() < depth - 1)
+            score = search_next_depth<next_expected_node_type, false>(depth - 1, -alpha - 1, -alpha);
 
           if (score > alpha && score < beta)
-            score = search_next_depth(true, next_depth_pv(0, depth, move_data), -beta, -alpha, EXACT);
+            score = search_next_depth<EXACT, true>(next_depth_pv(0, depth, move_data), -beta, -alpha);
         }
+
         unmake_move();
 
         if (score > best_score)
@@ -162,11 +173,11 @@ protected:
             if (score >= beta)
             {
               if (plies == 0)
-                update_pv(best_move, best_score, depth, BETA);
+                update_pv<BETA>(best_move, best_score, depth);
 
               break;
             }
-            update_pv(best_move, best_score, depth, EXACT);
+            update_pv<EXACT>(best_move, best_score, depth);
             alpha = best_score;
           }
           //          else if (pv) {
@@ -178,7 +189,8 @@ protected:
 
     if (move_count == 0)
       return search_node_score(pos->in_check ? -MAXSCORE + plies : draw_score());
-    else if (pos->reversible_half_move_count >= 100)
+
+    if (pos->reversible_half_move_count >= 100)
       return search_node_score(draw_score());
 
     if (best_move && !is_capture(best_move) && !is_promotion(best_move))
@@ -191,16 +203,23 @@ protected:
     return store_search_node_score(best_score, depth, node_type(best_score, beta, best_move), best_move);
   }
 
-  int search_next_depth(const bool is_pv, const int depth, const int alpha, const int beta, const NodeType expected_node_type) {
+  template<NodeType NT, bool PV>
+  int search_next_depth(const int depth, const int alpha, const int beta) {
     if ((pos->is_draw() || game->is_repetition()) && !is_null_move(pos->last_move))
       return search_node_score(-draw_score());
-    return depth <= 0 ? -search_quiesce(alpha, beta, 0, is_pv) : -search(is_pv, depth, alpha, beta, expected_node_type);
+    return depth <= 0 ? -search_quiesce<PV>(alpha, beta, 0) : -search<NT, PV>(depth, alpha, beta);
   }
 
-  uint32_t get_singular_move(const int depth, const bool is_pv) {
-    if (is_pv && pos->transp_move && pos->transp_type == EXACT && depth >= 4 && search_fail_low(depth / 2, std::max<int>(-MAXSCORE, pos->eval_score - 75), pos->transp_move))
-      return pos->transp_move;
-    return 0;
+  template<bool PV>
+  uint32_t get_singular_move(const int depth) {
+    if constexpr (!PV)
+      return 0;
+    else
+    {
+      if (pos->transp_move && pos->transp_type == EXACT && depth >= 4 && search_fail_low(depth / 2, std::max<int>(-MAXSCORE, pos->eval_score - 75), pos->transp_move))
+        return pos->transp_move;
+      return 0;
+    }
   }
 
   bool search_fail_low(const int depth, const int alpha, const uint32_t exclude_move) {
@@ -217,17 +236,18 @@ protected:
 
       if (make_move_and_evaluate(move_data->move, alpha, alpha + 1))
       {
-        const auto next_depth = next_depth_not_pv(true, depth, ++move_count, move_data, alpha, best_score, BETA);
+        const auto next_depth = next_depth_not_pv<BETA, true>(depth, ++move_count, move_data, alpha, best_score);
 
-        if (next_depth == -999)
+        if (!next_depth.has_value())
         {
           unmake_move();
           continue;
         }
-        auto score = search_next_depth(false, next_depth, -alpha - 1, -alpha, BETA);
 
-        if (score > alpha && depth > 1 && next_depth < depth - 1)
-          score = search_next_depth(false, depth - 1, -alpha - 1, -alpha, BETA);
+        auto score = search_next_depth<BETA, false>(next_depth.value(), -alpha - 1, -alpha);
+
+        if (score > alpha && depth > 1 && next_depth.value() < depth - 1)
+          score = search_next_depth<BETA, false>(depth - 1, -alpha - 1, -alpha);
 
         unmake_move();
 
@@ -235,7 +255,6 @@ protected:
           return false;
       }
     }
-
     if (move_count == 0)
       return false;
     return true;
@@ -245,17 +264,21 @@ protected:
     return !pos->in_check && pos->null_moves_in_row < 1 && !pos->material.is_kx(pos->side_to_move) && pos->eval_score >= beta;
   }
 
-  int next_depth_not_pv(const bool is_pv, const int depth, const int move_count, const MoveData *move_data, const int alpha, int &best_score, const int expected_node_type) const {
+  template<NodeType NT, bool PV>
+  std::optional<int> next_depth_not_pv(const int depth, const int move_count, const MoveData *move_data, const int alpha, int &best_score) const {
+
+    constexpr auto move_count_limit = PV ? 5 : 3;
+
     const auto m = move_data->move;
 
     if (pos->in_check && see->see_last_move(m) >= 0)
-      return depth;
+      return std::optional<int>(depth);
 
-    if (!is_queen_promotion(m) && !is_capture(m) && !is_killer_move(m, plies - 1) && move_count >= (is_pv ? 5 : 3))
+    if (move_count >= move_count_limit && !is_queen_promotion(m) && !is_capture(m) && !is_killer_move(m, plies - 1))
     {
       auto next_depth = depth - 2 - depth / 8 - (move_count - 6) / 10;
 
-      if (expected_node_type == BETA)
+      if constexpr (NT == BETA)
         next_depth -= 2;
 
       if (next_depth <= 3)
@@ -265,12 +288,12 @@ protected:
         if (score < alpha)
         {
           best_score = std::max<int>(best_score, score);
-          return -999;
+          return std::nullopt;
         }
       }
-      return next_depth;
+      return std::optional<int>(next_depth);
     }
-    return depth - 1;
+    return std::optional<int>(depth - 1);
   }
 
   int next_depth_pv(const uint32_t singular_move, const int depth, const MoveData *move_data) const {
@@ -287,9 +310,13 @@ protected:
   [[nodiscard]]
   static constexpr int null_move_reduction(const int depth) { return 4 + depth / 4; }
 
-  int search_quiesce(int alpha, const int beta, const int qs_ply, const bool search_pv) {
-    if (!search_pv && is_hash_score_valid(0, alpha, beta))
-      return search_node_score(pos->transp_score);
+  template<bool PV>
+  int search_quiesce(int alpha, const int beta, const int qs_ply) {
+    if constexpr (!PV)
+    {
+      if (is_hash_score_valid(0, alpha, beta))
+        return search_node_score(pos->transp_score);
+    }
 
     if (pos->eval_score >= beta)
     {
@@ -328,9 +355,23 @@ protected:
       {
         ++move_count;
 
-        const auto score = pos->is_draw()
-                               ? -draw_score()
-                               : -search_quiesce(-beta, -alpha, qs_ply + 1, search_pv && move_count == 1);
+        int score;
+
+        if (pos->is_draw())
+          score = -draw_score();
+        else
+        {
+          if constexpr (PV)
+            score = move_count == 1
+                  ? -search_quiesce<true>(-beta, -alpha, qs_ply + 1)
+                  : -search_quiesce<false>(-beta, -alpha, qs_ply + 1);
+          else
+            score = -search_quiesce<false>(-beta, -alpha, qs_ply + 1);
+        }
+
+        //const auto score = pos->is_draw()
+        //                       ? -draw_score()
+        //                       : -search_quiesce(-beta, -alpha, qs_ply + 1, search_pv && move_count == 1);
 
         unmake_move();
 
@@ -345,7 +386,7 @@ protected:
             if (score >= beta)
               break;
 
-            update_pv(best_move, best_score, 0, EXACT);
+            update_pv<EXACT>(best_move, best_score, 0);
             alpha = best_score;
           }
         }
@@ -401,14 +442,15 @@ protected:
 
   [[nodiscard]] int is_analysing() const { return protocol ? protocol->is_analysing() : true; }
 
-  void update_pv(const uint32_t move, const int score, const int depth, const NodeType node_type) {
+  template<NodeType NT>
+  void update_pv(const uint32_t move, const int score, const int depth) {
     auto *const entry = &pv[plies][plies];
 
     entry->score     = score;
     entry->depth     = depth;
     entry->key       = pos->key;
     entry->move      = move;
-    entry->node_type = node_type;
+    entry->node_type = NT;
     entry->eval      = pos->eval_score;
 
     pv_length[plies] = pv_length[plies + 1];
@@ -428,7 +470,7 @@ protected:
         for (auto i = plies; i < pv_length[plies]; ++i)
           _snprintf(&buf[strlen(buf)], sizeof buf - strlen(buf), "%s ", game->move_to_string(pv[plies][i].move, buf2));
 
-        protocol->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), std::max<int>(1ull, start_time.elapsed_milliseconds()), TT.get_load(), score, buf, node_type);
+        protocol->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), std::max<int>(1ull, start_time.elapsed_milliseconds()), TT.get_load(), score, buf, NT);
       }
     }
   }
@@ -656,7 +698,7 @@ protected:
   Eval *eval;
   Board *board;
   See *see;
-  Position *pos;
+  Position *pos{};
 
   uint64_t node_count{};
   uint64_t num_workers_{};
