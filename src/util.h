@@ -70,3 +70,9 @@ inline const char *FENfromParams(const char *params[], const int num_params, int
   }
   return fen;
 }
+
+template<typename T>
+constexpr bool in_between(const T value, const T min, const T max) {
+  static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "invalid type.");
+  return (static_cast<unsigned int>(value) - static_cast<unsigned int>(min) <= static_cast<unsigned int>(max) - static_cast<unsigned int>(min));
+}

@@ -29,30 +29,18 @@ public:
         return false;
       }
     }
-    auto *const prev    = pos++;
-    pos->side_to_move = ~prev->side_to_move;
-    pos->material     = prev->material;
-    pos->last_move    = m;
-
+    auto *const prev                = pos++;
+    pos->side_to_move               = ~prev->side_to_move;
+    pos->material                   = prev->material;
+    pos->last_move                  = m;
+    pos->castle_rights              = prev->castle_rights & castle_rights_mask[move_from(m)] & castle_rights_mask[move_to(m)];
+    pos->null_moves_in_row          = 0;
+    pos->reversible_half_move_count = is_capture(m) || (move_piece(m) & 7) == Pawn ? 0 : prev->reversible_half_move_count + 1;
+    pos->en_passant_square          = move_type(m) & DOUBLEPUSH ? move_to(m) + pawn_push(pos->side_to_move) : no_square;
+    pos->key                        = prev->key;
+    pos->pawn_structure_key         = prev->pawn_structure_key;
     if (calculate_in_check)
       pos->in_check = board.is_attacked(board.king_square[pos->side_to_move], ~pos->side_to_move);
-
-    pos->castle_rights     = prev->castle_rights & castle_rights_mask[move_from(m)] & castle_rights_mask[move_to(m)];
-    pos->null_moves_in_row = 0;
-
-    if (is_capture(m) || (move_piece(m) & 7) == Pawn)
-    {
-      pos->reversible_half_move_count = 0;
-    } else
-    { pos->reversible_half_move_count = prev->reversible_half_move_count + 1; }
-
-    if (move_type(m) & DOUBLEPUSH)
-    {
-      pos->en_passant_square = move_to(m) + pawn_push(pos->side_to_move);
-    } else
-    { pos->en_passant_square = no_square; }
-    pos->key                = prev->key;
-    pos->pawn_structure_key = prev->pawn_structure_key;
     update_key(m);
     pos->material.make_move(m);
     return true;
@@ -60,9 +48,7 @@ public:
 
   void unmake_move() {
     if (pos->last_move)
-    {
       board.unmake_move(pos->last_move);
-    }
     pos--;
   }
 
@@ -122,21 +108,18 @@ public:
 
     // from and to for moving piece
     if ((move_piece(m) & 7) == Pawn)
-    {
       pos->pawn_structure_key ^= zobrist::zobrist_pst[move_piece(m)][move_from(m)];
-    } else
-    { pos->key ^= zobrist::zobrist_pst[move_piece(m)][move_from(m)]; }
+    else
+      pos->key ^= zobrist::zobrist_pst[move_piece(m)][move_from(m)];
 
     if (move_type(m) & PROMOTION)
-    {
       pos->key ^= zobrist::zobrist_pst[move_promoted(m)][move_to(m)];
-    } else
+    else
     {
       if ((move_piece(m) & 7) == Pawn)
-      {
         pos->pawn_structure_key ^= zobrist::zobrist_pst[move_piece(m)][move_to(m)];
-      } else
-      { pos->key ^= zobrist::zobrist_pst[move_piece(m)][move_to(m)]; }
+      else
+        pos->key ^= zobrist::zobrist_pst[move_piece(m)][move_to(m)];
     }
 
     // remove captured piece
@@ -146,10 +129,9 @@ public:
     } else if (is_capture(m))
     {
       if ((move_captured(m) & 7) == Pawn)
-      {
         pos->pawn_structure_key ^= zobrist::zobrist_pst[move_captured(m)][move_to(m)];
-      } else
-      { pos->key ^= zobrist::zobrist_pst[move_captured(m)][move_to(m)]; }
+      else
+        pos->key ^= zobrist::zobrist_pst[move_captured(m)][move_to(m)];
     }
 
     // castling rights
@@ -169,10 +151,9 @@ public:
     pos->key ^= pos->pawn_structure_key;
   }
 
-  [[nodiscard]]
-  bool is_repetition() const {
-    auto num_moves  = pos->reversible_half_move_count;
-    auto *prev = pos;
+  [[nodiscard]] bool is_repetition() const {
+    auto num_moves = pos->reversible_half_move_count;
+    auto *prev     = pos;
 
     while ((num_moves = num_moves - 2) >= 0 && prev - position_list > 1)
     {
@@ -185,8 +166,7 @@ public:
   }
 
   // TODO : fix implementation defined behaviour
-  [[nodiscard]]
-  int half_move_count() const { return pos - position_list; }
+  [[nodiscard]] int half_move_count() const { return pos - position_list; }
 
   void add_piece(const int p, const Color c, const Square sq) {
     const auto pc = p | c << 3;
@@ -275,30 +255,23 @@ public:
       add_piece(piece, color, static_cast<Square>(f - 1 + (r - 1) * 8));
       f++;
       p++;
-      continue;
     }
 
     if (!get_delimiter(&p) || (pos->side_to_move = get_side_to_move(&p)) == COL_NB)
-    {
       return 4;
-    }
     p++;
 
     if (!get_delimiter(&p) || setup_castling(&p) == -1)
-    {
       return 5;
-    }
 
     if (!get_delimiter(&p))
-    {
       return 6;
-    }
 
     Square sq;
     if (!get_ep_square(&p, sq))
       return 6;
 
-    pos->en_passant_square          = sq; // < 64 ? sq : no_square;
+    pos->en_passant_square          = sq;// < 64 ? sq : no_square;
     pos->reversible_half_move_count = 0;
 
     if (pos->side_to_move == 1)
@@ -309,15 +282,13 @@ public:
     pos->key ^= zobrist::zobrist_castling[pos->castle_rights];
 
     if (pos->en_passant_square != no_square)
-    {
       pos->key ^= zobrist::zobrist_ep_file[file_of(pos->en_passant_square)];
-    }
+
     pos->in_check = board.is_attacked(board.king_square[pos->side_to_move], ~pos->side_to_move);
     return 0;
   }
 
-  [[nodiscard]]
-  char *get_fen() const {
+  [[nodiscard]] char *get_fen() const {
     constexpr std::string_view piece_letter = "PNBRQK  pnbrqk";
     static char fen[128];
     auto *p = fen;
@@ -329,7 +300,7 @@ public:
     {
       auto empty = 0;
 
-      for (const File f : Files)
+      for (const auto f : Files)
       {
         const auto sq = make_square(f, r);
         const auto pc = board.get_piece(sq);
@@ -338,25 +309,21 @@ public:
         {
           if (empty)
           {
-            *p++ = empty + '0';
-            empty  = 0;
+            *p++  = empty + '0';
+            empty = 0;
           }
           *p++ = piece_letter[pc];
         } else
-        { empty++; }
+          empty++;
       }
 
       if (empty)
-      {
         *p++ = empty + '0';
-      }
 
       if (r > 0)
-      {
         *p++ = '/';
-      }
     }
-    memcpy(p, pos->side_to_move == 0 ? " w " : " b ", 3);
+    memcpy(p, pos->side_to_move == WHITE ? " w " : " b ", 3);
     p += 3;
 
     if (pos->castle_rights == 0)
@@ -366,24 +333,17 @@ public:
     } else
     {
       if (pos->castle_rights & 1)
-      {
         *p++ = 'K';
-      }
 
       if (pos->castle_rights & 2)
-      {
         *p++ = 'Q';
-      }
 
       if (pos->castle_rights & 4)
-      {
         *p++ = 'k';
-      }
 
       if (pos->castle_rights & 8)
-      {
         *p++ = 'q';
-      }
+
       *p++ = ' ';
     }
 
@@ -405,31 +365,26 @@ public:
     return fen;
   }
 
-  [[nodiscard]]
-  static bool get_ep_square(const char **p, Square &sq) {
+  [[nodiscard]] static bool get_ep_square(const char **p, Square &sq) {
     if (**p == '-')
     {
-      sq = no_square;// 64 = no en passant square
+      sq = no_square;
       return true;
     }
 
-    if (**p < 'a' || **p > 'h')
-    {
+    if (!in_between(**p, 'a', 'h'))
       return false;
-    }
+
     (*p)++;
 
-    if (**p != '3' && **p != '6')
-    {
+    if (!in_between(**p, '3', '6'))
       return false;
-    }
 
     sq = static_cast<Square>(*(*p - 1) - 'a' + (**p - '1') * 8);
     return true;
   }
 
-  [[nodiscard]]
-  int setup_castling(const char **p) {
+  [[nodiscard]] int setup_castling(const char **p) {
     for (const auto sq : Squares)
       castle_rights_mask[sq] = 15;
 
@@ -443,7 +398,7 @@ public:
     {
       const auto c = **p;
 
-      if (c >= 'A' && c <= 'H')
+      if (in_between<char>(c, 'A', 'H'))
       {
         chess960 = true;
         xfen     = false;
@@ -454,7 +409,7 @@ public:
           add_short_castle_rights<WHITE>(rook_file);
         else
           add_long_castle_rights<WHITE>(rook_file);
-      } else if (c >= 'a' && c <= 'h')
+      } else if (in_between<char>(c, 'a', 'h'))
       {
         chess960 = true;
         xfen     = false;
@@ -487,8 +442,8 @@ public:
   template<Color Us>
   void add_short_castle_rights(int rook_file) {
 
-    constexpr auto Them        = ~Us;
-    constexpr int CastleRights = Us == WHITE ? 1 : 4;
+    constexpr auto Them         = ~Us;
+    constexpr auto CastleRights = Us == WHITE ? 1 : 4;
 
     if (rook_file == -1)
     {
@@ -507,7 +462,7 @@ public:
     castle_rights_mask[flip[Them][rook_file]] -= oo_allowed_mask[Us];
     castle_rights_mask[flip[Them][file_of(board.king_square[Us])]] -= oo_allowed_mask[Us];
     rook_castles_from[flip[Them][g1]] = flip[Them][rook_file];
-    oo_king_from[Us]                    = board.king_square[Us];
+    oo_king_from[Us]                  = board.king_square[Us];
 
     if (file_of(board.king_square[Us]) != 4 || rook_file != 7)
       chess960 = true;
@@ -536,7 +491,7 @@ public:
     castle_rights_mask[flip[Them][rook_file]] -= ooo_allowed_mask[Us];
     castle_rights_mask[flip[Them][file_of(board.king_square[Us])]] -= ooo_allowed_mask[Us];
     rook_castles_from[flip[Them][c1]] = flip[Them][rook_file];
-    ooo_king_from[Us]                   = board.king_square[Us];
+    ooo_king_from[Us]                 = board.king_square[Us];
 
     if (file_of(board.king_square[Us]) != 4 || rook_file != 0)
       chess960 = true;
@@ -587,15 +542,11 @@ public:
     if (is_castle_move(m) && chess960)
     {
       if (xfen && move_to(m) == ooo_king_to[move_side(m)])
-      {
         strcpy(buf, "O-O-O");
-      } else if (xfen)
-      {
+      else if (xfen)
         strcpy(buf, "O-O");
-      } else
-      {// shredder fen
+      else// shredder fen
         sprintf(buf, "%s%s", square_to_string(move_from(m), tmp1), square_to_string(rook_castles_from[move_to(m)], tmp2));
-      }
     } else
     {
       sprintf(buf, "%s%s", square_to_string(move_from(m), tmp1), square_to_string(move_to(m), tmp2));
