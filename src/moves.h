@@ -104,9 +104,7 @@ public:
         generate_quiet_moves();
         continue;
       }
-      const auto tmp       = move_list[iteration];
-      move_list[iteration] = move_list[best_idx];
-      move_list[best_idx]  = tmp;
+      std::swap(move_list[iteration], move_list[best_idx]);
       return &move_list[iteration++];
     } while (true);
   }
