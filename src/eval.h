@@ -3,6 +3,7 @@
 #include <array>
 #include "game.h"
 #include "hash.h"
+#include "position.h"
 
 class Eval {
 public:
@@ -11,13 +12,15 @@ public:
   virtual ~Eval() = default;
 
   int evaluate(const int alpha, const int beta) {
+
+    constexpr auto lazy_margin = 500;
+
     init_evaluate();
 
     eval_material<WHITE>();
     eval_material<BLACK>();
 
     const auto mat_eval    = poseval[0] - poseval[1];
-    const auto lazy_margin = 500;
 
     if (const auto lazy_eval = pos->side_to_move == WHITE ? mat_eval : -mat_eval; lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
       return pos->material.evaluate(pos->flags, lazy_eval, pos->side_to_move, &game_.board);

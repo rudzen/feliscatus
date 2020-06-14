@@ -11,6 +11,7 @@
 #include "see.h"
 #include "hash.h"
 #include "stopwatch.h"
+#include "position.h"
 
 class Search final : public MoveSorter {
 public:

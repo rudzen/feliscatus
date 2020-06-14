@@ -8,6 +8,8 @@
 
 #include <iostream>
 #include "game.h"
+#include "util.h"
+#include "position.h"
 
 constexpr int FIXED_MOVE_TIME    = 1;
 constexpr int FIXED_DEPTH        = 2;

@@ -14,11 +14,11 @@ public:
     reversible_half_move_count = 0;
     pawn_structure_key         = 0;
     key                        = 0;
+    last_move                  = 0;
+    null_moves_in_row          = 0;
+    transposition              = nullptr;
+    last_move                  = 0;
     material.clear();
-    last_move         = 0;
-    null_moves_in_row = 0;
-    transposition     = nullptr;
-    last_move         = 0;
   }
 
   const uint32_t *string_to_move(const char *m) {
@@ -37,9 +37,7 @@ public:
 
       // chess 960 - shredder fen
       if ((board->get_piece(from) == King && board->get_piece(to) == Rook) || (board->get_piece(from) == King + 8 && board->get_piece(to) == Rook + 8))
-      {
         castle_type = to > from ? 0 : 1;// ga na
-      }
     }
 
     if (castle_type == 0)
@@ -51,6 +49,7 @@ public:
       from = ooo_king_from[side_to_move];
       to   = ooo_king_to[side_to_move];
     }
+
     generate_moves();
 
     while (const MoveData *move_data = next_move())

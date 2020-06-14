@@ -2,18 +2,17 @@
 
 #include <cstdint>
 #include <string_view>
-#include "position.h"
 #include "types.h"
+#include "square.h"
+#include "board.h"
 
-// TODO : Move the rest of privately used only functions to implementation
-class Game {
+class Position;
+
+class Game final {
 public:
-  Game() : position_list(new Position[2000]), pos(position_list), chess960(false), xfen(false) {
-    for (auto i = 0; i < 2000; i++)
-      position_list[i].board = &board;
-  }
+  Game();
 
-  virtual ~Game() { delete[] position_list; }
+  ~Game();
 
   bool make_move(uint32_t m, bool check_legal, bool calculate_in_check);
 

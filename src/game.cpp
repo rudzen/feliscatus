@@ -2,6 +2,8 @@
 #include <cctype>
 #include <optional>
 #include "zobrist.h"
+#include "position.h"
+#include "board.h"
 
 namespace {
 
@@ -174,6 +176,14 @@ void update_key(Position *pos, const uint32_t m) {
 }
 
 }// namespace
+
+Game::Game()
+  : position_list(new Position[2000]), pos(position_list), chess960(false), xfen(false) {
+  for (auto i = 0; i < 2000; i++)
+    position_list[i].board = &board;
+}
+
+Game::~Game() { delete[] position_list; }
 
 bool Game::make_move(const uint32_t m, const bool check_legal, const bool calculate_in_check) {
   if (m == 0)
