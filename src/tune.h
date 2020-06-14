@@ -20,11 +20,11 @@ struct Node {
   double result_{};
 };
 
-inline bool x;
+inline bool x_;
 
 struct Param {
   Param(std::string name, int &value, const int initial_value, const int step) : name_(std::move(name)), initial_value_(initial_value), value_(value), step_(step) {
-    if (x)
+    if (x_)
       value = initial_value;
   }
 

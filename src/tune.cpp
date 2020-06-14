@@ -231,7 +231,7 @@ Tune::~Tune() { eval_->tuning_ = false; }
 
 void Tune::init_eval(std::vector<Param> &params) {
   auto step = 1;
-  x        = false;
+  x_        = false;
   /*
                   for (auto i = 0; i < 9; ++i)
                           {
