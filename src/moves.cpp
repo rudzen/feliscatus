@@ -1,6 +1,7 @@
 #include "moves.h"
 #include "board.h"
 #include "bitboard.h"
+#include "magic.h"
 
 namespace {
 

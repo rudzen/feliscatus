@@ -8,7 +8,6 @@
 #include "uci.h"
 #include "game.h"
 #include "eval.h"
-#include "see.h"
 #include "hash.h"
 #include "stopwatch.h"
 #include "position.h"
@@ -24,9 +23,9 @@ struct PVEntry {
 
 class Search final : public MoveSorter {
 public:
-  Search(Protocol *p, Game *g, Eval *e, See *s) : lag_buffer(-1), verbosity(true), protocol(p), game(g), eval(e), board(g->pos->b), see(s) { }
-
-  Search(Game *g, Eval *e, See *s) : Search(nullptr, g, e, s) {
+  Search() = delete;
+  Search(Protocol *p, Game *g, Eval *e) : lag_buffer(-1), verbosity(true), protocol(p), game(g), eval(e), board(g->pos->b) { }
+  Search(Game *g, Eval *e) : Search(nullptr, g, e) {
     stop_search.store(false);
   }
 
@@ -281,7 +280,7 @@ protected:
 
     const auto m = move_data->move;
 
-    if (pos->in_check && see->see_last_move(m) >= 0)
+    if (pos->in_check && board->see_last_move(m) >= 0)
       return std::optional<int>(depth);
 
     if (move_count >= move_count_limit && !is_queen_promotion(m) && !is_capture(m) && !is_killer_move(m, plies - 1))
@@ -312,7 +311,7 @@ protected:
     if (m == singular_move)
       return depth;
 
-    if ((pos->in_check || is_passed_pawn_move(m)) && see->see_last_move(m) >= 0)
+    if ((pos->in_check || is_passed_pawn_move(m)) && game->board.see_last_move(m) >= 0)
       return depth;
     return depth - 1;
   }
@@ -587,7 +586,7 @@ protected:
 
       if (value_piece <= value_captured)
         move_data.score = 300000 + value_captured * 20 - value_piece;
-      else if (see->see_move(m) >= 0)
+      else if (board->see_move(m) >= 0)
         move_data.score = 160000 + value_captured * 20 - value_piece;
       else
         move_data.score = -100000 + value_captured * 20 - value_piece;
@@ -693,7 +692,6 @@ protected:
   Game *game;
   Eval *eval;
   Board *board;
-  See *see;
   Position *pos{};
 
   uint64_t node_count{};

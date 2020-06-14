@@ -4,7 +4,7 @@
 #include "types.h"
 #include "piece.h"
 
-class Board;
+struct Board;
 
 struct Material {
   void clear();

@@ -3,6 +3,8 @@
 #include <algorithm>
 #include "board.h"
 #include "piece.h"
+#include "magic.h"
+#include "move.h"
 
 namespace {
 

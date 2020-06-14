@@ -7,7 +7,6 @@
 #include "search.h"
 
 class Game;
-struct See;
 class Eval;
 struct PVEntry;
 
@@ -71,7 +70,7 @@ private:
 
 class Tune : public MoveSorter {
 public:
-  Tune(Game *game, See *see, Eval *eval);
+  Tune(Game *game, Eval *eval);
 
   virtual ~Tune();
 
@@ -97,7 +96,6 @@ public:
 
 private:
   Game *game_;
-  See *see_;
   Eval *eval_;
 
   PVEntry pv[128][128]{};

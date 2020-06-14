@@ -1,14 +1,16 @@
 #pragma once
 
 #include <thread>
+#include "game.h"
+#include "eval.h"
+#include "search.h"
 
 struct Worker {
   void start(Game *master, PawnHash *pawnt) {
     game_ = new Game();
     game_->copy(master);
-    see_    = new See(&game_->board);
     eval_   = new Eval(*game_, pawnt);
-    search_ = new Search(game_, eval_, see_);
+    search_ = new Search(game_, eval_);
     thread_ = std::jthread(&Search::run, search_);
   }
 
@@ -18,14 +20,12 @@ struct Worker {
     thread_.join();
     delete search_;
     delete eval_;
-    delete see_;
     delete game_;
   }
 
 private:
   Game *game_;
   Eval *eval_;
-  See *see_;
   Search *search_;
   std::jthread thread_;
 };

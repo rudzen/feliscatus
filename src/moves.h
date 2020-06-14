@@ -15,7 +15,7 @@ struct MoveSorter {
   virtual void sort_move(MoveData &move_data) = 0;
 };
 
-class Board;
+struct Board;
 
 class Moves {
 public:

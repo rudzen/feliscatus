@@ -3,7 +3,6 @@
 #include <unordered_map>
 #include "tune.h"
 #include "game.h"
-#include "see.h"
 #include "eval.h"
 
 namespace {
@@ -128,8 +127,8 @@ void PGNPlayer::print_progress(const bool force) const {
   fmt::print("game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_, all_nodes_count_, all_selected_nodes_.size());
 }
 
-Tune::Tune(Game *game, See *see, Eval *eval)
-  : game_(game), see_(see), eval_(eval), score_static_(false) {
+Tune::Tune(Game *game, Eval *eval)
+  : game_(game), eval_(eval), score_static_(false) {
   PGNPlayer pgn;
   pgn.read(R"(d:\tomcat\x64\result.pgn)");
 
@@ -513,7 +512,7 @@ void Tune::sort_move(MoveData &move_data) {
 
     if (value_piece <= value_captured)
       move_data.score = 300000 + value_captured * 20 - value_piece;
-    else if (see_->see_move(m) >= 0) // TODO : create See on the fly?
+    else if (game_->board.see_move(m) >= 0) // TODO : create See on the fly?
       move_data.score = 160000 + value_captured * 20 - value_piece;
     else
       move_data.score = -100000 + value_captured * 20 - value_piece;

@@ -5,6 +5,8 @@
 #include "hash.h"
 #include "position.h"
 #include "parameters.h"
+#include "bitboard.h"
+#include "magic.h"
 
 class Eval {
 public:

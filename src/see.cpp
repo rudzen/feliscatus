@@ -1,8 +1,8 @@
-#include "see.h"
-#include "game.h"
 #include "board.h"
 #include "material.h"
-
+#include "bitboard.h"
+#include "magic.h"
+#include "move.h"
 
 namespace {
 
@@ -18,31 +18,27 @@ constexpr int next_to_capture(const uint32_t move) {
 
 }
 
-See::See(Board *board)
-  : board_(board) {
-}
-
-int See::see_move(const uint32_t move) {
+int Board::see_move(uint32_t move) {
   int score;
-  board_->make_move(move);
+  make_move(move);
 
-  if (!board_->is_attacked(board_->king_square[move_side(move)], ~move_side(move)))
+  if (!is_attacked(king_square[move_side(move)], ~move_side(move)))
   {
     init_see_move();
     score = see_rec(material_change(move), next_to_capture(move), move_to(move), ~move_side(move));
   } else
     score = SEE_INVALID_SCORE;
 
-  board_->unmake_move(move);
+  unmake_move(move);
   return score;
 }
 
-int See::see_last_move(const uint32_t move) {
+int Board::see_last_move(uint32_t move) {
   init_see_move();
   return see_rec(material_change(move), next_to_capture(move), move_to(move), ~move_side(move));
 }
 
-int See::see_rec(const int mat_change, const int next_capture, const Square to, const Color side_to_move) {
+int Board::see_rec(int mat_change, int next_capture, Square to, Color side_to_move) {
   Square from;
   uint32_t move;
   const auto rr = relative_rank(side_to_move, to);
@@ -57,23 +53,23 @@ int See::see_rec(const int mat_change, const int next_capture, const Square to, 
     else
       init_move(move, current_piece[side_to_move] | (side_to_move << 3), next_capture, from, to, CAPTURE, 0);
 
-    board_->make_move(move);
+    make_move(move);
 
-    if (!board_->is_attacked(board_->king_square[side_to_move], ~side_to_move))
+    if (!is_attacked(king_square[side_to_move], ~side_to_move))
       break;
 
-    board_->unmake_move(move);
-  }
-  while (true);
+    unmake_move(move);
+  } while (true);
 
   const auto score = -see_rec(material_change(move), next_to_capture(move), move_to(move), ~move_side(move));
 
-  board_->unmake_move(move);
+  unmake_move(move);
 
   return score < 0 ? mat_change + score : mat_change;
 }
 
-bool See::lookup_best_attacker(const Square to, const Color side, Square &from) {
+
+bool Board::lookup_best_attacker(const Square to, const Color side, Square &from) {
   // "Best" == "Lowest piece value"
 
   switch (current_piece[side])
@@ -86,7 +82,7 @@ bool See::lookup_best_attacker(const Square to, const Color side, Square &from) 
       return true;
     }
     current_piece[side]++;
-    current_piece_bitboard[side] = board_->knights(side);
+    current_piece_bitboard[side] = knights(side);
     [[fallthrough]];
   case Knight:
     if (current_piece_bitboard[side] & knightAttacks(to))
@@ -96,38 +92,38 @@ bool See::lookup_best_attacker(const Square to, const Color side, Square &from) 
       return true;
     }
     current_piece[side]++;
-    current_piece_bitboard[side] = board_->bishops(side);
+    current_piece_bitboard[side] = bishops(side);
     [[fallthrough]];
 
   case Bishop:
-    if (current_piece_bitboard[side] & bishopAttacks(to, board_->occupied))
+    if (current_piece_bitboard[side] & bishopAttacks(to, occupied))
     {
-      from = lsb(current_piece_bitboard[side] & bishopAttacks(to, board_->occupied));
+      from = lsb(current_piece_bitboard[side] & bishopAttacks(to, occupied));
       current_piece_bitboard[side] &= ~bit(from);
       return true;
     }
     current_piece[side]++;
-    current_piece_bitboard[side] = board_->rooks(side);
+    current_piece_bitboard[side] = rooks(side);
     [[fallthrough]];
   case Rook:
-    if (current_piece_bitboard[side] & rookAttacks(to, board_->occupied))
+    if (current_piece_bitboard[side] & rookAttacks(to, occupied))
     {
-      from = lsb(current_piece_bitboard[side] & rookAttacks(to, board_->occupied));
+      from = lsb(current_piece_bitboard[side] & rookAttacks(to, occupied));
       current_piece_bitboard[side] &= ~bit(from);
       return true;
     }
     current_piece[side]++;
-    current_piece_bitboard[side] = board_->queens(side);
+    current_piece_bitboard[side] = queens(side);
     [[fallthrough]];
   case Queen:
-    if (current_piece_bitboard[side] & queenAttacks(to, board_->occupied))
+    if (current_piece_bitboard[side] & queenAttacks(to, occupied))
     {
-      from = lsb(current_piece_bitboard[side] & queenAttacks(to, board_->occupied));
+      from = lsb(current_piece_bitboard[side] & queenAttacks(to, occupied));
       current_piece_bitboard[side] &= ~bit(from);
       return true;
     }
     current_piece[side]++;
-    current_piece_bitboard[side] = board_->king(side);
+    current_piece_bitboard[side] = king(side);
     [[fallthrough]];
   case King:
     if (current_piece_bitboard[side] & kingAttacks(to))
@@ -141,8 +137,8 @@ bool See::lookup_best_attacker(const Square to, const Color side, Square &from) 
   }
 }
 
-void See::init_see_move() {
+void Board::init_see_move() {
   current_piece.fill(Pawn);
-  current_piece_bitboard[WHITE] = board_->piece[Pawn];
-  current_piece_bitboard[BLACK] = board_->piece[Pawn | 8];
+  current_piece_bitboard[WHITE] = piece[Pawn];
+  current_piece_bitboard[BLACK] = piece[Pawn | 8];
 }

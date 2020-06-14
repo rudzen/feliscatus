@@ -6,7 +6,6 @@
 #include "zobrist.h"
 #include "uci.h"
 #include "eval.h"
-#include "see.h"
 #include "search.h"
 #include "hash.h"
 #include "worker.h"
@@ -108,9 +107,8 @@ public:
     game     = std::make_unique<Game>();
     protocol = std::make_unique<UCIProtocol>(this, game.get());
     pawnt    = std::make_unique<PawnHashTable>(8);
-    see      = std::make_unique<See>(&game->board);
     eval     = std::make_unique<Eval>(*game, pawnt.get());
-    search   = std::make_unique<Search>(protocol.get(), game.get(), eval.get(), see.get());
+    search   = std::make_unique<Search>(protocol.get(), game.get(), eval.get());
 
     new_game();
 
@@ -150,7 +148,7 @@ public:
       } else if (util::strieq(tokens[0], "tune"))
       {
         Stopwatch sw;
-        eval::Tune(game.get(), see.get(), eval.get());
+        eval::Tune(game.get(), eval.get());
         const auto seconds = sw.elapsed_seconds();
         printf("%f\n", seconds);
       } else if (util::strieq(tokens[0], "quit") || util::strieq(tokens[0], "exit"))
@@ -167,7 +165,6 @@ public:
 public:
   std::unique_ptr<Game> game;
   std::unique_ptr<Eval> eval;
-  std::unique_ptr<See> see;
   std::unique_ptr<Search> search;
   std::unique_ptr<Protocol> protocol;
   std::unique_ptr<PawnHash> pawnt;
