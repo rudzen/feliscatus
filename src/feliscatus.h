@@ -14,7 +14,7 @@
 #include "tune.h"
 #include "stopwatch.h"
 
-class Felis : public ProtocolListener {
+class Felis final : public ProtocolListener {
 public:
   Felis() : num_threads(1) {}
 
@@ -67,8 +67,6 @@ public:
   void start_workers() {
     for (auto &worker : workers)
       worker.start(game.get(), pawnt.get());
-    //for (int i = 0; i < num_threads - 1; i++)
-    //  workers[i].start(game, transt, pawnt);
   }
 
   void stop_workers() {

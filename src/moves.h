@@ -127,7 +127,7 @@ public:
       if ((occupied_by_side[~move_side(m)] & to) == 0)
         return false;
 
-      if ((bb_piece[moveCaptured(m)] & to) == 0)
+      if ((bb_piece[move_captured(m)] & to) == 0)
         return false;
     } else if (occupied & to)
       return false;

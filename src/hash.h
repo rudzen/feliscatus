@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cmath>
 #include "util.h"
+#include "types.h"
 
 #pragma pack(1)
 struct HashEntry {

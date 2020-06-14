@@ -3,6 +3,8 @@
 
 // TODO : Replace with portable code
 #include <conio.h>
+#include <windows.h>
+#include <winbase.h>
 
 #include <iostream>
 #include "game.h"

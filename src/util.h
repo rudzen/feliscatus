@@ -1,9 +1,5 @@
 #pragma once
 
-#include <windows.h>
-#include <sys/timeb.h>
-#include <ctime>
-#include <cstdint>
 #include <cstring>
 #include <cmath>
 
@@ -32,8 +28,8 @@ inline char *trim(char *buf) {
 }
 
 inline int tokenize(char *input, char *tokens[], const int max_tokens) {
-  int num_tokens = 0;
-  char *token    = strtok(input, " ");
+  auto num_tokens = 0;
+  auto *token    = strtok(input, " ");
 
   while (token != nullptr && num_tokens < max_tokens)
   {
@@ -60,7 +56,7 @@ inline bool strieq(const char *s1, const char *s2) {
 }
 
 inline const char *FENfromParams(const char *params[], const int num_params, int &param, char *fen) {
-  if ((num_params - param - 1) < 6)
+  if (num_params - param - 1 < 6)
     return nullptr;
 
   fen[0] = 0;

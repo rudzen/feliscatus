@@ -12,7 +12,7 @@ inline uint64_t zobrist_castling[16];
 inline uint64_t zobrist_side;
 inline uint64_t zobrist_ep_file[8];
 
-void init() {
+inline void init() {
   std::mt19937_64 prng64;
   prng64.seed(std::mt19937_64::default_seed);
 

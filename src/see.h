@@ -29,7 +29,7 @@ public:
 
 private:
   static constexpr int material_change(const uint32_t move) {
-    return (is_capture(move) ? piece_value(moveCaptured(move)) : 0) + (is_promotion(move) ? (piece_value(move_promoted(move)) - piece_value(Pawn)) : 0);
+    return (is_capture(move) ? piece_value(move_captured(move)) : 0) + (is_promotion(move) ? (piece_value(move_promoted(move)) - piece_value(Pawn)) : 0);
   }
 
   static constexpr int next_to_capture(const uint32_t move) { return is_promotion(move) ? move_promoted(move) : move_piece(move); }

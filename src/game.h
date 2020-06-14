@@ -142,14 +142,14 @@ public:
     // remove captured piece
     if (is_ep_capture(m))
     {
-      pos->pawn_structure_key ^= zobrist::zobrist_pst[moveCaptured(m)][move_to(m) + pawn_push(pos->side_to_move)];
+      pos->pawn_structure_key ^= zobrist::zobrist_pst[move_captured(m)][move_to(m) + pawn_push(pos->side_to_move)];
     } else if (is_capture(m))
     {
-      if ((moveCaptured(m) & 7) == Pawn)
+      if ((move_captured(m) & 7) == Pawn)
       {
-        pos->pawn_structure_key ^= zobrist::zobrist_pst[moveCaptured(m)][move_to(m)];
+        pos->pawn_structure_key ^= zobrist::zobrist_pst[move_captured(m)][move_to(m)];
       } else
-      { pos->key ^= zobrist::zobrist_pst[moveCaptured(m)][move_to(m)]; }
+      { pos->key ^= zobrist::zobrist_pst[move_captured(m)][move_to(m)]; }
     }
 
     // castling rights

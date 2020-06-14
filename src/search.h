@@ -344,9 +344,9 @@ protected:
         if (move_data->score < 0)
           break;
 
-        if (pos->eval_score + piece_value(moveCaptured(move_data->move)) + 150 < alpha)
+        if (pos->eval_score + piece_value(move_captured(move_data->move)) + 150 < alpha)
         {
-          best_score = std::max<int>(best_score, pos->eval_score + piece_value(moveCaptured(move_data->move)) + 150);
+          best_score = std::max<int>(best_score, pos->eval_score + piece_value(move_captured(move_data->move)) + 150);
           continue;
         }
       }
@@ -368,10 +368,6 @@ protected:
           else
             score = -search_quiesce<false>(-beta, -alpha, qs_ply + 1);
         }
-
-        //const auto score = pos->is_draw()
-        //                       ? -draw_score()
-        //                       : -search_quiesce(-beta, -alpha, qs_ply + 1, search_pv && move_count == 1);
 
         unmake_move();
 
@@ -399,21 +395,20 @@ protected:
   }
 
   bool make_move_and_evaluate(const uint32_t m, const int alpha, const int beta) {
-    if (game->make_move(m, true, true))
-    {
-      pos = game->pos;
-      ++plies;
-      pv_length[plies] = plies;
-      ++node_count;
+    if (!game->make_move(m, true, true))
+      return false;
 
-      check_sometimes();
+    pos = game->pos;
+    ++plies;
+    pv_length[plies] = plies;
+    ++node_count;
 
-      get_hash_and_evaluate(-beta, -alpha);
+    check_sometimes();
 
-      max_ply = std::max<int>(max_ply, plies);
-      return true;
-    }
-    return false;
+    get_hash_and_evaluate(-beta, -alpha);
+
+    max_ply = std::max<int>(max_ply, plies);
+    return true;
   }
 
   void unmake_move() {
@@ -574,7 +569,7 @@ protected:
       move_data.score = 890000;
     else if (is_capture(m))
     {
-      const auto value_captured = piece_value(moveCaptured(m));
+      const auto value_captured = piece_value(move_captured(m));
       auto value_piece    = piece_value(move_piece(m));
 
       if (value_piece == 0)

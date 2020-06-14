@@ -41,7 +41,7 @@ public:
 
   void make_move(const uint32_t m) {
     if (is_capture(m))
-      remove(moveCaptured(m));
+      remove(move_captured(m));
 
     if (move_type(m) & PROMOTION)
     {

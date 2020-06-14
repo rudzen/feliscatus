@@ -467,7 +467,7 @@ public:
       move_data.score = 890000;
     else if (is_capture(m))
     {
-      const auto value_captured = piece_value(moveCaptured(m));
+      const auto value_captured = piece_value(move_captured(m));
       auto value_piece    = piece_value(move_piece(m));
 
       if (value_piece == 0)

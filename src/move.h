@@ -20,7 +20,7 @@ constexpr void move_set_piece(uint32_t &move, const int piece) {
   move |= piece << 26;
 }
 
-constexpr int moveCaptured(const uint32_t move) {
+constexpr int move_captured(const uint32_t move) {
   return move >> 22 & 15;
 }
 

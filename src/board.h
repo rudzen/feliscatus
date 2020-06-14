@@ -54,12 +54,10 @@ public:
 
       if (is_ep_capture(m))
       {
-        if (pc < 8)
-          remove_piece(moveCaptured(m), static_cast<Square>(to - 8));
-        else
-          remove_piece(moveCaptured(m), static_cast<Square>(to + 8));
+        const auto direction = pc < 8 ? SOUTH : NORTH;
+        remove_piece(move_captured(m), to + direction);
       } else if (is_capture(m))
-        remove_piece(moveCaptured(m), to);
+        remove_piece(move_captured(m), to);
 
       if (is_promotion(m))
         add_piece(move_promoted(m), to);
@@ -73,8 +71,8 @@ public:
       add_piece(pc, to);
     }
 
-    if ((move_piece(m) & 7) == King)
-      king_square[move_side(m)] = move_to(m);
+    if ((pc & 7) == King)
+      king_square[move_side(m)] = to;
   }
 
   void unmake_move(const uint32_t m) {
@@ -92,12 +90,10 @@ public:
 
       if (is_ep_capture(m))
       {
-        if (pc < 8)
-          add_piece(moveCaptured(m), static_cast<Square>(to - 8));
-        else
-          add_piece(moveCaptured(m), static_cast<Square>(to + 8));
+        const auto direction = pc < 8 ? SOUTH : NORTH;
+        add_piece(move_captured(m), to + direction);
       } else if (is_capture(m))
-        add_piece(moveCaptured(m), to);
+        add_piece(move_captured(m), to);
 
       add_piece(pc, from);
     } else
