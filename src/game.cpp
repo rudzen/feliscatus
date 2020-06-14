@@ -1,9 +1,11 @@
 #include "game.h"
 #include <cctype>
 #include <optional>
+#include <cstring>
 #include "zobrist.h"
 #include "position.h"
 #include "board.h"
+#include "util.h"
 
 namespace {
 
