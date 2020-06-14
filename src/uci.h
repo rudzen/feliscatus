@@ -36,7 +36,7 @@ public:
 
   virtual void post_curr_move(uint32_t curr_move, int curr_move_number) = 0;
 
-  virtual void post_pv(int depth, int max_ply, uint64_t node_count, uint64_t nodes_per_second, uint64_t time, int hash_full, int score, const char *pv, int node_type) = 0;
+  virtual void post_pv(int depth, int max_ply, uint64_t node_count, uint64_t nodes_per_second, uint64_t time, int hash_full, int score, const char *pv, const NodeType node_type) = 0;
 
   [[nodiscard]]
   int is_analysing() const noexcept { return flags & (INFINITE_MOVE_TIME | PONDER_SEARCH); }
@@ -125,12 +125,12 @@ public:
     printf("info currmove %s currmovenumber %d\n", game->move_to_string(curr_move, move_buf), curr_move_number);
   }
 
-  void post_pv(const int d, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const uint64_t time, const int hash_full, const int score, const char *pv, const int node_type) override {
+  void post_pv(const int d, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const uint64_t time, const int hash_full, const int score, const char *pv, const NodeType node_type) override {
     char bound[24];
 
-    if (node_type == 4)
+    if (node_type == ALPHA)
       strcpy(bound, "upperbound ");
-    else if (node_type == 2)
+    else if (node_type == BETA)
       strcpy(bound, "lowerbound ");
     else
       bound[0] = 0;
