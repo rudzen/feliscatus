@@ -20,7 +20,7 @@ public:
     eval_material<WHITE>();
     eval_material<BLACK>();
 
-    const auto mat_eval    = poseval[0] - poseval[1];
+    const auto mat_eval    = poseval[WHITE] - poseval[BLACK];
 
     if (const auto lazy_eval = pos->side_to_move == WHITE ? mat_eval : -mat_eval; lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
       return pos->material.evaluate(pos->flags, lazy_eval, pos->side_to_move, &game_.board);
@@ -48,12 +48,12 @@ public:
 
     poseval[pos->side_to_move] += 10;
 
-    const auto pos_eval_mg = static_cast<int>((poseval_mg[0] - poseval_mg[1]) * stage);
-    const auto pos_eval_eg = static_cast<int>((poseval_eg[0] - poseval_eg[1]) * (1 - stage));
-    const auto pos_eval    = pos_eval_mg + pos_eval_eg + (poseval[0] - poseval[1]);
+    const auto pos_eval_mg = static_cast<int>((poseval_mg[WHITE] - poseval_mg[BLACK]) * stage);
+    const auto pos_eval_eg = static_cast<int>((poseval_eg[WHITE] - poseval_eg[BLACK]) * (1 - stage));
+    const auto pos_eval    = pos_eval_mg + pos_eval_eg + (poseval[WHITE] - poseval[BLACK]);
     const auto eval        = pos_eval;
 
-    return pos->material.evaluate(pos->flags, pos->side_to_move == 1 ? -eval : eval, pos->side_to_move, &game_.board);
+    return pos->material.evaluate(pos->flags, pos->side_to_move == BLACK ? -eval : eval, pos->side_to_move, &game_.board);
   }
 
 protected:

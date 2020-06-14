@@ -15,7 +15,7 @@
 
 class Search final : public MoveSorter {
 public:
-  Search(Protocol *p, Game *g, Eval *e, See *s) : lag_buffer(-1), verbosity(true), protocol(p), game(g), eval(e), board(g->pos->board), see(s) { }
+  Search(Protocol *p, Game *g, Eval *e, See *s) : lag_buffer(-1), verbosity(true), protocol(p), game(g), eval(e), board(g->pos->b), see(s) { }
 
   Search(Game *g, Eval *e, See *s) : Search(nullptr, g, e, s) {
     stop_search.store(false);

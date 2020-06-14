@@ -180,7 +180,7 @@ void update_key(Position *pos, const uint32_t m) {
 Game::Game()
   : position_list(new Position[2000]), pos(position_list), chess960(false), xfen(false) {
   for (auto i = 0; i < 2000; i++)
-    position_list[i].board = &board;
+    position_list[i].b = &board;
 }
 
 Game::~Game() { delete[] position_list; }
@@ -385,7 +385,7 @@ int Game::set_fen(const char *fen) {
   pos->en_passant_square          = sq;// < 64 ? sq : no_square;
   pos->reversible_half_move_count = 0;
 
-  if (pos->side_to_move == 1)
+  if (pos->side_to_move == BLACK)
   {
     pos->key ^= zobrist::zobrist_side;
     pos->pawn_structure_key ^= zobrist::zobrist_side;
@@ -538,8 +538,8 @@ void Game::copy(Game *other) {
 
   for (auto i = 0; i < 2000; i++)
   {
-    position_list[i]       = other->position_list[i];
-    position_list[i].board = &board;
+    position_list[i]   = other->position_list[i];
+    position_list[i].b = &board;
   }
 }
 

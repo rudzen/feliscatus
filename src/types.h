@@ -58,6 +58,10 @@ enum Direction : int {
 
 constexpr Direction pawn_push(const Color c) { return c == WHITE ? NORTH : SOUTH; }
 
+// Move generation flags
+constexpr int LEGALMOVES     = 1;
+constexpr int STAGES         = 2;
+constexpr int QUEENPROMOTION = 4;
 
 #define ENABLE_BASE_OPERATORS_ON(T)                                \
 constexpr T operator+(const T d1, const T d2) noexcept { return static_cast<T>(static_cast<int>(d1) + static_cast<int>(d2)); } \
