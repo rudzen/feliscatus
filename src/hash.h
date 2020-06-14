@@ -9,7 +9,7 @@ struct HashEntry {
   uint32_t key;
   uint16_t age;// 7 bits left
   uint8_t depth;
-  HashNodeType flags;// 5 bits left
+  NodeType flags;// 5 bits left
   int16_t score;
   uint32_t move;
   int16_t eval;
@@ -63,7 +63,7 @@ public:
     return nullptr;
   }
 
-  HashEntry *insert(const uint64_t key, const int depth, const int score, const HashNodeType type, const int move, int eval) {
+  HashEntry *insert(const uint64_t key, const int depth, const int score, const NodeType type, const int move, int eval) {
     auto *transp = get_entry_to_replace(key, depth);
 
     if (transp->flags == 0)

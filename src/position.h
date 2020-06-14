@@ -103,7 +103,7 @@ public:
   int eval_score;
   int transp_score;
   int transp_depth;
-  HashNodeType transp_type;
+  NodeType transp_type;
   uint32_t transp_move;
   int flags;
   HashEntry *transposition;
