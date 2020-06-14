@@ -71,7 +71,7 @@ private:
       if (current_piece_bitboard[side] & pawn_captures[to | ((~side) << 6)])
       {
         from = lsb(current_piece_bitboard[side] & pawn_captures[to | ((~side) << 6)]);
-        current_piece_bitboard[side] &= ~bb_square(from);
+        current_piece_bitboard[side] &= ~bit(from);
         return true;
       }
       current_piece[side]++;
@@ -82,7 +82,7 @@ private:
       if (current_piece_bitboard[side] & knightAttacks(to))
       {
         from = lsb(current_piece_bitboard[side] & knightAttacks(to));
-        current_piece_bitboard[side] &= ~bb_square(from);
+        current_piece_bitboard[side] &= ~bit(from);
         return true;
       }
       current_piece[side]++;
@@ -94,7 +94,7 @@ private:
       if (current_piece_bitboard[side] & bishopAttacks(to, board_.occupied))
       {
         from = lsb(current_piece_bitboard[side] & bishopAttacks(to, board_.occupied));
-        current_piece_bitboard[side] &= ~bb_square(from);
+        current_piece_bitboard[side] &= ~bit(from);
         return true;
       }
       current_piece[side]++;
@@ -105,7 +105,7 @@ private:
       if (current_piece_bitboard[side] & rookAttacks(to, board_.occupied))
       {
         from = lsb(current_piece_bitboard[side] & rookAttacks(to, board_.occupied));
-        current_piece_bitboard[side] &= ~bb_square(from);
+        current_piece_bitboard[side] &= ~bit(from);
         return true;
       }
       current_piece[side]++;
@@ -116,7 +116,7 @@ private:
       if (current_piece_bitboard[side] & queenAttacks(to, board_.occupied))
       {
         from = lsb(current_piece_bitboard[side] & queenAttacks(to, board_.occupied));
-        current_piece_bitboard[side] &= ~bb_square(from);
+        current_piece_bitboard[side] &= ~bit(from);
         return true;
       }
       current_piece[side]++;
@@ -127,7 +127,7 @@ private:
       if (current_piece_bitboard[side] & kingAttacks(to))
       {
         from = lsb(current_piece_bitboard[side] & kingAttacks(to));
-        current_piece_bitboard[side] &= ~bb_square(from);
+        current_piece_bitboard[side] &= ~bit(from);
         return true;
       }
 

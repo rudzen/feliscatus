@@ -365,8 +365,8 @@ private:
     const auto rook_to          = rook_castles_to[to];
     const auto rook_from        = rook_castles_from[to];
     const auto king_square      = board->king_square[stm];
-    const auto bb_castle_pieces = bb_square(rook_from) | bb_square(king_square);
-    const auto bb_castle_span   = bb_castle_pieces | between_bb[king_square][rook_from] | between_bb[rook_from][rook_to] | bb_square(rook_to) | bb_square(to);
+    const auto bb_castle_pieces = bit(rook_from, king_square);
+    const auto bb_castle_span   = bb_castle_pieces | between_bb[king_square][rook_from] | between_bb[rook_from][rook_to] | bit(rook_to, to);
 
     if ((bb_castle_span & occupied) != bb_castle_pieces)
       return false;

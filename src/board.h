@@ -18,9 +18,9 @@ public:
   }
 
   void add_piece(const int p, const Color side, const Square sq) {
-    piece[p + (side << 3)] |= bb_square(sq);
-    occupied_by_side[side] |= bb_square(sq);
-    occupied |= bb_square(sq);
+    piece[p + (side << 3)] |= sq;
+    occupied_by_side[side] |= sq;
+    occupied |= sq;
     board[sq] = p + (side << 3);
 
     if (p == King)
@@ -28,16 +28,17 @@ public:
   }
 
   void remove_piece(const int p, const Square sq) {
-    piece[p] &= ~bb_square(sq);
-    occupied_by_side[p >> 3] &= ~bb_square(sq);
-    occupied &= ~bb_square(sq);
+    const auto bbsq = bit(sq);
+    piece[p] &= ~bbsq;
+    occupied_by_side[p >> 3] &= ~bbsq;
+    occupied &= ~bbsq;
     board[sq] = NoPiece;
   }
 
   void add_piece(const int p, const Square sq) {
-    piece[p] |= bb_square(sq);
-    occupied_by_side[p >> 3] |= bb_square(sq);
-    occupied |= bb_square(sq);
+    piece[p] |= sq;
+    occupied_by_side[p >> 3] |= sq;
+    occupied |= sq;
     board[sq] = p;
   }
 
@@ -151,7 +152,7 @@ public:
   }
 
   [[nodiscard]]
-  bool is_occupied(const Square sq) const { return bb_square(sq) & occupied; }
+  bool is_occupied(const Square sq) const { return occupied & sq; }
 
   [[nodiscard]]
   bool is_attacked(const Square sq, const Color side) const {
@@ -260,21 +261,21 @@ public:
   bool is_pawn_passed(const Square sq, const Color side) const { return (passed_pawn_front_span[side][sq] & pawns(~side)) == 0; }
 
   [[nodiscard]]
-  bool is_piece_on_square(const int p, const Square sq, const Color side) { return (bb_square(sq) & piece[p + (side << 3)]) != 0; }
+  bool is_piece_on_square(const int p, const Square sq, const Color side) { return (piece[p + (side << 3)] & sq) != 0; }
 
   [[nodiscard]]
   bool is_piece_on_file(const int p, const Square sq, const Color side) const { return (bb_file(sq) & piece[p + (side << 3)]) != 0; }
 
   [[nodiscard]]
   bool is_pawn_isolated(const Square sq, const Color side) const {
-    const auto bb              = bb_square(sq);
+    const auto bb              = bit(sq);
     const auto neighbour_files = north_fill(south_fill(west_one(bb) | east_one(bb)));
     return (pawns(side) & neighbour_files) == 0;
   }
 
   [[nodiscard]]
   bool is_pawn_behind(const Square sq, const Color side) const {
-    const auto bbsq = bb_square(sq);
+    const auto bbsq = bit(sq);
     return (pawns(side) & pawn_fill[~side](west_one(bbsq) | east_one(bbsq))) == 0;
   }
 };

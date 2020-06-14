@@ -107,8 +107,28 @@ inline Bitboard pawn_east_attack_span[2][64];
 inline Bitboard pawn_west_attack_span[2][64];
 inline Bitboard pawn_captures[128];
 
-constexpr Bitboard bb_square(const Square sq) {
+template<Square sq>
+constexpr Bitboard bit() {
   return square_bb[sq];
+}
+
+template<typename... Squares>
+constexpr Bitboard bit(Squares... squares) {
+  return (... | square_bb[squares]);
+}
+
+constexpr Bitboard bit() {
+  return 0;
+}
+
+template<typename... Ranks>
+constexpr Bitboard bit(const Rank r, Ranks... ra) {
+  return RankBB[r] | bit(ra...);
+}
+
+template<typename... Files>
+constexpr Bitboard bit(const File f, Files... fi) {
+  return FileBB[f] | bit(fi...);
 }
 
 constexpr Bitboard bb_rank(const Rank rank) {
@@ -233,7 +253,7 @@ constexpr Bitboard south_fill(const Bitboard bb) {
 }
 
 constexpr void init_between_bitboards(const Square from, Bitboard (*step_func)(Bitboard), const Direction step) {
-  auto bb          = step_func(bb_square(from));
+  auto bb          = step_func(bit(from));
   auto to          = from + step;
   Bitboard between = ZeroBB;
 
