@@ -4,12 +4,11 @@
 #include "square.h"
 
 struct PGNFile;
+enum Token : uint8_t;
+
+enum Result : uint8_t { WhiteWin, Draw, BlackWin };
 
 namespace pgn {
-
-enum Token { Symbol, Integer, String, NAG, Asterisk, Period, LParen, RParen, LBracket, RBracket, LT, GT, Invalid, None };
-
-enum Result { WhiteWin, Draw, BlackWin };
 
 class PGNFileReader {
 public:

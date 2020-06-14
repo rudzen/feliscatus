@@ -109,7 +109,7 @@ void PGNPlayer::read_game_termination() {
   pgn::PGNPlayer::read_game_termination();
 
   for (auto &node : current_game_nodes_)
-    node.result_ = result_ == pgn::WhiteWin ? 1 : result_ == pgn::Draw ? 0.5 : 0;
+    node.result_ = result_ == WhiteWin ? 1 : result_ == Draw ? 0.5 : 0;
 
   all_selected_nodes_.insert(all_selected_nodes_.end(), current_game_nodes_.begin(), current_game_nodes_.end());
   current_game_nodes_.clear();

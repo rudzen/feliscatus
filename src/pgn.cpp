@@ -61,6 +61,8 @@ bool start_of_pawn_quiet_move(const char *p, Square &to_square) {
 
 }
 
+enum Token : uint8_t { Symbol, Integer, String, NAG, Asterisk, Period, LParen, RParen, LBracket, RBracket, LT, GT, Invalid, None };
+
 struct PGNFile {
   PGNFile(const char *path, const int oflag, const int pmode) {
     if ((fd = open(path, oflag | O_BINARY, pmode)) == -1)
@@ -89,7 +91,7 @@ private:
 
 class UnexpectedToken final : std::exception {
 public:
-  UnexpectedToken(const pgn::Token expected, const char *found, const size_t line) { sprintf(buf, "Expected <%s> but found '%s', line=%llu", token_string[expected], found, line); }
+  UnexpectedToken(const Token expected, const char *found, const size_t line) { sprintf(buf, "Expected <%s> but found '%s', line=%llu", token_string[expected], found, line); }
 
   UnexpectedToken(const char *expected, const char *found, const size_t line) { sprintf(buf, "Expected %s but found '%s', line=%llu", expected, found, line); }
 
