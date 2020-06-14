@@ -1,6 +1,7 @@
 #include <cctype>
 #include "position.h"
 #include "util.h"
+#include "board.h"
 
 Position::Position() { clear(); }
 
@@ -82,4 +83,8 @@ bool Position::is_castle_move(const char *m, int &castle_type) const {
   }
 
   return false;
+}
+
+bool Position::is_draw() const {
+  return flags & Material::recognize_draw();
 }

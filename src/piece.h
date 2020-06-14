@@ -15,6 +15,12 @@ constexpr int Queen   = 4;
 constexpr int King    = 5;
 constexpr int NoPiece = 6;
 
+constexpr std::array<int, 6> piece_values{100, 400, 400, 600, 1200, 0};
+
+constexpr int piece_value(const int p) {
+  return piece_values[p & 7];
+}
+
 constexpr std::string_view piece_notation = " nbrqk";
 
 inline const char *pieceToString(int piece, char *buf) {

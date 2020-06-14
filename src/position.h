@@ -10,8 +10,10 @@ struct Position : public Moves {
 
   void clear();
 
+  [[nodiscard]]
   const uint32_t *string_to_move(const char *m);
 
+  [[nodiscard]]
   bool is_castle_move(const char *m, int &castle_type) const;
 
   [[nodiscard]]
@@ -32,7 +34,3 @@ struct Position : public Moves {
   int flags;
   HashEntry *transposition;
 };
-
-inline bool Position::is_draw() const {
-  return flags & RECOGNIZEDDRAW;
-}

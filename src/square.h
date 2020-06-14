@@ -56,7 +56,7 @@ constexpr std::array<Square, 2> ooo_king_to{c1, c8};
 inline std::array<Square, sq_nb> rook_castles_to{};  // indexed by position of the king
 inline std::array<Square, sq_nb> rook_castles_from{};// also
 inline std::array<int, sq_nb> castle_rights_mask{};
-inline uint32_t dist[64][64];// chebyshev distance
+inline int dist[64][64];// chebyshev distance
 inline Square flip[2][64];
 
 constexpr Rank rank_of(const Square sq) { return static_cast<Rank>(sq >> 3); }
@@ -84,8 +84,8 @@ inline void init() {
   {
     for (const auto sq2 : Squares)
     {
-      const uint32_t ranks = std::abs(rank_of(sq1) - rank_of(sq2));
-      const uint32_t files = std::abs(file_of(sq1) - file_of(sq2));
+      const int ranks = std::abs(rank_of(sq1) - rank_of(sq2));
+      const int files = std::abs(file_of(sq1) - file_of(sq2));
       dist[sq1][sq2]       = std::max(ranks, files);
     }
   }
