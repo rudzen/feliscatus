@@ -5,7 +5,7 @@
 #include "magic.h"
 #include "zobrist.h"
 
-int main() {
+int main(/*int argc, char *argv[]*/) {
   squares::init();
   bitboard::init();
   attacks::init();

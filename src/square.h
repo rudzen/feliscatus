@@ -73,7 +73,7 @@ constexpr Square relative_square(const Color c, const Square s) { return static_
 
 constexpr Rank relative_rank(const Color c, const Square s) { return relative_rank(c, rank_of(s)); }
 
-static void init() {
+inline void init() {
   for (const auto sq : Squares)
   {
     flip[WHITE][sq] = static_cast<Square>(file_of(sq) + ((7 - rank_of(sq)) << 3));

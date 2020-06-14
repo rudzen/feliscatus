@@ -19,7 +19,7 @@ inline char *rtrim(char *buf) {
 
 inline char *ltrim(char *buf) {
   while (iswhitespace(buf[0]))
-    memcpy(buf, buf + 1, strlen(buf));
+    std::memcpy(buf, buf + 1, strlen(buf));
   return buf;
 }
 

@@ -2,9 +2,9 @@
 
 #include <algorithm>
 #include <memory>
+#include "game.h"
 #include "zobrist.h"
 #include "uci.h"
-#include "game.h"
 #include "eval.h"
 #include "see.h"
 #include "search.h"
