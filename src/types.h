@@ -5,6 +5,7 @@
 #include <ranges>
 
 using Bitboard = uint64_t;
+using Key      = uint64_t;
 
 enum Color : uint8_t {
   WHITE, BLACK, COL_NB

@@ -53,7 +53,7 @@ public:
   void init_search() { age++; }
 
   [[nodiscard]]
-  HashEntry *find(const uint64_t key) const {
+  HashEntry *find(const Key key) const {
     auto *transp = table + (key & mask);
     const auto k32 = key32(key);
     for (auto i = 0; i < NUMBER_SLOTS; i++, transp++)
@@ -64,7 +64,7 @@ public:
     return nullptr;
   }
 
-  HashEntry *insert(const uint64_t key, const int depth, const int score, const NodeType type, const int move, int eval) {
+  HashEntry *insert(const Key key, const int depth, const int score, const NodeType type, const int move, int eval) {
     auto *transp = get_entry_to_replace(key, depth);
 
     if (transp->flags == 0)
@@ -83,7 +83,7 @@ public:
   }
 
   [[nodiscard]]
-  HashEntry *get_entry_to_replace(const uint64_t key, [[maybe_unused]] int depth) const {
+  HashEntry *get_entry_to_replace(const Key key, [[maybe_unused]] int depth) const {
     auto *transp = table + (key & mask);
     const auto k32 = key32(key);
 
@@ -115,7 +115,7 @@ public:
   [[nodiscard]]
   int get_size_mb() const { return static_cast<int>(size_mb); }
 
-  static constexpr uint32_t key32(const uint64_t key) {
+  static constexpr uint32_t key32(const Key key) {
     return key >> 32;
   }
 
@@ -133,7 +133,7 @@ protected:
 #pragma pack(1)
 
 struct PawnHashEntry {
-  uint64_t zkey;
+  Key zkey;
   int16_t eval_mg;
   int16_t eval_eg;
   uint8_t passed_pawn_files[2];

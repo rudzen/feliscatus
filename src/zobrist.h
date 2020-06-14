@@ -1,16 +1,15 @@
 #pragma once
 
-#include <cstdint>
 #include <random>
 #include "piece.h"
 #include "square.h"
 
 namespace zobrist {
 
-inline uint64_t zobrist_pst[14][64];
-inline uint64_t zobrist_castling[16];
-inline uint64_t zobrist_side;
-inline uint64_t zobrist_ep_file[8];
+inline Key zobrist_pst[14][64];
+inline Key zobrist_castling[16];
+inline Key zobrist_side;
+inline Key zobrist_ep_file[8];
 
 inline void init() {
   std::mt19937_64 prng64;

@@ -93,8 +93,8 @@ public:
   bool is_draw() const { return flags & RECOGNIZEDDRAW; }
 
   int reversible_half_move_count;
-  uint64_t pawn_structure_key;
-  uint64_t key;
+  Key pawn_structure_key;
+  Key key;
   Material material;
   int null_moves_in_row;
   int pv_length;
