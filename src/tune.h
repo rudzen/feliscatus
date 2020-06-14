@@ -348,7 +348,7 @@ public:
     for (const auto &node : nodes)
     {
       game_.set_fen(node.fen_.c_str());
-      x += pow(node.result_ - sigmoid(get_score(0), K), 2);
+      x += pow(node.result_ - util::sigmoid(get_score(0), K), 2);
     }
     x /= nodes.size();
 

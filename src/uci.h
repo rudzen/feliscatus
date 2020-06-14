@@ -93,11 +93,11 @@ public:
       if (!*str)
         return;
 
-      if (strieq(trim(str), "stop"))
+      if (util::strieq(util::trim(str), "stop"))
       {
         flags &= ~(INFINITE_MOVE_TIME | PONDER_SEARCH);
         callback->stop();
-      } else if (strieq(trim(str), "ponderhit"))
+      } else if (util::strieq(util::trim(str), "ponderhit"))
       {
         flags &= ~(INFINITE_MOVE_TIME | PONDER_SEARCH);
         callback->ponder_hit();
@@ -146,7 +146,7 @@ public:
     if (num_params < 1)
       return -1;
 
-    if (strieq(params[0], "uci"))
+    if (util::strieq(params[0], "uci"))
     {
       printf("id name Feliscatus 0.1\n");
       printf("id author Gunnar Harms\n");
@@ -155,23 +155,23 @@ public:
       printf("option name Threads type spin default 1 min 1 max 64\n");
       printf("option name UCI_Chess960 type check default false\n");
       printf("uciok\n");
-    } else if (strieq(params[0], "isready"))
+    } else if (util::strieq(params[0], "isready"))
     {
       printf("readyok\n");
-    } else if (strieq(params[0], "ucinewgame"))
+    } else if (util::strieq(params[0], "ucinewgame"))
     {
       callback->new_game();
       printf("readyok\n");
-    } else if (strieq(params[0], "setoption"))
+    } else if (util::strieq(params[0], "setoption"))
     {
       handle_set_option(params, num_params);
-    } else if (strieq(params[0], "position"))
+    } else if (util::strieq(params[0], "position"))
     {
       handle_position(params, num_params);
-    } else if (strieq(params[0], "go"))
+    } else if (util::strieq(params[0], "go"))
     {
       handle_go(params, num_params, callback);
-    } else if (strieq(params[0], "quit"))
+    } else if (util::strieq(params[0], "quit"))
     { return 1; }
     return 0;
   }
@@ -188,41 +188,41 @@ public:
 
     for (auto param = 1; param < num_params; param++)
     {
-      if (strieq(params[param], "movetime"))
+      if (util::strieq(params[param], "movetime"))
       {
         flags |= FIXED_MOVE_TIME;
 
         if (++param < num_params)
           movetime = strtol(params[param], nullptr, 10);
-      } else if (strieq(params[param], "depth"))
+      } else if (util::strieq(params[param], "depth"))
       {
         flags |= FIXED_DEPTH;
 
         if (++param < num_params)
           depth = strtol(params[param], nullptr, 10);
-      } else if (strieq(params[param], "wtime"))
+      } else if (util::strieq(params[param], "wtime"))
       {
         if (++param < num_params)
           wtime = strtol(params[param], nullptr, 10);
-      } else if (strieq(params[param], "movestogo"))
+      } else if (util::strieq(params[param], "movestogo"))
       {
         if (++param < num_params)
           movestogo = strtol(params[param], nullptr, 10);
-      } else if (strieq(params[param], "btime"))
+      } else if (util::strieq(params[param], "btime"))
       {
         if (++param < num_params)
           btime = strtol(params[param], nullptr, 10);
-      } else if (strieq(params[param], "winc"))
+      } else if (util::strieq(params[param], "winc"))
       {
         if (++param < num_params)
           winc = strtol(params[param], nullptr, 10);
-      } else if (strieq(params[param], "binc"))
+      } else if (util::strieq(params[param], "binc"))
       {
         if (++param < num_params)
           binc = strtol(params[param], nullptr, 10);
-      } else if (strieq(params[param], "infinite"))
+      } else if (util::strieq(params[param], "infinite"))
         flags |= INFINITE_MOVE_TIME;
-      else if (strieq(params[param], "ponder"))
+      else if (util::strieq(params[param], "ponder"))
         flags |= PONDER_SEARCH;
     }
     cb->go(wtime, btime, movestogo, winc, binc, movetime);
@@ -237,13 +237,13 @@ public:
 
     char fen[128];
 
-    if (strieq(params[param], "startpos"))
+    if (util::strieq(params[param], "startpos"))
     {
       strcpy(fen, Game::kStartPosition.data());
       param++;
-    } else if (strieq(params[param], "fen"))
+    } else if (util::strieq(params[param], "fen"))
     {
-      if (!FENfromParams(params, num_params, param, fen))
+      if (!util::FENfromParams(params, num_params, param, fen))
         return -1;
       param++;
     } else
@@ -251,7 +251,7 @@ public:
 
     callback->set_fen(fen);
 
-    if ((num_params > param) && (strieq(params[param++], "moves")))
+    if ((num_params > param) && (util::strieq(params[param++], "moves")))
     {
       while (param < num_params)
       {
@@ -280,7 +280,7 @@ public:
   static bool parse_option_name(int &param, const char *params[], int num_params, const char **option_name) {
     while (param < num_params)
     {
-      if (strieq(params[param++], "name"))
+      if (util::strieq(params[param++], "name"))
         break;
     }
 
@@ -296,7 +296,7 @@ public:
     *option_value = nullptr;
 
     while (param < num_params)
-      if (strieq(params[param++], "value"))
+      if (util::strieq(params[param++], "value"))
         break;
 
     if (param < num_params)

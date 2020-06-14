@@ -3,6 +3,8 @@
 #include <cstring>
 #include <cmath>
 
+namespace util {
+
 inline double sigmoid(const double x, const double k) {
   return 1 / (1 + std::pow(10, -k * x / 400));
 }
@@ -29,7 +31,7 @@ inline char *trim(char *buf) {
 
 inline int tokenize(char *input, char *tokens[], const int max_tokens) {
   auto num_tokens = 0;
-  auto *token    = strtok(input, " ");
+  auto *token     = strtok(input, " ");
 
   while (token != nullptr && num_tokens < max_tokens)
   {
@@ -76,3 +78,6 @@ constexpr bool in_between(const T value, const T min, const T max) {
   static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "invalid type.");
   return (static_cast<unsigned int>(value) - static_cast<unsigned int>(min) <= static_cast<unsigned int>(max) - static_cast<unsigned int>(min));
 }
+
+}
+

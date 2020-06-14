@@ -20,7 +20,7 @@ public:
   void read_tag_pair() override {
     PGNFileReader::read_tag_pair();
 
-    if (strieq(tag_name_, "FEN"))
+    if (util::strieq(tag_name_, "FEN"))
       game_->set_fen(std::string(tag_value_).substr(1, strlen(tag_value_) - 2).c_str());
   }
 

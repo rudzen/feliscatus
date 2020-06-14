@@ -458,7 +458,7 @@ protected:
 
   [[nodiscard]]
   static bool is_file_letter(const char *p, int &file) {
-    if (strlen(p) && in_between(p[0], 'a', 'h'))
+    if (strlen(p) && util::in_between(p[0], 'a', 'h'))
     {
       file = p[0] - 'a';
       return true;
@@ -468,7 +468,7 @@ protected:
 
   [[nodiscard]]
   static bool is_rank_digit(const char *p, int &rank) {
-    if (strlen(p) && in_between(p[0], '1', '8'))
+    if (strlen(p) && util::in_between(p[0], '1', '8'))
     {
       rank = p[0] - '1';
       return true;
@@ -478,7 +478,7 @@ protected:
 
   [[nodiscard]]
   static bool is_square(const char *p, Square &square) {
-    if (strlen(p) > 1 && in_between(p[0], 'a', 'h') && in_between(p[1], '0', '9'))
+    if (strlen(p) > 1 && util::in_between(p[0], 'a', 'h') && util::in_between(p[1], '0', '9'))
     {
       square = static_cast<Square>(((p[1] - '1') << 3) + p[0] - 'a');
       return true;

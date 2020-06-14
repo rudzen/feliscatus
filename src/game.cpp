@@ -17,12 +17,12 @@ bool get_ep_square(const char **p, Square &sq) {
     return true;
   }
 
-  if (!in_between(**p, 'a', 'h'))
+  if (!util::in_between(**p, 'a', 'h'))
     return false;
 
   (*p)++;
 
-  if (!in_between(**p, '3', '6'))
+  if (!util::in_between(**p, '3', '6'))
     return false;
 
   sq = static_cast<Square>(*(*p - 1) - 'a' + (**p - '1') * 8);
@@ -489,7 +489,7 @@ int Game::setup_castling(const char **p) {
   {
     const auto c = **p;
 
-    if (in_between(c, 'A', 'H'))
+    if (util::in_between(c, 'A', 'H'))
     {
       chess960 = true;
       xfen     = false;
@@ -500,7 +500,7 @@ int Game::setup_castling(const char **p) {
         add_short_castle_rights<WHITE>(pos, this, board, rook_file);
       else
         add_long_castle_rights<WHITE>(pos, this, board, rook_file);
-    } else if (in_between<char>(c, 'a', 'h'))
+    } else if (util::in_between<char>(c, 'a', 'h'))
     {
       chess960 = true;
       xfen     = false;

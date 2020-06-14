@@ -80,23 +80,23 @@ public:
 
     if (value != nullptr)
     {
-      if (strieq("Hash", name))
+      if (util::strieq("Hash", name))
       {
         TT.init(std::clamp(static_cast<int>(strtol(value, nullptr, 10)), 8, 65536));
         _snprintf(buf, sizeof(buf), "Hash:%d", TT.get_size_mb());
-      } else if (strieq("Threads", name) || strieq("NumThreads", name))
+      } else if (util::strieq("Threads", name) || util::strieq("NumThreads", name))
       {
         num_threads = std::clamp(static_cast<int>(strtol(value, nullptr, 10)), 1, 64);
         _snprintf(buf, sizeof(buf), "Threads:%d", static_cast<int>(num_threads));
         workers.resize(num_threads - 1);
         workers.shrink_to_fit();
-      } else if (strieq("UCI_Chess960", name))
+      } else if (util::strieq("UCI_Chess960", name))
       {
-        game->chess960 = strieq(value, "true");
+        game->chess960 = util::strieq(value, "true");
         _snprintf(buf, sizeof(buf), "UCI_Chess960 %s", (game->chess960 ? on.data() : off.data()));
-      } else if (strieq("UCI_Chess960_Arena", name))
+      } else if (util::strieq("UCI_Chess960_Arena", name))
       {
-        game->chess960 = game->xfen = strieq(value, "true");
+        game->chess960 = game->xfen = util::strieq(value, "true");
       }
     }
     return 0;
@@ -128,32 +128,32 @@ public:
         exit(0);
 
       char *tokens[1024];
-      const int num_tokens = tokenize(trim(line), tokens, 1024);
+      const int num_tokens = util::tokenize(util::trim(line), tokens, 1024);
 
       if (num_tokens == 0)
         continue;
 
-      if (strieq(tokens[0], "uci") || !console_mode)
+      if (util::strieq(tokens[0], "uci") || !console_mode)
       {
         quit         = protocol->handle_input(const_cast<const char **>(tokens), num_tokens);
         console_mode = false;
-      } else if (strieq(tokens[0], "go"))
+      } else if (util::strieq(tokens[0], "go"))
       {
         protocol->set_flags(INFINITE_MOVE_TIME);
         go();
-      } else if (strieq(tokens[0], "perft"))
+      } else if (util::strieq(tokens[0], "perft"))
       {
         Perft(game.get()).perft(6);
-      } else if (strieq(tokens[0], "divide"))
+      } else if (util::strieq(tokens[0], "divide"))
       {
         Perft(game.get()).perft_divide(6);
-      } else if (strieq(tokens[0], "tune"))
+      } else if (util::strieq(tokens[0], "tune"))
       {
         Stopwatch sw;
         eval::Tune(*game, *see, *eval);
         const auto seconds = sw.elapsed_seconds();
         printf("%f\n", seconds);
-      } else if (strieq(tokens[0], "quit") || strieq(tokens[0], "exit"))
+      } else if (util::strieq(tokens[0], "quit") || util::strieq(tokens[0], "exit"))
       {
         quit = 1;
       }

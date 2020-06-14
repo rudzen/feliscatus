@@ -72,15 +72,15 @@ public:
   }
 
   bool is_castle_move(const char *m, int &castle_type) const {
-    if (strieq(m, "O-O") || strieq(m, "OO") || strieq(m, "0-0") || strieq(m, "00") || (strieq(m, "e1g1") && board->get_piece_type(e1) == King)
-        || (strieq(m, "e8g8") && board->get_piece_type(e8) == King))
+    if (util::strieq(m, "O-O") || util::strieq(m, "OO") || util::strieq(m, "0-0") || util::strieq(m, "00") || (util::strieq(m, "e1g1") && board->get_piece_type(e1) == King)
+        || (util::strieq(m, "e8g8") && board->get_piece_type(e8) == King))
     {
       castle_type = 0;
       return true;
     }
 
-    if (strieq(m, "O-O-O") || strieq(m, "OOO") || strieq(m, "0-0-0") || strieq(m, "000") || (strieq(m, "e1c1") && board->get_piece_type(e1) == King)
-        || (strieq(m, "e8c8") && board->get_piece_type(e8) == King))
+    if (util::strieq(m, "O-O-O") || util::strieq(m, "OOO") || util::strieq(m, "0-0-0") || util::strieq(m, "000") || (util::strieq(m, "e1c1") && board->get_piece_type(e1) == King)
+        || (util::strieq(m, "e8c8") && board->get_piece_type(e8) == King))
     {
       castle_type = 1;
       return true;
