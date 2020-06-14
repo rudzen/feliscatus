@@ -8,6 +8,9 @@
 #include <cstdio>
 #include <cctype>
 #include <exception>
+#include "types.h"
+#include "square.h"
+#include "util.h"
 
 namespace pgn {
 
