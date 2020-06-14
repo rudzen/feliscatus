@@ -105,10 +105,30 @@ inline Bitboard passed_pawn_front_span[2][64];
 inline Bitboard pawn_front_span[2][64];
 inline Bitboard pawn_east_attack_span[2][64];
 inline Bitboard pawn_west_attack_span[2][64];
-inline Bitboard pawn_captures[128];
+inline std::array<Bitboard, 128> pawn_captures{};
 
-constexpr Bitboard bb_square(const Square sq) {
+template<Square sq>
+constexpr Bitboard bit() {
   return square_bb[sq];
+}
+
+template<typename... Squares>
+constexpr Bitboard bit(Squares... squares) {
+  return (... | square_bb[squares]);
+}
+
+constexpr Bitboard bit() {
+  return 0;
+}
+
+template<typename... Ranks>
+constexpr Bitboard bit(const Rank r, Ranks... ra) {
+  return RankBB[r] | bit(ra...);
+}
+
+template<typename... Files>
+constexpr Bitboard bit(const File f, Files... fi) {
+  return FileBB[f] | bit(fi...);
 }
 
 constexpr Bitboard bb_rank(const Rank rank) {
@@ -122,6 +142,67 @@ constexpr Bitboard bb_file(const File file) {
 constexpr Bitboard bb_file(const Square s) {
   return bb_file(file_of(s));
 }
+
+//------------------------------------------------
+// Additional Square operators
+//------------------------------------------------
+constexpr Bitboard operator&(const Bitboard b, const Square s) noexcept {
+  return b & square_bb[s];
+}
+constexpr Bitboard operator|(const Bitboard b, const Square s) noexcept {
+  return b | square_bb[s];
+}
+constexpr Bitboard operator^(const Bitboard b, const Square s) noexcept {
+  return b ^ square_bb[s];
+}
+constexpr Bitboard &operator|=(Bitboard &b, const Square s) noexcept {
+  return b |= square_bb[s];
+}
+constexpr Bitboard &operator^=(Bitboard &b, const Square s) noexcept {
+  return b ^= square_bb[s];
+}
+
+//------------------------------------------------
+// Additional File operators
+//------------------------------------------------
+constexpr Bitboard operator&(const Bitboard b, const File f) noexcept {
+  return b & FileBB[f];
+}
+constexpr Bitboard operator|(const Bitboard b, const File f) noexcept {
+  return b | FileBB[f];
+}
+constexpr Bitboard operator^(const Bitboard b, const File f) noexcept {
+  return b ^ FileBB[f];
+}
+constexpr Bitboard &operator|=(Bitboard &b, const File f) noexcept {
+  return b |= FileBB[f];
+}
+constexpr Bitboard &operator^=(Bitboard &b, const File f) noexcept {
+  return b ^= FileBB[f];
+}
+
+//------------------------------------------------
+// Additional Rank operators
+//------------------------------------------------
+constexpr Bitboard operator&(const Bitboard b, const Rank r) noexcept {
+  return b & RankBB[r];
+}
+constexpr Bitboard operator&(const Rank r, const Bitboard b) noexcept {
+  return b & RankBB[r];
+}
+constexpr Bitboard operator|(const Bitboard b, const Rank r) noexcept {
+  return b | RankBB[r];
+}
+constexpr Bitboard operator^(const Bitboard b, const Rank r) noexcept {
+  return b ^ RankBB[r];
+}
+constexpr Bitboard &operator|=(Bitboard &b, const Rank r) noexcept {
+  return b |= RankBB[r];
+}
+constexpr Bitboard &operator^=(Bitboard &b, const Rank r) noexcept {
+  return b ^= RankBB[r];
+}
+
 
 constexpr Bitboard north_one(const Bitboard bb) {
   return bb << 8;
@@ -171,14 +252,14 @@ constexpr Bitboard south_fill(const Bitboard bb) {
   return fill;
 }
 
-constexpr void init_between_bitboards(const Square from, Bitboard (*step_func)(Bitboard), const int step) {
-  auto bb          = step_func(bb_square(from));
+constexpr void init_between_bitboards(const Square from, Bitboard (*step_func)(Bitboard), const Direction step) {
+  auto bb          = step_func(bit(from));
   auto to          = from + step;
   Bitboard between = ZeroBB;
 
   while (bb)
   {
-    if (from < 64 && to < 64)
+    if (from < sq_nb && to < sq_nb)
     {
       between_bb[from][to] = between;
       between |= bb;
@@ -205,14 +286,14 @@ constexpr void init() {
 
     std::fill(std::begin(between_bb[sq]), std::end(between_bb[sq]), 0);
 
-    init_between_bitboards(sq, north_one, 8);
-    init_between_bitboards(sq, north_east_one, 9);
-    init_between_bitboards(sq, east_one, 1);
-    init_between_bitboards(sq, south_east_one, -7);
-    init_between_bitboards(sq, south_one, -8);
-    init_between_bitboards(sq, south_west_one, -9);
-    init_between_bitboards(sq, west_one, -1);
-    init_between_bitboards(sq, north_west_one, 7);
+    init_between_bitboards(sq, north_one, NORTH);
+    init_between_bitboards(sq, north_east_one, NORTH_EAST);
+    init_between_bitboards(sq, east_one, EAST);
+    init_between_bitboards(sq, south_east_one, SOUTH_EAST);
+    init_between_bitboards(sq, south_one, SOUTH);
+    init_between_bitboards(sq, south_west_one, SOUTH_WEST);
+    init_between_bitboards(sq, west_one, WEST);
+    init_between_bitboards(sq, north_west_one, NORTH_WEST);
 
     pawn_captures[sq] = (bbsq & ~FileHBB) << 9;
     pawn_captures[sq] |= (bbsq & ~FileABB) << 7;
@@ -221,10 +302,21 @@ constexpr void init() {
   }
 }
 
-constexpr Bitboard (*pawn_push[2])(Bitboard)         = {north_one, south_one};
-constexpr Bitboard (*pawn_east_attacks[2])(Bitboard) = {north_west_one, south_west_one};
-constexpr Bitboard (*pawn_west_attacks[2])(Bitboard) = {north_east_one, south_east_one};
-constexpr Bitboard (*pawn_fill[2])(Bitboard)         = {north_fill, south_fill};
+constexpr Bitboard (*pawn_push_shift[COL_NB])(Bitboard)   = {north_one, south_one};
+constexpr Bitboard (*pawn_east_attacks[COL_NB])(Bitboard) = {north_west_one, south_west_one};
+constexpr Bitboard (*pawn_west_attacks[COL_NB])(Bitboard) = {north_east_one, south_east_one};
+constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard)         = {north_fill, south_fill};
+
+constexpr Bitboard pawn_push(const Color c, const Bitboard bb) { return pawn_push_shift[c](bb); }
+
+template<Direction D>
+constexpr Bitboard pawn_push(const Bitboard bb) {
+  static_assert(D != NORTH || D != SOUTH);
+  if constexpr (D == NORTH)
+    return north_one(bb);
+  else
+    return south_one(bb);
+}
 
 constexpr std::array<Bitboard, 2> rank_1{Rank1BB, Rank8BB};
 
@@ -236,13 +328,13 @@ constexpr std::array<Bitboard, 2> rank_6_and_7{Rank6BB | Rank7BB, Rank2BB | Rank
 
 constexpr std::array<Bitboard, 2> rank_7_and_8{Rank7BB | Rank8BB, Rank1BB | Rank2BB};
 
-constexpr std::array<int, 2> pawn_push_dist{8, -8};
+constexpr std::array<Direction, 2> pawn_push_dist{NORTH, SOUTH};
 
-constexpr std::array<int, 2> pawn_double_push_dist{16, -16};
+constexpr std::array<Direction, 2> pawn_double_push_dist{NORTH * 2, SOUTH * 2};
 
-constexpr std::array<int, 2> pawn_west_attack_dist{9, -7};
+constexpr std::array<Direction, 2> pawn_west_attack_dist{NORTH_EAST, SOUTH_EAST};
 
-constexpr std::array<int, 2> pawn_east_attack_dist{7, -9};
+constexpr std::array<Direction, 2> pawn_east_attack_dist{NORTH_WEST, SOUTH_WEST};
 
 constexpr void reset_lsb(Bitboard &x) {
   x &= (x - 1);

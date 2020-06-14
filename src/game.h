@@ -48,7 +48,7 @@ public:
 
     if (move_type(m) & DOUBLEPUSH)
     {
-      pos->en_passant_square = static_cast<Square>(move_to(m) + pawn_push_dist[pos->side_to_move]);
+      pos->en_passant_square = move_to(m) + pawn_push(pos->side_to_move);
     } else
     { pos->en_passant_square = no_square; }
     pos->key                = prev->key;
@@ -142,7 +142,7 @@ public:
     // remove captured piece
     if (is_ep_capture(m))
     {
-      pos->pawn_structure_key ^= zobrist::zobrist_pst[moveCaptured(m)][move_to(m) + (pos->side_to_move == BLACK ? -8 : 8)];
+      pos->pawn_structure_key ^= zobrist::zobrist_pst[moveCaptured(m)][move_to(m) + pawn_push(pos->side_to_move)];
     } else if (is_capture(m))
     {
       if ((moveCaptured(m) & 7) == Pawn)

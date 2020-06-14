@@ -151,7 +151,7 @@ protected:
         ++attack_count[Us];
       }
 
-      if (bb_square(sq) & pawn_attacks[Them])
+      if (pawn_attacks[Them] & sq)
         score += knight_in_danger;
     }
 
@@ -194,7 +194,7 @@ protected:
         ++attack_count[Us];
       }
 
-      if (bb_square(sq) & pawn_attacks[Them])
+      if (pawn_attacks[Them] & sq)
         score += bishop_in_danger;
     }
     poseval[Us] += score;
@@ -217,9 +217,7 @@ protected:
       score_mg += rook_pst_mg[flipsq];
       score_eg += rook_pst_eg[flipsq];
 
-      const auto &bbsq = bb_square(sq);
-
-      if (bbsq & open_files)
+      if (open_files & sq)
         score += rook_open_file;
 
       const auto attacks = rookAttacks(sq, occupied);
@@ -237,7 +235,7 @@ protected:
         ++attack_count[Us];
       }
 
-      if (bb_square(sq) & (pawn_attacks[Them] | _knight_attacks[Them] | bishop_attacks[Them]))
+      if ((pawn_attacks[Them] | _knight_attacks[Them] | bishop_attacks[Them]) & sq)
         score += rook_in_danger;
     }
     poseval[Us] += score;
@@ -275,7 +273,7 @@ protected:
         ++attack_count[Us];
       }
 
-      if (bb_square(sq) & (pawn_attacks[Them] | _knight_attacks[Them] | bishop_attacks[Them] | rook_attacks[Them]))
+      if ((pawn_attacks[Them] | _knight_attacks[Them] | bishop_attacks[Them] | rook_attacks[Them]) & sq)
         score += queen_in_danger;
     }
     poseval[Us] += score;
@@ -296,21 +294,22 @@ protected:
 
   template<Color Us>
   void eval_king() {
+    constexpr Direction Up = Us == WHITE ? NORTH : SOUTH;
     const auto sq    = lsb(game_.board.king(Us));
-    const auto bbsq  = bb_square(sq);
+    const auto bbsq  = bit(sq);
 
     auto score_mg       = king_pst_mg[flip[Us][sq]];
     const auto score_eg = king_pst_eg[flip[Us][sq]];
 
-    score_mg += king_pawn_shelter[pop_count((pawn_push[Us](bbsq) | pawn_west_attacks[Us](bbsq) | pawn_east_attacks[Us](bbsq)) & pawns(Us))];
+    score_mg += king_pawn_shelter[pop_count((pawn_push<Up>(bbsq) | pawn_west_attacks[Us](bbsq) | pawn_east_attacks[Us](bbsq)) & pawns(Us))];
 
     const auto eastwest = bbsq | west_one(bbsq) | east_one(bbsq);
 
     score_mg += king_on_open[pop_count(open_files & eastwest)];
     score_mg += king_on_half_open[pop_count(half_open_files[Us] & eastwest)];
 
-    if (((Us == 0) && (((sq == f1 || sq == g1) && (bb_square(h1) & game_.board.rooks(WHITE))) || ((sq == c1 || sq == b1) && (bb_square(a1) & game_.board.rooks(WHITE)))))
-        || ((Us == 1) && (((sq == f8 || sq == g8) && (bb_square(h8) & game_.board.rooks(BLACK))) || ((sq == c8 || sq == b8) && (bb_square(a8) & game_.board.rooks(BLACK))))))
+    if (((Us == 0) && (((sq == f1 || sq == g1) && (game_.board.rooks(WHITE) & h1)) || ((sq == c1 || sq == b1) && (game_.board.rooks(WHITE) & a1))))
+        || ((Us == 1) && (((sq == f8 || sq == g8) && (game_.board.rooks(BLACK) & h8)) || ((sq == c8 || sq == b8) && (game_.board.rooks(BLACK) & a8)))))
       score_mg += king_obstructs_rook;
 
     all_attacks[Us] |= king_attacks[king_sq(Us)];
