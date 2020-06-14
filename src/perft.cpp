@@ -81,7 +81,7 @@ int Perft::perft(const int depth, perft_result &result) const {
     {
       const auto *m = &move_data->move;
 
-      if (!g->make_move(*m, (perft_flags & LEGALMOVES) ? false : true, true))
+      if (!g->make_move(*m, perft_flags & LEGALMOVES ? false : true, true))
         continue;
 
       perft(depth - 1, result);

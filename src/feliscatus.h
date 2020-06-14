@@ -108,7 +108,7 @@ public:
     game     = std::make_unique<Game>();
     protocol = std::make_unique<UCIProtocol>(this, game.get());
     pawnt    = std::make_unique<PawnHashTable>(8);
-    see      = std::make_unique<See>(game.get());
+    see      = std::make_unique<See>(&game->board);
     eval     = std::make_unique<Eval>(*game, pawnt.get());
     search   = std::make_unique<Search>(protocol.get(), game.get(), eval.get(), see.get());
 

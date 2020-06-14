@@ -6,7 +6,7 @@ struct Worker {
   void start(Game *master, PawnHash *pawnt) {
     game_ = new Game();
     game_->copy(master);
-    see_    = new See(game_);
+    see_    = new See(&game_->board);
     eval_   = new Eval(*game_, pawnt);
     search_ = new Search(game_, eval_, see_);
     thread_ = std::jthread(&Search::run, search_);
