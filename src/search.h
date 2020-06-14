@@ -13,6 +13,15 @@
 #include "stopwatch.h"
 #include "position.h"
 
+struct PVEntry {
+  uint64_t key;
+  int depth;
+  int score;
+  uint32_t move;
+  NodeType node_type;
+  int eval;
+};
+
 class Search final : public MoveSorter {
 public:
   Search(Protocol *p, Game *g, Eval *e, See *s) : lag_buffer(-1), verbosity(true), protocol(p), game(g), eval(e), board(g->pos->b), see(s) { }
@@ -77,7 +86,7 @@ public:
 
   void stop() { stop_search.store(true); }
 
-  virtual void run() { go(0, 0, 0, 0, 0, 0, 0); }
+  void run() { go(0, 0, 0, 0, 0, 0, 0); }
 
 protected:
   template<NodeType NT, bool PV>
@@ -661,15 +670,6 @@ protected:
   bool is_passed_pawn_move(const uint32_t m) const { return move_piece_type(m) == Pawn && board->is_pawn_passed(move_to(m), move_side(m)); }
 
 public:
-  struct PVEntry {
-    uint64_t key;
-    int depth;
-    int score;
-    uint32_t move;
-    NodeType node_type;
-    int eval;
-  };
-
   double n_{};
   int plies{};
   int max_ply{};

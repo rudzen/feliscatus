@@ -150,7 +150,7 @@ public:
       } else if (util::strieq(tokens[0], "tune"))
       {
         Stopwatch sw;
-        eval::Tune(*game, *see, *eval);
+        eval::Tune(game.get(), see.get(), eval.get());
         const auto seconds = sw.elapsed_seconds();
         printf("%f\n", seconds);
       } else if (util::strieq(tokens[0], "quit") || util::strieq(tokens[0], "exit"))
