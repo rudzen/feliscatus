@@ -71,7 +71,6 @@ private:
 template<bool Tuning>
 template<Color Us>
 int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
-  constexpr auto lazy_margin = 500;
 
   init_evaluate<WHITE>();
 

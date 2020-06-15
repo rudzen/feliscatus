@@ -2,6 +2,8 @@
 
 // TODO : Join eg and mg values into a single int
 
+inline int lazy_margin = 500;
+
 inline int bishop_attack_king = 5;
 inline int bishop_in_danger   = -56;
 inline int bishop_mob2_eg[14] = {-60, -27, -20, -10, -8, -2, 2, 3, 4, 1, 6, 10, 16, 3};
