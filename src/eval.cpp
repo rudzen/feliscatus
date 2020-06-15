@@ -1,10 +1,12 @@
 #include "eval.h"
 #include "types.h"
+#include "hash.h"
 #include "square.h"
-#include "tune.h"
 #include "game.h"
 #include "parameters.h"
+#include "bitboard.h"
 #include "magic.h"
+#include "position.h"
 
 template<bool Tuning>
 struct Evaluate {

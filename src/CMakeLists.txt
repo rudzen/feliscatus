@@ -3,7 +3,7 @@ file(GLOB files
         "*.h"
         )
 
-#list(REMOVE_ITEM files "feliscatus.h")
+list(REMOVE_ITEM files "feliscatus.h")
 list(REMOVE_ITEM files "feliscatus.cpp")
 
 add_library(logic STATIC ${files})
