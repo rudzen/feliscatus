@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <fmt/format.h>
 
 enum NodeType : uint8_t;
 class Game;
@@ -24,17 +25,17 @@ struct Protocol {
 
   virtual ~Protocol() = default;
 
-  virtual int handle_input(const char *params[], int num_params)        = 0;
+  virtual int handle_input(const char *params[], int num_params)  = 0;
 
-  virtual void check_input()                                            = 0;
+  virtual void check_input()                                      = 0;
 
-  virtual void post_moves(const char *bestmove, const char *pondermove) = 0;
+  virtual void post_moves(uint32_t bestmove, uint32_t pondermove) = 0;
 
   virtual void post_info(int depth, int selective_depth, uint64_t node_count, uint64_t nodes_per_sec, uint64_t time, int hash_full) = 0;
 
   virtual void post_curr_move(uint32_t curr_move, int curr_move_number) = 0;
 
-  virtual void post_pv(int depth, int max_ply, uint64_t node_count, uint64_t nodes_per_second, uint64_t time, int hash_full, int score, const char *pv, NodeType node_type) = 0;
+  virtual void post_pv(int depth, int max_ply, uint64_t node_count, uint64_t nodes_per_second, uint64_t time, int hash_full, int score, fmt::memory_buffer &pv, NodeType node_type) = 0;
 
   [[nodiscard]]
   int is_analysing() const noexcept { return flags & (INFINITE_MOVE_TIME | PONDER_SEARCH); }

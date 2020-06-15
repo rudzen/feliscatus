@@ -468,13 +468,12 @@ protected:
 
       if (protocol && verbosity)
       {
-        char buf[2048], buf2[16];
-        buf[0] = 0;
+        fmt::memory_buffer buffer;
 
         for (auto i = plies; i < pv_length[plies]; ++i)
-          _snprintf(&buf[strlen(buf)], sizeof buf - strlen(buf), "%s ", game->move_to_string(pv[plies][i].move, buf2));
+          fmt::format_to(buffer, "{} ", game->move_to_string(pv[plies][i].move));
 
-        protocol->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), std::max<int>(1ull, start_time.elapsed_milliseconds()), TT.get_load(), score, buf, NT);
+        protocol->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), std::max<int>(1ull, start_time.elapsed_milliseconds()), TT.get_load(), score, buffer, NT);
       }
     }
   }

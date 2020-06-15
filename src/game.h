@@ -35,14 +35,14 @@ public:
   int set_fen(const char *fen);
 
   [[nodiscard]]
-  char *get_fen() const;
+  std::string get_fen() const;
 
   [[nodiscard]]
   int setup_castling(const char **p);
 
   void copy(Game *other);
 
-  const char *move_to_string(uint32_t m, char *buf) const;
+  std::string move_to_string(uint32_t m) const;
 
   void print_moves() const;
 

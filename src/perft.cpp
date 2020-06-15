@@ -36,7 +36,6 @@ void Perft::perft_divide(const int depth) const {
 
   perft_result result{};
   auto *pos = g->pos;
-  char buf[12];
   double time{};
   double nps{};
 
@@ -54,7 +53,7 @@ void Perft::perft_divide(const int depth) const {
     perft(depth - 1, result);
     time += sw.elapsed_milliseconds();
     g->unmake_move();
-    fmt::print("move {}: {} nodes\n", g->move_to_string(*m, buf), result.nodes - nodes_start);
+    fmt::print("move {}: {} nodes\n", g->move_to_string(*m), result.nodes - nodes_start);
   }
 
   if (time > 0.0)

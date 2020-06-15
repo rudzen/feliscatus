@@ -12,7 +12,7 @@ struct PVEntry;
 namespace eval {
 
 struct Node {
-  Node(const char *fen) : fen_(fen) {}
+  Node(std::string fen) : fen_(std::move(fen)) {}
 
   std::string fen_;
   double result_{};

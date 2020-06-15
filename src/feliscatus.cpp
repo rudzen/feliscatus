@@ -42,11 +42,7 @@ int Felis::go(const int wtime, const int btime, const int movestogo, const int w
 
   if (game->pos->pv_length)
   {
-    char best_move[12];
-    char ponder_move[12];
-
-    protocol->post_moves(game->move_to_string(search->pv[0][0].move, best_move), game->pos->pv_length > 1 ? game->move_to_string(search->pv[0][1].move, ponder_move) : nullptr);
-
+    protocol->post_moves(search->pv[0][0].move, game->pos->pv_length > 1 ? search->pv[0][1].move : 0u);
     game->make_move(search->pv[0][0].move, true, true);
   }
   return 0;

@@ -79,5 +79,37 @@ constexpr bool in_between(const T value, const T min, const T max) {
   return (static_cast<unsigned int>(value) - static_cast<unsigned int>(min) <= static_cast<unsigned int>(max) - static_cast<unsigned int>(min));
 }
 
+template<int Min, int Max>
+constexpr bool in_between(const int value) {
+  return (static_cast<unsigned int>(value) - static_cast<unsigned int>(Min) <= static_cast<unsigned int>(Max) - static_cast<unsigned int>(Min));
 }
 
+template<typename Integral>
+constexpr char to_char(const Integral v) {
+  return static_cast<char>(v + '0');
+}
+
+template<typename T>
+constexpr T from_char(const char c) {
+  return static_cast<T>(c - '0');
+}
+
+template<typename T>
+constexpr T to_integral(std::string_view str) {
+
+  static_assert(std::is_integral_v<T>, "Only integrals allowed.");
+
+  auto sv_val = [&str]() {
+    auto x = T(0);
+    while (in_between<'0', '9'>(str.front()))
+    {
+      x = x * 10 + from_char<T>(str.front());
+      str.remove_prefix(1);
+    }
+    return x;
+  };
+
+  return str.front() == '-' ? str.remove_prefix(1), -sv_val() : sv_val();
+}
+
+}

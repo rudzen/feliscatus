@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string_view>
 #include "moves.h"
 #include "material.h"
 
@@ -9,10 +10,10 @@ struct Position : public Moves {
   void clear();
 
   [[nodiscard]]
-  const uint32_t *string_to_move(const char *m);
+  const uint32_t *string_to_move(std::string_view m);
 
   [[nodiscard]]
-  bool is_castle_move(const char *m, int &castle_type) const;
+  bool is_castle_move(std::string_view m, int &castle_type) const;
 
   [[nodiscard]]
   bool is_draw() const;
