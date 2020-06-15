@@ -62,8 +62,6 @@ private:
   std::array<Bitboard, COL_NB> rook_attacks{};
   std::array<Bitboard, COL_NB> queen_attacks{};
   std::array<Bitboard, COL_NB> king_area{};
-  Bitboard occupied{};
-  Bitboard not_occupied{};
   Bitboard open_files{};
   std::array<Bitboard, COL_NB> half_open_files{};
 };
@@ -260,7 +258,7 @@ void Evaluate<Tuning>::eval_bishops() {
     score_mg += bishop_pst_mg[flipsq];
     score_eg += bishop_pst_eg[flipsq];
 
-    const auto attacks = bishopAttacks(sq, occupied ^ b.queens(Them));
+    const auto attacks = bishopAttacks(sq, b.occupied ^ b.queens(Them));
 
     all_attacks[Us] |= attacks;
     bishop_attacks[Us] |= attacks;
@@ -312,7 +310,7 @@ void Evaluate<Tuning>::eval_rooks() {
     if (open_files & sq)
       score += rook_open_file;
 
-    const auto attacks = rookAttacks(sq, occupied ^ b.queens(Them) ^ b.rooks(Them));
+    const auto attacks = rookAttacks(sq, b.occupied ^ b.queens(Them) ^ b.rooks(Them));
 
     all_attacks[Us] |= attacks;
     rook_attacks[Us] |= attacks;
@@ -352,7 +350,7 @@ void Evaluate<Tuning>::eval_queens() {
     score_mg += queen_pst_mg[flipsq];
     score_eg += queen_pst_eg[flipsq];
 
-    const auto attacks = queenAttacks(sq, occupied);
+    const auto attacks = queenAttacks(sq, b.occupied);
 
     all_attacks[Us] |= attacks;
     queen_attacks[Us] |= attacks;
@@ -450,9 +448,6 @@ void Evaluate<Tuning>::init_evaluate() {
 
   king_area[WHITE] = king_attacks[b.king_square[WHITE]] | b.king(WHITE);
   king_area[BLACK] = king_attacks[b.king_square[BLACK]] | b.king(BLACK);
-
-  occupied     = b.occupied;
-  not_occupied = ~occupied;
 
   const auto white_pawns = b.pawns(WHITE);
   const auto black_pawns = b.pawns(BLACK);
