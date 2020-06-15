@@ -52,7 +52,7 @@ void Felis::ponder_hit() { search->search_time += search->start_time.elapsed_mil
 
 void Felis::stop() { search->stop_search = true; }
 
-bool Felis::make_move(const char *m) const {
+bool Felis::make_move(const std::string_view m) const {
   const auto *const move = game->pos->string_to_move(m);
   return move ? game->make_move(*move, true, true) : false;
 }
@@ -74,29 +74,27 @@ void Felis::stop_workers() {
     worker.stop();
 }
 
-int Felis::set_option(const char *name, const char *value) {
-  char buf[1024];
-  strcpy(buf, "");
-
-  if (value != nullptr)
+int Felis::set_option(const std::string_view name, const std::string_view value) {
+  if (!value.empty())
   {
-    if (util::strieq("Hash", name))
+    if (name == "Hash")
     {
-      TT.init(std::clamp(static_cast<int>(strtol(value, nullptr, 10)), 8, 65536));
-      _snprintf(buf, sizeof(buf), "Hash:%d", TT.get_size_mb());
-    } else if (util::strieq("Threads", name) || util::strieq("NumThreads", name))
+      TT.init(std::clamp(util::to_integral<uint64_t>(value), 8ULL, 65536ULL));
+      fmt::print("info string Hash:{}\n", TT.get_size_mb());
+    } else if (name == "Threads" || name == "NumThreads")
     {
-      num_threads = std::clamp(static_cast<int>(strtol(value, nullptr, 10)), 1, 64);
-      _snprintf(buf, sizeof(buf), "Threads:%d", static_cast<int>(num_threads));
+      num_threads = std::clamp(util::to_integral<uint64_t>(value), 1ULL, 64ULL);
       workers.resize(num_threads - 1);
       workers.shrink_to_fit();
-    } else if (util::strieq("UCI_Chess960", name))
+      fmt::print("info string Threads:{}\n", num_threads);
+    } else if (name == "UCI_Chess960")
     {
-      game->chess960 = util::strieq(value, "true");
-      _snprintf(buf, sizeof(buf), "UCI_Chess960 %s", (game->chess960 ? on.data() : off.data()));
-    } else if (util::strieq("UCI_Chess960_Arena", name))
+      game->chess960 = value == "true";
+      fmt::print("info string UCI_Chess960:{}\n", game->chess960 ? on : off);
+    } else if (name == "UCI_Chess960_Arena")
     {
-      game->chess960 = game->xfen = util::strieq(value, "true");
+      game->chess960 = game->xfen = value == "true";
+      fmt::print("info string UCI_Chess960_Arena:{}\n", game->chess960 ? on : off);
     }
   }
   return 0;

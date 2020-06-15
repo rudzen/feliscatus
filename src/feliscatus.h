@@ -21,7 +21,7 @@ struct Felis final : public ProtocolListener {
 
   void stop() override;
 
-  bool make_move(const char *m) const;
+  bool make_move(std::string_view m) const;
 
   void go_search(int wtime, int btime, int movestogo, int winc, int binc, int movetime);
 
@@ -29,7 +29,7 @@ struct Felis final : public ProtocolListener {
 
   void stop_workers();
 
-  int set_option(const char *name, const char *value) override;
+  int set_option(std::string_view name, std::string_view value) override;
 
   int run();
 

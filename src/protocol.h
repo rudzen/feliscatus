@@ -18,7 +18,7 @@ struct ProtocolListener {
   virtual int go(int wtime, int btime, int movestogo, int winc, int binc, int movetime) = 0;
   virtual void ponder_hit()                                                             = 0;
   virtual void stop()                                                                   = 0;
-  virtual int set_option(const char *name, const char *value)                           = 0;
+  virtual int set_option(std::string_view name, std::string_view value)                 = 0;
 };
 
 struct Protocol {
