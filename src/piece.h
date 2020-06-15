@@ -3,10 +3,6 @@
 #include <string_view>
 #include <cstdio>
 
-// enum PieceType {
-//   Pawn, Knight, Bishop, Rook, Queen, King, NoPiece
-// };
-
 constexpr int Pawn    = 0;
 constexpr int Knight  = 1;
 constexpr int Bishop  = 2;
@@ -14,6 +10,8 @@ constexpr int Rook    = 3;
 constexpr int Queen   = 4;
 constexpr int King    = 5;
 constexpr int NoPiece = 6;
+
+constexpr std::array<int, 6> PieceTypes{ Pawn, Knight, Bishop, Rook, Queen, King };
 
 constexpr std::array<int, 6> piece_values{100, 400, 400, 600, 1200, 0};
 

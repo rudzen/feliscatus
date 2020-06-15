@@ -1,18 +1,12 @@
 #pragma once
 
-#include <array>
-#include "game.h"
-#include "hash.h"
-#include "position.h"
-#include "parameters.h"
-#include "bitboard.h"
-#include "magic.h"
-
+class Game;
+struct PawnHashTable;
 
 namespace Eval {
 
-int evaluate(const Game &game, PawnHashTable *pawnTable, const int alpha, const int beta);
+int evaluate(Game *g, PawnHashTable *pawnTable, int alpha, int beta);
 
-int tune(const Game &game, PawnHashTable *pawnTable, const int alpha, const int beta);
+int tune(Game *g, PawnHashTable *pawnTable, int alpha, int beta);
 
 }

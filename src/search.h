@@ -631,7 +631,7 @@ protected:
   void get_hash_and_evaluate(const int alpha, const int beta) const {
     if ((pos->transposition = TT.find(pos->key)) == nullptr)
     {
-      pos->eval_score  = Eval::evaluate(*game, pawn_hash_, alpha, beta);
+      pos->eval_score  = Eval::evaluate(game, pawn_hash_, alpha, beta);
       pos->transp_type = Void;
       pos->transp_move = 0;
       return;

@@ -4,6 +4,7 @@
 #include "tune.h"
 #include "game.h"
 #include "eval.h"
+#include "parameters.h"
 
 namespace {
 
@@ -411,14 +412,14 @@ void Tune::make_quiet(std::vector<Node> &nodes) {
 
 int Tune::get_score(const int side) {
   const auto score = score_static_
-                       ? Eval::tune(*game_, nullptr, -100000, 100000)
+                       ? Eval::tune(game_, nullptr, -100000, 100000)
                        : get_quiesce_score(-32768, 32768, false, 0);
 
   return game_->pos->side_to_move == side ? score : -score;
 }
 
 int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) {
-  auto score = Eval::tune(*game_, nullptr, -100000, 100000);
+  auto score = Eval::tune(game_, nullptr, -100000, 100000);
 
   if (score >= beta)
     return score;

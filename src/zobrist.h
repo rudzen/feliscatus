@@ -1,36 +1,37 @@
 #pragma once
 
-#include <random>
-#include "piece.h"
-#include "square.h"
+#include <array>
+#include "types.h"
+#include "prng.h"
 
 namespace zobrist {
 
 inline Key zobrist_pst[14][64];
-inline Key zobrist_castling[16];
+inline std::array<Key, 16> zobrist_castling{};
 inline Key zobrist_side;
-inline Key zobrist_ep_file[8];
+inline std::array<Key, 8> zobrist_ep_file{};
 
 inline void init() {
-  std::mt19937_64 prng64;
-  prng64.seed(std::mt19937_64::default_seed);
 
-  for (auto p = Pawn; p <= King; p++)
+  constexpr Key Seed = 1070372;
+
+  PRNG<Key> rng(Seed);
+
+  for (const auto p : PieceTypes)
   {
     for (const auto sq : Squares)
     {
-      zobrist_pst[p][sq]     = prng64();
-      zobrist_pst[p + 8][sq] = prng64();
+      zobrist_pst[p][sq]     = rng();
+      zobrist_pst[p + 8][sq] = rng();
     }
   }
 
   for (auto &i : zobrist_castling)
-    i = prng64();
+    i = rng();
 
   for (auto &i : zobrist_ep_file)
-    i = prng64();
+    i = rng();
 
-  zobrist_side = prng64();
+  zobrist_side = rng();
 }
-
 }// namespace zobrist

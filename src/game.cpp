@@ -9,8 +9,6 @@
 
 namespace {
 
-constexpr std::array<int, 6> PieceTypes{Pawn, Knight, Bishop, Rook, Queen, King};
-
 [[nodiscard]]
 bool get_ep_square(const char **p, Square &sq) {
   if (**p == '-')

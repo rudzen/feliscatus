@@ -10,31 +10,6 @@ void Board::clear() {
   occupied = 0;
 }
 
-void Board::add_piece(const int p, const Color side, const Square sq) {
-  piece[p + (side << 3)] |= sq;
-  occupied_by_side[side] |= sq;
-  occupied |= sq;
-  board[sq] = p + (side << 3);
-
-  if (p == King)
-    king_square[side] = sq;
-}
-
-void Board::remove_piece(const int p, const Square sq) {
-  const auto bbsq = bit(sq);
-  piece[p] &= ~bbsq;
-  occupied_by_side[p >> 3] &= ~bbsq;
-  occupied &= ~bbsq;
-  board[sq] = NoPiece;
-}
-
-void Board::add_piece(const int p, const Square sq) {
-  piece[p] |= sq;
-  occupied_by_side[p >> 3] |= sq;
-  occupied |= sq;
-  board[sq] = p;
-}
-
 void Board::make_move(const uint32_t m) {
 
   const auto from = move_from(m);

@@ -3,6 +3,8 @@
 #include "square.h"
 #include "tune.h"
 #include "game.h"
+#include "parameters.h"
+#include "magic.h"
 
 template<bool Tuning>
 struct Evaluate {
@@ -13,7 +15,7 @@ struct Evaluate {
   Evaluate(Evaluate &&other)      = delete;
   Evaluate &operator=(const Evaluate &) = delete;
   Evaluate &operator=(Evaluate &&other) = delete;
-  Evaluate(const Game &g, PawnHashTable *pawntable) : b(g.board), pos(g.pos), pawnt(pawntable) {}
+  Evaluate(const Game *g, PawnHashTable *pawntable) : b(g->board), pos(g->pos), pawnt(pawntable) {}
 
   template<Color Us>
   int evaluate(int alpha, int beta);
@@ -446,8 +448,8 @@ void Evaluate<Tuning>::init_evaluate() {
   attack_count.fill(0);
   attack_counter.fill(0);
 
-  king_area[WHITE] = king_attacks[b.king_square[WHITE]] | b.king(WHITE);
-  king_area[BLACK] = king_attacks[b.king_square[BLACK]] | b.king(BLACK);
+  king_area[WHITE] = king_attacks[b.king_square[WHITE]] | b.king_square[WHITE];
+  king_area[BLACK] = king_attacks[b.king_square[BLACK]] | b.king_square[BLACK];
 
   const auto white_pawns = b.pawns(WHITE);
   const auto black_pawns = b.pawns(BLACK);
@@ -467,12 +469,12 @@ void Evaluate<Tuning>::init_evaluate() {
 
 namespace Eval {
 
-int evaluate(const Game &game, PawnHashTable *pawnTable, const int alpha, const int beta) {
-  return game.pos->side_to_move == WHITE ? Evaluate<false>(game, pawnTable).evaluate<WHITE>(alpha, beta) : Evaluate<false>(game, pawnTable).evaluate<BLACK>(alpha, beta);
+int evaluate(Game *g, PawnHashTable *pawnTable, const int alpha, const int beta) {
+  return g->pos->side_to_move == WHITE ? Evaluate<false>(g, pawnTable).evaluate<WHITE>(alpha, beta) : Evaluate<false>(g, pawnTable).evaluate<BLACK>(alpha, beta);
 }
 
-int tune(const Game &game, PawnHashTable *pawnTable, const int alpha, const int beta) {
-  return game.pos->side_to_move == WHITE ? Evaluate<true>(game, pawnTable).evaluate<WHITE>(alpha, beta) : Evaluate<true>(game, pawnTable).evaluate<BLACK>(alpha, beta);
+int tune(Game *g, PawnHashTable *pawnTable, const int alpha, const int beta) {
+  return g->pos->side_to_move == WHITE ? Evaluate<true>(g, pawnTable).evaluate<WHITE>(alpha, beta) : Evaluate<true>(g, pawnTable).evaluate<BLACK>(alpha, beta);
 }
 
 
