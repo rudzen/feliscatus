@@ -3,8 +3,6 @@
 #include "util.h"
 #include "board.h"
 
-Position::Position() { clear(); }
-
 void Position::clear() {
   in_check                   = false;
   castle_rights              = 0;
