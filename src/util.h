@@ -112,4 +112,9 @@ constexpr T to_integral(std::string_view str) {
   return str.front() == '-' ? str.remove_prefix(1), -sv_val() : sv_val();
 }
 
+template<typename ToCheck, std::size_t ExpectedSize, std::size_t RealSize = sizeof(ToCheck)>
+void check_size() {
+  static_assert(ExpectedSize == RealSize, "Size is off!");
+}
+
 }
