@@ -348,6 +348,20 @@ constexpr Square lsb(const Bitboard x) {
   return static_cast<Square>(std::countr_zero(x));
 }
 
+constexpr Square pop_lsb(Bitboard *b) {
+  const Square s = lsb(*b);
+  *b &= *b - 1;
+  return s;
+}
+
+constexpr bool more_than_one(const Bitboard b) {
+  return b & (b - 1);
+}
+
+constexpr bool is_opposite_colors(const Square s1, const Square s2) {
+  return ((static_cast<int>(s1) + static_cast<int>(rank_of(s1)) + s2 + rank_of(s2)) & 1) != 0;
+}
+
 }// namespace bitboard
 
 using namespace bitboard;

@@ -127,14 +127,13 @@ void PGNPlayer::print_progress(const bool force) const {
   fmt::print("game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_, all_nodes_count_, all_selected_nodes_.size());
 }
 
-Tune::Tune(Game *game, Eval *eval)
-  : game_(game), eval_(eval), score_static_(false) {
+Tune::Tune(Game *game)
+  : game_(game), score_static_(false) {
   PGNPlayer pgn;
   pgn.read(R"(d:\tomcat\x64\result.pgn)");
 
   // Tuning as described in https://chessprogramming.wikispaces.com/Texel%27s+Tuning+Method
 
-  eval_->tuning_ = true;
   score_static_ = true;
 
   std::vector<Param> params;
@@ -226,7 +225,7 @@ Tune::Tune(Game *game, Eval *eval)
   fmt::print("{}\n", emit_code(params, true));
 }
 
-Tune::~Tune() { eval_->tuning_ = false; }
+Tune::~Tune() { }
 
 void Tune::init_eval(std::vector<Param> &params) {
   auto step = 1;
@@ -412,14 +411,14 @@ void Tune::make_quiet(std::vector<Node> &nodes) {
 
 int Tune::get_score(const int side) {
   const auto score = score_static_
-                       ? eval_->evaluate(-100000, 100000)
+                       ? Eval::tune(*game_, nullptr, -100000, 100000)
                        : get_quiesce_score(-32768, 32768, false, 0);
 
   return game_->pos->side_to_move == side ? score : -score;
 }
 
 int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) {
-  auto score = eval_->evaluate(-100000, 100000);
+  auto score = Eval::tune(*game_, nullptr, -100000, 100000);
 
   if (score >= beta)
     return score;

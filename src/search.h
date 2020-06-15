@@ -24,8 +24,8 @@ struct PVEntry {
 class Search final : public MoveSorter {
 public:
   Search() = delete;
-  Search(Protocol *p, Game *g, Eval *e) : lag_buffer(-1), verbosity(true), protocol(p), game(g), eval(e), board(g->pos->b) { }
-  Search(Game *g, Eval *e) : Search(nullptr, g, e) {
+  Search(Protocol *p, Game *g, PawnHash *pawnt) : lag_buffer(-1), verbosity(true), protocol(p), game(g), board(g->pos->b), pawn_hash_(pawnt) { }
+  Search(Game *g, PawnHash *pawnt) : Search(nullptr, g, pawnt) {
     stop_search.store(false);
   }
 
@@ -631,7 +631,7 @@ protected:
   void get_hash_and_evaluate(const int alpha, const int beta) const {
     if ((pos->transposition = TT.find(pos->key)) == nullptr)
     {
-      pos->eval_score  = eval->evaluate(alpha, beta);
+      pos->eval_score  = Eval::evaluate(*game, pawn_hash_, alpha, beta);
       pos->transp_type = Void;
       pos->transp_move = 0;
       return;
@@ -690,7 +690,6 @@ protected:
   uint32_t counter_moves[16][64]{};
   int drawScore_[2]{};
   Game *game;
-  Eval *eval;
   Board *board;
   Position *pos{};
 
@@ -705,4 +704,9 @@ protected:
 
   static constexpr std::array<int, 4> futility_margin {150, 150, 150, 400};
   static constexpr std::array<int, 4> razor_margin {0, 125, 125, 400};
+
+
+  private:
+
+  PawnHash *pawn_hash_;
 };

@@ -65,7 +65,7 @@ public:
 
   void start_workers() {
     for (auto &worker : workers)
-      worker.start(game.get(), pawnt.get());
+      worker.start(game.get());
   }
 
   void stop_workers() {
@@ -107,8 +107,7 @@ public:
     game     = std::make_unique<Game>();
     protocol = std::make_unique<UCIProtocol>(this, game.get());
     pawnt    = std::make_unique<PawnHashTable>(8);
-    eval     = std::make_unique<Eval>(*game, pawnt.get());
-    search   = std::make_unique<Search>(protocol.get(), game.get(), eval.get());
+    search   = std::make_unique<Search>(protocol.get(), game.get(), pawnt.get());
 
     new_game();
 
@@ -148,7 +147,7 @@ public:
       } else if (util::strieq(tokens[0], "tune"))
       {
         Stopwatch sw;
-        eval::Tune(game.get(), eval.get());
+        eval::Tune(game.get());
         const auto seconds = sw.elapsed_seconds();
         printf("%f\n", seconds);
       } else if (util::strieq(tokens[0], "quit") || util::strieq(tokens[0], "exit"))
@@ -164,7 +163,6 @@ public:
 
 public:
   std::unique_ptr<Game> game;
-  std::unique_ptr<Eval> eval;
   std::unique_ptr<Search> search;
   std::unique_ptr<Protocol> protocol;
   std::unique_ptr<PawnHash> pawnt;
