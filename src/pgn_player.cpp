@@ -45,7 +45,7 @@ pgn::PGNPlayer::PGNPlayer([[maybe_unused]] bool check_legal)
 pgn::PGNPlayer::~PGNPlayer() { delete game_; }
 
 void pgn::PGNPlayer::read_pgn_game() {
-  game_->new_game(Game::kStartPosition.data());
+  game_->new_game(Game::kStartPosition);
   pgn::PGNFileReader::read_pgn_game();
 }
 

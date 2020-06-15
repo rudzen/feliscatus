@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <string_view>
 #include <fmt/format.h>
 
 enum NodeType : uint8_t;
@@ -13,7 +14,7 @@ constexpr int PONDER_SEARCH      = 8;
 struct ProtocolListener {
   virtual ~ProtocolListener()                                                           = default;
   virtual int new_game()                                                                = 0;
-  virtual int set_fen(const char *fen)                                                  = 0;
+  virtual int set_fen(std::string_view fen)                                             = 0;
   virtual int go(int wtime, int btime, int movestogo, int winc, int binc, int movetime) = 0;
   virtual void ponder_hit()                                                             = 0;
   virtual void stop()                                                                   = 0;

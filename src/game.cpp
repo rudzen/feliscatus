@@ -3,7 +3,6 @@
 #include <optional>
 #include <cstring>
 #include <string>
-#include <string_view>
 #include <fmt/format.h>
 #include "zobrist.h"
 #include "position.h"
@@ -292,19 +291,19 @@ void Game::add_piece(const int p, const Color c, const Square sq) {
   pos->material.add(pc);
 }
 
-int Game::new_game(const char *fen) {
+int Game::new_game(const std::string_view fen) {
   if (set_fen(fen) == 0)
     return 0;
 
   return set_fen(kStartPosition.data());
 }
 
-int Game::set_fen(const char *fen) {
+int Game::set_fen(const std::string_view fen) {
   pos = position_list;
   pos->clear();
   board.clear();
 
-  const auto *p = fen;
+  const auto *p = fen.data();
   char f        = 1;
   char r        = 8;
 

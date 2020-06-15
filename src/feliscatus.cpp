@@ -32,7 +32,7 @@ int Felis::new_game() {
   return 0;
 }
 
-int Felis::set_fen(const char *fen) { return game->new_game(fen); }
+int Felis::set_fen(const std::string_view fen) { return game->new_game(fen); }
 
 int Felis::go(const int wtime, const int btime, const int movestogo, const int winc, const int binc, const int movetime) {
   game->pos->pv_length = 0;

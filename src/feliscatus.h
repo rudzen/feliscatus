@@ -13,7 +13,7 @@ struct Felis final : public ProtocolListener {
 
   int new_game() override;
 
-  int set_fen(const char *fen) override;
+  int set_fen(std::string_view fen) override;
 
   int go(int wtime = 0, int btime = 0, int movestogo = 0, int winc = 0, int binc = 0, int movetime = 5000) override;
 

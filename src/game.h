@@ -30,9 +30,9 @@ public:
 
   void add_piece(int p, Color c, Square sq);
 
-  int new_game(const char *fen);
+  int new_game(std::string_view fen);
 
-  int set_fen(const char *fen);
+  int set_fen(std::string_view fen);
 
   [[nodiscard]]
   std::string get_fen() const;
