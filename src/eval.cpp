@@ -144,14 +144,32 @@ template<Color Us>
 void Evaluate<Tuning>::eval_material() {
   poseval[Us] = pos->material.material_value[Us];
 
-  if (pos->material.count(Us, Bishop) == 2)
-  {
-    if (auto bishops = b.bishops(Us); !is_opposite_colors(pop_lsb(&bishops), pop_lsb(&bishops)))
-      return;
+  bool add{};
 
+  if (const auto bishop_count = pos->material.count(Us, Bishop); bishop_count == 2)
+  {
+    auto bishops = b.bishops(Us);
+    add = is_opposite_colors(pop_lsb(&bishops), pop_lsb(&bishops));
+  }
+  else if (bishop_count > 2) // edge case with more than two bishops
+  {
+    auto bishops = b.bishops(Us);
+    std::array<bool, COL_NB> cols{};
+    while (bishops)
+    {
+      const auto sq = pop_lsb(&bishops);
+      cols[color_of(sq)] = true;
+    }
+
+    add = cols[WHITE] | cols[BLACK];
+  }
+
+  if (add)
+  {
     poseval_mg[Us] += bishop_pair_mg;
     poseval_eg[Us] += bishop_pair_eg;
   }
+
 }
 
 template<bool Tuning>
@@ -165,8 +183,9 @@ void Evaluate<Tuning>::eval_pawns() {
 
   while (bb)
   {
-    const auto sq   = lsb(bb);
-    const auto file = file_of(sq);
+    const auto sq     = lsb(bb);
+    const auto sq_rel = relative_square(Us, sq);
+    const auto file   = file_of(sq);
 
     if (b.is_pawn_passed(sq, Us))
       passed_pawn_files[Us] |= 1 << file;
@@ -189,8 +208,8 @@ void Evaluate<Tuning>::eval_pawns() {
       score_mg += pawn_doubled_mg[open_file];
       score_eg += pawn_doubled_eg[open_file];
     }
-    score_mg += pawn_pst_mg[flip[Us][sq]];
-    score_eg += pawn_pst_eg[flip[Us][sq]];
+    score_mg += pawn_pst_mg[sq_rel];
+    score_eg += pawn_pst_eg[sq_rel];
   }
   pawn_eval_mg[Us] += score_mg;
   pawn_eval_eg[Us] += score_eg;
@@ -208,11 +227,11 @@ void Evaluate<Tuning>::eval_knights() {
 
   while (knights)
   {
-    const Square sq       = pop_lsb(&knights);
-    const uint64_t flipsq = flip[Us][sq];
+    const Square sq     = pop_lsb(&knights);
+    const Square sq_rel = relative_square(Us, sq);
 
-    score_mg += knight_pst_mg[flipsq];
-    score_eg += knight_pst_eg[flipsq];
+    score_mg += knight_pst_mg[sq_rel];
+    score_eg += knight_pst_eg[sq_rel];
 
     const auto attacks = knight_attacks[sq];
 
@@ -257,10 +276,10 @@ void Evaluate<Tuning>::eval_bishops() {
   while (bishops)
   {
     const auto sq     = pop_lsb(&bishops);
-    const auto flipsq = flip[Us][sq];
+    const auto sq_rel = relative_square(Us, sq);
 
-    score_mg += bishop_pst_mg[flipsq];
-    score_eg += bishop_pst_eg[flipsq];
+    score_mg += bishop_pst_mg[sq_rel];
+    score_eg += bishop_pst_eg[sq_rel];
 
     const auto attacks = bishopAttacks(sq, b.occupied ^ b.queens(Them));
 
@@ -305,11 +324,10 @@ void Evaluate<Tuning>::eval_rooks() {
   while (rooks)
   {
     const auto sq     = pop_lsb(&rooks);
-    const auto rel_sq = relative_square(Us, sq);
-    // const auto flipsq = flip[Us][sq];
+    const auto sq_rel = relative_square(Us, sq);
 
-    score_mg += rook_pst_mg[rel_sq];
-    score_eg += rook_pst_eg[rel_sq];
+    score_mg += rook_pst_mg[sq_rel];
+    score_eg += rook_pst_eg[sq_rel];
 
     if (open_files & sq)
       score += rook_open_file;
@@ -349,10 +367,10 @@ void Evaluate<Tuning>::eval_queens() {
   for (auto queens = b.queens(Us); queens; reset_lsb(queens))
   {
     const auto sq     = lsb(queens);
-    const auto flipsq = flip[Us][sq];
+    const auto sq_rel = relative_square(Us, sq);
 
-    score_mg += queen_pst_mg[flipsq];
-    score_eg += queen_pst_eg[flipsq];
+    score_mg += queen_pst_mg[sq_rel];
+    score_eg += queen_pst_eg[sq_rel];
 
     const auto attacks = queenAttacks(sq, b.occupied);
 
@@ -384,9 +402,10 @@ void Evaluate<Tuning>::eval_king() {
   constexpr Direction Up = Us == WHITE ? NORTH : SOUTH;
   const auto sq          = lsb(b.king(Us));
   const auto bbsq        = bit(sq);
+  const auto sq_rel      = relative_square(Us, sq);
 
-  auto score_mg       = king_pst_mg[flip[Us][sq]];
-  const auto score_eg = king_pst_eg[flip[Us][sq]];
+  auto score_mg       = king_pst_mg[sq_rel];
+  const auto score_eg = king_pst_eg[sq_rel];
 
   score_mg += king_pawn_shelter[pop_count((pawn_push<Up>(bbsq) | pawn_west_attacks[Us](bbsq) | pawn_east_attacks[Us](bbsq)) & b.pawns(Us))];
 
@@ -419,9 +438,9 @@ void Evaluate<Tuning>::eval_passed_pawns() {
       const auto score_mg   = passed_pawn_mg[r];
       auto score_eg         = passed_pawn_eg[r];
 
-      score_eg += passed_pawn_no_us[r] * (front_span & b.occupied_by_side[Us] ? 0 : 1);
-      score_eg += passed_pawn_no_them[r] * (front_span & b.occupied_by_side[Them] ? 0 : 1);
-      score_eg += passed_pawn_no_attacks[r] * (front_span & all_attacks[Them] ? 0 : 1);
+      score_eg += passed_pawn_no_us[r] * !(front_span & b.occupied_by_side[Us]);
+      score_eg += passed_pawn_no_them[r] * !(front_span & b.occupied_by_side[Them]);
+      score_eg += passed_pawn_no_attacks[r] * !(front_span & all_attacks[Them]);
       score_eg += passed_pawn_king_dist_them[dist[sq][b.king_square[Them]]];
       score_eg += passed_pawn_king_dist_us[dist[sq][b.king_square[Us]]];
 

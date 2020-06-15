@@ -5,7 +5,6 @@
 #include <array>
 #include "types.h"
 #include "square.h"
-#include "piece.h"
 #include "bitboard.h"
 
 struct Board {

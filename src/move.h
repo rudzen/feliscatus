@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include "piece.h"
 #include "square.h"
 #include "types.h"
 

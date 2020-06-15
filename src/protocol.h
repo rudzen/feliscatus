@@ -56,4 +56,3 @@ protected:
   ProtocolListener *callback;
   Game *game;
 };
-

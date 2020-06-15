@@ -1,7 +1,6 @@
 #include "pgn_player.h"
 #include <fmt/format.h>
 #include "bitboard.h"
-#include "piece.h"
 #include "util.h"
 #include "game.h"
 #include "position.h"

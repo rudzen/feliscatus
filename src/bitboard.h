@@ -362,6 +362,10 @@ constexpr bool is_opposite_colors(const Square s1, const Square s2) {
   return ((static_cast<int>(s1) + static_cast<int>(rank_of(s1)) + s2 + rank_of(s2)) & 1) != 0;
 }
 
+constexpr int color_of(const Square square) {
+  return static_cast<int>((DarkSquares >> square) & 1);
+}
+
 }// namespace bitboard
 
 using namespace bitboard;

@@ -2,7 +2,6 @@
 
 #include <array>
 #include "types.h"
-#include "piece.h"
 
 struct Board;
 
