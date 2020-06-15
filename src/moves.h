@@ -33,7 +33,7 @@ public:
   [[nodiscard]]
   int move_count() const;
 
-  void goto_move(const int pos);
+  void goto_move(int pos);
 
   [[nodiscard]]
   bool is_pseudo_legal(uint32_t m) const;

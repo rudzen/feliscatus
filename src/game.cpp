@@ -330,7 +330,7 @@ int Game::set_fen(const char *fen) {
       continue;
     }
 
-    auto color = islower(*p) ? BLACK : WHITE;
+    const auto color = islower(*p) ? BLACK : WHITE;
 
     int piece;
 
@@ -561,7 +561,7 @@ const char *Game::move_to_string(const uint32_t m, char *buf) const {
     sprintf(buf, "%s%s", square_to_string(move_from(m), tmp1), square_to_string(move_to(m), tmp2));
 
     if (is_promotion(m))
-      sprintf(&buf[strlen(buf)], "%s", pieceToString(move_promoted(m) & 7, tmp3));
+      sprintf(&buf[strlen(buf)], "%s", piece_to_string(move_promoted(m) & 7, tmp3));
   }
   return buf;
 }

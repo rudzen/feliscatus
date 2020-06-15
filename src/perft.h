@@ -15,8 +15,6 @@ struct Perft final {
   void perft_divide(int depth) const;
 
 private:
-  double total_time{};
-
   int perft(int depth, perft_result &result) const;
 
   Game *g{};

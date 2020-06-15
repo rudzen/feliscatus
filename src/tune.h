@@ -67,11 +67,9 @@ private:
 
 // TODO : Create command line parameters to set which values should be tuned.
 
-class Tune : public MoveSorter {
+class Tune final : public MoveSorter {
 public:
-  Tune(Game *game);
-
-  virtual ~Tune();
+  explicit Tune(Game *game);
 
   static void init_eval(std::vector<Param> &params);
 

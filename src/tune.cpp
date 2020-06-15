@@ -226,8 +226,6 @@ Tune::Tune(Game *game)
   fmt::print("{}\n", emit_code(params, true));
 }
 
-Tune::~Tune() { }
-
 void Tune::init_eval(std::vector<Param> &params) {
   auto step = 1;
   x_        = false;

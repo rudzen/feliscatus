@@ -1,174 +1,43 @@
 #pragma once
 
-#include <algorithm>
 #include <memory>
-#include "game.h"
-#include "zobrist.h"
-#include "uci.h"
-#include "eval.h"
-#include "search.h"
-#include "hash.h"
+#include <vector>
+#include "protocol.h"
 #include "worker.h"
-#include "perft.h"
-#include "tune.h"
-#include "stopwatch.h"
 
-class Felis final : public ProtocolListener {
-public:
-  Felis() : num_threads(1) {}
+struct PawnHashTable;
+class Search;
 
-  virtual ~Felis() = default;
+struct Felis final : public ProtocolListener {
+  Felis();
 
-  int new_game() override {
-    game->new_game(Game::kStartPosition.data());
-    // TODO : test effect of not clearing
-    //pawnt->clear();
-    //TT.clear();
-    return 0;
-  }
+  int new_game() override;
 
-  int set_fen(const char *fen) override { return game->new_game(fen); }
+  int set_fen(const char *fen) override;
 
-  int go(const int wtime = 0, const int btime = 0, const int movestogo = 0, const int winc = 0, const int binc = 0, const int movetime = 5000) override {
-    game->pos->pv_length = 0;
+  int go(int wtime = 0, int btime = 0, int movestogo = 0, int winc = 0, int binc = 0, int movetime = 5000) override;
 
-    if (game->pos->pv_length == 0)
-      go_search(wtime, btime, movestogo, winc, binc, movetime);
+  void ponder_hit() override;
 
-    if (game->pos->pv_length)
-    {
-      char best_move[12];
-      char ponder_move[12];
+  void stop() override;
 
-      protocol->post_moves(game->move_to_string(search->pv[0][0].move, best_move), game->pos->pv_length > 1 ? game->move_to_string(search->pv[0][1].move, ponder_move) : nullptr);
+  bool make_move(const char *m) const;
 
-      game->make_move(search->pv[0][0].move, true, true);
-    }
-    return 0;
-  }
+  void go_search(int wtime, int btime, int movestogo, int winc, int binc, int movetime);
 
-  void ponder_hit() override { search->search_time += search->start_time.elapsed_milliseconds(); }
+  void start_workers();
 
-  void stop() override { search->stop_search = true; }
+  void stop_workers();
 
-  virtual bool make_move(const char *m) {
-    const uint32_t *move = game->pos->string_to_move(m);
-    return move ? game->make_move(*move, true, true) : false;
-  }
+  int set_option(const char *name, const char *value) override;
 
-  void go_search(const int wtime, const int btime, const int movestogo, const int winc, const int binc, const int movetime) {
-    // Shared transposition table
-    start_workers();
-    search->go(wtime, btime, movestogo, winc, binc, movetime, num_threads);
-    stop_workers();
-  }
+  int run();
 
-  void start_workers() {
-    for (auto &worker : workers)
-      worker.start(game.get());
-  }
-
-  void stop_workers() {
-    for (auto &worker : workers)
-      worker.stop();
-  }
-
-  int set_option(const char *name, const char *value) override {
-    char buf[1024];
-    strcpy(buf, "");
-
-    if (value != nullptr)
-    {
-      if (util::strieq("Hash", name))
-      {
-        TT.init(std::clamp(static_cast<int>(strtol(value, nullptr, 10)), 8, 65536));
-        _snprintf(buf, sizeof(buf), "Hash:%d", TT.get_size_mb());
-      } else if (util::strieq("Threads", name) || util::strieq("NumThreads", name))
-      {
-        num_threads = std::clamp(static_cast<int>(strtol(value, nullptr, 10)), 1, 64);
-        _snprintf(buf, sizeof(buf), "Threads:%d", static_cast<int>(num_threads));
-        workers.resize(num_threads - 1);
-        workers.shrink_to_fit();
-      } else if (util::strieq("UCI_Chess960", name))
-      {
-        game->chess960 = util::strieq(value, "true");
-        _snprintf(buf, sizeof(buf), "UCI_Chess960 %s", (game->chess960 ? on.data() : off.data()));
-      } else if (util::strieq("UCI_Chess960_Arena", name))
-      {
-        game->chess960 = game->xfen = util::strieq(value, "true");
-      }
-    }
-    return 0;
-  }
-
-  int run() {
-    setbuf(stdout, nullptr);
-
-    game     = std::make_unique<Game>();
-    protocol = std::make_unique<UCIProtocol>(this, game.get());
-    pawnt    = std::make_unique<PawnHashTable>(8);
-    search   = std::make_unique<Search>(protocol.get(), game.get(), pawnt.get());
-
-    new_game();
-
-    auto console_mode = true;
-    auto quit         = 0;
-    char line[16384];
-
-    while (quit == 0)
-    {
-      game->pos->generate_moves();
-
-      (void)fgets(line, 16384, stdin);
-
-      if (feof(stdin))
-        exit(0);
-
-      char *tokens[1024];
-      const int num_tokens = util::tokenize(util::trim(line), tokens, 1024);
-
-      if (num_tokens == 0)
-        continue;
-
-      if (util::strieq(tokens[0], "uci") || !console_mode)
-      {
-        quit         = protocol->handle_input(const_cast<const char **>(tokens), num_tokens);
-        console_mode = false;
-      } else if (util::strieq(tokens[0], "go"))
-      {
-        protocol->set_flags(INFINITE_MOVE_TIME);
-        go();
-      } else if (util::strieq(tokens[0], "perft"))
-      {
-        Perft(game.get()).perft(6);
-      } else if (util::strieq(tokens[0], "divide"))
-      {
-        Perft(game.get()).perft_divide(6);
-      } else if (util::strieq(tokens[0], "tune"))
-      {
-        Stopwatch sw;
-        eval::Tune(game.get());
-        const auto seconds = sw.elapsed_seconds();
-        printf("%f\n", seconds);
-      } else if (util::strieq(tokens[0], "quit") || util::strieq(tokens[0], "exit"))
-      {
-        quit = 1;
-      }
-
-      for (auto i = 0; i < num_tokens; i++)
-        delete[] tokens[i];
-    }
-    return 0;
-  }
-
-public:
+private:
   std::unique_ptr<Game> game;
   std::unique_ptr<Search> search;
   std::unique_ptr<Protocol> protocol;
-  std::unique_ptr<PawnHash> pawnt;
+  std::unique_ptr<PawnHashTable> pawnt;
   std::vector<Worker> workers{};
   std::size_t num_threads;
-
-  static constexpr std::string_view on = "ON";
-  static constexpr std::string_view off = "OFF";
 };

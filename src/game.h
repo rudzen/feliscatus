@@ -6,7 +6,7 @@
 #include "square.h"
 #include "board.h"
 
-class Position;
+struct Position;
 
 class Game final {
 public:

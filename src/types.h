@@ -78,7 +78,7 @@ constexpr int piece_value(const int p) {
 
 constexpr std::string_view piece_notation = " nbrqk";
 
-inline const char *pieceToString(int piece, char *buf) {
+inline const char *piece_to_string(int piece, char *buf) {
   sprintf(buf, "%c", piece_notation[piece]);
   return buf;
 }
