@@ -87,42 +87,42 @@ void UCIProtocol::check_input() {
   }
 }
 
-void UCIProtocol::post_moves(const char *bestmove, const char *pondermove) {
+void UCIProtocol::post_moves(const uint32_t bestmove, const uint32_t pondermove) {
   while (flags & (INFINITE_MOVE_TIME | PONDER_SEARCH))
   {
     Sleep(10);
     check_input();
   }
-  printf("bestmove %s", bestmove);
+
+  fmt::memory_buffer buffer;
+
+  fmt::format_to(buffer, "bestmove {}", game->move_to_string(bestmove));
 
   if (pondermove)
-    printf(" ponder %s", pondermove);
+    fmt::format_to(buffer, " ponder {}", game->move_to_string(pondermove));
 
-  printf("\n");
+  fmt::print("{}\n", fmt::to_string(buffer));
 }
 
 void UCIProtocol::post_info(const int d, const int selective_depth, const uint64_t node_count, const uint64_t nodes_per_sec, const uint64_t time, const int hash_full) {
-  printf("info depth %d seldepth %d hashfull %d nodes %llu nps %llu time %llu\n", d, selective_depth, hash_full, node_count, nodes_per_sec, time);
+  fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, hash_full, node_count, nodes_per_sec, time);
 }
 
 void UCIProtocol::post_curr_move(const uint32_t curr_move, const int curr_move_number) {
-  char move_buf[32];
-
-  printf("info currmove %s currmovenumber %d\n", game->move_to_string(curr_move, move_buf), curr_move_number);
+  fmt::print("info currmove {} currmovenumber {}\n", game->move_to_string(curr_move), curr_move_number);
 }
 
-void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const uint64_t time, const int hash_full, const int score,
-                          const char *pv, const NodeType node_type) {
-  char bound[24];
+void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const uint64_t time, const int hash_full, const int score, fmt::memory_buffer &pv, const NodeType node_type) {
+
+  fmt::memory_buffer buffer;
+  fmt::format_to(buffer, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
 
   if (node_type == ALPHA)
-    strcpy(bound, "upperbound ");
+    fmt::format_to(buffer, "upperbound ");
   else if (node_type == BETA)
-    strcpy(bound, "lowerbound ");
-  else
-    bound[0] = 0;
+    fmt::format_to(buffer, "lowerbound ");
 
-  printf("info depth %d seldepth %d score cp %d %s hashfull %d nodes %llu nps %llu time %llu pv %s\n", d, max_ply, score, bound, hash_full, node_count, nodes_per_second, time, pv);
+  fmt::print("{}hashfull {} nodes {} nps {} time {} pv {}\n", fmt::to_string(buffer), hash_full, node_count, nodes_per_second, time, fmt::to_string(pv));
 }
 
 int UCIProtocol::handle_input(const char *params[], const int num_params) {

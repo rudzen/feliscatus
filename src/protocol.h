@@ -1,5 +1,7 @@
 #pragma once
 #include <cstdint>
+#include <string_view>
+#include <fmt/format.h>
 
 enum NodeType : uint8_t;
 class Game;
@@ -12,11 +14,11 @@ constexpr int PONDER_SEARCH      = 8;
 struct ProtocolListener {
   virtual ~ProtocolListener()                                                           = default;
   virtual int new_game()                                                                = 0;
-  virtual int set_fen(const char *fen)                                                  = 0;
+  virtual int set_fen(std::string_view fen)                                             = 0;
   virtual int go(int wtime, int btime, int movestogo, int winc, int binc, int movetime) = 0;
   virtual void ponder_hit()                                                             = 0;
   virtual void stop()                                                                   = 0;
-  virtual int set_option(const char *name, const char *value)                           = 0;
+  virtual int set_option(std::string_view name, std::string_view value)                 = 0;
 };
 
 struct Protocol {
@@ -24,17 +26,17 @@ struct Protocol {
 
   virtual ~Protocol() = default;
 
-  virtual int handle_input(const char *params[], int num_params)        = 0;
+  virtual int handle_input(const char *params[], int num_params)  = 0;
 
-  virtual void check_input()                                            = 0;
+  virtual void check_input()                                      = 0;
 
-  virtual void post_moves(const char *bestmove, const char *pondermove) = 0;
+  virtual void post_moves(uint32_t bestmove, uint32_t pondermove) = 0;
 
   virtual void post_info(int depth, int selective_depth, uint64_t node_count, uint64_t nodes_per_sec, uint64_t time, int hash_full) = 0;
 
   virtual void post_curr_move(uint32_t curr_move, int curr_move_number) = 0;
 
-  virtual void post_pv(int depth, int max_ply, uint64_t node_count, uint64_t nodes_per_second, uint64_t time, int hash_full, int score, const char *pv, NodeType node_type) = 0;
+  virtual void post_pv(int depth, int max_ply, uint64_t node_count, uint64_t nodes_per_second, uint64_t time, int hash_full, int score, fmt::memory_buffer &pv, NodeType node_type) = 0;
 
   [[nodiscard]]
   int is_analysing() const noexcept { return flags & (INFINITE_MOVE_TIME | PONDER_SEARCH); }

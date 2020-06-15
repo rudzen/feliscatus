@@ -15,7 +15,7 @@ void Position::clear() {
   material.clear();
 }
 
-const uint32_t *Position::string_to_move(const char *m) {
+const uint32_t *Position::string_to_move(std::string_view m) {
   auto castle_type = -1;// 0 = short, 1 = long
 
   if (!is_castle_move(m, castle_type) && (!util::in_between(m[0], 'a', 'h') || !util::in_between(m[1], '1', '8') || !util::in_between(m[2], 'a', 'h') || !util::in_between(m[3], '1', '8')))
@@ -56,7 +56,7 @@ const uint32_t *Position::string_to_move(const char *m) {
         continue;
 
       if (is_promotion(*move))
-        if (tolower(m[strlen(m) - 1]) != piece_notation[move_promoted(*move) & 7])
+        if (tolower(m.back()) != piece_notation[move_promoted(*move) & 7].front())
           continue;
 
       return move;
@@ -65,16 +65,16 @@ const uint32_t *Position::string_to_move(const char *m) {
   return nullptr;
 }
 
-bool Position::is_castle_move(const char *m, int &castle_type) const {
-  if (util::strieq(m, "O-O") || util::strieq(m, "OO") || util::strieq(m, "0-0") || util::strieq(m, "00") || (util::strieq(m, "e1g1") && b->get_piece_type(e1) == King)
-      || (util::strieq(m, "e8g8") && b->get_piece_type(e8) == King))
+bool Position::is_castle_move(const std::string_view m, int &castle_type) const {
+  if (m == "O-O" || m == "OO" || m == "0-0" || m == "00" || (m == "e1g1" && b->get_piece_type(e1) == King)
+      || (m == "e8g8" && b->get_piece_type(e8) == King))
   {
     castle_type = 0;
     return true;
   }
 
-  if (util::strieq(m, "O-O-O") || util::strieq(m, "OOO") || util::strieq(m, "0-0-0") || util::strieq(m, "000") || (util::strieq(m, "e1c1") && b->get_piece_type(e1) == King)
-      || (util::strieq(m, "e8c8") && b->get_piece_type(e8) == King))
+  if (m == "O-O-O" || m == "OOO" || m == "0-0-0" || m == "000" || (m == "e1c1" && b->get_piece_type(e1) == King)
+      || (m == "e8c8" && b->get_piece_type(e8) == King))
   {
     castle_type = 1;
     return true;

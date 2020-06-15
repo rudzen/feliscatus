@@ -76,13 +76,11 @@ constexpr int piece_value(const int p) {
   return piece_values[p & 7];
 }
 
-constexpr std::string_view piece_notation = " nbrqk";
+constexpr std::array<std::string_view, 6> piece_notation {" ", "n", "b", "r", "q", "k"};
 
-inline const char *piece_to_string(int piece, char *buf) {
-  sprintf(buf, "%c", piece_notation[piece]);
-  return buf;
+constexpr std::string_view piece_to_string(const int piece) {
+  return piece_notation[piece];
 }
-
 
 // Move generation flags
 constexpr int LEGALMOVES     = 1;

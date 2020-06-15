@@ -29,13 +29,11 @@ struct HashTable {
   }
 
   void init(uint64_t new_size_mb) {
-    new_size_mb = util::pow2(std::log2(new_size_mb));
-
     if (new_size_mb == size_mb)
       return;
 
     size_mb = new_size_mb;
-    size    = 1024 * 1024 * size_mb / sizeof(HashEntry);
+    size    = 1024 * 1024 * new_size_mb / sizeof(HashEntry);
     mask    = size - 1;
     size += NUMBER_SLOTS - 1;
     delete[] table;
