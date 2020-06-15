@@ -3,8 +3,11 @@
 #include <cstdint>
 #include <array>
 #include <ranges>
+#include <cstdio>
+#include <string_view>
 
 using Bitboard = uint64_t;
+using Key      = uint64_t;
 
 enum Color : uint8_t {
   WHITE, BLACK, COL_NB
@@ -57,6 +60,32 @@ enum Direction : int {
 
 constexpr Direction pawn_push(const Color c) { return c == WHITE ? NORTH : SOUTH; }
 
+constexpr int Pawn    = 0;
+constexpr int Knight  = 1;
+constexpr int Bishop  = 2;
+constexpr int Rook    = 3;
+constexpr int Queen   = 4;
+constexpr int King    = 5;
+constexpr int NoPiece = 6;
+
+constexpr std::array<int, 6> PieceTypes{ Pawn, Knight, Bishop, Rook, Queen, King };
+
+constexpr std::array<int, 6> piece_values{100, 400, 400, 600, 1200, 0};
+
+constexpr int piece_value(const int p) {
+  return piece_values[p & 7];
+}
+
+constexpr std::array<std::string_view, 6> piece_notation {" ", "n", "b", "r", "q", "k"};
+
+constexpr std::string_view piece_to_string(const int piece) {
+  return piece_notation[piece];
+}
+
+// Move generation flags
+constexpr int LEGALMOVES     = 1;
+constexpr int STAGES         = 2;
+constexpr int QUEENPROMOTION = 4;
 
 #define ENABLE_BASE_OPERATORS_ON(T)                                \
 constexpr T operator+(const T d1, const T d2) noexcept { return static_cast<T>(static_cast<int>(d1) + static_cast<int>(d2)); } \

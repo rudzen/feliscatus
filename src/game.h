@@ -2,18 +2,17 @@
 
 #include <cstdint>
 #include <string_view>
-#include "position.h"
 #include "types.h"
+#include "square.h"
+#include "board.h"
 
-// TODO : Move the rest of privately used only functions to implementation
-class Game {
+struct Position;
+
+class Game final {
 public:
-  Game() : position_list(new Position[2000]), pos(position_list), chess960(false), xfen(false) {
-    for (auto i = 0; i < 2000; i++)
-      position_list[i].board = &board;
-  }
+  Game();
 
-  virtual ~Game() { delete[] position_list; }
+  ~Game();
 
   bool make_move(uint32_t m, bool check_legal, bool calculate_in_check);
 
@@ -31,19 +30,19 @@ public:
 
   void add_piece(int p, Color c, Square sq);
 
-  int new_game(const char *fen);
+  int new_game(std::string_view fen);
 
-  int set_fen(const char *fen);
+  int set_fen(std::string_view fen);
 
   [[nodiscard]]
-  char *get_fen() const;
+  std::string get_fen() const;
 
   [[nodiscard]]
   int setup_castling(const char **p);
 
   void copy(Game *other);
 
-  const char *move_to_string(uint32_t m, char *buf) const;
+  std::string move_to_string(uint32_t m) const;
 
   void print_moves() const;
 

@@ -17,8 +17,7 @@ struct HashEntry {
 };
 #pragma pack()
 
-class HashTable {
-public:
+struct HashTable {
   HashTable() = default;
   explicit HashTable(uint64_t mb) {
     if constexpr (sizeof(HashEntry) != 16)
@@ -30,13 +29,11 @@ public:
   }
 
   void init(uint64_t new_size_mb) {
-    new_size_mb = pow2(std::log2(new_size_mb));
-
     if (new_size_mb == size_mb)
       return;
 
     size_mb = new_size_mb;
-    size    = 1024 * 1024 * size_mb / sizeof(HashEntry);
+    size    = 1024 * 1024 * new_size_mb / sizeof(HashEntry);
     mask    = size - 1;
     size += NUMBER_SLOTS - 1;
     delete[] table;
@@ -52,9 +49,8 @@ public:
 
   void init_search() { age++; }
 
-  [[nodiscard]]
-  HashEntry *find(const uint64_t key) const {
-    auto *transp = table + (key & mask);
+  [[nodiscard]] HashEntry *find(const Key key) const {
+    auto *transp   = table + (key & mask);
     const auto k32 = key32(key);
     for (auto i = 0; i < NUMBER_SLOTS; i++, transp++)
     {
@@ -64,7 +60,7 @@ public:
     return nullptr;
   }
 
-  HashEntry *insert(const uint64_t key, const int depth, const int score, const NodeType type, const int move, int eval) {
+  HashEntry *insert(const Key key, const int depth, const int score, const NodeType type, const int move, int eval) {
     auto *transp = get_entry_to_replace(key, depth);
 
     if (transp->flags == 0)
@@ -82,16 +78,15 @@ public:
     return transp;
   }
 
-  [[nodiscard]]
-  HashEntry *get_entry_to_replace(const uint64_t key, [[maybe_unused]] int depth) const {
-    auto *transp = table + (key & mask);
+  [[nodiscard]] HashEntry *get_entry_to_replace(const Key key, [[maybe_unused]] int depth) const {
+    auto *transp   = table + (key & mask);
     const auto k32 = key32(key);
 
     if (transp->flags == 0 || transp->key == k32)
       return transp;
 
-    auto *replace = transp++;
-    auto replace_score  = (replace->age << 9) + replace->depth;
+    auto *replace      = transp++;
+    auto replace_score = (replace->age << 9) + replace->depth;
 
     for (auto i = 1; i < NUMBER_SLOTS; i++, transp++)
     {
@@ -109,15 +104,11 @@ public:
     return replace;
   }
 
-  [[nodiscard]]
-  int get_load() const { return static_cast<int>(static_cast<double>(occupied) / size * 1000); }
+  [[nodiscard]] int get_load() const { return static_cast<int>(static_cast<double>(occupied) / size * 1000); }
 
-  [[nodiscard]]
-  int get_size_mb() const { return static_cast<int>(size_mb); }
+  [[nodiscard]] int get_size_mb() const { return static_cast<int>(size_mb); }
 
-  static constexpr uint32_t key32(const uint64_t key) {
-    return key >> 32;
-  }
+  static constexpr uint32_t key32(const Key key) { return key >> 32; }
 
 protected:
   HashEntry *table{};
@@ -133,16 +124,15 @@ protected:
 #pragma pack(1)
 
 struct PawnHashEntry {
-  uint64_t zkey;
+  Key zkey;
   int16_t eval_mg;
   int16_t eval_eg;
-  uint8_t passed_pawn_files[2];
+  std::array<uint8_t, COL_NB> passed_pawn_files;
   int16_t unused;
 };
 #pragma pack()
 
-class PawnHashTable {
-public:
+struct PawnHashTable {
   explicit PawnHashTable(const uint64_t size_mb) {
     if constexpr (sizeof(PawnHashEntry) != 16)
     {
@@ -153,7 +143,7 @@ public:
   }
 
   void init(const uint64_t size_mb) {
-    size = 1024 * 1024 * pow2(log2(size_mb)) / sizeof(PawnHashEntry);
+    size = 1024 * 1024 * util::pow2(log2(size_mb)) / sizeof(PawnHashEntry);
     mask = size - 1;
     delete[] table;
     table = new PawnHashEntry[size];
@@ -173,12 +163,11 @@ public:
 
   [[nodiscard]]
   PawnHashEntry *insert(const uint64_t key, const int score_mg, const int score_eg, const std::array<int, 2> &passed_pawn_files) const {
-    auto *pawnp        = table + (key & mask);
-    pawnp->zkey                 = key;
-    pawnp->eval_mg              = static_cast<int16_t>(score_mg);
-    pawnp->eval_eg              = static_cast<int16_t>(score_eg);
-    pawnp->passed_pawn_files[0] = static_cast<uint8_t>(passed_pawn_files[0]);
-    pawnp->passed_pawn_files[1] = static_cast<uint8_t>(passed_pawn_files[1]);
+    auto *pawnp    = table + (key & mask);
+    pawnp->zkey    = key;
+    pawnp->eval_mg = static_cast<int16_t>(score_mg);
+    pawnp->eval_eg = static_cast<int16_t>(score_eg);
+    std::copy(passed_pawn_files.begin(), passed_pawn_files.end(), pawnp->passed_pawn_files.begin());
     return pawnp;
   }
 
@@ -188,7 +177,7 @@ protected:
   uint64_t mask{};
 };
 
-using Hash = HashTable;
+using Hash     = HashTable;
 using PawnHash = PawnHashTable;
 
 inline HashTable TT;

@@ -1,34 +1,36 @@
 #include "game.h"
 #include <cctype>
 #include <optional>
+#include <cstring>
+#include <string>
+#include <fmt/format.h>
 #include "zobrist.h"
+#include "position.h"
+#include "board.h"
+#include "util.h"
 
 namespace {
 
-constexpr std::array<int, 6> PieceTypes{Pawn, Knight, Bishop, Rook, Queen, King};
-
-[[nodiscard]]
-bool get_ep_square(const char **p, Square &sq) {
+[[nodiscard]] bool get_ep_square(const char **p, Square &sq) {
   if (**p == '-')
   {
     sq = no_square;
     return true;
   }
 
-  if (!in_between(**p, 'a', 'h'))
+  if (!util::in_between(**p, 'a', 'h'))
     return false;
 
   (*p)++;
 
-  if (!in_between(**p, '3', '6'))
+  if (!util::in_between(**p, '3', '6'))
     return false;
 
   sq = static_cast<Square>(*(*p - 1) - 'a' + (**p - '1') * 8);
   return true;
 }
 
-[[nodiscard]]
-Color get_side_to_move(const char **p) {
+[[nodiscard]] Color get_side_to_move(const char **p) {
   switch (**p)
   {
   case 'w':
@@ -43,8 +45,7 @@ Color get_side_to_move(const char **p) {
   return COL_NB;
 }
 
-[[nodiscard]]
-bool get_delimiter(const char **p) {
+[[nodiscard]] bool get_delimiter(const char **p) {
   if (**p != ' ')
     return false;
 
@@ -72,11 +73,11 @@ void add_short_castle_rights(Position *pos, Game *g, const Board &board, std::op
     g->xfen = true;
   }
 
-  pos->castle_rights                                |= CastleRights;
+  pos->castle_rights |= CastleRights;
   castle_rights_mask[flip[Them][rook_file.value()]] -= oo_allowed_mask[Us];
-  castle_rights_mask[flip[Them][file_of(ksq)]]      -= oo_allowed_mask[Us];
-  rook_castles_from[flip[Them][g1]]                  = flip[Them][rook_file.value()];
-  oo_king_from[Us]                                   = ksq;
+  castle_rights_mask[flip[Them][file_of(ksq)]] -= oo_allowed_mask[Us];
+  rook_castles_from[flip[Them][g1]] = flip[Them][rook_file.value()];
+  oo_king_from[Us]                  = ksq;
 
   if (file_of(ksq) != FILE_E || rook_file.value() != FILE_H)
     g->chess960 = true;
@@ -102,11 +103,11 @@ void add_long_castle_rights(Position *pos, Game *g, const Board &board, std::opt
     g->xfen = true;
   }
 
-  pos->castle_rights                                |= CastleRights;
+  pos->castle_rights |= CastleRights;
   castle_rights_mask[flip[Them][rook_file.value()]] -= ooo_allowed_mask[Us];
-  castle_rights_mask[flip[Them][file_of(ksq)]]      -= ooo_allowed_mask[Us];
-  rook_castles_from[flip[Them][c1]]                  = flip[Them][rook_file.value()];
-  ooo_king_from[Us]                                  = ksq;
+  castle_rights_mask[flip[Them][file_of(ksq)]] -= ooo_allowed_mask[Us];
+  rook_castles_from[flip[Them][c1]] = flip[Them][rook_file.value()];
+  ooo_king_from[Us]                 = ksq;
 
   if (file_of(ksq) != FILE_E || rook_file.value() != FILE_A)
     g->chess960 = true;
@@ -174,6 +175,15 @@ void update_key(Position *pos, const uint32_t m) {
 }
 
 }// namespace
+
+Game::Game() : position_list(new Position[2000]), pos(position_list), chess960(false), xfen(false) {
+  for (auto i = 0; i < 2000; i++)
+    position_list[i].b = &board;
+}
+
+Game::~Game() {
+  delete[] position_list;
+}
 
 bool Game::make_move(const uint32_t m, const bool check_legal, const bool calculate_in_check) {
   if (m == 0)
@@ -281,19 +291,19 @@ void Game::add_piece(const int p, const Color c, const Square sq) {
   pos->material.add(pc);
 }
 
-int Game::new_game(const char *fen) {
+int Game::new_game(const std::string_view fen) {
   if (set_fen(fen) == 0)
     return 0;
 
   return set_fen(kStartPosition.data());
 }
 
-int Game::set_fen(const char *fen) {
+int Game::set_fen(const std::string_view fen) {
   pos = position_list;
   pos->clear();
   board.clear();
 
-  const auto *p = fen;
+  const auto *p = fen.data();
   char f        = 1;
   char r        = 8;
 
@@ -320,7 +330,7 @@ int Game::set_fen(const char *fen) {
       continue;
     }
 
-    auto color = islower(*p) ? BLACK : WHITE;
+    const auto color = islower(*p) ? BLACK : WHITE;
 
     int piece;
 
@@ -375,7 +385,7 @@ int Game::set_fen(const char *fen) {
   pos->en_passant_square          = sq;// < 64 ? sq : no_square;
   pos->reversible_half_move_count = 0;
 
-  if (pos->side_to_move == 1)
+  if (pos->side_to_move == BLACK)
   {
     pos->key ^= zobrist::zobrist_side;
     pos->pawn_structure_key ^= zobrist::zobrist_side;
@@ -389,13 +399,14 @@ int Game::set_fen(const char *fen) {
   return 0;
 }
 
-char *Game::get_fen() const {
+std::string Game::get_fen() const {
   constexpr std::string_view piece_letter = "PNBRQK  pnbrqk";
-  static char fen[128];
-  auto *p = fen;
-  char buf[12];
+  std::string s;
+  // static char fen[128];
+  // auto *p = fen;
+  // char buf[12];
 
-  std::memset(p, 0, 128);
+  // std::memset(p, 0, 128);
 
   for (const Rank r : ReverseRanks)
   {
@@ -410,60 +421,54 @@ char *Game::get_fen() const {
       {
         if (empty)
         {
-          *p++  = empty + '0';
+          s += empty + '0';
           empty = 0;
         }
-        *p++ = piece_letter[pc];
+        s += piece_letter[pc];
       } else
         empty++;
     }
 
     if (empty)
-      *p++ = empty + '0';
+      s += empty + '0';
 
     if (r > 0)
-      *p++ = '/';
+      s += '/';
   }
-  std::memcpy(p, pos->side_to_move == WHITE ? " w " : " b ", 3);
-  p += 3;
+  s += pos->side_to_move == WHITE ? " w " : " b ";
 
   if (pos->castle_rights == 0)
   {
-    std::memcpy(p, "- ", 2);
-    p += 2;
+    s += "- ";
   } else
   {
     if (pos->castle_rights & 1)
-      *p++ = 'K';
+      s += 'K';
 
     if (pos->castle_rights & 2)
-      *p++ = 'Q';
+      s += 'Q';
 
     if (pos->castle_rights & 4)
-      *p++ = 'k';
+      s += 'k';
 
     if (pos->castle_rights & 8)
-      *p++ = 'q';
+      s += 'q';
 
-    *p++ = ' ';
+    s += ' ';
   }
 
   if (pos->en_passant_square != no_square)
   {
-    std::memcpy(p, square_to_string(pos->en_passant_square, buf), 2);
-    p += 2;
-    *p++ = ' ';
+    s += square_to_string(pos->en_passant_square);
+    s += ' ';
   } else
-  {
-    std::memcpy(p, "- ", 2);
-    p += 2;
-  }
-  std::memset(buf, 0, 12);
-  std::memcpy(p, _itoa(pos->reversible_half_move_count, buf, 10), 12);
-  p[strlen(p)] = ' ';
-  std::memset(buf, 0, 12);
-  std::memcpy(p + strlen(p), _itoa(static_cast<int>((pos - position_list) / 2 + 1), buf, 10), 12);
-  return fen;
+    s += "- ";
+
+  s += std::to_string(pos->reversible_half_move_count);
+  s += ' ';
+  s += std::to_string(static_cast<int>((pos - position_list) / 2 + 1));
+
+  return s;
 }
 
 int Game::setup_castling(const char **p) {
@@ -479,7 +484,7 @@ int Game::setup_castling(const char **p) {
   {
     const auto c = **p;
 
-    if (in_between(c, 'A', 'H'))
+    if (util::in_between(c, 'A', 'H'))
     {
       chess960 = true;
       xfen     = false;
@@ -490,7 +495,7 @@ int Game::setup_castling(const char **p) {
         add_short_castle_rights<WHITE>(pos, this, board, rook_file);
       else
         add_long_castle_rights<WHITE>(pos, this, board, rook_file);
-    } else if (in_between<char>(c, 'a', 'h'))
+    } else if (util::in_between<char>(c, 'a', 'h'))
     {
       chess960 = true;
       xfen     = false;
@@ -528,42 +533,38 @@ void Game::copy(Game *other) {
 
   for (auto i = 0; i < 2000; i++)
   {
-    position_list[i]       = other->position_list[i];
-    position_list[i].board = &board;
+    position_list[i]   = other->position_list[i];
+    position_list[i].b = &board;
   }
 }
 
-const char *Game::move_to_string(const uint32_t m, char *buf) const {
-  char tmp1[12];
-  char tmp2[12];
-  char tmp3[12];
+std::string Game::move_to_string(const uint32_t m) const {
 
   if (is_castle_move(m) && chess960)
   {
     if (xfen && move_to(m) == ooo_king_to[move_side(m)])
-      strcpy(buf, "O-O-O");
+      return "O-O-O";
     else if (xfen)
-      strcpy(buf, "O-O");
+      return "O-O";
     else// shredder fen
-      sprintf(buf, "%s%s", square_to_string(move_from(m), tmp1), square_to_string(rook_castles_from[move_to(m)], tmp2));
+      return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(rook_castles_from[move_to(m)]));
   } else
   {
-    sprintf(buf, "%s%s", square_to_string(move_from(m), tmp1), square_to_string(move_to(m), tmp2));
+    std::string s = fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)));
 
     if (is_promotion(m))
-      sprintf(&buf[strlen(buf)], "%s", pieceToString(move_promoted(m) & 7, tmp3));
+      s += piece_to_string(move_promoted(m) & 7);
+    return s;
   }
-  return buf;
 }
 
 void Game::print_moves() const {
   auto i = 0;
-  char buf[12];
 
   while (const MoveData *m = pos->next_move())
   {
-    printf("%d. ", i++ + 1);
-    printf("%s", move_to_string(m->move, buf));
-    printf("   %d\n", m->score);
+    fmt::print("%{}. ", i++ + 1);
+    fmt::print(move_to_string(m->move));
+    fmt::print("   {}\n", m->score);
   }
 }

@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <array>
+#include <string_view>
 #include "types.h"
 
 namespace squares {
@@ -32,7 +33,7 @@ constexpr Square operator-(const Square s, const Direction d) noexcept {
 constexpr Square &operator+=(Square &s, const Direction d) noexcept { return s = s + d; }
 constexpr Square &operator-=(Square &s, const Direction d) noexcept { return s = s - d; }
 
-constexpr std::array<Square, 64> Squares
+constexpr std::array<Square, sq_nb> Squares
   { a1, b1, c1, d1, e1, f1, g1, h1,
     a2, b2, c2, d2, e2, f2, g2, h2,
     a3, b3, c3, d3, e3, f3, g3, h3,
@@ -42,6 +43,17 @@ constexpr std::array<Square, 64> Squares
     a7, b7, c7, d7, e7, f7, g7, h7,
     a8, b8, c8, d8, e8, f8, g8, h8
   };
+
+constexpr std::array<std::string_view, sq_nb> SquareString {
+    "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
+    "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
+    "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
+    "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4",
+    "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
+    "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
+    "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
+    "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8"
+};
 
 constexpr std::array<uint32_t, 2> oo_allowed_mask{1, 4};
 
@@ -56,7 +68,7 @@ constexpr std::array<Square, 2> ooo_king_to{c1, c8};
 inline std::array<Square, sq_nb> rook_castles_to{};  // indexed by position of the king
 inline std::array<Square, sq_nb> rook_castles_from{};// also
 inline std::array<int, sq_nb> castle_rights_mask{};
-inline uint32_t dist[64][64];// chebyshev distance
+inline int dist[64][64];// chebyshev distance
 inline Square flip[2][64];
 
 constexpr Rank rank_of(const Square sq) { return static_cast<Rank>(sq >> 3); }
@@ -84,8 +96,8 @@ inline void init() {
   {
     for (const auto sq2 : Squares)
     {
-      const uint32_t ranks = std::abs(rank_of(sq1) - rank_of(sq2));
-      const uint32_t files = std::abs(file_of(sq1) - file_of(sq2));
+      const int ranks = std::abs(rank_of(sq1) - rank_of(sq2));
+      const int files = std::abs(file_of(sq1) - file_of(sq2));
       dist[sq1][sq2]       = std::max(ranks, files);
     }
   }
@@ -99,9 +111,8 @@ inline void init() {
   // are initd in method setupCastling of class Game.
 }
 
-inline const char *square_to_string(const Square sq, char *buf) {
-  sprintf(buf, "%c%d", static_cast<char>(file_of(sq) + 'a'), rank_of(sq) + 1);
-  return buf;
+constexpr std::string_view square_to_string(const Square sq) {
+  return SquareString[sq];
 }
 }// namespace squares
 

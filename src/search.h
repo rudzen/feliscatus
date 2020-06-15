@@ -8,15 +8,24 @@
 #include "uci.h"
 #include "game.h"
 #include "eval.h"
-#include "see.h"
 #include "hash.h"
 #include "stopwatch.h"
+#include "position.h"
+
+struct PVEntry {
+  uint64_t key;
+  int depth;
+  int score;
+  uint32_t move;
+  NodeType node_type;
+  int eval;
+};
 
 class Search final : public MoveSorter {
 public:
-  Search(Protocol *p, Game *g, Eval *e, See *s) : lag_buffer(-1), verbosity(true), protocol(p), game(g), eval(e), board(g->pos->board), see(s) { }
-
-  Search(Game *g, Eval *e, See *s) : Search(nullptr, g, e, s) {
+  Search() = delete;
+  Search(Protocol *p, Game *g, PawnHash *pawnt) : lag_buffer(-1), verbosity(true), protocol(p), game(g), board(g->pos->b), pawn_hash_(pawnt) { }
+  Search(Game *g, PawnHash *pawnt) : Search(nullptr, g, pawnt) {
     stop_search.store(false);
   }
 
@@ -76,7 +85,7 @@ public:
 
   void stop() { stop_search.store(true); }
 
-  virtual void run() { go(0, 0, 0, 0, 0, 0, 0); }
+  void run() { go(0, 0, 0, 0, 0, 0, 0); }
 
 protected:
   template<NodeType NT, bool PV>
@@ -271,7 +280,7 @@ protected:
 
     const auto m = move_data->move;
 
-    if (pos->in_check && see->see_last_move(m) >= 0)
+    if (pos->in_check && board->see_last_move(m) >= 0)
       return std::optional<int>(depth);
 
     if (move_count >= move_count_limit && !is_queen_promotion(m) && !is_capture(m) && !is_killer_move(m, plies - 1))
@@ -302,7 +311,7 @@ protected:
     if (m == singular_move)
       return depth;
 
-    if ((pos->in_check || is_passed_pawn_move(m)) && see->see_last_move(m) >= 0)
+    if ((pos->in_check || is_passed_pawn_move(m)) && game->board.see_last_move(m) >= 0)
       return depth;
     return depth - 1;
   }
@@ -459,13 +468,12 @@ protected:
 
       if (protocol && verbosity)
       {
-        char buf[2048], buf2[16];
-        buf[0] = 0;
+        fmt::memory_buffer buffer;
 
         for (auto i = plies; i < pv_length[plies]; ++i)
-          _snprintf(&buf[strlen(buf)], sizeof buf - strlen(buf), "%s ", game->move_to_string(pv[plies][i].move, buf2));
+          fmt::format_to(buffer, "{} ", game->move_to_string(pv[plies][i].move));
 
-        protocol->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), std::max<int>(1ull, start_time.elapsed_milliseconds()), TT.get_load(), score, buf, NT);
+        protocol->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), std::max<int>(1ull, start_time.elapsed_milliseconds()), TT.get_load(), score, buffer, NT);
       }
     }
   }
@@ -577,7 +585,7 @@ protected:
 
       if (value_piece <= value_captured)
         move_data.score = 300000 + value_captured * 20 - value_piece;
-      else if (see->see_move(m) >= 0)
+      else if (board->see_move(m) >= 0)
         move_data.score = 160000 + value_captured * 20 - value_piece;
       else
         move_data.score = -100000 + value_captured * 20 - value_piece;
@@ -622,7 +630,7 @@ protected:
   void get_hash_and_evaluate(const int alpha, const int beta) const {
     if ((pos->transposition = TT.find(pos->key)) == nullptr)
     {
-      pos->eval_score  = eval->evaluate(alpha, beta);
+      pos->eval_score  = Eval::evaluate(game, pawn_hash_, alpha, beta);
       pos->transp_type = Void;
       pos->transp_move = 0;
       return;
@@ -660,15 +668,6 @@ protected:
   bool is_passed_pawn_move(const uint32_t m) const { return move_piece_type(m) == Pawn && board->is_pawn_passed(move_to(m), move_side(m)); }
 
 public:
-  struct PVEntry {
-    uint64_t key;
-    int depth;
-    int score;
-    uint32_t move;
-    NodeType node_type;
-    int eval;
-  };
-
   double n_{};
   int plies{};
   int max_ply{};
@@ -690,9 +689,7 @@ protected:
   uint32_t counter_moves[16][64]{};
   int drawScore_[2]{};
   Game *game;
-  Eval *eval;
   Board *board;
-  See *see;
   Position *pos{};
 
   uint64_t node_count{};
@@ -706,4 +703,9 @@ protected:
 
   static constexpr std::array<int, 4> futility_margin {150, 150, 150, 400};
   static constexpr std::array<int, 4> razor_margin {0, 125, 125, 400};
+
+
+  private:
+
+  PawnHash *pawn_hash_;
 };

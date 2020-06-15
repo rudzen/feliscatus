@@ -3,12 +3,11 @@ file(GLOB files
         "*.h"
         )
 
-#list(REMOVE_ITEM files "feliscatus.h")
-list(REMOVE_ITEM files "feliscatus.cpp")
+list(REMOVE_ITEM files "main.cpp")
 
-add_library(logic ${files})
+add_library(logic STATIC ${files})
 
-add_executable(Feliscatus feliscatus.cpp)
+add_executable(Feliscatus main.cpp)
 
 target_link_libraries(logic PRIVATE project_options project_warnings CONAN_PKG::fmt Threads::Threads)
 

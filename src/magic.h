@@ -101,6 +101,18 @@ constexpr Bitboard kingAttacks(const Square sq) {
   return king_attacks[sq];
 }
 
+inline Bitboard xray_rook_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
+  const auto attacks = rookAttacks(sq, occ);
+  blockers &= attacks;
+  return attacks ^ rookAttacks(sq, occ ^ blockers);
+}
+
+inline Bitboard xray_bishop_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
+  const auto attacks = bishopAttacks(sq, occ);
+  blockers &= attacks;
+  return attacks ^ bishopAttacks(sq, occ ^ blockers);
+}
+
 inline uint64_t initmagicmoves_occ(const std::array<int, 64> &squares, const int num_squares, const uint64_t linocc) {
   uint64_t ret = 0;
 
