@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "square.h"
+#include "../src/square.h"
 
 struct PGNFile;
 enum Token : uint8_t;

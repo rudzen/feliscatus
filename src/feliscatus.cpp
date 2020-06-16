@@ -1,6 +1,7 @@
 #include <string_view>
 #include <algorithm>
 #include <memory>
+#include <fmt/format.h>
 
 #include "feliscatus.h"
 #include "game.h"
@@ -10,7 +11,6 @@
 #include "hash.h"
 #include "worker.h"
 #include "perft.h"
-#include "tune.h"
 #include "stopwatch.h"
 
 namespace {
@@ -145,10 +145,7 @@ int Felis::run() {
       Perft(game.get()).perft_divide(6);
     } else if (util::strieq(tokens[0], "tune"))
     {
-      Stopwatch sw;
-      eval::Tune(game.get());
-      const auto seconds = sw.elapsed_seconds();
-      printf("%f\n", seconds);
+      fmt::print("Tuner disabled for now untill it's a stand alone file\n");
     } else if (util::strieq(tokens[0], "quit") || util::strieq(tokens[0], "exit"))
     {
       quit = 1;

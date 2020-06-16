@@ -2,9 +2,11 @@
 
 #include <utility>
 #include <vector>
-#include "moves.h"
+#include <docopt/docopt.h>
+#include <map>
+#include "../src/bitboard.h"
 #include "pgn_player.h"
-#include "search.h"
+#include "../src/search.h"
 
 class Game;
 struct PVEntry;
@@ -69,9 +71,7 @@ private:
 
 class Tune final : public MoveSorter {
 public:
-  explicit Tune(Game *game);
-
-  static void init_eval(std::vector<Param> &params);
+  explicit Tune(Game *game, std::string_view input, std::string_view output, const std::map<std::string, docopt::value> &args);
 
   double e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, double K);
 
@@ -93,6 +93,7 @@ public:
 
 private:
   Game *game_;
+
 
   PVEntry pv[128][128]{};
   int pv_length[128]{};

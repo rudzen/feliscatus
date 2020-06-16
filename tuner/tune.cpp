@@ -8,6 +8,27 @@
 
 namespace {
 
+enum SelectedParams {
+  none = 0,
+  psqt = 1,
+  piecevalue = 1 << 1,
+  king = 1 << 2,
+  queen = 1 << 3,
+  rook = 1 << 4,
+  bishop = 1 << 5,
+  knight = 1 << 6,
+  pawn = 1 << 7,
+  passedpawn = 1 << 8,
+  coordination = 1 << 9,
+  centercontrol = 1 << 10,
+  tempo = 1 << 11,
+  space = 1 << 12,
+  mobility = 1 << 13,
+  attbypawn = 1 << 14,
+  limitadjust 1 << 15,
+  lazymargin 1 << 16
+}
+
 std::string emit_code(const std::vector<eval::Param> &params0, const bool hr) {
   std::unordered_map<std::string, std::vector<eval::Param>> params1;
 
@@ -84,150 +105,64 @@ constexpr double bestK() {
   return 1.12;
 }
 
-}// namespace
+SelectedParams resolve_params(const std::map<std::string, docopt::value> &args)
+{
+  SelectedParams result{none};
 
-namespace eval {
+    int result = Params::Type::NONE;
 
-
-PGNPlayer::PGNPlayer() : pgn::PGNPlayer(), all_nodes_count_(0) {}
-
-void PGNPlayer::read_pgn_database() {
-  PGNFileReader::read_pgn_database();
-  print_progress(true);
-}
-
-void PGNPlayer::read_san_move() {
-  pgn::PGNPlayer::read_san_move();
-
-  all_nodes_count_++;
-
-  if (game_->pos - game_->position_list >= 14 && all_nodes_count_ % 7 == 0)
-    current_game_nodes_.emplace_back(game_->get_fen());
-}
-
-void PGNPlayer::read_game_termination() {
-  pgn::PGNPlayer::read_game_termination();
-
-  for (auto &node : current_game_nodes_)
-    node.result_ = result_ == WhiteWin ? 1 : result_ == Draw ? 0.5 : 0;
-
-  all_selected_nodes_.insert(all_selected_nodes_.end(), current_game_nodes_.begin(), current_game_nodes_.end());
-  current_game_nodes_.clear();
-
-  print_progress(false);
-}
-
-void PGNPlayer::read_comment1() {
-  pgn::PGNPlayer::read_comment1();
-}
-
-void PGNPlayer::print_progress(const bool force) const {
-  if (!force && game_count_ % 100 != 0)
-    return;
-
-  fmt::print("game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_, all_nodes_count_, all_selected_nodes_.size());
-}
-
-Tune::Tune(Game *game)
-  : game_(game), score_static_(false) {
-  PGNPlayer pgn;
-  pgn.read(R"(d:\tomcat\x64\result.pgn)");
-
-  // Tuning as described in https://chessprogramming.wikispaces.com/Texel%27s+Tuning+Method
-
-  score_static_ = true;
-
-  std::vector<Param> params;
-
-  init_eval(params);
-
-  if (score_static_)
-    make_quiet(pgn.all_selected_nodes_);
-
-  std::vector<ParamIndexRecord> params_index(params.size());
-
-  for (std::size_t i = 0; i < params.size(); ++i)
-    params_index.emplace_back(ParamIndexRecord{i, 0});
-
-  constexpr const auto K      = bestK();
-  auto bestE  = e(pgn.all_selected_nodes_, params, params_index, K);
-  auto improved = true;
-
-  std::ofstream out(R"(d:\tomcat\x64\tune.txt)");
-  out << fmt::format("Old E:{}\n", bestE);
-  out << fmt::format("Old Values:\n{}\n", emit_code(params, true));
-
-  while (improved)
+  for(const auto &elem : options)
   {
-    print_best_values(bestE, params);
-    improved = false;
-
-    for (std::size_t i = 0; i < params_index.size(); ++i)
+    if (elem.second.asBool())
     {
-      auto idx    = params_index[i].idx_;
-      auto &step  = params[idx].step_;
-      auto &value = params[idx].value_;
-
-      if (step == 0)
-        continue;
-
-      value += step;
-
-      fmt::print("Tuning prm[{}] {} i:{}  current:{}  trying:{}...\n", idx, params[idx].name_, i, value - step, value);
-
-      auto newE = e(pgn.all_selected_nodes_, params, params_index, K);
-
-      if (newE < bestE)
-      {
-        params_index[i].improved_ = bestE - newE;
-        bestE                     = newE;
-        improved                  = true;
-        out << "E:" << bestE << "\n";
-        out << emit_code(params, true);
-      } else if (step > 0)
-      {
-        step = -step;
-        value += 2 * step;
-
-        fmt::print("Tuning prm[{}] {} i:{}  current:{}  trying:{}...\n", idx, params[idx].name_, i, value - step, value);
-
-        newE = e(pgn.all_selected_nodes_, params, params_index, K);
-
-        if (newE < bestE)
-        {
-          params_index[i].improved_ = bestE - newE;
-          bestE                     = newE;
-          improved                  = true;
-          out << "E:" << bestE << "\n";
-          out << emit_code(params, true);
-        } else
-        {
-          params_index[i].improved_ = 0;
-          value -= step;
-          step = 0;
-        }
-      } else
-      {
-        params_index[i].improved_ = 0;
-        value -= step;
-        step = 0;
-      }
-    }
-
-    if (improved)
-    {
-      // std::stable_sort(params_index.begin(), params_index.end());
+      if (elem.first == "--piecevalue")
+        result |= Params::Type::PIECE_VALUE;
+      else if (elem.first == "--king")
+        result |= Params::Type::KING;
+      else if (elem.first == "--queen")
+        result |= Params::Type::QUEEN;
+      else if (elem.first == "--rook")
+        result |= Params::Type::ROOK;
+      else if (elem.first == "--bishop")
+        result |= Params::Type::BISHOP;
+      else if (elem.first == "--knight")
+        result |= Params::Type::KNIGHT;
+      else if (elem.first == "--pawn")
+        result |= Params::Type::PAWN;
+      else if (elem.first == "--passedpawn")
+        result |= Params::Type::PASSED_PAWN;
+      else if (elem.first == "--coordination")
+        result |= Params::Type::PIECE_COORDINATION;
+      else if (elem.first == "--centercontrol")
+        result |= Params::Type::PIECE_CENTER_CONTROL;
+      else if (elem.first == "--tempo")
+        result |= Params::Type::TEMPO;
+      else if (elem.first == "--space")
+        result |= Params::Type::SPACE;
+      else if (elem.first == "--mobility")
+        result |= Params::Type::MOBILITY;
+      else if (elem.first == "--attbypawn")
+        result |= Params::Type::ATT_BY_PAWN;
+      else if (elem.first == "--weak")
+        result |= Params::Type::WEAK_PIECE;
+      else if (elem.first == "--limitadjust")
+        result |= Params::Type::GAME_LIMIT_ADJUST;
+      else if (elem.first == "--imbalance")
+        result |= Params::Type::IMBALANCE;
+      else
+        std::cerr << "Unknown parameter, outdated version.\n";
     }
   }
-  print_best_values(bestE, params);
-  out << fmt::format("New E:{}\n", bestE);
-  out << fmt::format("\nNew:\n{}\n", emit_code(params, false));
 
-  fmt::print("{}\n", emit_code(params, true));
+  return static_cast<Params::Type>(result);
+
+
 }
 
-void Tune::init_eval(std::vector<Param> &params) {
+void init_eval(std::vector<Param> &params, const std::map<std::string, docopt::value> &args) {
   auto step = 1;
+
+
   x_        = false;
   /*
                   for (auto i = 0; i < 9; ++i)
@@ -375,6 +310,150 @@ void Tune::init_eval(std::vector<Param> &params) {
                   params.emplace_back(Param("rook_attack_king", eval_->rook_attack_king, 0, step));
                   params.emplace_back(Param("queen_attack_king", eval_->queen_attack_king, 0, step));
   */
+}
+
+
+
+}// namespace
+
+namespace eval {
+
+
+PGNPlayer::PGNPlayer() : pgn::PGNPlayer(), all_nodes_count_(0) {}
+
+void PGNPlayer::read_pgn_database() {
+  PGNFileReader::read_pgn_database();
+  print_progress(true);
+}
+
+void PGNPlayer::read_san_move() {
+  pgn::PGNPlayer::read_san_move();
+
+  all_nodes_count_++;
+
+  if (game_->pos - game_->position_list >= 14 && all_nodes_count_ % 7 == 0)
+    current_game_nodes_.emplace_back(game_->get_fen());
+}
+
+void PGNPlayer::read_game_termination() {
+  pgn::PGNPlayer::read_game_termination();
+
+  for (auto &node : current_game_nodes_)
+    node.result_ = result_ == WhiteWin ? 1 : result_ == Draw ? 0.5 : 0;
+
+  all_selected_nodes_.insert(all_selected_nodes_.end(), current_game_nodes_.begin(), current_game_nodes_.end());
+  current_game_nodes_.clear();
+
+  print_progress(false);
+}
+
+void PGNPlayer::read_comment1() {
+  pgn::PGNPlayer::read_comment1();
+}
+
+void PGNPlayer::print_progress(const bool force) const {
+  if (!force && game_count_ % 100 != 0)
+    return;
+
+  fmt::print("game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_, all_nodes_count_, all_selected_nodes_.size());
+}
+
+Tune::Tune(Game *game, const std::string_view input, const std::string_view output, const std::map<std::string, docopt::value> &args)
+  : game_(game), score_static_(false) {
+  PGNPlayer pgn;
+  pgn.read(input.data());
+
+  // Tuning as described in https://chessprogramming.wikispaces.com/Texel%27s+Tuning+Method
+
+  score_static_ = true;
+
+  std::vector<Param> params;
+
+  init_eval(params);
+
+  if (score_static_)
+    make_quiet(pgn.all_selected_nodes_);
+
+  std::vector<ParamIndexRecord> params_index(params.size());
+
+  for (std::size_t i = 0; i < params.size(); ++i)
+    params_index.emplace_back(ParamIndexRecord{i, 0});
+
+  constexpr const auto K      = bestK();
+  auto bestE  = e(pgn.all_selected_nodes_, params, params_index, K);
+  auto improved = true;
+
+  std::ofstream out(output);
+  out << fmt::format("Old E:{}\n", bestE);
+  out << fmt::format("Old Values:\n{}\n", emit_code(params, true));
+
+  while (improved)
+  {
+    print_best_values(bestE, params);
+    improved = false;
+
+    for (std::size_t i = 0; i < params_index.size(); ++i)
+    {
+      auto idx    = params_index[i].idx_;
+      auto &step  = params[idx].step_;
+      auto &value = params[idx].value_;
+
+      if (step == 0)
+        continue;
+
+      value += step;
+
+      fmt::print("Tuning prm[{}] {} i:{}  current:{}  trying:{}...\n", idx, params[idx].name_, i, value - step, value);
+
+      auto newE = e(pgn.all_selected_nodes_, params, params_index, K);
+
+      if (newE < bestE)
+      {
+        params_index[i].improved_ = bestE - newE;
+        bestE                     = newE;
+        improved                  = true;
+        out << "E:" << bestE << "\n";
+        out << emit_code(params, true);
+      } else if (step > 0)
+      {
+        step = -step;
+        value += 2 * step;
+
+        fmt::print("Tuning prm[{}] {} i:{}  current:{}  trying:{}...\n", idx, params[idx].name_, i, value - step, value);
+
+        newE = e(pgn.all_selected_nodes_, params, params_index, K);
+
+        if (newE < bestE)
+        {
+          params_index[i].improved_ = bestE - newE;
+          bestE                     = newE;
+          improved                  = true;
+          out << "E:" << bestE << "\n";
+          out << emit_code(params, true);
+        } else
+        {
+          params_index[i].improved_ = 0;
+          value -= step;
+          step = 0;
+        }
+      } else
+      {
+        params_index[i].improved_ = 0;
+        value -= step;
+        step = 0;
+      }
+    }
+
+    if (improved)
+    {
+      // std::stable_sort(params_index.begin(), params_index.end());
+    }
+  }
+  print_best_values(bestE, params);
+  out << fmt::format("New E:{}\n", bestE);
+  out << fmt::format("\nNew:\n{}\n", emit_code(params, false));
+
+  fmt::print("{}\n", emit_code(params, true));
 }
 
 double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, double K) {
