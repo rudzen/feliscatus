@@ -295,10 +295,8 @@ constexpr void init() {
     init_between_bitboards(sq, west_one, WEST);
     init_between_bitboards(sq, north_west_one, NORTH_WEST);
 
-    pawn_captures[sq] = (bbsq & ~FileHBB) << 9;
-    pawn_captures[sq] |= (bbsq & ~FileABB) << 7;
-    pawn_captures[sq + 64] = (bbsq & ~FileABB) >> 9;
-    pawn_captures[sq + 64] |= (bbsq & ~FileHBB) >> 7;
+    pawn_captures[sq] = north_east_one(bbsq) | north_west_one(bbsq);
+    pawn_captures[sq + 64] = south_east_one(bbsq) | south_west_one(bbsq);
   }
 }
 
