@@ -2,6 +2,8 @@
 
 #include <utility>
 #include <vector>
+#include <string>
+#include <fmt/format.h>
 #include <docopt/docopt.h>
 #include <map>
 #include "../src/bitboard.h"
@@ -11,37 +13,12 @@
 class Game;
 struct PVEntry;
 
+
 namespace eval {
 
-struct Node {
-  Node(std::string fen) : fen_(std::move(fen)) {}
-
-  std::string fen_;
-  double result_{};
-};
-
-inline bool x_;
-
-struct Param {
-  Param(std::string name, int &value, const int initial_value, const int step) : name_(std::move(name)), initial_value_(initial_value), value_(value), step_(step) {
-    if (x_)
-      value = initial_value;
-  }
-
-  std::string name_;
-  int initial_value_;
-  int &value_;
-  int step_;
-};
-
-struct ParamIndexRecord {
-  size_t idx_;
-  double improved_;
-};
-
-inline bool operator<(const ParamIndexRecord &lhs, const ParamIndexRecord &rhs) {
-  return lhs.improved_ >= rhs.improved_;
-}
+struct Node;
+struct Param;
+struct ParamIndexRecord;
 
 class PGNPlayer : public pgn::PGNPlayer {
 public:

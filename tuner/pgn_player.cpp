@@ -1,9 +1,9 @@
 #include "pgn_player.h"
 #include <fmt/format.h>
-#include "bitboard.h"
-#include "util.h"
-#include "game.h"
-#include "position.h"
+#include "../src/bitboard.h"
+#include "../src/util.h"
+#include "../src/game.h"
+#include "../src/position.h"
 
 namespace {
 

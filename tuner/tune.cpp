@@ -1,15 +1,53 @@
 #include <fmt/format.h>
 #include <fstream>
 #include <unordered_map>
+#include <docopt/docopt.h>
+#include <string>
+#include <ranges>
 #include "tune.h"
-#include "game.h"
-#include "eval.h"
-#include "parameters.h"
-#include "util.h"
+#include "../src/game.h"
+#include "../src/eval.h"
+#include "../src/parameters.h"
+#include "../src/util.h"
+
+namespace eval {
+
+
+struct Node {
+  Node(std::string fen) : fen_(std::move(fen)) {}
+
+  std::string fen_;
+  double result_{};
+};
+
+inline bool x_;
+
+struct Param {
+  Param(std::string name, int &value, const int initial_value, const int step) : name_(std::move(name)), initial_value_(initial_value), value_(value), step_(step) {
+    if (x_)
+      value = initial_value;
+  }
+
+  std::string name_;
+  int initial_value_;
+  int &value_;
+  int step_;
+};
+
+struct ParamIndexRecord {
+  size_t idx_;
+  double improved_;
+};
+
+inline bool operator<(const ParamIndexRecord &lhs, const ParamIndexRecord &rhs) {
+  return lhs.improved_ >= rhs.improved_;
+}
+
+}
 
 namespace {
 
-enum SelectedParams {
+enum SelectedParams : uint64_t {
   none = 0,
   psqt = 1,
   piecevalue = 1 << 1,
@@ -26,9 +64,9 @@ enum SelectedParams {
   space = 1 << 12,
   mobility = 1 << 13,
   attbypawn = 1 << 14,
-  limitadjust 1 << 15,
-  lazymargin 1 << 16
-}
+  limitadjust = 1 << 15,
+  lazymargin = 1 << 16
+};
 
 std::string emit_code(const std::vector<eval::Param> &params0, const bool hr) {
   std::unordered_map<std::string, std::vector<eval::Param>> params1;
@@ -108,63 +146,108 @@ constexpr double bestK() {
 
 SelectedParams resolve_params(const std::map<std::string, docopt::value> &args)
 {
-  SelectedParams result{none};
+  int result{none};
 
-    int result = Params::Type::NONE;
-
-  for(const auto &elem : options)
+  for(const auto &elem : args)
   {
     if (elem.second.asBool())
     {
       if (elem.first == "--piecevalue")
-        result |= Params::Type::PIECE_VALUE;
+        result |= piecevalue;
       else if (elem.first == "--king")
-        result |= Params::Type::KING;
+        result |= king;
       else if (elem.first == "--queen")
-        result |= Params::Type::QUEEN;
+        result |= queen;
       else if (elem.first == "--rook")
-        result |= Params::Type::ROOK;
+        result |= rook;
       else if (elem.first == "--bishop")
-        result |= Params::Type::BISHOP;
+        result |= bishop;
       else if (elem.first == "--knight")
-        result |= Params::Type::KNIGHT;
+        result |= knight;
       else if (elem.first == "--pawn")
-        result |= Params::Type::PAWN;
+        result |= pawn;
       else if (elem.first == "--passedpawn")
-        result |= Params::Type::PASSED_PAWN;
+        result |= passedpawn;
       else if (elem.first == "--coordination")
-        result |= Params::Type::PIECE_COORDINATION;
+        result |= coordination;
       else if (elem.first == "--centercontrol")
-        result |= Params::Type::PIECE_CENTER_CONTROL;
+        result |= centercontrol;
       else if (elem.first == "--tempo")
-        result |= Params::Type::TEMPO;
+        result |= tempo;
       else if (elem.first == "--space")
-        result |= Params::Type::SPACE;
+        result |= space;
       else if (elem.first == "--mobility")
-        result |= Params::Type::MOBILITY;
+        result |= mobility;
       else if (elem.first == "--attbypawn")
-        result |= Params::Type::ATT_BY_PAWN;
+        result |= attbypawn;
       else if (elem.first == "--weak")
-        result |= Params::Type::WEAK_PIECE;
+        result |= limitadjust;
       else if (elem.first == "--limitadjust")
-        result |= Params::Type::GAME_LIMIT_ADJUST;
-      else if (elem.first == "--imbalance")
-        result |= Params::Type::IMBALANCE;
+        result |= lazymargin;
       else
-        std::cerr << "Unknown parameter, outdated version.\n";
+        fmt::print("Unknown parameter, outdated version.\n");
     }
   }
 
-  return static_cast<Params::Type>(result);
-
+  return static_cast<SelectedParams>(result);
+}
 
 }
 
-void init_eval(std::vector<Param> &params, const std::map<std::string, docopt::value> &args) {
+void init_eval(std::vector<eval::Param> &params, const std::map<std::string, docopt::value> &args) {
   auto step = 1;
 
+  const auto current_parameters = resolve_params(args);
 
-  x_        = false;
+  eval::x_        = false;
+
+  // Check parameters
+  if (current_parameters & SelectedParams::knight)
+  {
+    if (current_parameters & SelectedParams::psqt)
+    {
+        for (const auto i : Squares)
+        {
+          params.emplace_back("knight_pst_mg", knight_pst_mg[i], 0, step);
+          params.emplace_back("knight_pst_eg", knight_pst_eg[i], 0, step);
+        }
+    }
+
+    if (current_parameters & SelectedParams::mobility)
+    {
+      for (auto &knight_mobility : knight_mob_mg)
+        params.emplace_back("knight_mob_mg", knight_mobility, 0, step);
+
+      for (auto &knight_mobility : knight_mob_eg)
+        params.emplace_back("knight_mob_eg", knight_mobility, 0, step);
+    }
+  }
+
+  if (current_parameters & SelectedParams::bishop)
+  {
+    if (current_parameters & SelectedParams::psqt)
+    {
+      for (const auto i : Squares)
+      {
+        params.emplace_back("bishop_pst_mg", bishop_pst_mg[i], 0, step);
+        params.emplace_back("bishop_pst_eg", bishop_pst_eg[i], 0, step);
+      }
+    }
+
+    if (current_parameters & SelectedParams::mobility)
+    {
+      for (auto &bishop_mobility : bishop_mob_mg)
+        params.emplace_back("bishop_mob_mg", bishop_mobility, 0, step);
+
+      for (auto &bishop_mobility : bishop_mob_eg)
+        params.emplace_back("bishop_mob_eg", bishop_mobility, 0, step);
+    }
+  }
+
+  if (current_parameters & SelectedParams::lazymargin)
+    params.emplace_back("lazy_margin", lazy_margin, 0, step);
+
+
   /*
                   for (auto i = 0; i < 9; ++i)
                           {
@@ -210,17 +293,18 @@ void init_eval(std::vector<Param> &params, const std::map<std::string, docopt::v
     params.emplace_back("pawn_pst_eg", pawn_pst_eg[i], 0, istep);
   }
 
-  for (const auto i : Squares)
-  {
-    params.emplace_back("knight_pst_mg", knight_pst_mg[i], 0, step);
-    params.emplace_back("knight_pst_eg", knight_pst_eg[i], 0, step);
-  }
 
-  for (const auto i : Squares)
-  {
-    params.emplace_back("bishop_pst_mg", bishop_pst_mg[i], 0, step);
-    params.emplace_back("bishop_pst_eg", bishop_pst_eg[i], 0, step);
-  }
+  // for (const auto i : Squares)
+  // {
+  //   params.emplace_back("knight_pst_mg", knight_pst_mg[i], 0, step);
+  //   params.emplace_back("knight_pst_eg", knight_pst_eg[i], 0, step);
+  // }
+
+  // for (const auto i : Squares)
+  // {
+  //   params.emplace_back("bishop_pst_mg", bishop_pst_mg[i], 0, step);
+  //   params.emplace_back("bishop_pst_eg", bishop_pst_eg[i], 0, step);
+  // }
 
   for (const auto i : Squares)
   {
@@ -313,12 +397,7 @@ void init_eval(std::vector<Param> &params, const std::map<std::string, docopt::v
   */
 }
 
-
-
-}// namespace
-
 namespace eval {
-
 
 PGNPlayer::PGNPlayer() : pgn::PGNPlayer(), all_nodes_count_(0) {}
 
@@ -368,9 +447,9 @@ Tune::Tune(Game *game, const std::string_view input, const std::string_view outp
 
   score_static_ = true;
 
-  std::vector<Param> params;
+  std::vector<eval::Param> params;
 
-  init_eval(params);
+  init_eval(params, args);
 
   if (score_static_)
     make_quiet(pgn.all_selected_nodes_);
@@ -384,7 +463,7 @@ Tune::Tune(Game *game, const std::string_view input, const std::string_view outp
   auto bestE  = e(pgn.all_selected_nodes_, params, params_index, K);
   auto improved = true;
 
-  std::ofstream out(output);
+  std::ofstream out(output.data());
   out << fmt::format("Old E:{}\n", bestE);
   out << fmt::format("Old Values:\n{}\n", emit_code(params, true));
 
@@ -457,7 +536,7 @@ Tune::Tune(Game *game, const std::string_view input, const std::string_view outp
   fmt::print("{}\n", emit_code(params, true));
 }
 
-double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, double K) {
+double Tune::e(const std::vector<eval::Node> &nodes, const std::vector<eval::Param> &params, const std::vector<eval::ParamIndexRecord> &params_index, double K) {
   double x = 0;
 
   for (const auto &node : nodes)
