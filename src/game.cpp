@@ -18,12 +18,12 @@ namespace {
     return true;
   }
 
-  if (!util::in_between(**p, 'a', 'h'))
+  if (!util::in_between<'a', 'h'>(**p))
     return false;
 
   (*p)++;
 
-  if (!util::in_between(**p, '3', '6'))
+  if (!util::in_between<'3', '6'>(**p))
     return false;
 
   sq = static_cast<Square>(*(*p - 1) - 'a' + (**p - '1') * 8);
@@ -484,7 +484,7 @@ int Game::setup_castling(const char **p) {
   {
     const auto c = **p;
 
-    if (util::in_between(c, 'A', 'H'))
+    if (util::in_between<'A', 'H'>(c))
     {
       chess960 = true;
       xfen     = false;
@@ -495,7 +495,7 @@ int Game::setup_castling(const char **p) {
         add_short_castle_rights<WHITE>(pos, this, board, rook_file);
       else
         add_long_castle_rights<WHITE>(pos, this, board, rook_file);
-    } else if (util::in_between<char>(c, 'a', 'h'))
+    } else if (util::in_between<'a', 'h'>(c))
     {
       chess960 = true;
       xfen     = false;

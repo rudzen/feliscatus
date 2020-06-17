@@ -5,6 +5,7 @@
 #include "game.h"
 #include "eval.h"
 #include "parameters.h"
+#include "util.h"
 
 namespace {
 

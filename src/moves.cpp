@@ -210,7 +210,6 @@ void Moves::generate_quiet_moves() {
 }
 
 void Moves::add_move(const int piece, const Square from, const Square to, const uint32_t type, const int promoted) {
-  uint32_t move;
   int captured;
 
   if (type & CAPTURE)
@@ -220,7 +219,7 @@ void Moves::add_move(const int piece, const Square from, const Square to, const 
   else
     captured = 0;
 
-  init_move(move, piece, captured, from, to, type, promoted);
+  const auto move = init_move(piece, captured, from, to, type, promoted);
 
   if (transp_move == move)
     return;

@@ -8,9 +8,10 @@
 #include "uci.h"
 #include "game.h"
 #include "eval.h"
-#include "hash.h"
 #include "stopwatch.h"
 #include "position.h"
+#include "pawnhashtable.h"
+#include "transpositional.h"
 
 struct PVEntry {
   uint64_t key;
@@ -24,8 +25,8 @@ struct PVEntry {
 class Search final : public MoveSorter {
 public:
   Search() = delete;
-  Search(Protocol *p, Game *g, PawnHash *pawnt) : lag_buffer(-1), verbosity(true), protocol(p), game(g), board(g->pos->b), pawn_hash_(pawnt) { }
-  Search(Game *g, PawnHash *pawnt) : Search(nullptr, g, pawnt) {
+  Search(Protocol *p, Game *g, PawnHashTable *pawnt) : lag_buffer(-1), verbosity(true), protocol(p), game(g), board(g->pos->b), pawn_hash_(pawnt) { }
+  Search(Game *g, PawnHashTable *pawnt) : Search(nullptr, g, pawnt) {
     stop_search.store(false);
   }
 
@@ -704,8 +705,7 @@ protected:
   static constexpr std::array<int, 4> futility_margin {150, 150, 150, 400};
   static constexpr std::array<int, 4> razor_margin {0, 125, 125, 400};
 
-
   private:
 
-  PawnHash *pawn_hash_;
+  PawnHashTable *pawn_hash_;
 };

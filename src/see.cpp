@@ -33,25 +33,25 @@ int Board::see_move(uint32_t move) {
   return score;
 }
 
-int Board::see_last_move(uint32_t move) {
+int Board::see_last_move(const uint32_t move) {
   init_see_move();
   return see_rec(material_change(move), next_to_capture(move), move_to(move), ~move_side(move));
 }
 
-int Board::see_rec(int mat_change, int next_capture, Square to, Color side_to_move) {
-  Square from;
-  uint32_t move;
+int Board::see_rec(const int mat_change, const int next_capture, const Square to, const Color side_to_move) {
   const auto rr = relative_rank(side_to_move, to);
+
+  uint32_t move;
 
   do
   {
-    if (!lookup_best_attacker(to, side_to_move, from))
+    const auto from = lookup_best_attacker(to, side_to_move);
+    if (!from.has_value())
       return mat_change;
 
-    if (current_piece[side_to_move] == Pawn && rr == RANK_8)
-      init_move(move, current_piece[side_to_move] | (side_to_move << 3), next_capture, from, to, PROMOTION | CAPTURE, Queen | (side_to_move << 3));
-    else
-      init_move(move, current_piece[side_to_move] | (side_to_move << 3), next_capture, from, to, CAPTURE, 0);
+    move = current_piece[side_to_move] == Pawn && rr == RANK_8
+         ? init_move<PROMOTION | CAPTURE>(current_piece[side_to_move] | (side_to_move << 3), next_capture, from.value(), to, Queen | (side_to_move << 3))
+         : init_move<CAPTURE>(current_piece[side_to_move] | (side_to_move << 3), next_capture, from.value(), to, 0);
 
     make_move(move);
 
@@ -68,73 +68,81 @@ int Board::see_rec(int mat_change, int next_capture, Square to, Color side_to_mo
   return score < 0 ? mat_change + score : mat_change;
 }
 
-
-bool Board::lookup_best_attacker(const Square to, const Color side, Square &from) {
+std::optional<Square> Board::lookup_best_attacker(const Square to, const Color side) {
   // "Best" == "Lowest piece value"
+
+  Bitboard b;
 
   switch (current_piece[side])
   {
   case Pawn:
-    if (current_piece_bitboard[side] & pawn_captures[to | ((~side) << 6)])
+    b = current_piece_bitboard[side] & pawn_captures[to | ((~side) << 6)];
+    if (b)
     {
-      from = lsb(current_piece_bitboard[side] & pawn_captures[to | ((~side) << 6)]);
+      const auto from = lsb(b);
       current_piece_bitboard[side] &= ~bit(from);
-      return true;
+      return std::optional<Square>(from);
     }
     current_piece[side]++;
     current_piece_bitboard[side] = knights(side);
     [[fallthrough]];
   case Knight:
-    if (current_piece_bitboard[side] & knightAttacks(to))
+    b = current_piece_bitboard[side] & knightAttacks(to);
+    if (b)
     {
-      from = lsb(current_piece_bitboard[side] & knightAttacks(to));
+      const auto from = lsb(b);
       current_piece_bitboard[side] &= ~bit(from);
-      return true;
+      return std::optional<Square>(from);
     }
     current_piece[side]++;
     current_piece_bitboard[side] = bishops(side);
     [[fallthrough]];
 
   case Bishop:
-    if (current_piece_bitboard[side] & bishopAttacks(to, occupied))
+    b = current_piece_bitboard[side] & bishopAttacks(to, occupied);
+    if (b)
     {
-      from = lsb(current_piece_bitboard[side] & bishopAttacks(to, occupied));
+      const auto from = lsb(b);
       current_piece_bitboard[side] &= ~bit(from);
-      return true;
+      return std::optional<Square>(from);
     }
     current_piece[side]++;
     current_piece_bitboard[side] = rooks(side);
     [[fallthrough]];
   case Rook:
-    if (current_piece_bitboard[side] & rookAttacks(to, occupied))
+    b = current_piece_bitboard[side] & rookAttacks(to, occupied);
+    if (b)
     {
-      from = lsb(current_piece_bitboard[side] & rookAttacks(to, occupied));
+      const auto from = lsb(b);
       current_piece_bitboard[side] &= ~bit(from);
-      return true;
+      return std::optional<Square>(from);
     }
     current_piece[side]++;
     current_piece_bitboard[side] = queens(side);
     [[fallthrough]];
   case Queen:
-    if (current_piece_bitboard[side] & queenAttacks(to, occupied))
+    b = current_piece_bitboard[side] & queenAttacks(to, occupied);
+    if (b)
     {
-      from = lsb(current_piece_bitboard[side] & queenAttacks(to, occupied));
+      const auto from = lsb(b);
       current_piece_bitboard[side] &= ~bit(from);
-      return true;
+      return std::optional<Square>(from);
     }
     current_piece[side]++;
     current_piece_bitboard[side] = king(side);
     [[fallthrough]];
   case King:
-    if (current_piece_bitboard[side] & kingAttacks(to))
+    b = current_piece_bitboard[side] & kingAttacks(to);
+    if (b)
     {
-      from = lsb(current_piece_bitboard[side] & kingAttacks(to));
+      const auto from = lsb(b);
       current_piece_bitboard[side] &= ~bit(from);
-      return true;
-    }[[fallthrough]];
-  default:
-    return false;
+      return std::optional<Square>(from);
+    }
+    break;
   }
+
+  return std::nullopt;
 }
 
 void Board::init_see_move() {
