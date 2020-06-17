@@ -15,34 +15,31 @@ static constexpr auto title =
             \__|\_,_|_||_\___|_|)";
 
 static constexpr auto USAGE =
-  R"(Mirage Simple Tuner.
+  R"(FelisCatus Tuner.
     Usage:
-          simple_tuner -h
-          simple_tuner [--psqt] [--piecevalue] [--king] [--queen] [--rook] [--bishop] [--knight] [--pawn] [--passedpawn] [--coordination] [--centercontrol] [--tempo] [--space] [--mobility] [--attbypawn] [--limitadjust] [--lazymargin]
+          FeliscatusTuner -h
+          FeliscatusTuner [--psqt] [--piecevalue] [--king] [--queen] [--rook] [--bishop] [--knight] [--pawn] [--passedpawn] [--coordination] [--centercontrol] [--tempo] [--space] [--mobility] [--attbypawn] [--limitadjust] [--lazymargin]
 
   Options:
           -h --help           Show this screen.
 
           --epd=FILE          Sets the file to read from [default: ./out.epd].
           --log=FILE          Prefix for logfile [default: _feliscatus_tuner].
-          --psqt              Enable piece square table value tuning [default: true].
-          --piecevalue        Enable piece value tuning [default: false].
-          --king              Enable king evaluation tuning [default: false].
-          --queen             Enable queen evaluation tuning [default: false].
-          --rook              Enable rook evaluation tuning [default: false].
-          --bishop            Enable bishop evaluation tuning [default: false].
-          --knight            Enable knight evaluation tuning [default: false].
           --pawn              Enable pawn evaluation tuning [default: false].
+          --knight            Enable knight evaluation tuning [default: false].
+          --bishop            Enable bishop evaluation tuning [default: false].
+          --rook              Enable rook evaluation tuning [default: false].
+          --queen             Enable queen evaluation tuning [default: false].
+          --king              Enable king evaluation tuning [default: false].
+          --psqt              Enable piece square table value tuning [default: false].
+          --mobility          Enable mobility evaluation tuning [default: false].
           --passedpawn        Enable passed pawn evaluation tuning [default: false].
           --coordination      Enable piece coordination evaluation tuning [default: false].
-          --centercontrol     Enable center control evaluation tuning [default: false].
+          --strength          Enable attack strength evaluation tuning [default: false].
           --tempo             Enable tempo evaluation tuning [default: false].
-          --space             Enable space evaluation tuning [default: false].
-          --mobility          Enable mobility evaluation tuning [default: false].
-          --attbypawn         Enable attacked by pawn evaluation tuning [default: false].
-          --weak              Enable weakness evaluation tuning [default: false].
-          --limitadjust       Enable game limit adjusting evaluation tuning [default: false].
-          --imbalance         Enable imbalance evaluation tuning [default: false].
+          --weakness          Enable weakness evaluation tuning [default: false].
+          --lazy_margin       Enable evaluation lazy_margin tuning [default: false].
+          --tempo             Enable tempo tuning [default: false].
 )";
 
 int main(int argc, char **argv) {
