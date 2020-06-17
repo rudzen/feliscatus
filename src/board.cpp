@@ -78,15 +78,15 @@ void Board::unmake_move(const uint32_t m) {
 
 Bitboard Board::get_pinned_pieces(const Color side, const Square sq) {
   Bitboard pinned_pieces = 0;
-  const auto opp         = ~side;
-  auto pinners           = xray_bishop_attacks(occupied, occupied_by_side[side], sq) & (piece[Bishop + (opp << 3)] | piece[Queen | opp << 3]);
+  const auto opp_mask    = (~side) << 3;
+  auto pinners           = xray_bishop_attacks(occupied, occupied_by_side[side], sq) & (piece[Bishop | opp_mask] | piece[Queen | opp_mask]);
 
   while (pinners)
   {
     pinned_pieces |= between_bb[lsb(pinners)][sq] & occupied_by_side[side];
     reset_lsb(pinners);
   }
-  pinners = xray_rook_attacks(occupied, occupied_by_side[side], sq) & (piece[Rook + (opp << 3)] | piece[Queen | opp << 3]);
+  pinners = xray_rook_attacks(occupied, occupied_by_side[side], sq) & (piece[Rook | opp_mask] | piece[Queen | opp_mask]);
 
   while (pinners)
   {
@@ -96,42 +96,19 @@ Bitboard Board::get_pinned_pieces(const Color side, const Square sq) {
   return pinned_pieces;
 }
 
-Bitboard Board::piece_attacks(const int pc, const Square sq) const {
-  switch (pc & 7)
-  {
-  case Knight:
-    return knightAttacks(sq);
-
-  case Bishop:
-    return bishopAttacks(sq, occupied);
-
-  case Rook:
-    return rookAttacks(sq, occupied);
-
-  case Queen:
-    return queenAttacks(sq, occupied);
-
-  case King:
-    return kingAttacks(sq);
-
-  default:
-    break;// error
-  }
-  return 0;
-}
-
 bool Board::is_attacked_by_slider(const Square sq, const Color side) const {
-  const auto r_attacks = rookAttacks(sq, occupied);
+  const auto mask = side << 3;
+  const auto r_attacks = piece_attacks_bb<Rook>(sq, occupied);
 
-  if (piece[Rook + (side << 3)] & r_attacks)
+  if (piece[Rook | mask] & r_attacks)
     return true;
 
-  const auto b_attacks = bishopAttacks(sq, occupied);
+  const auto b_attacks = piece_attacks_bb<Bishop>(sq, occupied);
 
-  if (piece[Bishop + (side << 3)] & b_attacks)
+  if (piece[Bishop | mask] & b_attacks)
     return true;
 
-  if (piece[Queen + (side << 3)] & (b_attacks | r_attacks))
+  if (piece[Queen | mask] & (b_attacks | r_attacks))
     return true;
   return false;
 }

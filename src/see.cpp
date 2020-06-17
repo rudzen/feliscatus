@@ -87,7 +87,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
     current_piece_bitboard[side] = knights(side);
     [[fallthrough]];
   case Knight:
-    b = current_piece_bitboard[side] & knightAttacks(to);
+    b = current_piece_bitboard[side] & piece_attacks_bb<Knight>(to);
     if (b)
     {
       const auto from = lsb(b);
@@ -99,7 +99,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
     [[fallthrough]];
 
   case Bishop:
-    b = current_piece_bitboard[side] & bishopAttacks(to, occupied);
+    b = current_piece_bitboard[side] & piece_attacks_bb<Bishop>(to, occupied);
     if (b)
     {
       const auto from = lsb(b);
@@ -110,7 +110,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
     current_piece_bitboard[side] = rooks(side);
     [[fallthrough]];
   case Rook:
-    b = current_piece_bitboard[side] & rookAttacks(to, occupied);
+    b = current_piece_bitboard[side] & piece_attacks_bb<Rook>(to, occupied);
     if (b)
     {
       const auto from = lsb(b);
@@ -121,7 +121,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
     current_piece_bitboard[side] = queens(side);
     [[fallthrough]];
   case Queen:
-    b = current_piece_bitboard[side] & queenAttacks(to, occupied);
+    b = current_piece_bitboard[side] & piece_attacks_bb<Queen>(to, occupied);
     if (b)
     {
       const auto from = lsb(b);
@@ -132,7 +132,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
     current_piece_bitboard[side] = king(side);
     [[fallthrough]];
   case King:
-    b = current_piece_bitboard[side] & kingAttacks(to);
+    b = current_piece_bitboard[side] & piece_attacks_bb<King>(to);
     if (b)
     {
       const auto from = lsb(b);

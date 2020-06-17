@@ -30,9 +30,6 @@ struct Board {
   [[nodiscard]]
   bool is_attacked(Square sq, Color side) const;
 
-  [[nodiscard]]
-  Bitboard piece_attacks(int pc, Square sq) const;
-
   void print() const;
 
   [[nodiscard]]
@@ -118,28 +115,29 @@ private:
 };
 
 inline void Board::add_piece(const int p, const Color side, const Square sq) {
-    piece[p + (side << 3)] |= sq;
-    occupied_by_side[side] |= sq;
-    occupied |= sq;
-    board[sq] = p + (side << 3);
+  const auto pc = p | (side << 3);
+  piece[pc] |= sq;
+  occupied_by_side[side] |= sq;
+  occupied |= sq;
+  board[sq] = pc;
 
-    if (p == King)
-        king_square[side] = sq;
+  if (p == King)
+      king_square[side] = sq;
 }
 
 inline void Board::remove_piece(const int p, const Square sq) {
-    const auto bbsq = bit(sq);
-    piece[p] &= ~bbsq;
-    occupied_by_side[p >> 3] &= ~bbsq;
-    occupied &= ~bbsq;
-    board[sq] = NoPiece;
+  const auto bbsq = bit(sq);
+  piece[p] &= ~bbsq;
+  occupied_by_side[p >> 3] &= ~bbsq;
+  occupied &= ~bbsq;
+  board[sq] = NoPiece;
 }
 
 inline void Board::add_piece(const int p, const Square sq) {
-    piece[p] |= sq;
-    occupied_by_side[p >> 3] |= sq;
-    occupied |= sq;
-    board[sq] = p;
+  piece[p] |= sq;
+  occupied_by_side[p >> 3] |= sq;
+  occupied |= sq;
+  board[sq] = p;
 }
 
 inline int Board::get_piece(const Square sq) const {
@@ -159,7 +157,7 @@ inline bool Board::is_attacked(const Square sq, const Color side) const {
 }
 
 inline bool Board::is_attacked_by_knight(const Square sq, const Color side) const {
-  return (piece[Knight + (side << 3)] & knight_attacks[sq]) != 0;
+  return (piece[Knight | (side << 3)] & knight_attacks[sq]) != 0;
 }
 
 inline bool Board::is_attacked_by_pawn(const Square sq, const Color side) const {
@@ -203,9 +201,9 @@ inline bool Board::is_pawn_passed(const Square sq, const Color side) const {
 }
 
 inline bool Board::is_piece_on_square(const int p, const Square sq, const Color side) {
-  return (piece[p + (side << 3)] & sq) != 0;
+  return (piece[p | (side << 3)] & sq) != 0;
 }
 
 inline bool Board::is_piece_on_file(const int p, const Square sq, const Color side) const {
-  return (bb_file(sq) & piece[p + (side << 3)]) != 0;
+  return (bb_file(sq) & piece[p | (side << 3)]) != 0;
 }

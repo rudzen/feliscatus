@@ -39,8 +39,8 @@ struct HashTable final {
 
 protected:
   HashEntry *table{};
-  Bitboard mask{};
-  Bitboard occupied{};
+  uint64_t mask{};
+  uint64_t occupied{};
   uint64_t size_mb{};
   uint64_t size{};
   int age{};

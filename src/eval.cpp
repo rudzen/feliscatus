@@ -80,10 +80,14 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
   eval_material<WHITE>();
   eval_material<BLACK>();
 
+#if !defined(NO_EVAL_LAZY_THRESHOLD)
+
   const auto mat_eval = poseval[WHITE] - poseval[BLACK];
 
   if (const auto lazy_eval = pos->side_to_move == WHITE ? mat_eval : -mat_eval; lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
     return pos->material.evaluate(pos->flags, lazy_eval, pos->side_to_move, &b);
+
+#endif
 
   // Pass 1.
   eval_pawns_both_sides();
@@ -162,7 +166,7 @@ void Evaluate<Tuning>::eval_material() {
       cols[color_of(sq)] = true;
     }
 
-    add = cols[WHITE] | cols[BLACK];
+    add = cols[WHITE] & cols[BLACK];
   }
 
   if (add)
@@ -249,9 +253,9 @@ void Evaluate<Tuning>::eval_knights() {
     score_mg += knight_mob2_mg[not_defended_by_pawns];
     score_eg += knight_mob2_eg[not_defended_by_pawns];
 
-    if (attacks & king_area[Them])
+    if (const auto attacks_on_king = attacks & king_area[Them]; attacks_on_king)
     {
-      attack_counter[Us] += pop_count(attacks & king_area[Them]) * knight_attack_king;
+      attack_counter[Us] += pop_count(attacks_on_king) * knight_attack_king;
       ++attack_count[Us];
     }
 
@@ -282,7 +286,7 @@ void Evaluate<Tuning>::eval_bishops() {
     score_mg += bishop_pst_mg[flipsq];
     score_eg += bishop_pst_eg[flipsq];
 
-    const auto attacks = bishopAttacks(sq, b.occupied ^ b.queens(Them));
+    const auto attacks = piece_attacks_bb<Bishop>(sq, b.occupied ^ b.queens(Them));
 
     all_attacks[Us] |= attacks;
     bishop_attacks[Us] |= attacks;
@@ -298,9 +302,9 @@ void Evaluate<Tuning>::eval_bishops() {
     score_mg += bishop_mob2_mg[not_defended_by_pawns];
     score_eg += bishop_mob2_eg[not_defended_by_pawns];
 
-    if (attacks & king_area[Them])
+    if (const auto attacks_on_king = attacks & king_area[Them]; attacks_on_king)
     {
-      attack_counter[Us] += pop_count(attacks & king_area[Them]) * bishop_attack_king;
+      attack_counter[Us] += pop_count(attacks_on_king) * bishop_attack_king;
       ++attack_count[Us];
     }
 
@@ -333,7 +337,7 @@ void Evaluate<Tuning>::eval_rooks() {
     if (open_files & sq)
       score += rook_open_file;
 
-    const auto attacks = rookAttacks(sq, b.occupied ^ b.queens(Them) ^ b.rooks(Them));
+    const auto attacks = piece_attacks_bb<Rook>(sq, b.occupied ^ b.queens(Them) ^ b.rooks(Them));
 
     all_attacks[Us] |= attacks;
     rook_attacks[Us] |= attacks;
@@ -343,9 +347,9 @@ void Evaluate<Tuning>::eval_rooks() {
     score_mg += rook_mob_mg[mob];
     score_eg += rook_mob_eg[mob];
 
-    if (attacks & king_area[Them])
+    if (const auto attacks_on_king = attacks & king_area[Them]; attacks_on_king)
     {
-      attack_counter[Us] += pop_count(attacks & king_area[Them]) * rook_attack_king;
+      attack_counter[Us] += pop_count(attacks_on_king) * rook_attack_king;
       ++attack_count[Us];
     }
 
@@ -373,7 +377,7 @@ void Evaluate<Tuning>::eval_queens() {
     score_mg += queen_pst_mg[flipsq];
     score_eg += queen_pst_eg[flipsq];
 
-    const auto attacks = queenAttacks(sq, b.occupied);
+    const auto attacks = piece_attacks_bb<Queen>(sq, b.occupied);
 
     all_attacks[Us] |= attacks;
     queen_attacks[Us] |= attacks;
@@ -383,9 +387,9 @@ void Evaluate<Tuning>::eval_queens() {
     score_mg += queen_mob_mg[mob];
     score_eg += queen_mob_eg[mob];
 
-    if (attacks & king_area[Them])
+    if (const auto attacks_on_king = attacks & king_area[Them]; attacks_on_king)
     {
-      attack_counter[Us] += pop_count(attacks & king_area[Them]) * queen_attack_king;
+      attack_counter[Us] += pop_count(attacks_on_king) * queen_attack_king;
       ++attack_count[Us];
     }
 
