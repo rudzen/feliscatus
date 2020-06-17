@@ -28,7 +28,7 @@ bool start_of_promoted_to(const char *p) {
 }
 
 bool is_square(const char *p, Square &square) {
-  if (std::strlen(p) > 1 && util::in_between(p[0], 'a', 'h') && util::in_between(p[1], '0', '9'))
+  if (std::strlen(p) > 1 && util::in_between<'a', 'h'>(p[0]) && util::in_between<'0', '9'>(p[1]))
   {
     square = static_cast<Square>(((p[1] - '1') << 3) + p[0] - 'a');
     return true;
@@ -37,7 +37,7 @@ bool is_square(const char *p, Square &square) {
 }
 
 bool is_rank_digit(const char *p, int &rank) {
-  if (std::strlen(p) && util::in_between(p[0], '1', '8'))
+  if (std::strlen(p) && util::in_between<'1', '8'>(p[0]))
   {
     rank = p[0] - '1';
     return true;
@@ -46,7 +46,7 @@ bool is_rank_digit(const char *p, int &rank) {
 }
 
 bool is_file_letter(const char *p, int &file) {
-  if (std::strlen(p) && util::in_between(p[0], 'a', 'h'))
+  if (std::strlen(p) && util::in_between<'a', 'h'>(p[0]))
   {
     file = p[0] - 'a';
     return true;
@@ -298,7 +298,7 @@ bool PGNFileReader::read_san_move_suffix(char *&p) {
   const auto len = strlen(p);
 
   if (len && (p[0] == '+' || p[0] == '#'))
-    p += 1;
+    p += 1;  // NOLINT(bugprone-branch-clone)
   else if (len > 1 && (strncmp(p, "!!", 2) == 0 || strncmp(p, "!?", 2) == 0 || strncmp(p, "?!", 2) == 0 || strncmp(p, "??", 2) == 0))
     p += 2;
   else if ((len && p[0] == '!') || (strlen(p) && p[0] == '?'))
@@ -484,7 +484,7 @@ bool PGNFileReader::start_of_move(const char *p) { return is_non_pawn_piece_lett
 bool PGNFileReader::is_non_pawn_piece_letter(const char *p, int &piece_letter) const {
   if (token_ == Symbol && strlen(p) && (p[0] == 'N' || p[0] == 'B' || p[0] == 'R' || p[0] == 'Q' || p[0] == 'K'))
   {
-    piece_letter = p[0];
+    piece_letter = p[0];  // NOLINT(bugprone-signed-char-misuse)
     return true;
   }
   return false;

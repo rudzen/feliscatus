@@ -18,7 +18,7 @@ void Position::clear() {
 const uint32_t *Position::string_to_move(std::string_view m) {
   auto castle_type = -1;// 0 = short, 1 = long
 
-  if (!is_castle_move(m, castle_type) && (!util::in_between(m[0], 'a', 'h') || !util::in_between(m[1], '1', '8') || !util::in_between(m[2], 'a', 'h') || !util::in_between(m[3], '1', '8')))
+  if (!is_castle_move(m, castle_type) && (!util::in_between<'a', 'h'>(m[0]) || !util::in_between<'1', '8'>(m[1]) || !util::in_between<'a', 'h'>(m[2]) || !util::in_between<'1', '8'>(m[3])))
     return nullptr;
 
   auto from = no_square;

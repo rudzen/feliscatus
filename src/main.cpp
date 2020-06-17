@@ -3,6 +3,9 @@
 #include "bitboard.h"
 #include "magic.h"
 #include "zobrist.h"
+#include "util.h"
+#include "pawnhashtable.h"
+#include "transpositional.h"
 
 constexpr int TT_ENTRY_SIZE   = 16;
 constexpr int PAWN_ENTRY_SIZE = 16;

@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <array>
+#include <optional>
+
 #include "types.h"
 #include "square.h"
 #include "bitboard.h"
@@ -107,7 +109,7 @@ private:
   int see_rec(int mat_change, int next_capture, Square to, Color side_to_move);
 
   [[nodiscard]]
-  bool lookup_best_attacker(Square to, Color side, Square &from);
+  std::optional<Square> lookup_best_attacker(Square to, Color side);
 
   void init_see_move();
 
