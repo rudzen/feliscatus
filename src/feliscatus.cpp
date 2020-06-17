@@ -8,10 +8,10 @@
 #include "search.h"
 #include "protocol.h"
 #include "uci.h"
-#include "hash.h"
 #include "worker.h"
 #include "perft.h"
 #include "stopwatch.h"
+#include "util.h"
 
 namespace {
 
@@ -48,9 +48,9 @@ int Felis::go(const int wtime, const int btime, const int movestogo, const int w
   return 0;
 }
 
-void Felis::ponder_hit() { search->search_time += search->start_time.elapsed_milliseconds(); }
+void Felis::ponder_hit() { search->search_time += static_cast<int>(search->start_time.elapsed_milliseconds()); }
 
-void Felis::stop() { search->stop_search = true; }
+void Felis::stop() { search->stop_search.store(true); }
 
 bool Felis::make_move(const std::string_view m) const {
   const auto *const move = game->pos->string_to_move(m);
@@ -105,9 +105,10 @@ int Felis::run() {
 
   game     = std::make_unique<Game>();
   protocol = std::make_unique<UCIProtocol>(this, game.get());
-  pawnt    = std::make_unique<PawnHashTable>(8);
+  pawnt    = std::make_unique<PawnHashTable>();
   search   = std::make_unique<Search>(protocol.get(), game.get(), pawnt.get());
-
+  TT.init(256);
+  
   new_game();
 
   auto console_mode = true;

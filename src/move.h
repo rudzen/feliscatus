@@ -15,16 +15,8 @@ constexpr int move_piece(const uint32_t move) {
   return move >> 26 & 15;
 }
 
-constexpr void move_set_piece(uint32_t &move, const int piece) {
-  move |= piece << 26;
-}
-
 constexpr int move_captured(const uint32_t move) {
   return move >> 22 & 15;
-}
-
-constexpr void move_set_captured(uint32_t &move, const int piece) {
-  move |= piece << 22;
 }
 
 constexpr int move_promoted(const uint32_t move) {
@@ -39,24 +31,12 @@ constexpr int move_type(const uint32_t move) {
   return move >> 12 & 63;
 }
 
-constexpr void move_set_type(uint32_t &move, const int type) {
-  move |= type << 12;
-}
-
 constexpr Square move_from(const uint32_t move) {
   return static_cast<Square>(move >> 6 & 63);
 }
 
-constexpr void move_set_from(uint32_t &move, const Square sq) {
-  move |= sq << 6;
-}
-
 constexpr Square move_to(const uint32_t move) {
   return static_cast<Square>(move & 63);
-}
-
-constexpr void move_set_to(uint32_t &move, const Square sq) {
-  move |= sq;
 }
 
 constexpr int move_piece_type(const uint32_t move) {
@@ -95,12 +75,11 @@ constexpr bool is_null_move(const uint32_t m) {
   return m == 0;
 }
 
-constexpr void init_move(uint32_t &move, const int piece, const int captured, const Square from, const Square to, const int type, const int promoted) {
-  move = 0;
-  move_set_piece(move, piece);
-  move_set_captured(move, captured);
-  move_set_promoted(move, promoted);
-  move_set_from(move, from);
-  move_set_to(move, to);
-  move_set_type(move, type);
+template<int Type>
+constexpr uint32_t init_move(const int piece, const int captured, const Square from, const Square to, const int promoted) {
+  return (piece << 26) | (captured << 22) | (promoted << 18) | (Type << 12) | (from << 6) | static_cast<int>(to);
+}
+
+constexpr uint32_t init_move(const int piece, const int captured, const Square from, const Square to, const int type, const int promoted) {
+  return (piece << 26) | (captured << 22) | (promoted << 18) | (type << 12) | (from << 6) | static_cast<int>(to);
 }

@@ -309,7 +309,7 @@ int Material::KBKX(const int eval, const uint32_t key1, const uint32_t key2, con
     {
       if (side1 == side_to_move || !board->is_attacked(lsb(board->bishops(side1)), side2))
       {
-        if (const Bitboard bishopbb = board->bishops(side1); pawn_front_span[side2][lsb(board->pawns(side2))] & (bishopAttacks(lsb(bishopbb), board->occupied) | bishopbb))
+        if (const Bitboard bishopbb = board->bishops(side1); pawn_front_span[side2][lsb(board->pawns(side2))] & (piece_attacks_bb<Bishop>(lsb(bishopbb), board->occupied) | bishopbb))
           return draw_score();
       }
     }
@@ -339,7 +339,7 @@ int Material::KNKX(const int eval, const uint32_t key2, const int pc1, const int
     {
       if (side1 == side_to_move || !board->is_attacked(lsb(board->knights(side1)), side2))
       {
-        if (const Bitboard knightbb = board->knights(side1); pawn_front_span[side2][lsb(board->pawns(side2))] & (knightAttacks(lsb(knightbb)) | knightbb))
+        if (const Bitboard knightbb = board->knights(side1); pawn_front_span[side2][lsb(board->pawns(side2))] & (piece_attacks_bb<Knight>(lsb(knightbb)) | knightbb))
           return draw_score();
       }
     }

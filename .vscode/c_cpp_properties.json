@@ -6,11 +6,7 @@
                 "${workspaceFolder}/**"
             ],
             "defines": [
-                "USE_POPCNT",
-                "NDEBUG",
-                "CUCKOO",
-                "EGTABLE",
-                "LAZY_EVAL_THRESHOLD"
+                "NDEBUG"
             ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c11",
@@ -26,11 +22,7 @@
                 "C:\\msys64\\mingw64\\include"
             ],
             "defines": [
-                "USE_POPCNT",
-                "NDEBUG",
-                "CUCKOO",
-                "EGTABLE",
-                "LAZY_EVAL_THRESHOLD"
+                "NDEBUG"
             ],
             "compilerPath": "C:\\msys64\\mingw64\\bin\\g++",
             "cStandard": "c18",

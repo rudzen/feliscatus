@@ -59,7 +59,7 @@ void Moves::generate_moves(const int piece, const Bitboard to_squares) {
   for (auto bb = b->piece[piece]; bb; reset_lsb(bb))
   {
     const auto from = lsb(bb);
-    add_moves(piece, from, b->piece_attacks(piece, from) & to_squares);
+    add_moves(piece, from, piece_attacks_bb(piece, from, b->occupied) & to_squares);
   }
 }
 
@@ -210,7 +210,6 @@ void Moves::generate_quiet_moves() {
 }
 
 void Moves::add_move(const int piece, const Square from, const Square to, const uint32_t type, const int promoted) {
-  uint32_t move;
   int captured;
 
   if (type & CAPTURE)
@@ -220,7 +219,7 @@ void Moves::add_move(const int piece, const Square from, const Square to, const 
   else
     captured = 0;
 
-  init_move(move, piece, captured, from, to, type, promoted);
+  const auto move = init_move(piece, captured, from, to, type, promoted);
 
   if (transp_move == move)
     return;
@@ -239,45 +238,56 @@ void Moves::add_move(const int piece, const Square from, const Square to, const 
 
 void Moves::add_moves(const Bitboard to_squares) {
   Bitboard bb;
-  const auto offset = side_to_move << 3;
   Square from;
+  const auto mask = side_to_move << 3;
 
-  for (bb = b->piece[Queen + offset]; bb; reset_lsb(bb))
+  auto pc = Queen | mask;
+
+  for (bb = b->piece[pc]; bb; reset_lsb(bb))
   {
     from = lsb(bb);
-    add_moves(Queen + offset, from, queenAttacks(from, b->occupied) & to_squares);
+    add_moves(pc, from, piece_attacks_bb<Queen>(from, b->occupied) & to_squares);
   }
 
-  for (bb = b->piece[Rook + offset]; bb; reset_lsb(bb))
+  pc = Rook | mask;
+
+  for (bb = b->piece[pc]; bb; reset_lsb(bb))
   {
     from = lsb(bb);
-    add_moves(Rook + offset, from, rookAttacks(from, b->occupied) & to_squares);
+    add_moves(pc, from, piece_attacks_bb<Rook>(from, b->occupied) & to_squares);
   }
 
-  for (bb = b->piece[Bishop + offset]; bb; reset_lsb(bb))
+  pc = Bishop | mask;
+
+  for (bb = b->piece[pc]; bb; reset_lsb(bb))
   {
     from = lsb(bb);
-    add_moves(Bishop + offset, from, bishopAttacks(from, b->occupied) & to_squares);
+    add_moves(pc, from, piece_attacks_bb<Bishop>(from, b->occupied) & to_squares);
   }
 
-  for (bb = b->piece[Knight + offset]; bb; reset_lsb(bb))
+  pc = Knight | mask;
+
+  for (bb = b->piece[pc]; bb; reset_lsb(bb))
   {
     from = lsb(bb);
-    add_moves(Knight + offset, from, knightAttacks(from) & to_squares);
+    add_moves(pc, from,  piece_attacks_bb<Knight>(from) & to_squares);
   }
 
-  for (bb = b->piece[King + offset]; bb; reset_lsb(bb))
+  pc = King | mask;
+
+  for (bb = b->piece[pc]; bb; reset_lsb(bb))
   {
     from = lsb(bb);
-    add_moves(King + offset, from, kingAttacks(from) & to_squares);
+    add_moves(pc, from, piece_attacks_bb<King>(from) & to_squares);
   }
 }
 
 void Moves::add_moves(const int piece, const Square from, const Bitboard attacks) {
+  const auto pc = piece | (side_to_move << 3);
   for (auto bb = attacks; bb; reset_lsb(bb))
   {
     const auto to = lsb(bb);
-    add_move(piece | (side_to_move << 3), from, to, b->get_piece(to) == NoPiece ? QUIET : CAPTURE);
+    add_move(pc, from, to, b->get_piece(to) == NoPiece ? QUIET : CAPTURE);
   }
 }
 
@@ -299,6 +309,10 @@ void Moves::add_pawn_capture_moves(const Bitboard to_squares) {
 }
 
 void Moves::add_pawn_moves(const Bitboard to_squares, const Direction dist, const uint32_t type) {
+
+  const auto mask = side_to_move << 3;
+  const auto pawn = Pawn | mask;
+
   for (auto bb = to_squares; bb; reset_lsb(bb))
   {
     const auto to   = lsb(bb);
@@ -308,14 +322,14 @@ void Moves::add_pawn_moves(const Bitboard to_squares, const Direction dist, cons
     {
       if (move_flags & QUEENPROMOTION)
       {
-        add_move(Pawn | (side_to_move << 3), from, to, type | PROMOTION, Queen | (side_to_move << 3));
+        add_move(pawn, from, to, type | PROMOTION, Queen | mask);
         return;
       }
 
       for (auto promoted = Queen; promoted >= Knight; promoted--)
-        add_move(Pawn | (side_to_move << 3), from, to, type | PROMOTION, promoted | (side_to_move << 3));
+        add_move(pawn, from, to, type | PROMOTION, promoted | mask);
     } else
-      add_move(Pawn | (side_to_move << 3), from, to, type);
+      add_move(pawn, from, to, type);
   }
 }
 

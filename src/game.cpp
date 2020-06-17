@@ -1,13 +1,15 @@
-#include "game.h"
 #include <cctype>
 #include <optional>
 #include <cstring>
 #include <string>
 #include <fmt/format.h>
+#include "game.h"
 #include "zobrist.h"
 #include "position.h"
 #include "board.h"
 #include "util.h"
+#include "transpositional.h"
+#include "miscellaneous.h"
 
 namespace {
 
@@ -18,12 +20,12 @@ namespace {
     return true;
   }
 
-  if (!util::in_between(**p, 'a', 'h'))
+  if (!util::in_between<'a', 'h'>(**p))
     return false;
 
   (*p)++;
 
-  if (!util::in_between(**p, '3', '6'))
+  if (!util::in_between<'3', '6'>(**p))
     return false;
 
   sq = static_cast<Square>(*(*p - 1) - 'a' + (**p - '1') * 8);
@@ -213,6 +215,9 @@ bool Game::make_move(const uint32_t m, const bool check_legal, const bool calcul
     pos->in_check = board.is_attacked(board.king_square[pos->side_to_move], ~pos->side_to_move);
   update_key(pos, m);
   pos->material.make_move(m);
+
+  prefetch(TT.find(pos->key));
+
   return true;
 }
 
@@ -245,8 +250,9 @@ uint64_t Game::calculate_key() {
   {
     for (const auto side : Colors)
     {
-      for (auto bb = board.piece[piece | side << 3]; bb != 0; reset_lsb(bb))
-        key ^= zobrist::zobrist_pst[piece | side << 3][lsb(bb)];
+      const auto pc = piece | (side << 3);
+      for (auto bb = board.piece[pc]; bb != 0; reset_lsb(bb))
+        key ^= zobrist::zobrist_pst[pc][lsb(bb)];
     }
   }
   key ^= zobrist::zobrist_castling[pos->castle_rights];
@@ -484,7 +490,7 @@ int Game::setup_castling(const char **p) {
   {
     const auto c = **p;
 
-    if (util::in_between(c, 'A', 'H'))
+    if (util::in_between<'A', 'H'>(c))
     {
       chess960 = true;
       xfen     = false;
@@ -495,7 +501,7 @@ int Game::setup_castling(const char **p) {
         add_short_castle_rights<WHITE>(pos, this, board, rook_file);
       else
         add_long_castle_rights<WHITE>(pos, this, board, rook_file);
-    } else if (util::in_between<char>(c, 'a', 'h'))
+    } else if (util::in_between<'a', 'h'>(c))
     {
       chess960 = true;
       xfen     = false;

@@ -27,6 +27,10 @@
 
 #pragma once
 
+#include <cassert>
+#include "bitboard.h"
+#include "util.h"
+
 namespace attacks {
 
 inline uint64_t magic_bishop_db[64][1 << 9];
@@ -91,26 +95,6 @@ inline Bitboard rookAttacks(const Square square, const Bitboard occupied) {
 
 inline Bitboard queenAttacks(const Square square, const Bitboard occupied) {
   return bishopAttacks(square, occupied) | rookAttacks(square, occupied);
-}
-
-constexpr Bitboard knightAttacks(const Square sq) {
-  return knight_attacks[sq];
-}
-
-constexpr Bitboard kingAttacks(const Square sq) {
-  return king_attacks[sq];
-}
-
-inline Bitboard xray_rook_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
-  const auto attacks = rookAttacks(sq, occ);
-  blockers &= attacks;
-  return attacks ^ rookAttacks(sq, occ ^ blockers);
-}
-
-inline Bitboard xray_bishop_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
-  const auto attacks = bishopAttacks(sq, occ);
-  blockers &= attacks;
-  return attacks ^ bishopAttacks(sq, occ ^ blockers);
 }
 
 inline uint64_t initmagicmoves_occ(const std::array<int, 64> &squares, const int num_squares, const uint64_t linocc) {
@@ -279,6 +263,60 @@ inline void init() {
     }
   }
 }
-}// namespace attacks
 
-using namespace attacks;
+}
+
+template<int Pt>
+inline Bitboard piece_attacks_bb(const Square sq, Bitboard occupied = 0)
+{
+  static_assert(util::in_between<Pawn, King>(Pt));
+  if constexpr (Pt == Knight)
+    return knight_attacks[sq];
+  else if constexpr (Pt == Bishop)
+    return attacks::bishopAttacks(sq, occupied);
+  else if constexpr (Pt == Rook)
+    return attacks::rookAttacks(sq, occupied);
+  else if constexpr (Pt == Queen)
+    return attacks::bishopAttacks(sq, occupied) | attacks::rookAttacks(sq, occupied);
+  else if constexpr (Pt == King)
+    return king_attacks[sq];
+
+  assert(false);
+  return 0;
+}
+
+inline Bitboard piece_attacks_bb(const int pc, const Square sq, Bitboard occupied = 0) {
+  switch (pc & 7)
+  {
+  case Knight:
+    return piece_attacks_bb<Knight>(sq);
+
+  case Bishop:
+    return piece_attacks_bb<Bishop>(sq, occupied);
+
+  case Rook:
+    return piece_attacks_bb<Rook>(sq, occupied);
+
+  case Queen:
+    return piece_attacks_bb<Queen>(sq, occupied);
+
+  case King:
+    return piece_attacks_bb<King>(sq);
+
+  default:
+    break;// error
+  }
+  return 0;
+}
+
+inline Bitboard xray_rook_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
+  const auto attacks = piece_attacks_bb<Rook>(sq, occ);
+  blockers &= attacks;
+  return attacks ^ piece_attacks_bb<Rook>(sq, occ ^ blockers);
+}
+
+inline Bitboard xray_bishop_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
+  const auto attacks = piece_attacks_bb<Bishop>(sq, occ);
+  blockers &= attacks;
+  return attacks ^ piece_attacks_bb<Bishop>(sq, occ ^ blockers);
+}

@@ -5,11 +5,9 @@
 #include "game.h"
 #include "eval.h"
 #include "search.h"
-#include "hash.h"
+#include "pawnhashtable.h"
 
 struct Worker {
-
-  Worker() : pawn_hash_(8) {}
 
   void start(Game *master) {
     game_ = std::make_unique<Game>();
@@ -25,7 +23,7 @@ struct Worker {
   }
 
 private:
-  PawnHash pawn_hash_;
+  PawnHashTable pawn_hash_{};
   std::unique_ptr<Game> game_{};
   std::unique_ptr<Search> search_{};
   std::jthread thread_{};
