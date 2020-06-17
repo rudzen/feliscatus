@@ -151,37 +151,33 @@ SelectedParams resolve_params(const std::map<std::string, docopt::value> &args) 
   {
     if (elem.second.asBool())
     {
-      if (elem.first == "--piecevalue")
-        result |= piecevalue;
-      else if (elem.first == "--king")
-        result |= king;
-      else if (elem.first == "--queen")
-        result |= queen;
-      else if (elem.first == "--rook")
-        result |= rook;
-      else if (elem.first == "--bishop")
-        result |= bishop;
+      if (elem.first == "--pawn")
+        result |= pawn;
       else if (elem.first == "--knight")
         result |= knight;
-      else if (elem.first == "--pawn")
-        result |= pawn;
+      else if (elem.first == "--bishop")
+        result |= bishop;
+      else if (elem.first == "--rook")
+        result |= rook;
+      else if (elem.first == "--queen")
+        result |= queen;
+      else if (elem.first == "--king")
+        result |= king;
+      else if (elem.first == "--psqt")
+        result |= psqt;
+      else if (elem.first == "--mobility")
+        result |= mobility;
       else if (elem.first == "--passedpawn")
         result |= passedpawn;
       else if (elem.first == "--coordination")
         result |= coordination;
-      else if (elem.first == "--centercontrol")
-        result |= centercontrol;
+      else if (elem.first == "--strength")
+        result |= strength;
+      else if (elem.first == "--weakness")
+        result |= weakness;
       else if (elem.first == "--tempo")
         result |= tempo;
-      else if (elem.first == "--space")
-        result |= space;
-      else if (elem.first == "--mobility")
-        result |= mobility;
-      else if (elem.first == "--attbypawn")
-        result |= attbypawn;
-      else if (elem.first == "--weak")
-        result |= limitadjust;
-      else if (elem.first == "--limitadjust")
+      else if (elem.first == "--lazy_margin")
         result |= lazymargin;
       else
         fmt::print("Unknown parameter, outdated version.\n");

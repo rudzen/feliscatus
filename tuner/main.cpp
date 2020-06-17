@@ -31,15 +31,14 @@ static constexpr auto USAGE =
           --rook              Enable rook evaluation tuning [default: false].
           --queen             Enable queen evaluation tuning [default: false].
           --king              Enable king evaluation tuning [default: false].
-          --psqt              Enable piece square table value tuning [default: false].
-          --mobility          Enable mobility evaluation tuning [default: false].
-          --passedpawn        Enable passed pawn evaluation tuning [default: false].
-          --coordination      Enable piece coordination evaluation tuning [default: false].
-          --strength          Enable attack strength evaluation tuning [default: false].
+          --psqt              Enable piece square table value tuning (requires any piece) [default: false].
+          --mobility          Enable mobility evaluation tuning (requires any piece) [default: false].
+          --passedpawn        Enable passed pawn evaluation tuning (requires pawn) [default: false].
+          --coordination      Enable piece coordination evaluation tuning (requires bishop) [default: false].
+          --strength          Enable attack strength evaluation tuning (requires any piece) [default: false].
+          --weakness          Enable weakness evaluation tuning (requires any piece) [default: false].
           --tempo             Enable tempo evaluation tuning [default: false].
-          --weakness          Enable weakness evaluation tuning [default: false].
           --lazy_margin       Enable evaluation lazy_margin tuning [default: false].
-          --tempo             Enable tempo tuning [default: false].
 )";
 
 int main(int argc, char **argv) {
