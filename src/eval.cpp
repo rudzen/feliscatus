@@ -110,7 +110,7 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 
   const auto stage = (pos->material.value() - pos->material.pawn_value()) / static_cast<double>(Material::max_value_without_pawns);
 
-  poseval[pos->side_to_move] += 10;
+  poseval[pos->side_to_move] += tempo;
 
   const auto pos_eval_mg = static_cast<int>((poseval_mg[WHITE] - poseval_mg[BLACK]) * stage);
   const auto pos_eval_eg = static_cast<int>((poseval_eg[WHITE] - poseval_eg[BLACK]) * (1 - stage));

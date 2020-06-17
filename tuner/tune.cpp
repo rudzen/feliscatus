@@ -3,7 +3,6 @@
 #include <unordered_map>
 #include <docopt/docopt.h>
 #include <string>
-#include <ranges>
 #include "tune.h"
 #include "../src/game.h"
 #include "../src/eval.h"
@@ -11,7 +10,6 @@
 #include "../src/util.h"
 
 namespace eval {
-
 
 struct Node {
   Node(std::string fen) : fen_(std::move(fen)) {}
@@ -43,29 +41,31 @@ inline bool operator<(const ParamIndexRecord &lhs, const ParamIndexRecord &rhs) 
   return lhs.improved_ >= rhs.improved_;
 }
 
-}
+}// namespace eval
 
 namespace {
 
 enum SelectedParams : uint64_t {
-  none = 0,
-  psqt = 1,
-  piecevalue = 1 << 1,
-  king = 1 << 2,
-  queen = 1 << 3,
-  rook = 1 << 4,
-  bishop = 1 << 5,
-  knight = 1 << 6,
-  pawn = 1 << 7,
-  passedpawn = 1 << 8,
-  coordination = 1 << 9,
+  none          = 0,
+  psqt          = 1,
+  piecevalue    = 1 << 1,
+  king          = 1 << 2,
+  queen         = 1 << 3,
+  rook          = 1 << 4,
+  bishop        = 1 << 5,
+  knight        = 1 << 6,
+  pawn          = 1 << 7,
+  passedpawn    = 1 << 8,
+  coordination  = 1 << 9,
   centercontrol = 1 << 10,
-  tempo = 1 << 11,
-  space = 1 << 12,
-  mobility = 1 << 13,
-  attbypawn = 1 << 14,
-  limitadjust = 1 << 15,
-  lazymargin = 1 << 16
+  tempo         = 1 << 11,
+  space         = 1 << 12,
+  mobility      = 1 << 13,
+  attbypawn     = 1 << 14,
+  limitadjust   = 1 << 15,
+  lazymargin    = 1 << 16,
+  weakness      = 1 << 17,
+  strength      = 1 << 18
 };
 
 std::string emit_code(const std::vector<eval::Param> &params0, const bool hr) {
@@ -144,11 +144,10 @@ constexpr double bestK() {
   return 1.12;
 }
 
-SelectedParams resolve_params(const std::map<std::string, docopt::value> &args)
-{
+SelectedParams resolve_params(const std::map<std::string, docopt::value> &args) {
   int result{none};
 
-  for(const auto &elem : args)
+  for (const auto &elem : args)
   {
     if (elem.second.asBool())
     {
@@ -192,209 +191,225 @@ SelectedParams resolve_params(const std::map<std::string, docopt::value> &args)
   return static_cast<SelectedParams>(result);
 }
 
-}
+}// namespace
 
 void init_eval(std::vector<eval::Param> &params, const std::map<std::string, docopt::value> &args) {
   auto step = 1;
 
   const auto current_parameters = resolve_params(args);
 
-  eval::x_        = false;
-
   // Check parameters
-  if (current_parameters & SelectedParams::knight)
+
+  eval::x_ = false;
+
+  if (current_parameters & SelectedParams::pawn)
   {
     if (current_parameters & SelectedParams::psqt)
     {
-        for (const auto i : Squares)
-        {
-          params.emplace_back("knight_pst_mg", knight_pst_mg[i], 0, step);
-          params.emplace_back("knight_pst_eg", knight_pst_eg[i], 0, step);
-        }
+      for (const auto sq : Squares)
+      {
+        auto istep = sq > 7 && sq < 56 ? step : 0;
+        params.emplace_back("pawn_pst_mg", pawn_pst_mg[sq], 0, istep);
+        params.emplace_back("pawn_pst_eg", pawn_pst_eg[sq], 0, istep);
+      }
     }
 
     if (current_parameters & SelectedParams::mobility)
     {
-      for (auto &knight_mobility : knight_mob_mg)
-        params.emplace_back("knight_mob_mg", knight_mobility, 0, step);
+      for (auto &v : pawn_isolated_mg)
+        params.emplace_back("pawn_isolated_mg", v, 0, step);
 
-      for (auto &knight_mobility : knight_mob_eg)
-        params.emplace_back("knight_mob_eg", knight_mobility, 0, step);
+      for (auto &v : pawn_isolated_eg)
+        params.emplace_back("pawn_isolated_eg", v, 0, step);
+
+      for (auto &v : pawn_behind_mg)
+        params.emplace_back("pawn_behind_mg", v, 0, step);
+
+      for (auto &v : pawn_doubled_mg)
+        params.emplace_back("pawn_doubled_mg", v, 0, step);
+
+      for (auto &v : pawn_doubled_eg)
+        params.emplace_back("pawn_doubled_eg", v, 0, step);
     }
+
+    if (current_parameters & SelectedParams::passedpawn)
+    {
+      for (auto &v : passed_pawn_mg)
+        params.emplace_back("passed_pawn_mg", v, 0, step);
+
+      for (auto &v : passed_pawn_no_us)
+        params.emplace_back("passed_pawn_no_us", v, 0, step);
+
+      for (auto &v : passed_pawn_no_them)
+        params.emplace_back("passed_pawn_no_them", v, 0, step);
+
+      for (auto &v : passed_pawn_no_attacks)
+        params.emplace_back("passed_pawn_no_attacks", v, 0, step);
+
+      for (auto &v : passed_pawn_king_dist_us)
+        params.emplace_back("passed_pawn_king_dist_us", v, 0, step);
+
+      for (auto &v : passed_pawn_king_dist_them)
+        params.emplace_back("passed_pawn_king_dist_them", v, 0, step);
+    }
+  }
+
+  if (current_parameters & SelectedParams::knight)
+  {
+    if (current_parameters & SelectedParams::psqt)
+    {
+      for (const auto sq : Squares)
+      {
+        params.emplace_back("knight_pst_mg", knight_pst_mg[sq], 0, step);
+        params.emplace_back("knight_pst_eg", knight_pst_eg[sq], 0, step);
+      }
+    }
+
+    if (current_parameters & SelectedParams::mobility)
+    {
+      for (auto &v : knight_mob_mg)
+        params.emplace_back("knight_mob_mg", v, 0, step);
+
+      for (auto &v : knight_mob_eg)
+        params.emplace_back("knight_mob_eg", v, 0, step);
+
+      for (auto &v : knight_mob2_mg)
+        params.emplace_back("knight_mob2_mg", v, 0, step);
+
+      for (auto &v : knight_mob2_eg)
+        params.emplace_back("knight_mob2_eg", v, 0, step);
+    }
+
+    if (current_parameters & SelectedParams::weakness)
+      params.emplace_back("knight_in_danger", knight_in_danger, 0, step);
+
+    if (current_parameters & SelectedParams::strength)
+      params.emplace_back("knight_attack_king", knight_attack_king, 0, step);
   }
 
   if (current_parameters & SelectedParams::bishop)
   {
     if (current_parameters & SelectedParams::psqt)
     {
-      for (const auto i : Squares)
+      for (const auto sq : Squares)
       {
-        params.emplace_back("bishop_pst_mg", bishop_pst_mg[i], 0, step);
-        params.emplace_back("bishop_pst_eg", bishop_pst_eg[i], 0, step);
+        params.emplace_back("bishop_pst_mg", bishop_pst_mg[sq], 0, step);
+        params.emplace_back("bishop_pst_eg", bishop_pst_eg[sq], 0, step);
       }
     }
 
     if (current_parameters & SelectedParams::mobility)
     {
-      for (auto &bishop_mobility : bishop_mob_mg)
-        params.emplace_back("bishop_mob_mg", bishop_mobility, 0, step);
+      for (auto &v : bishop_mob_mg)
+        params.emplace_back("bishop_mob_mg", v, 0, step);
 
-      for (auto &bishop_mobility : bishop_mob_eg)
-        params.emplace_back("bishop_mob_eg", bishop_mobility, 0, step);
+      for (auto &v : bishop_mob_eg)
+        params.emplace_back("bishop_mob_eg", v, 0, step);
+
+      for (auto &v : bishop_mob2_mg)
+        params.emplace_back("bishop_mob2_mg", v, 0, step);
+
+      for (auto &v : bishop_mob2_eg)
+        params.emplace_back("bishop_mob2_eg", v, 0, step);
     }
+
+    if (current_parameters & SelectedParams::coordination)
+    {
+      params.emplace_back("bishop_pair_mg", bishop_pair_mg, 0, step);
+      params.emplace_back("bishop_pair_eg", bishop_pair_eg, 0, step);
+    }
+
+    if (current_parameters & SelectedParams::weakness)
+      params.emplace_back("bishop_in_danger", bishop_in_danger, 0, step);
+
+    if (current_parameters & SelectedParams::strength)
+      params.emplace_back("bishop_attack_king", bishop_attack_king, 0, step);
+  }
+
+  if (current_parameters & SelectedParams::rook)
+  {
+    if (current_parameters & SelectedParams::psqt)
+    {
+      for (const auto sq : Squares)
+      {
+        params.emplace_back("rook_pst_mg", rook_pst_mg[sq], 0, step);
+        params.emplace_back("rook_pst_eg", rook_pst_eg[sq], 0, step);
+      }
+    }
+
+    if (current_parameters & SelectedParams::mobility)
+    {
+      for (auto &v : rook_mob_mg)
+        params.emplace_back("rook_mob_mg", v, 0, step);
+
+      for (auto &v : rook_mob_eg)
+        params.emplace_back("rook_mob_eg", v, 0, step);
+
+      params.emplace_back("king_obstructs_rook", king_obstructs_rook, 0, step);
+      params.emplace_back("rook_open_file", rook_open_file, 0, step);
+    }
+
+    if (current_parameters & SelectedParams::weakness)
+      params.emplace_back("rook_in_danger", rook_in_danger, 0, step);
+
+    if (current_parameters & SelectedParams::strength)
+      params.emplace_back("rook_attack_king", rook_attack_king, 0, step);
+  }
+
+  if (current_parameters & SelectedParams::queen)
+  {
+    if (current_parameters & SelectedParams::psqt)
+    {
+      for (const auto sq : Squares)
+      {
+        params.emplace_back("queen_pst_mg", queen_pst_mg[sq], 0, step);
+        params.emplace_back("queen_pst_eg", queen_pst_eg[sq], 0, step);
+      }
+    }
+
+    if (current_parameters & SelectedParams::mobility)
+    {
+      for (auto &v : queen_mob_mg)
+        params.emplace_back("queen_mob_mg", v, 0, step);
+
+      for (auto &v : queen_mob_eg)
+        params.emplace_back("queen_mob_eg", v, 0, step);
+    }
+
+    if (current_parameters & SelectedParams::weakness)
+      params.emplace_back("queen_in_danger", queen_in_danger, 0, step);
+
+    if (current_parameters & SelectedParams::strength)
+      params.emplace_back("queen_attack_king", queen_attack_king, 0, step);
+  }
+
+  if (current_parameters & SelectedParams::king)
+  {
+    if (current_parameters & SelectedParams::psqt)
+    {
+      for (const auto sq : Squares)
+      {
+        params.emplace_back("king_pst_mg", king_pst_mg[sq], 0, step);
+        params.emplace_back("king_pst_eg", king_pst_eg[sq], 0, step);
+      }
+    }
+
+    for (auto &v : king_pawn_shelter)
+      params.emplace_back("king_pawn_shelter", v, 0, step);
+
+    for (auto &v : king_on_open)
+      params.emplace_back("king_on_open", v, 0, step);
+
+    for (auto &v : king_on_half_open)
+      params.emplace_back("king_on_half_open", v, 0, step);
   }
 
   if (current_parameters & SelectedParams::lazymargin)
     params.emplace_back("lazy_margin", lazy_margin, 0, step);
 
+  if (current_parameters & SelectedParams::tempo)
+    params.emplace_back("tempo", tempo, 0, step);
 
-  /*
-                  for (auto i = 0; i < 9; ++i)
-                          {
-                          params.emplace_back(Param("knight_mob_mg", eval_->knight_mob_mg[i], 0, step));
-                          params.emplace_back(Param("knight_mob_eg", eval_->knight_mob_eg[i], 0, step));
-                          }
-
-                  for (auto i = 0; i < 14; ++i)
-                          {
-                          params.emplace_back(Param("bishop_mob_mg", eval_->bishop_mob_mg[i], 0, step));
-                          params.emplace_back(Param("bishop_mob_eg", eval_->bishop_mob_eg[i], 0, step));
-                          }
-
-                  for (auto i = 0; i < 15; ++i)
-                          {
-                          params.emplace_back(Param("rook_mob_mg", eval_->rook_mob_mg[i], 0, step));
-                          params.emplace_back(Param("rook_mob_eg", eval_->rook_mob_eg[i], 0, step));
-                          }
-
-                  for (auto i = 0; i < 28; ++i)
-                          {
-                          params.emplace_back(Param("queen_mob_mg", eval_->queen_mob_mg[i], 0, step));
-                          params.emplace_back(Param("queen_mob_eg", eval_->queen_mob_eg[i], 0, step));
-                          }
-
-                  for (auto i = 0; i < 9; ++i)
-                          {
-                          params.emplace_back(Param("knight_mob2_mg", eval_->knight_mob2_mg[i], 0, step));
-                          params.emplace_back(Param("knight_mob2_eg", eval_->knight_mob2_eg[i], 0, step));
-                          }
-
-                  for (auto i = 0; i < 14; ++i)
-                          {
-                          params.emplace_back(Param("bishop_mob2_mg", eval_->bishop_mob2_mg[i], 0, step));
-                          params.emplace_back(Param("bishop_mob2_eg", eval_->bishop_mob2_eg[i], 0, step));
-                          }
-  */
-  //----------------------------------
-  for (const auto i : Squares)
-  {
-    auto istep = i > 7 && i < 56 ? step : 0;
-    params.emplace_back("pawn_pst_mg", pawn_pst_mg[i], 0, istep);
-    params.emplace_back("pawn_pst_eg", pawn_pst_eg[i], 0, istep);
-  }
-
-
-  // for (const auto i : Squares)
-  // {
-  //   params.emplace_back("knight_pst_mg", knight_pst_mg[i], 0, step);
-  //   params.emplace_back("knight_pst_eg", knight_pst_eg[i], 0, step);
-  // }
-
-  // for (const auto i : Squares)
-  // {
-  //   params.emplace_back("bishop_pst_mg", bishop_pst_mg[i], 0, step);
-  //   params.emplace_back("bishop_pst_eg", bishop_pst_eg[i], 0, step);
-  // }
-
-  for (const auto i : Squares)
-  {
-    params.emplace_back("rook_pst_mg", rook_pst_mg[i], 0, step);
-    params.emplace_back("rook_pst_eg", rook_pst_eg[i], 0, step);
-  }
-
-  for (const auto i : Squares)
-  {
-    params.emplace_back("queen_pst_mg", queen_pst_mg[i], 0, step);
-    params.emplace_back("queen_pst_eg", queen_pst_eg[i], 0, step);
-  }
-  for (const auto i : Squares)
-  {
-    params.emplace_back("king_pst_mg", king_pst_mg[i], 0, step);
-    params.emplace_back("king_pst_eg", king_pst_eg[i], 0, step);
-  }
-  /*
-                  //----------------------------------
-                  for (auto i = 0; i < 2; ++i)
-                          params.emplace_back(Param("pawn_isolated_mg", eval_->pawn_isolated_mg[i], 0, step));
-
-                  for (auto i = 0; i < 2; ++i)
-                          params.emplace_back(Param("pawn_isolated_eg", eval_->pawn_isolated_eg[i], 0, step));
-
-                  for (auto i = 0; i < 2; ++i)
-                          params.emplace_back(Param("pawn_behind_mg", eval_->pawn_behind_mg[i], 0, step));
-
-                  for (auto i = 0; i < 2; ++i)
-                          params.emplace_back(Param("pawn_behind_eg", eval_->pawn_behind_eg[i], 0, step));
-
-                  for (auto i = 0; i < 2; ++i)
-                          params.emplace_back(Param("pawn_doubled_mg", eval_->pawn_doubled_mg[i], 0, step));
-
-                  for (auto i = 0; i < 2; ++i)
-                          params.emplace_back(Param("pawn_doubled_eg", eval_->pawn_doubled_eg[i], 0, step));
-
-                  //----------------------------------
-                  for (auto i = 0; i < 8; ++i)
-                          params.emplace_back(Param("passed_pawn_mg", eval_->passed_pawn_mg[i], 0, step));
-
-                  for (auto i = 0; i < 8; ++i)
-                          params.emplace_back(Param("passed_pawn_eg", eval_->passed_pawn_eg[i], 0, step));
-
-                  for (auto i = 0; i < 8; ++i)
-                          params.emplace_back(Param("passed_pawn_no_us", eval_->passed_pawn_no_us[i], 0, step));
-
-                  for (auto i = 0; i < 8; ++i)
-                          params.emplace_back(Param("passed_pawn_no_them", eval_->passed_pawn_no_them[i], 0, step));
-
-                  for (auto i = 0; i < 8; ++i)
-                          params.emplace_back(Param("passed_pawn_no_attacks", eval_->passed_pawn_no_attacks[i], 0, step));
-
-                  for (auto i = 0; i < 8; ++i)
-                          params.emplace_back(Param("passed_pawn_king_dist_us", eval_->passed_pawn_king_dist_us[i], 0, step));
-
-                  for (auto i = 0; i < 8; ++i)
-                          params.emplace_back(Param("passed_pawn_king_dist_them", eval_->passed_pawn_king_dist_them[i], 0, step));
-
-                  //----------------------------------
-                  for (auto i = 0; i < 4; ++i)
-                          params.emplace_back(Param("king_pawn_shelter", eval_->king_pawn_shelter[i], 0, step));
-
-                  for (auto i = 0; i < 4; ++i)
-                          params.emplace_back(Param("king_on_open", eval_->king_on_open[i], 0, step));
-
-                  for (auto i = 0; i < 4; ++i)
-                          params.emplace_back(Param("king_on_half_open", eval_->king_on_half_open[i], 0, step));
-
-                  //----------------------------------
-                  params.emplace_back(Param("bishop_pair_mg", eval_->bishop_pair_mg, 0, step));
-                  params.emplace_back(Param("bishop_pair_eg", eval_->bishop_pair_eg, 0, step));
-
-                  //----------------------------------
-                  params.emplace_back(Param("king_obstructs_rook", eval_->king_obstructs_rook, 0, step));
-
-                  params.emplace_back(Param("rook_open_file", eval_->rook_open_file, 0, step));
-
-                  //----------------------------------
-                  params.emplace_back(Param("knight_in_danger", eval_->knight_in_danger, 0, step));
-                  params.emplace_back(Param("bishop_in_danger", eval_->bishop_in_danger, 0, step));
-                  params.emplace_back(Param("rook_in_danger", eval_->rook_in_danger, 0, step));
-                  params.emplace_back(Param("queen_in_danger", eval_->queen_in_danger, 0, step));
-
-                  //----------------------------------
-                  params.emplace_back(Param("knight_attack_king", eval_->knight_attack_king, 0, step));
-                  params.emplace_back(Param("bishop_attack_king", eval_->bishop_attack_king, 0, step));
-                  params.emplace_back(Param("rook_attack_king", eval_->rook_attack_king, 0, step));
-                  params.emplace_back(Param("queen_attack_king", eval_->queen_attack_king, 0, step));
-  */
 }
 
 namespace eval {
@@ -438,8 +453,7 @@ void PGNPlayer::print_progress(const bool force) const {
   fmt::print("game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_, all_nodes_count_, all_selected_nodes_.size());
 }
 
-Tune::Tune(Game *game, const std::string_view input, const std::string_view output, const std::map<std::string, docopt::value> &args)
-  : game_(game), score_static_(false) {
+Tune::Tune(Game *game, const std::string_view input, const std::string_view output, const std::map<std::string, docopt::value> &args) : game_(game), score_static_(false) {
   PGNPlayer pgn;
   pgn.read(input.data());
 
@@ -459,9 +473,9 @@ Tune::Tune(Game *game, const std::string_view input, const std::string_view outp
   for (std::size_t i = 0; i < params.size(); ++i)
     params_index.emplace_back(ParamIndexRecord{i, 0});
 
-  constexpr const auto K      = bestK();
-  auto bestE  = e(pgn.all_selected_nodes_, params, params_index, K);
-  auto improved = true;
+  constexpr const auto K = bestK();
+  auto bestE             = e(pgn.all_selected_nodes_, params, params_index, K);
+  auto improved          = true;
 
   std::ofstream out(output.data());
   out << fmt::format("Old E:{}\n", bestE);
@@ -568,9 +582,7 @@ void Tune::make_quiet(std::vector<Node> &nodes) {
 }
 
 int Tune::get_score(const int side) {
-  const auto score = score_static_
-                       ? Eval::tune(game_, nullptr, -100000, 100000)
-                       : get_quiesce_score(-32768, 32768, false, 0);
+  const auto score = score_static_ ? Eval::tune(game_, nullptr, -100000, 100000) : get_quiesce_score(-32768, 32768, false, 0);
 
   return game_->pos->side_to_move == side ? score : -score;
 }
@@ -632,7 +644,9 @@ bool Tune::make_move(const uint32_t m, int ply) {
   return false;
 }
 
-void Tune::unmake_move() const { game_->unmake_move(); }
+void Tune::unmake_move() const {
+  game_->unmake_move();
+}
 
 void Tune::play_pv() {
   for (auto i = 0; i < pv_length[0]; ++i)
@@ -650,7 +664,7 @@ void Tune::update_pv(const uint32_t move, const int score, const int ply) {
 
   pv_length[ply] = pv_length[ply + 1];
 
-  for (auto i  = ply + 1; i < pv_length[ply]; ++i)
+  for (auto i = ply + 1; i < pv_length[ply]; ++i)
     pv[ply][i] = pv[ply + 1][i];
 }
 
@@ -669,7 +683,7 @@ void Tune::sort_move(MoveData &move_data) {
 
     if (value_piece <= value_captured)
       move_data.score = 300000 + value_captured * 20 - value_piece;
-    else if (game_->board.see_move(m) >= 0) // TODO : create See on the fly?
+    else if (game_->board.see_move(m) >= 0)// TODO : create See on the fly?
       move_data.score = 160000 + value_captured * 20 - value_piece;
     else
       move_data.score = -100000 + value_captured * 20 - value_piece;
@@ -677,4 +691,4 @@ void Tune::sort_move(MoveData &move_data) {
     exit(0);
 }
 
-}
+}// namespace eval
