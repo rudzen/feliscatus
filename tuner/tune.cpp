@@ -58,7 +58,7 @@ enum SelectedParams : uint64_t {
   passedpawn    = 1 << 8,
   coordination  = 1 << 9,
   centercontrol = 1 << 10,
-  tempo         = 1 << 11,
+  color_tempo   = 1 << 11,
   space         = 1 << 12,
   mobility      = 1 << 13,
   attbypawn     = 1 << 14,
@@ -407,7 +407,7 @@ void init_eval(std::vector<eval::Param> &params, const std::map<std::string, doc
   if (current_parameters & SelectedParams::lazymargin)
     params.emplace_back("lazy_margin", lazy_margin, 0, step);
 
-  if (current_parameters & SelectedParams::tempo)
+  if (current_parameters & SelectedParams::color_tempo)
     params.emplace_back("tempo", tempo, 0, step);
 
 }
