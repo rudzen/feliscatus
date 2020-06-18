@@ -5,7 +5,6 @@
 #include <fmt/format.h>
 #include "game.h"
 #include "zobrist.h"
-#include "position.h"
 #include "board.h"
 #include "util.h"
 #include "transpositional.h"
@@ -178,13 +177,9 @@ void update_key(Position *pos, const uint32_t m) {
 
 }// namespace
 
-Game::Game() : position_list(new Position[2000]), pos(position_list), chess960(false), xfen(false) {
+Game::Game() : pos(position_list.data()), chess960(false), xfen(false) {
   for (auto i = 0; i < 2000; i++)
     position_list[i].b = &board;
-}
-
-Game::~Game() {
-  delete[] position_list;
 }
 
 bool Game::make_move(const uint32_t m, const bool check_legal, const bool calculate_in_check) {
@@ -270,7 +265,7 @@ bool Game::is_repetition() const {
   auto num_moves = pos->reversible_half_move_count;
   auto *prev     = pos;
 
-  while ((num_moves = num_moves - 2) >= 0 && prev - position_list > 1)
+  while ((num_moves = num_moves - 2) >= 0 && prev - position_list.data() > 1)
   {
     prev -= 2;
 
@@ -282,7 +277,7 @@ bool Game::is_repetition() const {
 
 int Game::half_move_count() const {
   // TODO : fix implementation defined behaviour
-  return pos - position_list;
+  return pos - position_list.data();
 }
 
 void Game::add_piece(const int p, const Color c, const Square sq) {
@@ -305,7 +300,7 @@ int Game::new_game(const std::string_view fen) {
 }
 
 int Game::set_fen(const std::string_view fen) {
-  pos = position_list;
+  pos = position_list.data();
   pos->clear();
   board.clear();
 
@@ -472,7 +467,7 @@ std::string Game::get_fen() const {
 
   s += std::to_string(pos->reversible_half_move_count);
   s += ' ';
-  s += std::to_string(static_cast<int>((pos - position_list) / 2 + 1));
+  s += std::to_string(static_cast<int>((pos - position_list.data()) / 2 + 1));
 
   return s;
 }
@@ -535,7 +530,7 @@ void Game::copy(Game *other) {
   chess960 = other->chess960;
   xfen     = other->xfen;
 
-  pos += other->pos - other->position_list;
+  pos += other->pos - other->position_list.data();
 
   for (auto i = 0; i < 2000; i++)
   {

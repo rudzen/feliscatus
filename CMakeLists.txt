@@ -77,3 +77,4 @@ enable_engine_options()
 
 # main engine lib
 add_subdirectory(src)
+add_subdirectory(tuner)

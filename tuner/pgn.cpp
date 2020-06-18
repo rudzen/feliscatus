@@ -6,8 +6,8 @@
 #include <cctype>
 #include <exception>
 #include "pgn.h"
-#include "types.h"
-#include "util.h"
+#include "../src/types.h"
+#include "../src/util.h"
 
 namespace {
 

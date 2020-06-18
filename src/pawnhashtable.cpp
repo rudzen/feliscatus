@@ -2,11 +2,8 @@
 #include "pawnhashtable.h"
 #include "position.h"
 
-std::optional<PawnHashEntry *> PawnHashTable::find(const Position *pos) {
-  auto *pawnp = (*this)[pos->pawn_structure_key]; ////*this[key];// table + (key & mask);
-  return pawnp->zkey != pos->pawn_structure_key || pawnp->zkey == 0
-           ? std::nullopt
-           : std::make_optional(pawnp);
+PawnHashEntry *PawnHashTable::find(const Position *pos) {
+  return (*this)[pos->pawn_structure_key];
 }
 
 PawnHashEntry *PawnHashTable::insert(const Key key, const int score_mg, const int score_eg, const std::array<int, 2> &passed_pawn_files) {

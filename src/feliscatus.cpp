@@ -1,6 +1,7 @@
 #include <string_view>
 #include <algorithm>
 #include <memory>
+#include <fmt/format.h>
 
 #include "feliscatus.h"
 #include "game.h"
@@ -9,7 +10,6 @@
 #include "uci.h"
 #include "worker.h"
 #include "perft.h"
-#include "tune.h"
 #include "stopwatch.h"
 #include "util.h"
 
@@ -108,7 +108,7 @@ int Felis::run() {
   pawnt    = std::make_unique<PawnHashTable>();
   search   = std::make_unique<Search>(protocol.get(), game.get(), pawnt.get());
   TT.init(256);
-  
+
   new_game();
 
   auto console_mode = true;
@@ -146,10 +146,7 @@ int Felis::run() {
       Perft(game.get()).perft_divide(6);
     } else if (util::strieq(tokens[0], "tune"))
     {
-      Stopwatch sw;
-      eval::Tune(game.get());
-      const auto seconds = sw.elapsed_seconds();
-      printf("%f\n", seconds);
+      fmt::print("Tuner is a separate program, please run 'FeliscatusTuner' for help\n");
     } else if (util::strieq(tokens[0], "quit") || util::strieq(tokens[0], "exit"))
     {
       quit = 1;

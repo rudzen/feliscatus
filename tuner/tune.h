@@ -2,44 +2,23 @@
 
 #include <utility>
 #include <vector>
-#include "moves.h"
+#include <string>
+#include <fmt/format.h>
+#include <docopt/docopt.h>
+#include <map>
+#include "../src/bitboard.h"
 #include "pgn_player.h"
-#include "search.h"
+#include "../src/search.h"
 
 class Game;
 struct PVEntry;
 
+
 namespace eval {
 
-struct Node {
-  Node(std::string fen) : fen_(std::move(fen)) {}
-
-  std::string fen_;
-  double result_{};
-};
-
-inline bool x_;
-
-struct Param {
-  Param(std::string name, int &value, const int initial_value, const int step) : name_(std::move(name)), initial_value_(initial_value), value_(value), step_(step) {
-    if (x_)
-      value = initial_value;
-  }
-
-  std::string name_;
-  int initial_value_;
-  int &value_;
-  int step_;
-};
-
-struct ParamIndexRecord {
-  size_t idx_;
-  double improved_;
-};
-
-inline bool operator<(const ParamIndexRecord &lhs, const ParamIndexRecord &rhs) {
-  return lhs.improved_ >= rhs.improved_;
-}
+struct Node;
+struct Param;
+struct ParamIndexRecord;
 
 class PGNPlayer : public pgn::PGNPlayer {
 public:
@@ -61,7 +40,7 @@ public:
 
 private:
   std::vector<Node> current_game_nodes_;
-  int64_t all_nodes_count_;
+  int64_t all_nodes_count_{};
 };
 
 
@@ -69,15 +48,13 @@ private:
 
 class Tune final : public MoveSorter {
 public:
-  explicit Tune(Game *game);
-
-  static void init_eval(std::vector<Param> &params);
+  explicit Tune(Game *game, std::string_view input, std::string_view output, const std::map<std::string, docopt::value> &args);
 
   double e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, double K);
 
   void make_quiet(std::vector<Node> &nodes);
 
-  int get_score(int side);
+  int get_score(Color side);
 
   int get_quiesce_score(int alpha, int beta, bool store_pv, int ply);
 
@@ -93,6 +70,7 @@ public:
 
 private:
   Game *game_;
+  PawnHashTable pawn_table_{};
 
   PVEntry pv[128][128]{};
   int pv_length[128]{};
