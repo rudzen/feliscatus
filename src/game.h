@@ -5,14 +5,11 @@
 #include "types.h"
 #include "square.h"
 #include "board.h"
-
-struct Position;
+#include "position.h"
 
 class Game final {
 public:
   Game();
-
-  ~Game();
 
   bool make_move(uint32_t m, bool check_legal, bool calculate_in_check);
 
@@ -47,7 +44,7 @@ public:
   void print_moves() const;
 
 public:
-  Position *position_list;
+  std::array<Position, 2000> position_list{};
   Position *pos;
   Board board;
   bool chess960;

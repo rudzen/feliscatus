@@ -1,15 +1,21 @@
-#include <docopt/docopt.h>
 #include <string>
 #include <string_view>
 #include <memory>
+#include <fmt/format.h>
+#include <docopt/docopt.h>
 #include "tune.h"
-
+#include "../src/square.h"
+#include "../src/bitboard.h"
+#include "../src/magic.h"
+#include "../src/zobrist.h"
+#include "../src/transpositional.h"
 
 static constexpr auto title =
-  R"(___    _ _     ___      _
+  R"(
+     ___    _ _     ___      _
     | __|__| (_)___/ __|__ _| |_ _  _ ___
     | _/ -_) | (_-< (__/ _` |  _| || (_-<
-    |_|\___|_|_/__/\___\__,_|\__|\_,_/__/)
+    |_|\___|_|_/__/\___\__,_|\__|\_,_/__/
            | |_ _  _ _ _  ___ _ _
            |  _| || | ' \/ -_) '_|
             \__|\_,_|_||_\___|_|)";
@@ -18,12 +24,12 @@ static constexpr auto USAGE =
   R"(FelisCatus Tuner.
     Usage:
           FeliscatusTuner -h
-          FeliscatusTuner [--psqt] [--piecevalue] [--king] [--queen] [--rook] [--bishop] [--knight] [--pawn] [--passedpawn] [--coordination] [--centercontrol] [--tempo] [--space] [--mobility] [--attbypawn] [--limitadjust] [--lazymargin]
+          FeliscatusTuner [--pgn=FILE] [--log=FILE] [--pawn] [--knight] [--bishop] [--rook] [--queen] [--king] [--psqt] [--mobility] [--passedpawn] [--coordination] [--strength] [--weakness] [--tempo] [--lazy_margin]
 
   Options:
           -h --help           Show this screen.
 
-          --epd=FILE          Sets the file to read from [default: ./out.epd].
+          --pgn=FILE          Sets the file to read from [default: ./out.pgn].
           --log=FILE          Prefix for logfile [default: _feliscatus_tuner].
           --pawn              Enable pawn evaluation tuning [default: false].
           --knight            Enable knight evaluation tuning [default: false].
@@ -43,16 +49,25 @@ static constexpr auto USAGE =
 
 int main(int argc, char **argv) {
 
+  fmt::print("{}\n", title);
+
   std::map<std::string, docopt::value> args = docopt::docopt(USAGE, { std::next(argv), std::next(argv, argc) }, true, "Felis Catus Tuner");
 
+  squares::init();
+  bitboard::init();
+  attacks::init();
+  zobrist::init();
+
+  TT.init(256);
+
   // get filename from command line arguments
-  const auto input_file = args["--epd"].asString();
-  const auto output_file = args["--log"].asString();
+  const auto input_file = "D:\\Chess\\Felis_self_play#1.at.pgn";//  args["--epd"].asString();
+  const auto output_file = "D:\\Chess\\out.txt";// args["--log"].asString();
 
   auto game = std::make_unique<Game>();
 
   Stopwatch sw;
   eval::Tune(game.get(), input_file, output_file, args);
   const auto seconds = sw.elapsed_seconds();
-  printf("%f\n", seconds);
+  fmt::print("{} seconds\n", seconds);
 }

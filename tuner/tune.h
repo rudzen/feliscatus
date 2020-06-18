@@ -40,7 +40,7 @@ public:
 
 private:
   std::vector<Node> current_game_nodes_;
-  int64_t all_nodes_count_;
+  int64_t all_nodes_count_{};
 };
 
 
@@ -54,7 +54,7 @@ public:
 
   void make_quiet(std::vector<Node> &nodes);
 
-  int get_score(int side);
+  int get_score(Color side);
 
   int get_quiesce_score(int alpha, int beta, bool store_pv, int ply);
 
@@ -70,7 +70,7 @@ public:
 
 private:
   Game *game_;
-
+  PawnHashTable pawn_table_{};
 
   PVEntry pv[128][128]{};
   int pv_length[128]{};

@@ -1,4 +1,5 @@
 #include <optional>
+#include <memory>
 #include "eval.h"
 #include "types.h"
 #include "square.h"
@@ -49,7 +50,7 @@ private:
   const Board &b{};
   Position *pos{};
   PawnHashTable *pawnt{};
-  std::optional<PawnHashEntry*> pawnp{};
+  PawnHashEntry* pawnp{};
 
   std::array<int, COL_NB> poseval_mg{};
   std::array<int, COL_NB> poseval_eg{};
@@ -122,26 +123,30 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 
 template<bool Tuning>
 void Evaluate<Tuning>::eval_pawns_both_sides() {
-  if (pos->material.pawn_count())
+
+  if (pos->material.pawn_count() == 0)
   {
-    pawnp = Tuning ? std::nullopt : pawnt->find(pos);
+    pawnp = nullptr;
+    return;
+  }
 
-    if (!pawnp.has_value())
-    {
-      pawn_eval_mg.fill(0);
-      pawn_eval_eg.fill(0);
+  pawnp = pawnt->find(pos);
 
-      passed_pawn_files.fill(0);
+  if (pawnp->zkey == 0 || pawnp->zkey != pos->pawn_structure_key)
+  {
+    pawn_eval_mg.fill(0);
+    pawn_eval_eg.fill(0);
 
-      eval_pawns<WHITE>();
-      eval_pawns<BLACK>();
+    passed_pawn_files.fill(0);
 
+    eval_pawns<WHITE>();
+    eval_pawns<BLACK>();
+
+    if constexpr (!Tuning)
       pawnp = pawnt->insert(pos->pawn_structure_key, pawn_eval_mg[WHITE] - pawn_eval_mg[BLACK], pawn_eval_eg[WHITE] - pawn_eval_eg[BLACK], passed_pawn_files);
-    }
-    poseval_mg[0] += pawnp.value()->eval_mg;
-    poseval_eg[0] += pawnp.value()->eval_eg;
-  } else
-    pawnp = std::nullopt;
+  }
+  poseval_mg[0] += pawnp->eval_mg;
+  poseval_eg[0] += pawnp->eval_eg;
 }
 
 template<bool Tuning>
@@ -433,10 +438,10 @@ template<Color Us>
 void Evaluate<Tuning>::eval_passed_pawns() {
   constexpr auto Them = ~Us;
 
-  if (!pawnp.has_value())
+  if (pawnp == nullptr)
     return;
 
-  for (uint64_t files = pawnp.value()->passed_pawn_files[Us]; files; reset_lsb(files))
+  for (uint64_t files = pawnp->passed_pawn_files[Us]; files; reset_lsb(files))
   {
     for (auto bb = bb_file(lsb(files)) & b.pawns(Us); bb; reset_lsb(bb))
     {

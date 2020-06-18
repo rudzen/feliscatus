@@ -108,7 +108,7 @@ int Felis::run() {
   pawnt    = std::make_unique<PawnHashTable>();
   search   = std::make_unique<Search>(protocol.get(), game.get(), pawnt.get());
   TT.init(256);
-  
+
   new_game();
 
   auto console_mode = true;
@@ -146,7 +146,7 @@ int Felis::run() {
       Perft(game.get()).perft_divide(6);
     } else if (util::strieq(tokens[0], "tune"))
     {
-      fmt::print("Tuner disabled for now untill it's a stand alone file\n");
+      fmt::print("Tuner is a separate program, please run 'FeliscatusTuner' for help\n");
     } else if (util::strieq(tokens[0], "quit") || util::strieq(tokens[0], "exit"))
     {
       quit = 1;

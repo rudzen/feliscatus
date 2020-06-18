@@ -73,7 +73,7 @@ void pgn::PGNPlayer::read_san_move() {
   {
     if (!detect_piece(from_piece_, piece))
     {
-      fmt::print("default [{}]\n", token_str);
+      fmt::print("default [{}]\n", std::string(token_str));
       exit(0);
     }
     game_->pos->generate_moves(piece, bit(to_square_));
@@ -88,7 +88,7 @@ void pgn::PGNPlayer::read_san_move() {
   {
     if (!detect_piece(promoted_to, promoted))
     {
-      fmt::print("promoted_to error [{}]\n", token_str);
+      fmt::print("promoted_to error [{}]\n", std::string(token_str));
       exit(0);
     }
   }
@@ -122,7 +122,7 @@ void pgn::PGNPlayer::read_san_move() {
     fmt::print("castle_move_: {}\n", castle_move_);
     fmt::print("side_to_move: {}\n", side_to_move);
     fmt::print("pos->in_check: {}\n", game_->pos->in_check);
-    fmt::print("game_count_: {}", game_count_);
+    fmt::print("game_count_: {}\n", game_count_);
     game_->board.print();
     exit(0);
   }
