@@ -105,7 +105,6 @@ std::string emit_code(const std::vector<eval::Param> &params0) {
         if (i % 8 == 0)
           format_to(s, "\n ");
 
-        // TODO: 4 len
         format_to(s, "{}", params2.second[i].value_);
       } else
         format_to(s, "{}", params2.second[i].value_);
@@ -527,7 +526,8 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
     game_->set_fen(node.fen_);
     x += std::pow(node.result_ - util::sigmoid(get_score(WHITE), K), 2);
   }
-  x /= nodes.size();
+
+  x /= nodes.empty() ? 1 : nodes.size();
 
   fmt::memory_buffer s;
 
@@ -657,7 +657,7 @@ void Tune::sort_move(MoveData &move_data) {
 
     if (value_piece <= value_captured)
       move_data.score = 300000 + value_captured * 20 - value_piece;
-    else if (game_->board.see_move(m) >= 0)// TODO : create See on the fly?
+    else if (game_->board.see_move(m) >= 0)
       move_data.score = 160000 + value_captured * 20 - value_piece;
     else
       move_data.score = -100000 + value_captured * 20 - value_piece;
