@@ -4,6 +4,9 @@
 #include <unordered_map>
 #include <utility>
 #include <fmt/format.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include "tune.h"
 #include "../src/game.h"
 #include "../src/eval.h"
@@ -12,6 +15,8 @@
 #include "file_resolver.h"
 
 namespace eval {
+
+// loggers
 
 struct Node final {
   Node(std::string fen) : fen_(std::move(fen)) {}
@@ -47,6 +52,10 @@ inline bool operator<(const ParamIndexRecord &lhs, const ParamIndexRecord &rhs) 
 
 namespace {
 
+auto console = spdlog::stdout_color_mt("tuner");
+auto err_logger = spdlog::stderr_color_mt("stderr");
+std::shared_ptr<spdlog::logger> file_logger;
+
 enum SelectedParams : uint64_t {
   none          = 0,
   psqt          = 1,
@@ -70,7 +79,8 @@ enum SelectedParams : uint64_t {
   strength      = 1 << 18
 };
 
-std::string emit_code(const std::vector<eval::Param> &params0, const bool hr) {
+template<bool Hr>
+std::string emit_code(const std::vector<eval::Param> &params0) {
 
   std::unordered_map<std::string, std::vector<eval::Param>> params1;
 
@@ -90,7 +100,7 @@ std::string emit_code(const std::vector<eval::Param> &params0, const bool hr) {
 
     for (size_t i = 0; i < n; ++i)
     {
-      if (hr && n == 64)
+      if (Hr && n == 64)
       {
         if (i % 8 == 0)
           format_to(s, "\n ");
@@ -120,15 +130,12 @@ void print_best_values(double E, const std::vector<eval::Param> &params) {
   {
     if (params[i].step_ == 0)
       finished++;
-
-    fmt::print("{}:{}:{}  step:{}\n", i, params[i].name_, params[i].value_, params[i].step_);
+    console->info("{}:{}:{}  step:{}\n", i, params[i].name_, params[i].value_, params[i].step_);
   }
 
-  fmt::print("Best E:{}  \n", E);
-  // fmt::print("Best E:{:.{}f}  \n", E);
-  fmt::print("Finished:{} %\n", finished * 100.0 / params.size());
+  console->info("Best E:{}", E);
+  console->info("Finished:{} %", finished == 0 ? 100.0 : finished * 100.0 / params.size());
 }
-
 
 constexpr double bestK() {
   /*
@@ -147,21 +154,18 @@ constexpr double bestK() {
   return 1.12;
 }
 
-}// namespace
 
 void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings) {
   auto step = 1;
-
-  //const auto current_parameters = resolve_params(args);
-
-  // Check parameters
 
   eval::x_ = false;
 
   if (settings->pawn)
   {
+    console->info("Pawn tuning active");
     if (settings->psqt)
     {
+      console->info("Pawn psqt tuning active");
       for (const auto sq : Squares)
       {
         auto istep = sq > 7 && sq < 56 ? step : 0;
@@ -172,6 +176,7 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
 
     if (settings->mobility)
     {
+      console->info("Pawn mobility tuning active");
       for (auto &v : pawn_isolated_mg)
         params.emplace_back("pawn_isolated_mg", v, 0, step);
 
@@ -302,8 +307,9 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
         params.emplace_back("rook_mob_eg", v, 0, step);
 
       params.emplace_back("king_obstructs_rook", king_obstructs_rook, 0, step);
-      params.emplace_back("rook_open_file", rook_open_file, 0, step);
     }
+
+    params.emplace_back("rook_open_file", rook_open_file, 0, step);
 
     if (settings->weakness)
       params.emplace_back("rook_in_danger", rook_in_danger, 0, step);
@@ -367,6 +373,9 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     params.emplace_back("tempo", tempo, 0, step);
 }
 
+}// namespace
+
+
 namespace eval {
 
 PGNPlayer::PGNPlayer() : pgn::PGNPlayer() {}
@@ -428,13 +437,18 @@ Tune::Tune(std::unique_ptr<Game> game, const ParserSettings *settings) : game_(s
   for (std::size_t i = 0; i < params.size(); ++i)
     params_index.emplace_back(i, 0);
 
-  constexpr auto K       = bestK();
-  auto bestE             = e(pgn.all_selected_nodes_, params, params_index, K);
-  auto improved          = true;
+  constexpr auto max_log_file_size = 1048576 * 5;
+  constexpr auto max_log_files     = 3;
+  constexpr auto K                 = bestK();
+  auto bestE                       = e(pgn.all_selected_nodes_, params, params_index, K);
+  auto improved                    = true;
+  file_logger = spdlog::rotating_logger_mt("file_logger", "logs/log.txt", max_log_file_size, max_log_files);
+
+  file_logger->info("Tuner session started.");
 
   std::ofstream out(fmt::format("{}{}", settings->file_name, ".txt"));
   out << fmt::format("Old E:{}\n", bestE);
-  out << fmt::format("Old Values:\n{}\n", emit_code(params, true));
+  out << fmt::format("Old Values:\n{}\n", emit_code<true>(params));
 
   while (improved)
   {
@@ -462,7 +476,7 @@ Tune::Tune(std::unique_ptr<Game> game, const ParserSettings *settings) : game_(s
         bestE                     = new_e;
         improved                  = true;
         out << "E:" << bestE << "\n";
-        out << emit_code(params, true);
+        out << emit_code<true>(params);
       } else if (step > 0)
       {
         step = -step;
@@ -478,7 +492,7 @@ Tune::Tune(std::unique_ptr<Game> game, const ParserSettings *settings) : game_(s
           bestE                     = new_e;
           improved                  = true;
           out << "E:" << bestE << "\n";
-          out << emit_code(params, true);
+          out << emit_code<true>(params);
         } else
         {
           params_index[i].improved_ = 0;
@@ -500,9 +514,9 @@ Tune::Tune(std::unique_ptr<Game> game, const ParserSettings *settings) : game_(s
   }
   print_best_values(bestE, params);
   out << fmt::format("New E:{}\n", bestE);
-  out << fmt::format("\nNew:\n{}\n", emit_code(params, false));
+  out << fmt::format("\nNew:\n{}\n", emit_code<false>(params));
 
-  fmt::print("{}\n", emit_code(params, true));
+  fmt::print("{}\n", emit_code<true>(params));
 }
 
 double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, double K) {
@@ -526,7 +540,7 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
 
   format_to(s, "\n");
 
-  fmt::print("{}\n", fmt::to_string(s));
+  console->info("{}\n", fmt::to_string(s));
 
   return x;
 }

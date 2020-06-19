@@ -6,7 +6,6 @@
 #include <filesystem>
 #include <memory>
 #include <map>
-#include <fmt/format.h>
 
 #include "../src/bitboard.h"
 #include "pgn_player.h"
