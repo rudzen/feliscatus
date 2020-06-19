@@ -4,7 +4,6 @@
 #include <chrono>
 #include <sstream>
 #include <fmt/format.h>
-#include <CLI/CLI.hpp>
 #include "tune.h"
 #include "../src/square.h"
 #include "../src/bitboard.h"
@@ -12,7 +11,7 @@
 #include "../src/zobrist.h"
 #include "../src/transpositional.h"
 #include "file_resolver.h"
-#include "cli_parser.h"
+#include "../cli/cli_parser.h"
 
 namespace {
 

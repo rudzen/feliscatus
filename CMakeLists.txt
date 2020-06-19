@@ -75,6 +75,11 @@ endif()
 include(cmake/Engine.cmake)
 enable_engine_options()
 
+# cli lib wrapper
+add_subdirectory(cli)
+
 # main engine lib
 add_subdirectory(src)
+
+# tuner
 add_subdirectory(tuner)

@@ -10,7 +10,7 @@
 #include "../src/bitboard.h"
 #include "pgn_player.h"
 #include "../src/search.h"
-#include "cli_parser.h"
+#include "../cli/cli_parser.h"
 
 class Game;
 struct PVEntry;
@@ -44,9 +44,6 @@ private:
   std::vector<Node> current_game_nodes_;
   int64_t all_nodes_count_{};
 };
-
-
-// TODO : Create command line parameters to set which values should be tuned.
 
 class Tune final : public MoveSorter {
 public:

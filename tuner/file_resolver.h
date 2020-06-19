@@ -51,7 +51,6 @@ inline std::uintmax_t FileResolver::size() const {
 
 inline std::filesystem::path FileResolver::file_name() const {
     return std::filesystem::absolute(file_);
-//  return file_.filename();
 }
 
 namespace file_handler {
