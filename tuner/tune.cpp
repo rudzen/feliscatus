@@ -83,12 +83,10 @@ std::string emit_code(const std::vector<eval::Param> &params0, const bool hr) {
   {
     const auto n = params2.second.size();
 
-    format_to(s, "int Eval::{}", params2.first);
-
     if (n > 1)
-      format_to(s, "[{}] = {{ ", n);
+      format_to(s, "inline std::array<int, {}> {} {{", n, params2.first);
     else
-      format_to(s, " = ");
+      format_to(s, "inline int {} = ", params2.first);
 
     for (size_t i = 0; i < n; ++i)
     {
