@@ -44,9 +44,9 @@ public:
   void print_moves() const;
 
 public:
-  std::array<Position, 256> position_list{};
+  std::array<Position, 2000> position_list{};
   Position *pos;
-  Board board;
+  Board board{};
   bool chess960;
   bool xfen;
 

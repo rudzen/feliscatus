@@ -532,10 +532,10 @@ void Game::copy(Game *other) {
 
   pos += other->pos - other->position_list.data();
 
-  for (auto i = 0; i < 2000; i++)
+  for (std::size_t i; auto &pl : position_list)
   {
-    position_list[i]   = other->position_list[i];
-    position_list[i].b = &board;
+    pl   = other->position_list[i];
+    pl.b = &board;
   }
 }
 
