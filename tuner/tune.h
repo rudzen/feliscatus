@@ -3,16 +3,19 @@
 #include <utility>
 #include <vector>
 #include <string>
-#include <fmt/format.h>
-#include <docopt/docopt.h>
+#include <filesystem>
+#include <memory>
 #include <map>
+#include <fmt/format.h>
+
 #include "../src/bitboard.h"
 #include "pgn_player.h"
 #include "../src/search.h"
+#include "cli_parser.h"
 
 class Game;
 struct PVEntry;
-
+struct FileResolver;
 
 namespace eval {
 
@@ -48,7 +51,7 @@ private:
 
 class Tune final : public MoveSorter {
 public:
-  explicit Tune(Game *game, std::string_view input, std::string_view output, const std::map<std::string, docopt::value> &args);
+  explicit Tune(std::unique_ptr<Game> game, const ParserSettings *settings);
 
   double e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, double K);
 
@@ -69,7 +72,7 @@ public:
   void sort_move(MoveData &move_data) override;
 
 private:
-  Game *game_;
+  std::unique_ptr<Game> game_;
   PawnHashTable pawn_table_{};
 
   PVEntry pv[128][128]{};

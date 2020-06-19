@@ -1,10 +1,10 @@
 #include <fcntl.h>
-#include <io.h>
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
 #include <cctype>
 #include <exception>
+#include <fmt/format.h>
 #include "pgn.h"
 #include "../src/types.h"
 #include "../src/util.h"
@@ -117,7 +117,7 @@ PGNFileReader::~PGNFileReader() {
   delete[] buffer_;
 }
 
-void PGNFileReader::read(const char *path) {
+void PGNFileReader::read(std::string_view path) {
   readpos_    = 0;
   fillpos_    = 0;
   line_       = 1;
@@ -125,8 +125,9 @@ void PGNFileReader::read(const char *path) {
   token_      = None;
   strict_     = true;
   game_count_ = 0;
-
-  file_ = std::make_unique<PGNFile>(path, O_RDONLY, 0);
+  fmt::print("attempting to open {}\n", path);
+  
+  file_ = std::make_unique<PGNFile>(path.data(), O_RDONLY, 0);
 
   if (file_ == nullptr)
   {
