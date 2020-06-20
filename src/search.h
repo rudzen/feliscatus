@@ -85,9 +85,6 @@ private:
   [[nodiscard]]
   bool is_killer_move(uint32_t m, int ply) const;
 
-  [[nodiscard]]
-  int codec_t_table_score(int score, int ply) const;
-
   void init_search(const SearchLimits &limits);
 
   void sort_move(MoveData &move_data) override;
@@ -101,8 +98,6 @@ private:
   int draw_score() const;
 
   void store_hash(int depth, int score, NodeType node_type, uint32_t move) const;
-
-  void get_hash_and_evaluate(int alpha, int beta) const;
 
   [[nodiscard]]
   bool is_hash_score_valid(int depth, int alpha, int beta) const;
@@ -127,9 +122,10 @@ public:
   bool verbosity{};
   std::optional<Protocol *> protocol;
 
+  static constexpr int MAXSCORE = 0x7fff;
+
 private:
 
-  static constexpr int MAXSCORE = 0x7fff;
   static constexpr int MAXDEPTH = 128;
 
   static constexpr int KILLERMOVESCORE    = 124900;

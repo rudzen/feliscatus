@@ -16,6 +16,30 @@ void store_pv(const PVEntry *pv, const int pv_length) {
   }
 }
 
+[[nodiscard]]
+int codec_t_table_score(const int score, const int ply) {
+  if (std::abs(score) < Search::MAXSCORE - 128)
+    return score;
+  return score < 0 ? score - ply : score + ply;
+}
+
+void get_hash_and_evaluate(Position *pos, Game* game, PawnHashTable *pawn_hash_table, const int alpha, const int beta, const int plies) {
+  if ((pos->transposition = TT.find(pos->key)) == nullptr)
+  {
+    pos->eval_score  = Eval::evaluate(game, pawn_hash_table, alpha, beta);
+    pos->transp_type = Void;
+    pos->transp_move = 0;
+    return;
+  }
+
+  pos->transp_score = codec_t_table_score(pos->transposition->score, -plies);
+  pos->eval_score   = codec_t_table_score(pos->transposition->eval, -plies);
+  pos->transp_depth = pos->transposition->depth;
+  pos->transp_type  = static_cast<NodeType>(pos->transposition->flags & 7);
+  pos->transp_move  = pos->transposition->move;
+  pos->flags        = 0;
+}
+
 }
 
 int Search::go(const SearchLimits &limits, const std::size_t num_workers) {
@@ -38,7 +62,7 @@ int Search::go(const SearchLimits &limits, const std::size_t num_workers) {
       {
         pv_length[0] = 0;
 
-        get_hash_and_evaluate(alpha, beta);
+        get_hash_and_evaluate(pos, game, pawn_hash_, alpha, beta, plies);
 
         const auto score = search<EXACT, true>(search_depth, alpha, beta);
 
@@ -64,8 +88,8 @@ int Search::go(const SearchLimits &limits, const std::size_t num_workers) {
       while (plies)
         unmake_move();
 
-      if (pv_length[0])
-        store_pv(pv[0], pv_length.front());
+      if (const int pv_len = pv_length.front(); pv_len)
+        store_pv(pv[0], pv_len);
     }
   }
   return 0;
@@ -142,7 +166,7 @@ bool Search::make_move_and_evaluate(const uint32_t m, const int alpha, const int
 
   check_sometimes();
 
-  get_hash_and_evaluate(-beta, -alpha);
+  get_hash_and_evaluate(pos, game, pawn_hash_, -beta, -alpha, plies);
 
   max_ply = std::max<int>(max_ply, plies);
   return true;
@@ -201,12 +225,6 @@ void Search::update_killer_moves(const uint32_t move) {
 }
 
 bool Search::is_killer_move(const uint32_t m, const int ply) const { return m == killer_moves[0][ply] || m == killer_moves[1][ply] || m == killer_moves[2][ply]; }
-
-int Search::codec_t_table_score(const int score, const int ply) const {
-  if (std::abs(static_cast<int>(score)) < MAXSCORE - 128)
-    return score;
-  return score < 0 ? score - ply : score + ply;
-}
 
 void Search::init_search(const SearchLimits &limits) {
   pos                     = game->pos;// Updated in makeMove and unmakeMove from here on.
@@ -270,10 +288,8 @@ void Search::sort_move(MoveData &move_data) {
 
     if (value_piece <= value_captured)
       move_data.score = 300000 + value_captured * 20 - value_piece;
-    else if (board->see_move(m) > 0)
+    else if (board->see_move(m) >= 0)
       move_data.score = 160000 + value_captured * 20 - value_piece;
-    else if (board->see_move(m) == 0)
-      move_data.score = 150000 + value_captured * 20 - value_piece;
     else
       move_data.score = -100000 + value_captured * 20 - value_piece;
   } else if (is_promotion(m))
@@ -308,22 +324,6 @@ void Search::store_hash(const int depth, int score, const NodeType node_type, co
     pos->eval_score = score;
 
   pos->transposition = TT.insert(pos->key, depth, score, node_type, move, pos->eval_score);
-}
-
-void Search::get_hash_and_evaluate(const int alpha, const int beta) const {
-  if ((pos->transposition = TT.find(pos->key)) == nullptr)
-  {
-    pos->eval_score  = Eval::evaluate(game, pawn_hash_, alpha, beta);
-    pos->transp_type = Void;
-    pos->transp_move = 0;
-    return;
-  }
-  pos->transp_score = codec_t_table_score(pos->transposition->score, -plies);
-  pos->eval_score   = codec_t_table_score(pos->transposition->eval, -plies);
-  pos->transp_depth = pos->transposition->depth;
-  pos->transp_type  = static_cast<NodeType>(pos->transposition->flags & 7);
-  pos->transp_move  = pos->transposition->move;
-  pos->flags        = 0;
 }
 
 bool Search::is_hash_score_valid(const int depth, const int alpha, const int beta) const {
