@@ -46,7 +46,7 @@ int Board::see_rec(const int mat_change, const int next_capture, const Square to
   do
   {
     const auto from = lookup_best_attacker(to, side_to_move);
-    if (!from.has_value())
+    if (!from)
       return mat_change;
 
     move = current_piece[side_to_move] == Pawn && rr == RANK_8

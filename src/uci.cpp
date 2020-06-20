@@ -1,11 +1,10 @@
-#include "uci.h"
-
 #include <conio.h>
 #include <windows.h>
 #include <winbase.h>
 
 #include <iostream>
 
+#include "uci.h"
 #include "util.h"
 #include "game.h"
 #include "position.h"
@@ -104,7 +103,7 @@ void UCIProtocol::post_moves(const uint32_t bestmove, const uint32_t pondermove)
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-void UCIProtocol::post_info(const int d, const int selective_depth, const uint64_t node_count, const uint64_t nodes_per_sec, const uint64_t time, const int hash_full) {
+void UCIProtocol::post_info(const int d, const int selective_depth, const uint64_t node_count, const uint64_t nodes_per_sec, const TimeUnit time, const int hash_full) {
   fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, hash_full, node_count, nodes_per_sec, time);
 }
 
@@ -112,7 +111,7 @@ void UCIProtocol::post_curr_move(const uint32_t curr_move, const int curr_move_n
   fmt::print("info currmove {} currmovenumber {}\n", game->move_to_string(curr_move), curr_move_number);
 }
 
-void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const uint64_t time, const int hash_full, const int score, fmt::memory_buffer &pv, const NodeType node_type) {
+void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const TimeUnit time, const int hash_full, const int score, fmt::memory_buffer &pv, const NodeType node_type) {
 
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
@@ -132,7 +131,7 @@ int UCIProtocol::handle_input(const char *params[], const int num_params) {
   if (util::strieq(params[0], "uci"))
   {
     printf("id name Feliscatus 0.1\n");
-    printf("id author Gunnar Harms\n");
+    printf("id author Gunnar Harms, FireFather, Rudy Alex Kohn\n");
     printf("option name Hash type spin default 1024 min 8 max 65536\n");
     printf("option name Ponder type check default true\n");
     printf("option name Threads type spin default 1 min 1 max 64\n");
@@ -157,12 +156,8 @@ int UCIProtocol::handle_input(const char *params[], const int num_params) {
 }
 
 int UCIProtocol::handle_go(const char *params[], const int num_params, ProtocolListener *cb) {
-  auto wtime     = 0;
-  auto btime     = 0;
-  auto winc      = 0;
-  auto binc      = 0;
-  auto movetime  = 0;
-  auto movestogo = 0;
+
+  SearchLimits limits{};
 
   flags = 0;
 
@@ -173,7 +168,7 @@ int UCIProtocol::handle_go(const char *params[], const int num_params, ProtocolL
       flags |= FIXED_MOVE_TIME;
 
       if (++param < num_params)
-        movetime = strtol(params[param], nullptr, 10);
+        limits.movetime = strtol(params[param], nullptr, 10);
     } else if (util::strieq(params[param], "depth"))
     {
       flags |= FIXED_DEPTH;
@@ -183,29 +178,29 @@ int UCIProtocol::handle_go(const char *params[], const int num_params, ProtocolL
     } else if (util::strieq(params[param], "wtime"))
     {
       if (++param < num_params)
-        wtime = strtol(params[param], nullptr, 10);
+        limits.time[WHITE] = strtol(params[param], nullptr, 10);
     } else if (util::strieq(params[param], "movestogo"))
     {
       if (++param < num_params)
-        movestogo = strtol(params[param], nullptr, 10);
+        limits.movestogo = strtol(params[param], nullptr, 10);
     } else if (util::strieq(params[param], "btime"))
     {
       if (++param < num_params)
-        btime = strtol(params[param], nullptr, 10);
+        limits.time[BLACK] = strtol(params[param], nullptr, 10);
     } else if (util::strieq(params[param], "winc"))
     {
       if (++param < num_params)
-        winc = strtol(params[param], nullptr, 10);
+        limits.inc[WHITE] = strtol(params[param], nullptr, 10);
     } else if (util::strieq(params[param], "binc"))
     {
       if (++param < num_params)
-        binc = strtol(params[param], nullptr, 10);
+        limits.inc[BLACK] = strtol(params[param], nullptr, 10);
     } else if (util::strieq(params[param], "infinite"))
       flags |= INFINITE_MOVE_TIME;
     else if (util::strieq(params[param], "ponder"))
       flags |= PONDER_SEARCH;
   }
-  cb->go(wtime, btime, movestogo, winc, binc, movetime);
+  cb->go(limits);
   return 0;
 }
 

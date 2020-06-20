@@ -24,9 +24,8 @@ void Perft::perft(const int depth) const {
     perft_result result;
     Stopwatch sw;
     perft(i, result);
-    const auto time = sw.elapsed_milliseconds();
-    if (time > 0.0)
-      nps = result.nodes / time * 1000;
+    const auto time = sw.elapsed_milliseconds() + 1;
+    nps = result.nodes / time * 1000;
     fmt::print("depth {}: {} nodes, {} ms, {} nps\n", i, result.nodes, time, nps);
   }
 }
@@ -36,7 +35,7 @@ void Perft::perft_divide(const int depth) const {
 
   perft_result result{};
   auto *pos = g->pos;
-  double time{};
+  TimeUnit time{};
   double nps{};
 
   pos->generate_moves(nullptr, 0, perft_flags);
@@ -56,8 +55,7 @@ void Perft::perft_divide(const int depth) const {
     fmt::print("move {}: {} nodes\n", g->move_to_string(*m), result.nodes - nodes_start);
   }
 
-  if (time > 0.0)
-    nps = result.nodes / time * 1000;
+  nps = result.nodes / (time + 1) * 1000;
 
   fmt::print("{} nodes, {} nps", result.nodes, nps);
 }

@@ -2,15 +2,8 @@
 #include <algorithm>
 #include <memory>
 #include <fmt/format.h>
-
 #include "feliscatus.h"
-#include "game.h"
-#include "search.h"
-#include "protocol.h"
-#include "uci.h"
-#include "worker.h"
 #include "perft.h"
-#include "stopwatch.h"
 #include "util.h"
 
 namespace {
@@ -34,11 +27,11 @@ int Felis::new_game() {
 
 int Felis::set_fen(const std::string_view fen) { return game->new_game(fen); }
 
-int Felis::go(const int wtime, const int btime, const int movestogo, const int winc, const int binc, const int movetime) {
+int Felis::go(const SearchLimits &limits) {
   game->pos->pv_length = 0;
 
   if (game->pos->pv_length == 0)
-    go_search(wtime, btime, movestogo, winc, binc, movetime);
+    go_search(limits);
 
   if (game->pos->pv_length)
   {
@@ -48,7 +41,7 @@ int Felis::go(const int wtime, const int btime, const int movestogo, const int w
   return 0;
 }
 
-void Felis::ponder_hit() { search->search_time += static_cast<int>(search->start_time.elapsed_milliseconds()); }
+void Felis::ponder_hit() { search->search_time += search->start_time.elapsed_milliseconds(); }
 
 void Felis::stop() { search->stop_search.store(true); }
 
@@ -57,10 +50,10 @@ bool Felis::make_move(const std::string_view m) const {
   return move ? game->make_move(*move, true, true) : false;
 }
 
-void Felis::go_search(const int wtime, const int btime, const int movestogo, const int winc, const int binc, const int movetime) {
+void Felis::go_search(const SearchLimits &limits) {
   // Shared transposition table
   start_workers();
-  search->go(wtime, btime, movestogo, winc, binc, movetime, num_threads);
+  search->go(limits, num_threads);
   stop_workers();
 }
 
@@ -107,7 +100,6 @@ int Felis::run() {
   protocol = std::make_unique<UCIProtocol>(this, game.get());
   pawnt    = std::make_unique<PawnHashTable>();
   search   = std::make_unique<Search>(protocol.get(), game.get(), pawnt.get());
-  TT.init(256);
 
   new_game();
 
@@ -137,7 +129,8 @@ int Felis::run() {
     } else if (util::strieq(tokens[0], "go"))
     {
       protocol->set_flags(INFINITE_MOVE_TIME);
-      go();
+      SearchLimits limits{};
+      go(limits);
     } else if (util::strieq(tokens[0], "perft"))
     {
       Perft(game.get()).perft(6);

@@ -25,19 +25,19 @@ struct PVEntry {
 class Search final : public MoveSorter {
 public:
   Search() = delete;
-  Search(Protocol *p, Game *g, PawnHashTable *pawnt) : lag_buffer(-1), verbosity(true), protocol(p), game(g), board(g->pos->b), pawn_hash_(pawnt) { }
-  Search(Game *g, PawnHashTable *pawnt) : Search(nullptr, g, pawnt) {
+  Search(std::optional<Protocol *> p, Game *g, PawnHashTable *pawnt) : lag_buffer(-1), verbosity(true), protocol(p), game(g), board(g->pos->b), pawn_hash_(pawnt) { }
+  Search(Game *g, PawnHashTable *pawnt) : Search(std::nullopt, g, pawnt) {
     stop_search.store(false);
   }
 
   virtual ~Search() = default;
 
-  int go(const int wtime, const int btime, const int movestogo, const int winc, const int binc, const int movetime, const int num_workers) {
+  int go(const SearchLimits &limits, const std::size_t num_workers) {
     num_workers_ = num_workers;
-    init_search(wtime, btime, movestogo, winc, binc, movetime);
+    init_search(limits);
 
     drawScore_[pos->side_to_move]  = 0;//-25;
-    drawScore_[!pos->side_to_move] = 0;// 25;
+    drawScore_[~pos->side_to_move] = 0;// 25;
 
     auto alpha = -MAXSCORE;
     auto beta  = MAXSCORE;
@@ -86,7 +86,10 @@ public:
 
   void stop() { stop_search.store(true); }
 
-  void run() { go(0, 0, 0, 0, 0, 0, 0); }
+  void run() {
+    SearchLimits limits{};
+    go(limits, 0);
+  }
 
 protected:
   template<NodeType NT, bool PV>
@@ -132,7 +135,7 @@ protected:
 
     pos->generate_moves(this, pos->transp_move, STAGES);
 
-    auto best_move  = 0;
+    auto best_move  = 0u;
     auto best_score = -MAXSCORE;
     auto move_count = 0;
 
@@ -145,7 +148,7 @@ protected:
         ++move_count;
 
         if (protocol && plies == 1 && search_depth >= 20 && (search_time > 5000 || is_analysing()))
-          protocol->post_curr_move(move_data->move, move_count);
+          protocol.value()->post_curr_move(move_data->move, move_count);
 
         if (PV && move_count == 1)
           score = search_next_depth<EXACT, true>(next_depth_pv(singular_move, depth, move_data), -beta, -alpha);
@@ -153,7 +156,7 @@ protected:
         {
           const auto next_depth = next_depth_not_pv<NT, PV>(depth, move_count, move_data, alpha, best_score);
 
-          if (!next_depth.has_value())
+          if (!next_depth)
           {
             unmake_move();
             continue;
@@ -248,7 +251,7 @@ protected:
       {
         const auto next_depth = next_depth_not_pv<BETA, true>(depth, ++move_count, move_data, alpha, best_score);
 
-        if (!next_depth.has_value())
+        if (!next_depth)
         {
           unmake_move();
           continue;
@@ -435,17 +438,18 @@ protected:
   void check_time() {
     if (protocol)
     {
-      if (!is_analysing() && !protocol->is_fixed_depth())
-        stop_search = search_depth > 1 && start_time.elapsed_milliseconds() > static_cast<unsigned>(search_time);
+      if (!is_analysing() && !protocol.value()->is_fixed_depth())
+        stop_search = search_depth > 1 && start_time.elapsed_milliseconds() > search_time;
       else
-        protocol->check_input();
+        protocol.value()->check_input();
     }
 
     if (stop_search.load())
       throw 1;
   }
 
-  [[nodiscard]] int is_analysing() const { return protocol ? protocol->is_analysing() : true; }
+  [[nodiscard]]
+  int is_analysing() const { return protocol.has_value() ? protocol.value()->is_analysing() : true; }
 
   template<NodeType NT>
   void update_pv(const uint32_t move, const int score, const int depth) {
@@ -474,7 +478,7 @@ protected:
         for (auto i = plies; i < pv_length[plies]; ++i)
           fmt::format_to(buffer, "{} ", game->move_to_string(pv[plies][i].move));
 
-        protocol->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), std::max<int>(1ull, start_time.elapsed_milliseconds()), TT.get_load(), score, buffer, NT);
+        protocol.value()->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), start_time.elapsed_milliseconds() + 1, TT.get_load(), score, buffer, NT);
       }
     }
   }
@@ -489,8 +493,9 @@ protected:
     }
   }
 
-  [[nodiscard]] uint64_t nodes_per_second() const {
-    const uint64_t micros = start_time.elapsed_microseconds();
+  [[nodiscard]]
+  uint64_t nodes_per_second() const {
+    const auto micros = start_time.elapsed_microseconds();
     return micros == 0 ? node_count * num_workers_ : node_count * num_workers_ * 1000000 / micros;
   }
 
@@ -525,23 +530,23 @@ protected:
     return score < 0 ? score - ply : score + ply;
   }
 
-  void init_search(int wtime, int btime, const int movestogo, int winc, int binc, const int movetime) {
+  void init_search(const SearchLimits &limits) {
     pos                     = game->pos;// Updated in makeMove and unmakeMove from here on.
     const auto time_reserve = 72;
 
     if (protocol)
     {
-      if (protocol->is_fixed_time())
-        search_time = 950 * movetime / 1000;
+      if (protocol.value()->is_fixed_time())
+        search_time = 950 * limits.movetime / 1000;
       else
       {
-        auto moves_left = movestogo > 30 ? 30 : movestogo;
+        auto moves_left = limits.movestogo > 30 ? 30 : limits.movestogo;
 
         if (moves_left == 0)
           moves_left = 30;
 
-        time_left = pos->side_to_move == 0 ? wtime : btime;
-        time_inc  = pos->side_to_move == 0 ? winc : binc;
+        time_left = limits.time[pos->side_to_move];
+        time_inc  = limits.inc[pos->side_to_move];
 
         if (time_inc == 0 && time_left < 1000)
         {
@@ -656,10 +661,10 @@ protected:
   bool move_is_easy() const {
     if (protocol)
     {
-      if ((pos->move_count() == 1 && search_depth > 9) || (protocol->is_fixed_depth() && protocol->get_depth() == search_depth) || pv[0][0].score == MAXSCORE - 1)
+      if ((pos->move_count() == 1 && search_depth > 9) || (protocol.value()->is_fixed_depth() && protocol.value()->get_depth() == search_depth) || pv[0][0].score == MAXSCORE - 1)
         return true;
 
-      if (!is_analysing() && !protocol->is_fixed_depth() && search_time < start_time.elapsed_milliseconds() * n_)
+      if (!is_analysing() && !protocol.value()->is_fixed_depth() && search_time < start_time.elapsed_milliseconds() * n_)
         return true;
     }
     return false;
@@ -675,13 +680,13 @@ public:
   PVEntry pv[128][128]{};
   int pv_length[128]{};
   Stopwatch start_time{};
-  int search_time{};
-  int time_left{};
-  int time_inc{};
+  TimeUnit search_time{};
+  TimeUnit time_left{};
+  TimeUnit time_inc{};
   int lag_buffer;
   std::atomic_bool stop_search;
   bool verbosity{};
-  Protocol *protocol;
+  std::optional<Protocol *> protocol;
 
 protected:
   int search_depth{};
@@ -694,7 +699,7 @@ protected:
   Position *pos{};
 
   uint64_t node_count{};
-  uint64_t num_workers_{};
+  std::size_t num_workers_{};
 
   static constexpr int MAXSCORE = 0x7fff;
   static constexpr int MAXDEPTH = 96;

@@ -15,7 +15,7 @@ struct Felis final : public ProtocolListener {
 
   int set_fen(std::string_view fen) override;
 
-  int go(int wtime = 0, int btime = 0, int movestogo = 0, int winc = 0, int binc = 0, int movetime = 5000) override;
+  int go(const SearchLimits &limits) override;
 
   void ponder_hit() override;
 
@@ -23,7 +23,7 @@ struct Felis final : public ProtocolListener {
 
   bool make_move(std::string_view m) const;
 
-  void go_search(int wtime, int btime, int movestogo, int winc, int binc, int movetime);
+  void go_search(const SearchLimits &limits);
 
   void start_workers();
 

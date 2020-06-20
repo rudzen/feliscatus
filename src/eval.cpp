@@ -10,6 +10,13 @@
 #include "position.h"
 #include "pawnhashtable.h"
 
+
+namespace {
+
+  constexpr auto get_actual_eval = [](const std::array<int, COL_NB> &e) { return e[WHITE] - e[BLACK]; };
+
+}
+
 template<bool Tuning>
 struct Evaluate {
 
@@ -81,9 +88,9 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
   eval_material<WHITE>();
   eval_material<BLACK>();
 
-#if !defined(NO_EVAL_LAZY_THRESHOLD)
+  const auto mat_eval = get_actual_eval(poseval);
 
-  const auto mat_eval = poseval[WHITE] - poseval[BLACK];
+#if !defined(NO_EVAL_LAZY_THRESHOLD)
 
   if (const auto lazy_eval = pos->side_to_move == WHITE ? mat_eval : -mat_eval; lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
     return pos->material.evaluate(pos->flags, lazy_eval, pos->side_to_move, &b);
@@ -113,12 +120,12 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 
   poseval[pos->side_to_move] += tempo;
 
-  const auto pos_eval_mg = static_cast<int>((poseval_mg[WHITE] - poseval_mg[BLACK]) * stage);
-  const auto pos_eval_eg = static_cast<int>((poseval_eg[WHITE] - poseval_eg[BLACK]) * (1 - stage));
-  const auto pos_eval    = pos_eval_mg + pos_eval_eg + (poseval[WHITE] - poseval[BLACK]);
-  const auto eval        = pos_eval;
+  const auto pos_eval_mg = static_cast<int>(get_actual_eval(poseval_mg) * stage);
+  const auto pos_eval_eg = static_cast<int>(get_actual_eval(poseval_eg) * (1 - stage));
+  const auto pos_eval    = pos_eval_mg + pos_eval_eg + get_actual_eval(poseval);
+  const auto eval        = pos->material.evaluate(pos->flags, pos->side_to_move == BLACK ? -pos_eval : pos_eval, pos->side_to_move, &b);;
 
-  return pos->material.evaluate(pos->flags, pos->side_to_move == BLACK ? -eval : eval, pos->side_to_move, &b);
+  return eval;
 }
 
 template<bool Tuning>
@@ -143,7 +150,7 @@ void Evaluate<Tuning>::eval_pawns_both_sides() {
     eval_pawns<BLACK>();
 
     if constexpr (!Tuning)
-      pawnp = pawnt->insert(pos->pawn_structure_key, pawn_eval_mg[WHITE] - pawn_eval_mg[BLACK], pawn_eval_eg[WHITE] - pawn_eval_eg[BLACK], passed_pawn_files);
+      pawnp = pawnt->insert(pos->pawn_structure_key, get_actual_eval(pawn_eval_mg), get_actual_eval(pawn_eval_eg), passed_pawn_files);
   }
   poseval_mg[0] += pawnp->eval_mg;
   poseval_eg[0] += pawnp->eval_eg;
