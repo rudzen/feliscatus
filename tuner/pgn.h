@@ -75,25 +75,10 @@ protected:
   bool start_of_pgn_game();
 
   [[nodiscard]]
-  bool start_of_tag_section() const;
-
-  [[nodiscard]]
   bool start_of_move_text_section();
 
   [[nodiscard]]
-  bool start_of_tag_pair() const;
-
-  [[nodiscard]]
   bool start_of_element();
-
-  [[nodiscard]]
-  bool start_of_recursive_variation() const;
-
-  [[nodiscard]]
-  bool start_of_tag_name() const;
-
-  [[nodiscard]]
-  bool start_of_tag_value() const;
 
   [[nodiscard]]
   bool start_of_game_termination();
