@@ -21,8 +21,7 @@
 #pragma once
 
 #include <chrono>
-
-using TimeUnit = std::chrono::milliseconds::rep;
+#include "miscellaneous.h"
 
 struct Stopwatch final {
 

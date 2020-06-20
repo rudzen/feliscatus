@@ -688,21 +688,10 @@ public:
   bool verbosity{};
   std::optional<Protocol *> protocol;
 
-protected:
-  int search_depth{};
-  uint32_t killer_moves[4][128]{};
-  int history_scores[16][64]{};
-  uint32_t counter_moves[16][64]{};
-  int drawScore_[2]{};
-  Game *game;
-  Board *board;
-  Position *pos{};
-
-  uint64_t node_count{};
-  std::size_t num_workers_{};
+private:
 
   static constexpr int MAXSCORE = 0x7fff;
-  static constexpr int MAXDEPTH = 96;
+  static constexpr int MAXDEPTH = 128;
 
   static constexpr int KILLERMOVESCORE    = 124900;
   static constexpr int PROMOTIONMOVESCORE = 50000;
@@ -710,7 +699,17 @@ protected:
   static constexpr std::array<int, 4> futility_margin {150, 150, 150, 400};
   static constexpr std::array<int, 4> razor_margin {0, 125, 125, 400};
 
-  private:
+  int search_depth{};
+  uint32_t killer_moves[4][MAXDEPTH]{};
+  int history_scores[16][64]{};
+  uint32_t counter_moves[16][64]{};
+  std::array<int, COL_NB> drawScore_{};
+  Game *game;
+  Board *board;
+  Position *pos{};
+
+  uint64_t node_count{};
+  std::size_t num_workers_{};
 
   PawnHashTable *pawn_hash_;
 };

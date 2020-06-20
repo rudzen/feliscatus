@@ -1,12 +1,16 @@
 #pragma once
 
+#include <chrono>
+
+using TimeUnit = std::chrono::milliseconds::rep;
+
 #if defined(NO_PREFETCH)
 
-void prefetch(void *) {}
+inline void prefetch(void *) {}
 
 #else
 
-void prefetch(void* addr) {
+inline void prefetch(void* addr) {
   __builtin_prefetch(addr);
 }
 #endif
