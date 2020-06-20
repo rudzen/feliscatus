@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cctype>
+#include <string>
 #include <exception>
 #include <fmt/format.h>
 #include "pgn.h"
