@@ -9,6 +9,8 @@
 #include "../src/types.h"
 #include "../src/util.h"
 
+enum Token : uint8_t { Symbol, Integer, String, NAG, Asterisk, Period, LParen, RParen, LBracket, RBracket, LT, GT, Invalid, None };
+
 namespace {
 
 const char token_string[][12] = {"Symbol", "Integer", "String", "NAG", "Asterisk", "Period", "LParen", "RParen", "LBracket", "RBracket", "LT", "GT", "Invalid", "None"};
@@ -58,16 +60,23 @@ bool start_of_pawn_quiet_move(const char *p, Square &to_square) {
   return std::strlen(p) > 1 && is_square(p, to_square);
 }
 
+constexpr bool start_of_tag_pair(const Token token) { return token == LBracket; }
+
+constexpr bool start_of_tag_section(const Token token) { return start_of_tag_pair(token); }
+
+constexpr bool start_of_recursive_variation(const Token token) { return token == LParen; }
+
+constexpr bool start_of_tag_name(const Token token) { return token == Symbol; }
+
+constexpr bool start_of_tag_value(const Token token) { return token == String; }
 
 }
-
-enum Token : uint8_t { Symbol, Integer, String, NAG, Asterisk, Period, LParen, RParen, LBracket, RBracket, LT, GT, Invalid, None };
 
 struct PGNFile {
   PGNFile(const char *path, const int oflag, const int pmode) {
     if ((fd = open(path, oflag | O_BINARY, pmode)) == -1)
     {
-      perror("File::File: cannot open file");
+      fmt::print(stderr, "File::File: cannot open file");
       exit(EXIT_FAILURE);
     }
   }
@@ -79,7 +88,7 @@ struct PGNFile {
 
     if ((n = ::read(fd, static_cast<void *>(buf), count)) == -1)
     {
-      perror("File::read: cannot read file");
+      fmt::print(stderr, "File::File: cannot read file");
       exit(EXIT_FAILURE);
     }
     return n;
@@ -91,15 +100,15 @@ private:
 
 class UnexpectedToken final : std::exception {
 public:
-  UnexpectedToken(const Token expected, const char *found, const size_t line) { sprintf(buf, "Expected <%s> but found '%s', line=%llu", token_string[expected], found, line); }
+  UnexpectedToken(const Token expected, const char *found, const size_t line) { s = fmt::format("Expected <{}> but found '{}', line={}", token_string[expected], found, line); }
 
-  UnexpectedToken(const char *expected, const char *found, const size_t line) { sprintf(buf, "Expected %s but found '%s', line=%llu", expected, found, line); }
+  UnexpectedToken(const char *expected, const char *found, const size_t line) { s = fmt::format("Expected {} but found '{}', line={}", expected, found, line); }
 
   [[nodiscard]]
-  const char *str() const { return buf; }
+  const char *str() const { return s.data(); }
 
 private:
-  char buf[2048]{};
+  std::string s;
 };
 
 namespace pgn {
@@ -178,7 +187,7 @@ void PGNFileReader::read_pgn_game() {
 }
 
 void PGNFileReader::read_tag_section() {
-  while (start_of_tag_pair())
+  while (start_of_tag_pair(token_))
   {
     read_tag_pair();
 
@@ -227,7 +236,7 @@ void PGNFileReader::read_element_sequence() {
   {
     if (start_of_element())
       read_element();
-    else if (start_of_recursive_variation())
+    else if (start_of_recursive_variation(token_))
       read_recursive_variation();
     else
       break;
@@ -436,21 +445,11 @@ void PGNFileReader::read_recursive_variation() {
   read_token(token_);
 }
 
-bool PGNFileReader::start_of_pgn_game() { return start_of_tag_section() || start_of_move_text_section(); }
-
-bool PGNFileReader::start_of_tag_section() const { return start_of_tag_pair(); }
+bool PGNFileReader::start_of_pgn_game() { return start_of_tag_section(token_) || start_of_move_text_section(); }
 
 bool PGNFileReader::start_of_move_text_section() { return start_of_element(); }
 
-bool PGNFileReader::start_of_tag_pair() const { return token_ == LBracket; }
-
 bool PGNFileReader::start_of_element() { return start_of_move_number_indication() || start_of_san_move() || start_of_numeric_annotation_glyph(); }
-
-bool PGNFileReader::start_of_recursive_variation() const { return token_ == LParen; }
-
-bool PGNFileReader::start_of_tag_name() const { return token_ == Symbol; }
-
-bool PGNFileReader::start_of_tag_value() const { return token_ == String; }
 
 bool PGNFileReader::start_of_game_termination() {
   if (token_ != Symbol)
