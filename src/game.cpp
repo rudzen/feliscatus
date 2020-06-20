@@ -403,11 +403,6 @@ int Game::set_fen(const std::string_view fen) {
 std::string Game::get_fen() const {
   constexpr std::string_view piece_letter = "PNBRQK  pnbrqk";
   std::string s;
-  // static char fen[128];
-  // auto *p = fen;
-  // char buf[12];
-
-  // std::memset(p, 0, 128);
 
   for (const Rank r : ReverseRanks)
   {
@@ -532,9 +527,9 @@ void Game::copy(Game *other) {
 
   pos += other->pos - other->position_list.data();
 
-  for (std::size_t i; auto &pl : position_list)
+  for (std::size_t i = 0; auto &pl : position_list)
   {
-    pl   = other->position_list[i];
+    pl   = other->position_list[i++];
     pl.b = &board;
   }
 }
@@ -545,18 +540,16 @@ std::string Game::move_to_string(const uint32_t m) const {
   {
     if (xfen && move_to(m) == ooo_king_to[move_side(m)])
       return "O-O-O";
-    else if (xfen)
+    if (xfen)
       return "O-O";
-    else// shredder fen
-      return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(rook_castles_from[move_to(m)]));
-  } else
-  {
-    std::string s = fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)));
-
-    if (is_promotion(m))
-      s += piece_to_string(move_promoted(m) & 7);
-    return s;
+    // shredder fen
+    return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(rook_castles_from[move_to(m)]));
   }
+  auto s = fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)));
+
+  if (is_promotion(m))
+    s += piece_to_string(move_promoted(m) & 7);
+  return s;
 }
 
 void Game::print_moves() const {
