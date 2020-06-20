@@ -14,13 +14,15 @@ macro(run_conan)
             https://api.bintray.com/conan/bincrafters/public-conan)
 
             #blaze/3.7
+            #docopt.cpp/0.6.2
+
     conan_cmake_run(
             REQUIRES
             ${CONAN_EXTRA_REQUIRES}
             catch2/2.12.1
-            docopt.cpp/0.6.2
             fmt/6.2.1
             spdlog/1.6.0
+            nlohmann_json/3.8.0
             OPTIONS
             ${CONAN_EXTRA_OPTIONS}
             BASIC_SETUP

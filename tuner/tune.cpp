@@ -4,14 +4,19 @@
 #include <unordered_map>
 #include <utility>
 #include <fmt/format.h>
-#include <docopt/docopt.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include "tune.h"
 #include "../src/game.h"
 #include "../src/eval.h"
 #include "../src/parameters.h"
 #include "../src/util.h"
+#include "file_resolver.h"
 
 namespace eval {
+
+// loggers
 
 struct Node final {
   Node(std::string fen) : fen_(std::move(fen)) {}
@@ -47,6 +52,10 @@ inline bool operator<(const ParamIndexRecord &lhs, const ParamIndexRecord &rhs) 
 
 namespace {
 
+auto console = spdlog::stdout_color_mt("tuner");
+auto err_logger = spdlog::stderr_color_mt("stderr");
+std::shared_ptr<spdlog::logger> file_logger;
+
 enum SelectedParams : uint64_t {
   none          = 0,
   psqt          = 1,
@@ -70,7 +79,8 @@ enum SelectedParams : uint64_t {
   strength      = 1 << 18
 };
 
-std::string emit_code(const std::vector<eval::Param> &params0, const bool hr) {
+template<bool Hr>
+std::string emit_code(const std::vector<eval::Param> &params0) {
 
   std::unordered_map<std::string, std::vector<eval::Param>> params1;
 
@@ -83,21 +93,18 @@ std::string emit_code(const std::vector<eval::Param> &params0, const bool hr) {
   {
     const auto n = params2.second.size();
 
-    format_to(s, "int Eval::{}", params2.first);
-
     if (n > 1)
-      format_to(s, "[{}] = {{ ", n);
+      format_to(s, "inline std::array<int, {}> {} {{", n, params2.first);
     else
-      format_to(s, " = ");
+      format_to(s, "inline int {} = ", params2.first);
 
     for (size_t i = 0; i < n; ++i)
     {
-      if (hr && n == 64)
+      if (Hr && n == 64)
       {
         if (i % 8 == 0)
           format_to(s, "\n ");
 
-        // TODO: 4 len
         format_to(s, "{}", params2.second[i].value_);
       } else
         format_to(s, "{}", params2.second[i].value_);
@@ -122,15 +129,12 @@ void print_best_values(double E, const std::vector<eval::Param> &params) {
   {
     if (params[i].step_ == 0)
       finished++;
-
-    fmt::print("{}:{}:{}  step:{}\n", i, params[i].name_, params[i].value_, params[i].step_);
+    console->info("{}:{}:{}  step:{}\n", i, params[i].name_, params[i].value_, params[i].step_);
   }
 
-  fmt::print("Best E:{}  \n", E);
-  // fmt::print("Best E:{:.{}f}  \n", E);
-  fmt::print("Finished:{} %\n", finished * 100.0 / params.size());
+  console->info("Best E:{}", E);
+  console->info("Finished:{} %", finished == 0 ? 100.0 : finished * 100.0 / params.size());
 }
-
 
 constexpr double bestK() {
   /*
@@ -149,64 +153,18 @@ constexpr double bestK() {
   return 1.12;
 }
 
-SelectedParams resolve_params(const std::map<std::string, docopt::value> &args) {
-  int result{none};
 
-  for (const auto &elem : args)
-  {
-    if (elem.second.asBool())
-    {
-      if (elem.first == "--pawn")
-        result |= pawn;
-      else if (elem.first == "--knight")
-        result |= knight;
-      else if (elem.first == "--bishop")
-        result |= bishop;
-      else if (elem.first == "--rook")
-        result |= rook;
-      else if (elem.first == "--queen")
-        result |= queen;
-      else if (elem.first == "--king")
-        result |= king;
-      else if (elem.first == "--psqt")
-        result |= psqt;
-      else if (elem.first == "--mobility")
-        result |= mobility;
-      else if (elem.first == "--passedpawn")
-        result |= passedpawn;
-      else if (elem.first == "--coordination")
-        result |= coordination;
-      else if (elem.first == "--strength")
-        result |= strength;
-      else if (elem.first == "--weakness")
-        result |= weakness;
-      else if (elem.first == "--tempo")
-        result |= tempo;
-      else if (elem.first == "--lazy_margin")
-        result |= lazymargin;
-      else
-        fmt::print("Unknown parameter, outdated version.\n");
-    }
-  }
-
-  return static_cast<SelectedParams>(result);
-}
-
-}// namespace
-
-void init_eval(std::vector<eval::Param> &params, const std::map<std::string, docopt::value> &args) {
+void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings) {
   auto step = 1;
-
-  const auto current_parameters = resolve_params(args);
-
-  // Check parameters
 
   eval::x_ = false;
 
-  if (current_parameters & pawn)
+  if (settings->pawn)
   {
-    if (current_parameters & psqt)
+    console->info("Pawn tuning active");
+    if (settings->psqt)
     {
+      console->info("Pawn psqt tuning active");
       for (const auto sq : Squares)
       {
         auto istep = sq > 7 && sq < 56 ? step : 0;
@@ -215,8 +173,9 @@ void init_eval(std::vector<eval::Param> &params, const std::map<std::string, doc
       }
     }
 
-    if (current_parameters & mobility)
+    if (settings->mobility)
     {
+      console->info("Pawn mobility tuning active");
       for (auto &v : pawn_isolated_mg)
         params.emplace_back("pawn_isolated_mg", v, 0, step);
 
@@ -233,7 +192,7 @@ void init_eval(std::vector<eval::Param> &params, const std::map<std::string, doc
         params.emplace_back("pawn_doubled_eg", v, 0, step);
     }
 
-    if (current_parameters & passedpawn)
+    if (settings->passed_pawn)
     {
       for (auto &v : passed_pawn_mg)
         params.emplace_back("passed_pawn_mg", v, 0, step);
@@ -255,9 +214,9 @@ void init_eval(std::vector<eval::Param> &params, const std::map<std::string, doc
     }
   }
 
-  if (current_parameters & knight)
+  if (settings->knight)
   {
-    if (current_parameters & psqt)
+    if (settings->psqt)
     {
       for (const auto sq : Squares)
       {
@@ -266,7 +225,7 @@ void init_eval(std::vector<eval::Param> &params, const std::map<std::string, doc
       }
     }
 
-    if (current_parameters & mobility)
+    if (settings->mobility)
     {
       for (auto &v : knight_mob_mg)
         params.emplace_back("knight_mob_mg", v, 0, step);
@@ -281,16 +240,16 @@ void init_eval(std::vector<eval::Param> &params, const std::map<std::string, doc
         params.emplace_back("knight_mob2_eg", v, 0, step);
     }
 
-    if (current_parameters & weakness)
+    if (settings->weakness)
       params.emplace_back("knight_in_danger", knight_in_danger, 0, step);
 
-    if (current_parameters & strength)
+    if (settings->strength)
       params.emplace_back("knight_attack_king", knight_attack_king, 0, step);
   }
 
-  if (current_parameters & bishop)
+  if (settings->bishop)
   {
-    if (current_parameters & psqt)
+    if (settings->psqt)
     {
       for (const auto sq : Squares)
       {
@@ -299,7 +258,7 @@ void init_eval(std::vector<eval::Param> &params, const std::map<std::string, doc
       }
     }
 
-    if (current_parameters & mobility)
+    if (settings->mobility)
     {
       for (auto &v : bishop_mob_mg)
         params.emplace_back("bishop_mob_mg", v, 0, step);
@@ -314,22 +273,22 @@ void init_eval(std::vector<eval::Param> &params, const std::map<std::string, doc
         params.emplace_back("bishop_mob2_eg", v, 0, step);
     }
 
-    if (current_parameters & coordination)
+    if (settings->coordination)
     {
       params.emplace_back("bishop_pair_mg", bishop_pair_mg, 0, step);
       params.emplace_back("bishop_pair_eg", bishop_pair_eg, 0, step);
     }
 
-    if (current_parameters & weakness)
+    if (settings->weakness)
       params.emplace_back("bishop_in_danger", bishop_in_danger, 0, step);
 
-    if (current_parameters & strength)
+    if (settings->strength)
       params.emplace_back("bishop_attack_king", bishop_attack_king, 0, step);
   }
 
-  if (current_parameters & rook)
+  if (settings->rook)
   {
-    if (current_parameters & psqt)
+    if (settings->psqt)
     {
       for (const auto sq : Squares)
       {
@@ -338,7 +297,7 @@ void init_eval(std::vector<eval::Param> &params, const std::map<std::string, doc
       }
     }
 
-    if (current_parameters & mobility)
+    if (settings->mobility)
     {
       for (auto &v : rook_mob_mg)
         params.emplace_back("rook_mob_mg", v, 0, step);
@@ -347,19 +306,20 @@ void init_eval(std::vector<eval::Param> &params, const std::map<std::string, doc
         params.emplace_back("rook_mob_eg", v, 0, step);
 
       params.emplace_back("king_obstructs_rook", king_obstructs_rook, 0, step);
-      params.emplace_back("rook_open_file", rook_open_file, 0, step);
     }
 
-    if (current_parameters & weakness)
+    params.emplace_back("rook_open_file", rook_open_file, 0, step);
+
+    if (settings->weakness)
       params.emplace_back("rook_in_danger", rook_in_danger, 0, step);
 
-    if (current_parameters & strength)
+    if (settings->strength)
       params.emplace_back("rook_attack_king", rook_attack_king, 0, step);
   }
 
-  if (current_parameters & queen)
+  if (settings->queen)
   {
-    if (current_parameters & psqt)
+    if (settings->psqt)
     {
       for (const auto sq : Squares)
       {
@@ -368,7 +328,7 @@ void init_eval(std::vector<eval::Param> &params, const std::map<std::string, doc
       }
     }
 
-    if (current_parameters & mobility)
+    if (settings->mobility)
     {
       for (auto &v : queen_mob_mg)
         params.emplace_back("queen_mob_mg", v, 0, step);
@@ -377,16 +337,16 @@ void init_eval(std::vector<eval::Param> &params, const std::map<std::string, doc
         params.emplace_back("queen_mob_eg", v, 0, step);
     }
 
-    if (current_parameters & weakness)
+    if (settings->weakness)
       params.emplace_back("queen_in_danger", queen_in_danger, 0, step);
 
-    if (current_parameters & strength)
+    if (settings->strength)
       params.emplace_back("queen_attack_king", queen_attack_king, 0, step);
   }
 
-  if (current_parameters & king)
+  if (settings->king)
   {
-    if (current_parameters & psqt)
+    if (settings->psqt)
     {
       for (const auto sq : Squares)
       {
@@ -405,12 +365,15 @@ void init_eval(std::vector<eval::Param> &params, const std::map<std::string, doc
       params.emplace_back("king_on_half_open", v, 0, step);
   }
 
-  if (current_parameters & lazymargin)
+  if (settings->lazy_margin)
     params.emplace_back("lazy_margin", lazy_margin, 0, step);
 
-  if (current_parameters & color_tempo)
+  if (settings->tempo)
     params.emplace_back("tempo", tempo, 0, step);
 }
+
+}// namespace
+
 
 namespace eval {
 
@@ -453,9 +416,9 @@ void PGNPlayer::print_progress(const bool force) const {
   fmt::print("game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_, all_nodes_count_, all_selected_nodes_.size());
 }
 
-Tune::Tune(Game *game, const std::string_view input, const std::string_view output, const std::map<std::string, docopt::value> &args) : game_(game), score_static_(false) {
+Tune::Tune(std::unique_ptr<Game> game, const ParserSettings *settings) : game_(std::move(game)), score_static_(false) {
   PGNPlayer pgn;
-  pgn.read(input.data());
+  pgn.read(settings->file_name);
 
   // Tuning as described in https://chessprogramming.wikispaces.com/Texel%27s+Tuning+Method
 
@@ -463,7 +426,7 @@ Tune::Tune(Game *game, const std::string_view input, const std::string_view outp
 
   std::vector<Param> params;
 
-  init_eval(params, args);
+  init_eval(params, settings);
 
   if (score_static_)
     make_quiet(pgn.all_selected_nodes_);
@@ -473,13 +436,18 @@ Tune::Tune(Game *game, const std::string_view input, const std::string_view outp
   for (std::size_t i = 0; i < params.size(); ++i)
     params_index.emplace_back(i, 0);
 
-  constexpr auto K = bestK();
-  auto bestE             = e(pgn.all_selected_nodes_, params, params_index, K);
-  auto improved          = true;
+  constexpr auto max_log_file_size = 1048576 * 5;
+  constexpr auto max_log_files     = 3;
+  constexpr auto K                 = bestK();
+  auto bestE                       = e(pgn.all_selected_nodes_, params, params_index, K);
+  auto improved                    = true;
+  file_logger = spdlog::rotating_logger_mt("file_logger", "logs/log.txt", max_log_file_size, max_log_files);
 
-  std::ofstream out(output.data());
+  file_logger->info("Tuner session started.");
+
+  std::ofstream out(fmt::format("{}{}", settings->file_name, ".txt"));
   out << fmt::format("Old E:{}\n", bestE);
-  out << fmt::format("Old Values:\n{}\n", emit_code(params, true));
+  out << fmt::format("Old Values:\n{}\n", emit_code<true>(params));
 
   while (improved)
   {
@@ -507,7 +475,7 @@ Tune::Tune(Game *game, const std::string_view input, const std::string_view outp
         bestE                     = new_e;
         improved                  = true;
         out << "E:" << bestE << "\n";
-        out << emit_code(params, true);
+        out << emit_code<true>(params);
       } else if (step > 0)
       {
         step = -step;
@@ -523,7 +491,7 @@ Tune::Tune(Game *game, const std::string_view input, const std::string_view outp
           bestE                     = new_e;
           improved                  = true;
           out << "E:" << bestE << "\n";
-          out << emit_code(params, true);
+          out << emit_code<true>(params);
         } else
         {
           params_index[i].improved_ = 0;
@@ -545,9 +513,9 @@ Tune::Tune(Game *game, const std::string_view input, const std::string_view outp
   }
   print_best_values(bestE, params);
   out << fmt::format("New E:{}\n", bestE);
-  out << fmt::format("\nNew:\n{}\n", emit_code(params, false));
+  out << fmt::format("\nNew:\n{}\n", emit_code<false>(params));
 
-  fmt::print("{}\n", emit_code(params, true));
+  fmt::print("{}\n", emit_code<true>(params));
 }
 
 double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, double K) {
@@ -558,7 +526,8 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
     game_->set_fen(node.fen_);
     x += std::pow(node.result_ - util::sigmoid(get_score(WHITE), K), 2);
   }
-  x /= nodes.size();
+
+  x /= nodes.empty() ? 1 : nodes.size();
 
   fmt::memory_buffer s;
 
@@ -571,7 +540,7 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
 
   format_to(s, "\n");
 
-  fmt::print("{}\n", fmt::to_string(s));
+  console->info("{}\n", fmt::to_string(s));
 
   return x;
 }
@@ -588,12 +557,12 @@ void Tune::make_quiet(std::vector<Node> &nodes) {
 }
 
 int Tune::get_score(const Color side) {
-  const auto score = score_static_ ? Eval::tune(game_, &pawn_table_, -100000, 100000) : get_quiesce_score(-32768, 32768, false, 0);
+  const auto score = score_static_ ? Eval::tune(game_.get(), &pawn_table_, -100000, 100000) : get_quiesce_score(-32768, 32768, false, 0);
   return game_->pos->side_to_move == side ? score : -score;
 }
 
 int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) {
-  auto score = Eval::tune(game_, &pawn_table_, -100000, 100000);
+  auto score = Eval::tune(game_.get(), &pawn_table_, -100000, 100000);
 
   if (score >= beta)
     return score;
@@ -688,7 +657,7 @@ void Tune::sort_move(MoveData &move_data) {
 
     if (value_piece <= value_captured)
       move_data.score = 300000 + value_captured * 20 - value_piece;
-    else if (game_->board.see_move(m) >= 0)// TODO : create See on the fly?
+    else if (game_->board.see_move(m) >= 0)
       move_data.score = 160000 + value_captured * 20 - value_piece;
     else
       move_data.score = -100000 + value_captured * 20 - value_piece;

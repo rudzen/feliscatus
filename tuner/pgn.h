@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string_view>
 #include "../src/square.h"
 
 struct PGNFile;
@@ -16,7 +17,7 @@ public:
 
   virtual ~PGNFileReader();
 
-  virtual void read(const char *path);
+  virtual void read(std::string_view path);
 
 protected:
   virtual void read();
