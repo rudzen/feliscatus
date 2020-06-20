@@ -71,8 +71,8 @@ private:
   std::unique_ptr<Game> game_;
   PawnHashTable pawn_table_{};
 
-  PVEntry pv[128][128]{};
-  int pv_length[128]{};
+  PVEntry pv[MAXDEPTH][MAXDEPTH]{};
+  std::array<int, MAXDEPTH> pv_length{};
   bool score_static_;
 };
 

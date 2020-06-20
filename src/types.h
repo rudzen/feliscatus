@@ -9,6 +9,8 @@
 using Bitboard = uint64_t;
 using Key      = uint64_t;
 
+constexpr int MAXDEPTH = 128;
+
 enum Color : uint8_t {
   WHITE, BLACK, COL_NB
 };

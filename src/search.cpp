@@ -18,7 +18,7 @@ void store_pv(const PVEntry *pv, const int pv_length) {
 
 [[nodiscard]]
 int codec_t_table_score(const int score, const int ply) {
-  if (std::abs(score) < Search::MAXSCORE - 128)
+  if (std::abs(score) < Search::MAXSCORE - MAXDEPTH)
     return score;
   return score < 0 ? score - ply : score + ply;
 }

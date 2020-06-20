@@ -111,8 +111,8 @@ public:
   double n_{};
   int plies{};
   int max_ply{};
-  PVEntry pv[128][128]{};
-  std::array<int, 128> pv_length{};
+  PVEntry pv[MAXDEPTH][MAXDEPTH]{};
+  std::array<int, MAXDEPTH> pv_length{};
   Stopwatch start_time{};
   TimeUnit search_time{};
   TimeUnit time_left{};
@@ -125,8 +125,6 @@ public:
   static constexpr int MAXSCORE = 0x7fff;
 
 private:
-
-  static constexpr int MAXDEPTH = 128;
 
   static constexpr int KILLERMOVESCORE    = 124900;
   static constexpr int PROMOTIONMOVESCORE = 50000;

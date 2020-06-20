@@ -628,8 +628,8 @@ void Tune::play_pv() {
 }
 
 void Tune::update_pv(const uint32_t move, const int score, const int ply) {
-  assert(ply < 128);
-  assert(pv_length[ply] < 128);
+  assert(ply < MAXDEPTH);
+  assert(pv_length[ply] < MAXDEPTH);
   auto *entry = &pv[ply][ply];
 
   entry->score = score;

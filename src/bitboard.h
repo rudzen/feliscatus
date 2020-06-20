@@ -100,10 +100,10 @@ constexpr std::array<Bitboard, sq_nb> make_king_attacks()
 
 constexpr std::array<Bitboard, sq_nb> king_attacks = make_king_attacks();
 
-inline Bitboard between_bb[64][64];
-inline Bitboard passed_pawn_front_span[2][64];
-inline Bitboard pawn_front_span[2][64];
-inline std::array<Bitboard, 128> pawn_captures{};
+inline Bitboard between_bb[sq_nb][sq_nb];
+inline Bitboard passed_pawn_front_span[COL_NB][sq_nb];
+inline Bitboard pawn_front_span[COL_NB][sq_nb];
+inline std::array<Bitboard, sq_nb * 2> pawn_captures{};
 
 template<Square sq>
 constexpr Bitboard bit() {
