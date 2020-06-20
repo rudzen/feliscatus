@@ -99,6 +99,7 @@ public:
   const char *str() const { return buf; }
 
 private:
+  // TODO : replace with std::string
   char buf[2048]{};
 };
 
@@ -108,7 +109,7 @@ PGNFileReader::PGNFileReader()
   : file_(nullptr) {
   if ((buffer_ = new unsigned char[bufsize]) == nullptr)
   {
-    fprintf(stderr, "PGNFileReader: unable to allocate buffer\n");
+    fmt::print(stderr, "PGNFileReader: unable to allocate buffer\n");
     exit(EXIT_FAILURE);
   }
 }
@@ -126,12 +127,12 @@ void PGNFileReader::read(std::string_view path) {
   strict_     = true;
   game_count_ = 0;
   fmt::print("attempting to open {}\n", path);
-  
+
   file_ = std::make_unique<PGNFile>(path.data(), O_RDONLY, 0);
 
   if (file_ == nullptr)
   {
-    fprintf(stderr, "PGNFileReader::read: unable to create a File\n");
+    fmt::print(stderr, "PGNFileReader::read: unable to create a File\n");
     exit(EXIT_FAILURE);
   }
   read();
@@ -147,7 +148,7 @@ void PGNFileReader::read() {
       throw UnexpectedToken("no more tokens", token_str, line_);
   } catch (const UnexpectedToken &e)
   {
-    fprintf(stderr, "%s\n", e.str());
+    fmt::print(stderr, "%s\n", e.str());
   }
 }
 

@@ -130,20 +130,20 @@ int UCIProtocol::handle_input(const char *params[], const int num_params) {
 
   if (util::strieq(params[0], "uci"))
   {
-    printf("id name Feliscatus 0.1\n");
-    printf("id author Gunnar Harms, FireFather, Rudy Alex Kohn\n");
-    printf("option name Hash type spin default 1024 min 8 max 65536\n");
-    printf("option name Ponder type check default true\n");
-    printf("option name Threads type spin default 1 min 1 max 64\n");
-    printf("option name UCI_Chess960 type check default false\n");
-    printf("uciok\n");
+    fmt::print("id name Feliscatus 0.1\n");
+    fmt::print("id author Gunnar Harms, FireFather, Rudy Alex Kohn\n");
+    fmt::print("option name Hash type spin default 1024 min 8 max 65536\n");
+    fmt::print("option name Ponder type check default true\n");
+    fmt::print("option name Threads type spin default 1 min 1 max 64\n");
+    fmt::print("option name UCI_Chess960 type check default false\n");
+    fmt::print("uciok\n");
   } else if (util::strieq(params[0], "isready"))
   {
-    printf("readyok\n");
+    fmt::print("readyok\n");
   } else if (util::strieq(params[0], "ucinewgame"))
   {
     callback->new_game();
-    printf("readyok\n");
+    fmt::print("readyok\n");
   } else if (util::strieq(params[0], "setoption"))
     handle_set_option(params, num_params);
   else if (util::strieq(params[0], "position"))

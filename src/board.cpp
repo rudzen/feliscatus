@@ -1,3 +1,4 @@
+#include <fmt/format.h>
 #include "board.h"
 #include "magic.h"
 #include "move.h"
@@ -115,22 +116,29 @@ bool Board::is_attacked_by_slider(const Square sq, const Color side) const {
 
 void Board::print() const {
   constexpr std::string_view piece_letter = "PNBRQK. pnbrqk. ";
-  
-  printf("\n");
+
+  fmt::memory_buffer s;
+
+  fmt::format_to(s, "\n");
 
   for (const Rank rank : ReverseRanks)
   {
-    printf("%d  ", rank + 1);
+    fmt::format_to(s, "{}  ", rank + 1);
 
     for (const auto file : Files)
     {
       const auto sq = make_square(file, rank);
       const auto pc = get_piece(sq);
-      printf("%c ", piece_letter[pc]);
+      fmt::format_to(s, "{} ", piece_letter[pc]);
     }
-    printf("\n");
+    fmt::format_to(s, "\n");
   }
-  printf("   a b c d e f g h\n");
+
+  fmt::print("{}   a b c d e f g h\n", fmt::to_string(s));
+}
+
+bool Board::is_passed_pawn_move(const uint32_t m) const {
+  return move_piece_type(m) == Pawn && is_pawn_passed(move_to(m), move_side(m));
 }
 
 bool Board::is_pawn_isolated(const Square sq, const Color side) const {

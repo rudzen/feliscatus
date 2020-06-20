@@ -251,9 +251,9 @@ constexpr Bitboard south_fill(const Bitboard bb) {
 }
 
 constexpr void init_between_bitboards(const Square from, Bitboard (*step_func)(Bitboard), const Direction step) {
-  auto bb          = step_func(bit(from));
-  auto to          = from + step;
-  Bitboard between = ZeroBB;
+  auto bb      = step_func(bit(from));
+  auto to      = from + step;
+  auto between = ZeroBB;
 
   while (bb)
   {

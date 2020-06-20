@@ -61,6 +61,9 @@ struct Board {
   Bitboard occupied{};
 
   [[nodiscard]]
+  bool is_passed_pawn_move(uint32_t m) const;
+
+  [[nodiscard]]
   bool is_pawn_passed(Square sq, Color side) const;
 
   [[nodiscard]]
