@@ -13,6 +13,15 @@ struct HashEntry {
   int16_t score;
   uint32_t move;
   int16_t eval;
+
+  [[nodiscard]]
+  bool is_exact() const noexcept { return flags & EXACT; }
+
+  [[nodiscard]]
+  bool is_beta() const noexcept { return flags & BETA; }
+
+  [[nodiscard]]
+  bool is_alpha() const noexcept { return flags & ALPHA; }
 };
 #pragma pack()
 

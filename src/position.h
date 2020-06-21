@@ -29,9 +29,4 @@ struct Position : public Moves {
   uint32_t transp_move{};
   int flags{};
   HashEntry *transposition{};
-
-private:
-
-  [[nodiscard]]
-  bool is_castle_move(std::string_view m, int &castle_type) const;
 };

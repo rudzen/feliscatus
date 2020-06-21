@@ -326,9 +326,9 @@ void Search::store_hash(const int depth, int score, const NodeType node_type, co
   pos->transposition = TT.insert(pos->key, depth, score, node_type, move, pos->eval_score);
 }
 
-bool Search::is_hash_score_valid(const int depth, const int alpha, const int beta) const {
-  return pos->transposition && pos->transp_depth >= depth
-         && (pos->transp_type & EXACT || (pos->transp_type & BETA && pos->transp_score >= beta) || (pos->transp_type & ALPHA && pos->transp_score <= alpha));
+bool Search::is_hash_score_valid(const HashEntry *tt, const int depth, const int alpha, const int beta) const {
+  return tt && tt->depth >= depth
+         && (tt->is_exact() || (tt->is_beta() && pos->transp_score >= beta) || (tt->is_alpha() && pos->transp_score <= alpha));
 }
 
 bool Search::move_is_easy() const {

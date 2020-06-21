@@ -100,7 +100,7 @@ private:
   void store_hash(int depth, int score, NodeType node_type, uint32_t move) const;
 
   [[nodiscard]]
-  bool is_hash_score_valid(int depth, int alpha, int beta) const;
+  bool is_hash_score_valid(const HashEntry *tt, int depth, int alpha, int beta) const;
 
   static constexpr NodeType node_type(const int score, const int beta, const uint32_t move) { return move ? (score >= beta ? BETA : EXACT) : ALPHA; }
 
@@ -151,7 +151,7 @@ template<NodeType NT, bool PV>
 int Search::search(const int depth, int alpha, const int beta) {
   if constexpr (!PV)
   {
-    if (is_hash_score_valid(depth, alpha, beta))
+    if (is_hash_score_valid(pos->transposition, depth, alpha, beta))
       return search_node_score(pos->transp_score);
   }
 
@@ -326,7 +326,7 @@ template<bool PV>
 int Search::search_quiesce(int alpha, const int beta, const int qs_ply) {
   if constexpr (!PV)
   {
-    if (is_hash_score_valid(0, alpha, beta))
+    if (is_hash_score_valid(pos->transposition, 0, alpha, beta))
       return search_node_score(pos->transp_score);
   }
 
