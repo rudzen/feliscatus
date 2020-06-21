@@ -4,19 +4,20 @@
 #include <cstdint>
 #include <array>
 #include <optional>
-
 #include "types.h"
 #include "square.h"
 #include "bitboard.h"
+
+enum Move : uint32_t;
 
 struct Board {
   void clear();
 
   void add_piece(int p, Color side, Square sq);
 
-  void make_move(uint32_t m);
+  void make_move(Move m);
 
-  void unmake_move(uint32_t m);
+  void unmake_move(Move m);
 
   [[nodiscard]]
   int get_piece(Square sq) const;
@@ -61,7 +62,7 @@ struct Board {
   Bitboard occupied{};
 
   [[nodiscard]]
-  bool is_passed_pawn_move(uint32_t m) const;
+  bool is_passed_pawn_move(Move m) const;
 
   [[nodiscard]]
   bool is_pawn_passed(Square sq, Color side) const;
@@ -76,10 +77,10 @@ struct Board {
   bool is_pawn_behind(Square sq, Color side) const;
 
   [[nodiscard]]
-  int see_move(uint32_t move);
+  int see_move(Move move);
 
   [[nodiscard]]
-  int see_last_move(uint32_t move);
+  int see_last_move(Move move);
 
 private:
 

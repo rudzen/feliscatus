@@ -10,7 +10,7 @@ struct Position : public Moves {
   void clear();
 
   [[nodiscard]]
-  const uint32_t *string_to_move(std::string_view m);
+  const Move *string_to_move(std::string_view m);
 
   [[nodiscard]]
   bool is_draw() const;
@@ -21,12 +21,12 @@ struct Position : public Moves {
   Material material{};
   int null_moves_in_row{};
   int pv_length{};
-  uint32_t last_move{};
+  Move last_move{};
   int eval_score{};
   int transp_score{};
   int transp_depth{};
   NodeType transp_type{};
-  uint32_t transp_move{};
+  Move transp_move{};
   int flags{};
   HashEntry *transposition{};
 };

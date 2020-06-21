@@ -3,10 +3,9 @@
 #include <array>
 #include <cstdint>
 #include "types.h"
-#include "move.h"
 
 struct MoveData {
-  uint32_t move;
+  Move move;
   int score;
 };
 
@@ -19,7 +18,7 @@ struct Board;
 
 class Moves {
 public:
-  void generate_moves(MoveSorter *sorter = nullptr, uint32_t tt_move = 0, int flags = 0);
+  void generate_moves(MoveSorter *sorter = nullptr, Move tt_move = MOVE_NONE, int flags = 0);
 
   void generate_captures_and_promotions(MoveSorter *sorter);
 
@@ -36,7 +35,7 @@ public:
   void goto_move(int pos);
 
   [[nodiscard]]
-  bool is_pseudo_legal(uint32_t m) const;
+  bool is_pseudo_legal(Move m) const;
 
   std::array<MoveData, 256> move_list{};
 
@@ -47,7 +46,7 @@ public:
   Square en_passant_square{};
 
 private:
-  void reset(MoveSorter *sorter, uint32_t move, int flags);
+  void reset(MoveSorter *sorter, Move move, int flags);
 
   void generate_hash_move();
 
@@ -55,7 +54,7 @@ private:
 
   void generate_quiet_moves();
 
-  void add_move(int piece, Square from, Square to, uint32_t type, int promoted = 0);
+  void add_move(int piece, Square from, Square to, MoveType type, int promoted = 0);
 
   void add_moves(Bitboard to_squares);
 
@@ -65,15 +64,15 @@ private:
 
   void add_pawn_capture_moves(Bitboard to_squares);
 
-  void add_pawn_moves(Bitboard to_squares, Direction dist, uint32_t type);
+  void add_pawn_moves(Bitboard to_squares, Direction dist, MoveType type);
 
   void add_castle_move(Square from, Square to);
 
   [[nodiscard]]
-  bool gives_check(uint32_t m) const;
+  bool gives_check(Move m) const;
 
   [[nodiscard]]
-  bool is_legal(uint32_t m, int piece, Square from, uint32_t type) const;
+  bool is_legal(Move m, int piece, Square from, MoveType type) const;
 
   [[nodiscard]]
   bool can_castle_short() const;
@@ -87,7 +86,7 @@ private:
   int number_moves{};
   Bitboard pinned{};
   MoveSorter *move_sorter{};
-  uint32_t transp_move{};
+  Move transp_move{};
   int move_flags{};
 };
 

@@ -38,7 +38,7 @@ void Perft::perft_divide(const int depth) const {
   TimeUnit time{};
   double nps{};
 
-  pos->generate_moves(nullptr, 0, perft_flags);
+  pos->generate_moves(nullptr, MOVE_NONE, perft_flags);
 
   while (const MoveData *move_data = pos->next_move())
   {
@@ -68,7 +68,7 @@ int Perft::perft(const int depth, perft_result &result) const {
   }
 
   auto *pos = g->pos;
-  pos->generate_moves(nullptr, 0, perft_flags);
+  pos->generate_moves(nullptr, MOVE_NONE, perft_flags);
 
   if ((perft_flags & STAGES) == 0 && depth == 1)
     result.nodes += pos->move_count();

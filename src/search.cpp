@@ -28,7 +28,7 @@ void get_hash_and_evaluate(Position *pos, Game* game, PawnHashTable *pawn_hash_t
   {
     pos->eval_score  = Eval::evaluate(game, pawn_hash_table, alpha, beta);
     pos->transp_type = Void;
-    pos->transp_move = 0;
+    pos->transp_move = MOVE_NONE;
     return;
   }
 
@@ -36,7 +36,7 @@ void get_hash_and_evaluate(Position *pos, Game* game, PawnHashTable *pawn_hash_t
   pos->eval_score   = codec_t_table_score(pos->transposition->eval, -plies);
   pos->transp_depth = pos->transposition->depth;
   pos->transp_type  = static_cast<NodeType>(pos->transposition->flags & 7);
-  pos->transp_move  = pos->transposition->move;
+  pos->transp_move  = pos->transposition->m();
   pos->flags        = 0;
 }
 
@@ -102,7 +102,7 @@ void Search::run() {
   go(limits, 0);
 }
 
-bool Search::search_fail_low(const int depth, const int alpha, const uint32_t exclude_move) {
+bool Search::search_fail_low(const int depth, const int alpha, const Move exclude_move) {
   pos->generate_moves(this, pos->transp_move, STAGES);
 
   auto move_count = 0;
@@ -144,7 +144,7 @@ bool Search::should_try_null_move(const int beta) const {
   return !pos->in_check && pos->null_moves_in_row < 1 && !pos->material.is_kx(pos->side_to_move) && pos->eval_score >= beta;
 }
 
-int Search::next_depth_pv(const uint32_t singular_move, const int depth, const MoveData *move_data) const {
+int Search::next_depth_pv(const Move singular_move, const int depth, const MoveData *move_data) const {
   const auto m = move_data->move;
 
   if (m == singular_move)
@@ -155,7 +155,7 @@ int Search::next_depth_pv(const uint32_t singular_move, const int depth, const M
   return depth - 1;
 }
 
-bool Search::make_move_and_evaluate(const uint32_t m, const int alpha, const int beta) {
+bool Search::make_move_and_evaluate(const Move m, const int alpha, const int beta) {
   if (!game->make_move(m, true, true))
     return false;
 
@@ -203,7 +203,7 @@ uint64_t Search::nodes_per_second() const {
   return micros == 0 ? node_count * num_workers_ : node_count * num_workers_ * 1000000 / micros;
 }
 
-void Search::update_history_scores(const uint32_t move, const int depth) {
+void Search::update_history_scores(const Move move, const int depth) {
   history_scores[move_piece(move)][move_to(move)] += depth * depth;
 
   if (history_scores[move_piece(move)][move_to(move)] > 2048)
@@ -214,7 +214,7 @@ void Search::update_history_scores(const uint32_t move, const int depth) {
   }
 }
 
-void Search::update_killer_moves(const uint32_t move) {
+void Search::update_killer_moves(const Move move) {
   // Same move can be stored twice for a ply.
   if (!is_capture(move) && !is_promotion(move) && move != killer_moves[0][plies])
   {
@@ -224,7 +224,7 @@ void Search::update_killer_moves(const uint32_t move) {
   }
 }
 
-bool Search::is_killer_move(const uint32_t m, const int ply) const { return m == killer_moves[0][ply] || m == killer_moves[1][ply] || m == killer_moves[2][ply]; }
+bool Search::is_killer_move(const Move m, const int ply) const { return m == killer_moves[0][ply] || m == killer_moves[1][ply] || m == killer_moves[2][ply]; }
 
 void Search::init_search(const SearchLimits &limits) {
   pos                     = game->pos;// Updated in makeMove and unmakeMove from here on.
@@ -306,14 +306,14 @@ void Search::sort_move(MoveData &move_data) {
     move_data.score = history_scores[move_piece(m)][move_to(m)];
 }
 
-int Search::store_search_node_score(const int score, const int depth, const NodeType node_type, const uint32_t move) const {
+int Search::store_search_node_score(const int score, const int depth, const NodeType node_type, const Move move) const {
   store_hash(depth, score, node_type, move);
   return search_node_score(score);
 }
 
 int Search::draw_score() const { return drawScore_[pos->side_to_move]; }
 
-void Search::store_hash(const int depth, int score, const NodeType node_type, const uint32_t move) const {
+void Search::store_hash(const int depth, int score, const NodeType node_type, const Move move) const {
   score = codec_t_table_score(score, plies);
 
   if (node_type == BETA)

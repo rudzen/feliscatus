@@ -2,23 +2,23 @@
 #include "material.h"
 #include "bitboard.h"
 #include "magic.h"
-#include "move.h"
+#include "types.h"
 
 namespace {
 
 constexpr int SEE_INVALID_SCORE = -5000;
 
-constexpr int material_change(const uint32_t move) {
+constexpr int material_change(const Move move) {
   return (is_capture(move) ? piece_value(move_captured(move)) : 0) + (is_promotion(move) ? (piece_value(move_promoted(move)) - piece_value(Pawn)) : 0);
 }
 
-constexpr int next_to_capture(const uint32_t move) {
+constexpr int next_to_capture(const Move move) {
   return is_promotion(move) ? move_promoted(move) : move_piece(move);
 }
 
 }
 
-int Board::see_move(uint32_t move) {
+int Board::see_move(Move move) {
   int score;
   make_move(move);
 
@@ -33,7 +33,7 @@ int Board::see_move(uint32_t move) {
   return score;
 }
 
-int Board::see_last_move(const uint32_t move) {
+int Board::see_last_move(const Move move) {
   init_see_move();
   return see_rec(material_change(move), next_to_capture(move), move_to(move), ~move_side(move));
 }
@@ -41,7 +41,7 @@ int Board::see_last_move(const uint32_t move) {
 int Board::see_rec(const int mat_change, const int next_capture, const Square to, const Color side_to_move) {
   const auto rr = relative_rank(side_to_move, to);
 
-  uint32_t move;
+  Move move;
 
   do
   {

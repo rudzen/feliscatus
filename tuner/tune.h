@@ -57,13 +57,13 @@ public:
 
   int get_quiesce_score(int alpha, int beta, bool store_pv, int ply);
 
-  bool make_move(uint32_t m, int ply);
+  bool make_move(Move m, int ply);
 
   void unmake_move() const;
 
   void play_pv();
 
-  void update_pv(uint32_t move, int score, int ply);
+  void update_pv(Move move, int score, int ply);
 
   void sort_move(MoveData &move_data) override;
 

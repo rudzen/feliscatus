@@ -5,6 +5,7 @@
 #include "feliscatus.h"
 #include "perft.h"
 #include "util.h"
+#include "types.h"
 
 namespace {
 
@@ -35,7 +36,7 @@ int Felis::go(const SearchLimits &limits) {
 
   if (game->pos->pv_length)
   {
-    protocol->post_moves(search->pv[0][0].move, game->pos->pv_length > 1 ? search->pv[0][1].move : 0u);
+    protocol->post_moves(search->pv[0][0].move, game->pos->pv_length > 1 ? search->pv[0][1].move : MOVE_NONE);
     game->make_move(search->pv[0][0].move, true, true);
   }
   return 0;

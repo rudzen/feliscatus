@@ -131,7 +131,7 @@ void add_long_castle_rights(Position *pos, Game *g, std::optional<File> rook_fil
     g->chess960 = true;
 }
 
-void update_key(Position *pos, const uint32_t m) {
+void update_key(Position *pos, const Move m) {
   pos->key ^= pos->pawn_structure_key;
   pos->pawn_structure_key ^= zobrist::zobrist_side;
 
@@ -199,7 +199,7 @@ Game::Game() : pos(position_list.data()), chess960(false), xfen(false) {
     p.b = &board;
 }
 
-bool Game::make_move(const uint32_t m, const bool check_legal, const bool calculate_in_check) {
+bool Game::make_move(const Move m, const bool check_legal, const bool calculate_in_check) {
   if (m == 0)
     return make_null_move();
 
@@ -243,7 +243,7 @@ bool Game::make_null_move() {
   auto *const prev                = pos++;
   pos->side_to_move               = ~prev->side_to_move;
   pos->material                   = prev->material;
-  pos->last_move                  = 0;
+  pos->last_move                  = MOVE_NONE;
   pos->in_check                   = false;
   pos->castle_rights              = prev->castle_rights;
   pos->null_moves_in_row          = prev->null_moves_in_row + 1;
@@ -251,7 +251,7 @@ bool Game::make_null_move() {
   pos->en_passant_square          = no_square;
   pos->key                        = prev->key;
   pos->pawn_structure_key         = prev->pawn_structure_key;
-  update_key(pos, 0);
+  update_key(pos, MOVE_NONE);
   return true;
 }
 
@@ -551,7 +551,7 @@ void Game::copy(Game *other) {
   }
 }
 
-std::string Game::move_to_string(const uint32_t m) const {
+std::string Game::move_to_string(const Move m) const {
 
   if (is_castle_move(m) && chess960)
   {

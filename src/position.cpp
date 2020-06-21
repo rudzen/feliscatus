@@ -28,14 +28,14 @@ void Position::clear() {
   castle_rights              = 0;
   reversible_half_move_count = 0;
   pawn_structure_key = key   = 0;
-  last_move                  = 0;
+  last_move                  = MOVE_NONE;
   null_moves_in_row          = 0;
   transposition              = nullptr;
-  last_move                  = 0;
+  last_move                  = MOVE_NONE;
   material.clear();
 }
 
-const uint32_t *Position::string_to_move(std::string_view m) {
+const Move *Position::string_to_move(std::string_view m) {
   auto castle_type = -1;// 0 = short, 1 = long
 
   if (!is_string_castle_move(b, m, castle_type) && (!util::in_between<'a', 'h'>(m[0]) || !util::in_between<'1', '8'>(m[1]) || !util::in_between<'a', 'h'>(m[2]) || !util::in_between<'1', '8'>(m[3])))

@@ -1,7 +1,6 @@
 #include <fmt/format.h>
 #include "board.h"
 #include "magic.h"
-#include "move.h"
 
 void Board::clear() {
   piece.fill(0);
@@ -11,7 +10,7 @@ void Board::clear() {
   occupied = 0;
 }
 
-void Board::make_move(const uint32_t m) {
+void Board::make_move(const Move m) {
 
   const auto from = move_from(m);
   const auto to   = move_to(m);
@@ -45,7 +44,7 @@ void Board::make_move(const uint32_t m) {
     king_square[move_side(m)] = to;
 }
 
-void Board::unmake_move(const uint32_t m) {
+void Board::unmake_move(const Move m) {
 
   const auto from = move_from(m);
   const auto to   = move_to(m);
@@ -110,7 +109,7 @@ bool Board::is_attacked_by_slider(const Square sq, const Color side) const {
 
   if (piece[Bishop | mask] & b_attacks)
     return true;
-  
+
   return (piece[Queen | mask] & (b_attacks | r_attacks)) != 0;
 }
 
@@ -137,7 +136,7 @@ void Board::print() const {
   fmt::print("{}   a b c d e f g h\n", fmt::to_string(s));
 }
 
-bool Board::is_passed_pawn_move(const uint32_t m) const {
+bool Board::is_passed_pawn_move(const Move m) const {
   return move_piece_type(m) == Pawn && is_pawn_passed(move_to(m), move_side(m));
 }
 

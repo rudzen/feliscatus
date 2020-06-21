@@ -86,7 +86,7 @@ void UCIProtocol::check_input() {
   }
 }
 
-void UCIProtocol::post_moves(const uint32_t bestmove, const uint32_t pondermove) {
+void UCIProtocol::post_moves(const Move bestmove, const Move pondermove) {
   while (flags & (INFINITE_MOVE_TIME | PONDER_SEARCH))
   {
     Sleep(10);
@@ -107,7 +107,7 @@ void UCIProtocol::post_info(const int d, const int selective_depth, const uint64
   fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, hash_full, node_count, nodes_per_sec, time);
 }
 
-void UCIProtocol::post_curr_move(const uint32_t curr_move, const int curr_move_number) {
+void UCIProtocol::post_curr_move(const Move curr_move, const int curr_move_number) {
   fmt::print("info currmove {} currmovenumber {}\n", game->move_to_string(curr_move), curr_move_number);
 }
 

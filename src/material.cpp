@@ -3,7 +3,7 @@
 #include <algorithm>
 #include "board.h"
 #include "magic.h"
-#include "move.h"
+#include "types.h"
 
 namespace {
 
@@ -55,7 +55,7 @@ void Material::update_key(const Color c, const int p, const int delta) {
 
 int Material::count(const Color c, const int p) { return key[c] >> piece_bit_shift[p] & 15; }
 
-void Material::make_move(const uint32_t m) {
+void Material::make_move(const Move m) {
   if (is_capture(m))
     remove(move_captured(m));
 

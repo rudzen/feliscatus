@@ -604,7 +604,7 @@ int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, cons
   return best_score;
 }
 
-bool Tune::make_move(const uint32_t m, int ply) {
+bool Tune::make_move(const Move m, int ply) {
   if (!game_->make_move(m, true, true))
     return false;
 
@@ -622,7 +622,7 @@ void Tune::play_pv() {
     game_->make_move(pv[0][i].move, false, true);
 }
 
-void Tune::update_pv(const uint32_t move, const int score, const int ply) {
+void Tune::update_pv(const Move move, const int score, const int ply) {
   assert(ply < MAXDEPTH);
   assert(pv_length[ply] < MAXDEPTH);
   auto *entry = &pv[ply][ply];

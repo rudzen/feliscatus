@@ -15,6 +15,9 @@ struct HashEntry {
   int16_t eval;
 
   [[nodiscard]]
+  Move m() const noexcept { return static_cast<Move>(move); }
+
+  [[nodiscard]]
   bool is_exact() const noexcept { return flags & EXACT; }
 
   [[nodiscard]]

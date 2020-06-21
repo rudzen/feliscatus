@@ -7,6 +7,7 @@
 #include "types.h"
 
 enum NodeType : uint8_t;
+enum Move : uint32_t;
 class Game;
 
 constexpr int FIXED_MOVE_TIME    = 1;
@@ -40,11 +41,11 @@ struct Protocol {
 
   virtual void check_input()                                      = 0;
 
-  virtual void post_moves(uint32_t bestmove, uint32_t pondermove) = 0;
+  virtual void post_moves(Move bestmove, Move pondermove)         = 0;
 
   virtual void post_info(int depth, int selective_depth, uint64_t node_count, uint64_t nodes_per_sec, TimeUnit time, int hash_full) = 0;
 
-  virtual void post_curr_move(uint32_t curr_move, int curr_move_number) = 0;
+  virtual void post_curr_move(Move curr_move, int curr_move_number) = 0;
 
   virtual void post_pv(int depth, int max_ply, uint64_t node_count, uint64_t nodes_per_second, TimeUnit time, int hash_full, int score, fmt::memory_buffer &pv, NodeType node_type) = 0;
 

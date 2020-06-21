@@ -7,11 +7,13 @@
 #include "board.h"
 #include "position.h"
 
+enum Move : uint32_t;
+
 class Game final {
 public:
   Game();
 
-  bool make_move(uint32_t m, bool check_legal, bool calculate_in_check);
+  bool make_move(Move m, bool check_legal, bool calculate_in_check);
 
   void unmake_move();
 
@@ -40,7 +42,7 @@ public:
   void copy(Game *other);
 
   [[nodiscard]]
-  std::string move_to_string(uint32_t m) const;
+  std::string move_to_string(Move m) const;
 
   void print_moves() const;
 

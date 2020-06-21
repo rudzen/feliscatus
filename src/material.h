@@ -4,6 +4,7 @@
 #include "types.h"
 
 struct Board;
+enum Move : uint32_t;
 
 struct Material {
   void clear();
@@ -17,7 +18,7 @@ struct Material {
   [[nodiscard]]
   int count(Color c, int p);
 
-  void make_move(uint32_t m);
+  void make_move(Move m);
 
   [[nodiscard]]
   bool is_kx(Color c);
