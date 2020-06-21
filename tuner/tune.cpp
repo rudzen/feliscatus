@@ -8,6 +8,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include "tune.h"
+
 #include "../src/game.h"
 #include "../src/eval.h"
 #include "../src/parameters.h"
@@ -15,8 +16,6 @@
 #include "file_resolver.h"
 
 namespace eval {
-
-// loggers
 
 struct Node final {
   Node(std::string fen) : fen_(std::move(fen)) {}
@@ -527,7 +526,7 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
     x += std::pow(node.result_ - util::sigmoid(get_score(WHITE), K), 2);
   }
 
-  x /= nodes.empty() ? 1 : nodes.size();
+  x /= nodes.empty() ? 1.0 : static_cast<double>(nodes.size());
 
   fmt::memory_buffer s;
 
@@ -576,11 +575,8 @@ int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, cons
 
   while (auto *const move_data = game_->pos->next_move())
   {
-    if (!is_promotion(move_data->move))
-    {
-      if (move_data->score < 0)
-        break;
-    }
+    if (!is_promotion(move_data->move) && move_data->score < 0)
+      break;
 
     if (make_move(move_data->move, ply))
     {
@@ -609,13 +605,12 @@ int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, cons
 }
 
 bool Tune::make_move(const uint32_t m, int ply) {
-  if (game_->make_move(m, true, true))
-  {
-    ++ply;
-    pv_length[ply] = ply;
-    return true;
-  }
-  return false;
+  if (!game_->make_move(m, true, true))
+    return false;
+
+  ++ply;
+  pv_length[ply] = ply;
+  return true;
 }
 
 void Tune::unmake_move() const {
@@ -636,10 +631,12 @@ void Tune::update_pv(const uint32_t move, const int score, const int ply) {
   entry->move  = move;
   // entry->eval = game_->pos->eval_score;
 
-  pv_length[ply] = pv_length[ply + 1];
+  const auto next_ply = ply + 1;
 
-  for (auto i = ply + 1; i < pv_length[ply]; ++i)
-    pv[ply][i] = pv[ply + 1][i];
+  pv_length[ply] = pv_length[next_ply];
+
+  for (auto i = next_ply; i < pv_length[ply]; ++i)
+    pv[ply][i] = pv[next_ply][i];
 }
 
 void Tune::sort_move(MoveData &move_data) {

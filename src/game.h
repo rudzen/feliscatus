@@ -50,5 +50,8 @@ public:
   bool chess960;
   bool xfen;
 
+  std::array<int, sq_nb> castle_rights_mask{};
+
   static constexpr std::string_view kStartPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
 };

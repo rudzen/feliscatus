@@ -1,5 +1,7 @@
 #include <optional>
 #include <memory>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include "eval.h"
 #include "types.h"
 #include "square.h"
@@ -10,10 +12,14 @@
 #include "position.h"
 #include "pawnhashtable.h"
 
-
 namespace {
 
   constexpr auto get_actual_eval = [](const std::array<int, COL_NB> &e) { return e[WHITE] - e[BLACK]; };
+
+  constexpr auto max_log_file_size = 1048576 * 5;
+  constexpr auto max_log_files     = 3;
+
+  std::shared_ptr<spdlog::logger> eval_logger = spdlog::rotating_logger_mt("eval_logger", "logs/eval.txt", max_log_file_size, max_log_files);
 
 }
 
@@ -202,7 +208,7 @@ void Evaluate<Tuning>::eval_pawns() {
   {
     const auto sq     = lsb(bb);
     const auto file   = file_of(sq);
-    const auto flipsq = flip[Us][sq];
+    const auto flipsq = relative_square(Them, sq);
 
     if (b.is_pawn_passed(sq, Us))
       passed_pawn_files[Us] |= 1 << file;
@@ -245,7 +251,7 @@ void Evaluate<Tuning>::eval_knights() {
   while (knights)
   {
     const auto sq     = pop_lsb(&knights);
-    const auto flipsq = flip[Us][sq];
+    const auto flipsq = relative_square(Them, sq);
 
     score_mg += knight_pst_mg[flipsq];
     score_eg += knight_pst_eg[flipsq];
@@ -293,7 +299,7 @@ void Evaluate<Tuning>::eval_bishops() {
   while (bishops)
   {
     const auto sq     = pop_lsb(&bishops);
-    const auto flipsq = flip[Us][sq];
+    const auto flipsq = relative_square(Them, sq);
 
     score_mg += bishop_pst_mg[flipsq];
     score_eg += bishop_pst_eg[flipsq];
@@ -341,7 +347,7 @@ void Evaluate<Tuning>::eval_rooks() {
   while (rooks)
   {
     const auto sq     = pop_lsb(&rooks);
-    const auto flipsq = flip[Us][sq];
+    const auto flipsq = relative_square(Them, sq);
 
     score_mg += rook_pst_mg[flipsq];
     score_eg += rook_pst_eg[flipsq];
@@ -384,7 +390,7 @@ void Evaluate<Tuning>::eval_queens() {
   for (auto queens = b.queens(Us); queens; reset_lsb(queens))
   {
     const auto sq     = lsb(queens);
-    const auto flipsq = flip[Us][sq];
+    const auto flipsq = relative_square(Them, sq);
 
     score_mg += queen_pst_mg[flipsq];
     score_eg += queen_pst_eg[flipsq];
@@ -419,7 +425,7 @@ void Evaluate<Tuning>::eval_king() {
   constexpr Direction Up = Us == WHITE ? NORTH : SOUTH;
   const auto sq          = lsb(b.king(Us));
   const auto bbsq        = bit(sq);
-  const auto flipsq      = flip[Us][sq];
+  const auto flipsq      = relative_square(~Us, sq);
 
   auto score_mg       = king_pst_mg[flipsq];
   const auto score_eg = king_pst_eg[flipsq];

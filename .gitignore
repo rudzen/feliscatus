@@ -101,3 +101,5 @@ build/
 \.vscode/ipch/
 
 .idea/
+
+logs/

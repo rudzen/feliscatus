@@ -61,7 +61,7 @@ constexpr std::array<Bitboard, 8> FileBB{FileABB, FileBBB, FileCBB, FileDBB, Fil
 constexpr std::array<Bitboard, sq_nb> make_knight_attacks()
 {
   std::array<Bitboard, sq_nb> result{};
-  for (const Square sq : Squares)
+  for (const auto sq : Squares)
   {
     const auto bbsq = square_bb[sq];
     result[sq] =  (bbsq & ~(FileABB | FileBBB)) << 6;

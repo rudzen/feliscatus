@@ -305,11 +305,11 @@ int Material::KBKX(const int eval, const uint32_t key1, const uint32_t key2, con
   case k: {
     if (pc1 + pc2 == 0)
       return draw_score();
-    else if (pc1 == 0 && pc2 == 1)
+    if (pc1 == 0 && pc2 == 1)
     {
       if (side1 == side_to_move || !board->is_attacked(lsb(board->bishops(side1)), side2))
       {
-        if (const Bitboard bishopbb = board->bishops(side1); pawn_front_span[side2][lsb(board->pawns(side2))] & (piece_attacks_bb<Bishop>(lsb(bishopbb), board->occupied) | bishopbb))
+        if (const auto bishopbb = board->bishops(side1); pawn_front_span[side2][lsb(board->pawns(side2))] & (piece_attacks_bb<Bishop>(lsb(bishopbb), board->occupied) | bishopbb))
           return draw_score();
       }
     }
@@ -339,7 +339,7 @@ int Material::KNKX(const int eval, const uint32_t key2, const int pc1, const int
     {
       if (side1 == side_to_move || !board->is_attacked(lsb(board->knights(side1)), side2))
       {
-        if (const Bitboard knightbb = board->knights(side1); pawn_front_span[side2][lsb(board->pawns(side2))] & (piece_attacks_bb<Knight>(lsb(knightbb)) | knightbb))
+        if (const auto knightbb = board->knights(side1); pawn_front_span[side2][lsb(board->pawns(side2))] & (piece_attacks_bb<Knight>(lsb(knightbb)) | knightbb))
           return draw_score();
       }
     }
@@ -409,7 +409,7 @@ int Material::KBpK(const int eval, const Color side1) {
 
   if (!same_color(promosq1, lsb(board->bishops(side1))))
   {
-    if (const auto &bbk2 = board->king(~side1); (promosq1 == h8 && bbk2 & corner_h8) || (promosq1 == a8 && bbk2 & corner_a8) || (promosq1 == h1 && bbk2 & corner_h1) || (
+    if (const auto bbk2 = board->king(~side1); (promosq1 == h8 && bbk2 & corner_h8) || (promosq1 == a8 && bbk2 & corner_a8) || (promosq1 == h1 && bbk2 & corner_h1) || (
                                                   promosq1 == a1 && bbk2 & corner_a1))
       return draw_score();
   }

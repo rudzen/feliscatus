@@ -4,10 +4,14 @@
 #include <cstdint>
 #include <array>
 #include <string_view>
+#include <memory>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/rotating_file_sink.h>
+
 #include "types.h"
+#include "util.h"
 
 namespace squares {
-
 
 enum Square {
   a1, b1, c1, d1, e1, f1, g1, h1,
@@ -65,11 +69,14 @@ constexpr std::array<Square, 2> oo_king_to{g1, g8};
 inline std::array<Square, 2> ooo_king_from{};
 constexpr std::array<Square, 2> ooo_king_to{c1, c8};
 
-inline std::array<Square, sq_nb> rook_castles_to{};  // indexed by position of the king
-inline std::array<Square, sq_nb> rook_castles_from{};// also
-inline std::array<int, sq_nb> castle_rights_mask{};
-inline int dist[64][64];// chebyshev distance
-inline Square flip[2][64];
+/// indexed by the position of the king
+inline std::array<Square, sq_nb> rook_castles_to{};
+
+/// indexed by the position of the king
+inline std::array<Square, sq_nb> rook_castles_from{};
+
+/// chebyshev distance
+inline int dist[64][64];
 
 constexpr Rank rank_of(const Square sq) { return static_cast<Rank>(sq >> 3); }
 
@@ -85,13 +92,11 @@ constexpr Square relative_square(const Color c, const Square s) { return static_
 
 constexpr Rank relative_rank(const Color c, const Square s) { return relative_rank(c, rank_of(s)); }
 
-inline void init() {
-  for (const auto sq : Squares)
-  {
-    flip[WHITE][sq] = static_cast<Square>(file_of(sq) + ((7 - rank_of(sq)) << 3));
-    flip[BLACK][sq] = static_cast<Square>(file_of(sq) + (rank_of(sq) << 3));
-  }
+constexpr std::string_view square_to_string(const Square sq) {
+  return SquareString[sq];
+}
 
+inline void init() {
   for (const auto sq1 : Squares)
   {
     for (const auto sq2 : Squares)
@@ -104,16 +109,15 @@ inline void init() {
 
   for (const auto side : Colors)
   {
-    rook_castles_to[flip[side][g1]] = flip[side][f1];
-    rook_castles_to[flip[side][c1]] = flip[side][d1];
+    const auto rank_1 = relative_rank(side, RANK_1);
+    rook_castles_to[make_square(FILE_G, rank_1)] = make_square(FILE_F, rank_1);
+    rook_castles_to[make_square(FILE_C, rank_1)] = make_square(FILE_D, rank_1);
   }
+
   // Arrays castle_right_mask, rook_castles_from, ooo_king_from and oo_king_from
   // are initd in method setupCastling of class Game.
 }
 
-constexpr std::string_view square_to_string(const Square sq) {
-  return SquareString[sq];
-}
 }// namespace squares
 
 using namespace squares;

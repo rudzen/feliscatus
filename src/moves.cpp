@@ -181,7 +181,7 @@ void Moves::generate_hash_move() {
 
 void Moves::generate_captures_and_promotions() {
   add_moves(b->occupied_by_side[~side_to_move]);
-  const auto &pawns = b->pawns(side_to_move);
+  const auto pawns = b->pawns(side_to_move);
   add_pawn_moves(pawn_push(side_to_move, pawns & rank_7[side_to_move]) & ~b->occupied, pawn_push(side_to_move), QUIET);
   add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & b->occupied_by_side[~side_to_move], pawn_west_attack_dist[side_to_move], CAPTURE);
   add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & b->occupied_by_side[~side_to_move], pawn_east_attack_dist[side_to_move], CAPTURE);
