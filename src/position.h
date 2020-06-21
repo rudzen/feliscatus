@@ -13,9 +13,6 @@ struct Position : public Moves {
   const uint32_t *string_to_move(std::string_view m);
 
   [[nodiscard]]
-  bool is_castle_move(std::string_view m, int &castle_type) const;
-
-  [[nodiscard]]
   bool is_draw() const;
 
   int reversible_half_move_count{};
@@ -32,4 +29,9 @@ struct Position : public Moves {
   uint32_t transp_move{};
   int flags{};
   HashEntry *transposition{};
+
+private:
+
+  [[nodiscard]]
+  bool is_castle_move(std::string_view m, int &castle_type) const;
 };
