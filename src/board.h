@@ -5,7 +5,6 @@
 #include <array>
 #include <optional>
 #include "types.h"
-#include "square.h"
 #include "bitboard.h"
 
 enum Move : uint32_t;

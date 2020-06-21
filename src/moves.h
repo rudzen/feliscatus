@@ -64,7 +64,7 @@ private:
 
   void add_pawn_capture_moves(Bitboard to_squares);
 
-  void add_pawn_moves(Bitboard to_squares, Direction dist, MoveType type);
+  void add_pawn_moves(Bitboard to_squares, Direction distance, MoveType type);
 
   void add_castle_move(Square from, Square to);
 

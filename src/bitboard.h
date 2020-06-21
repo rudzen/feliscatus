@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <bit>
 #include <algorithm>
-#include "square.h"
 #include "types.h"
 
 namespace bitboard {

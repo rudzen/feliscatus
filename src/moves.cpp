@@ -1,12 +1,14 @@
+#include <ranges>
 #include "moves.h"
 #include "board.h"
 #include "bitboard.h"
 #include "magic.h"
 
+
 namespace {
 
 [[nodiscard]]
-inline bool is_castle_allowed(const Square to, const Color stm, const Board* b) {
+bool is_castle_allowed(const Square to, const Color stm, const Board* b) {
   // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
   // The following comments were taken from that source.
 
@@ -26,10 +28,9 @@ inline bool is_castle_allowed(const Square to, const Color stm, const Board* b) 
   // squares) may be under attack by an enemy piece. (Initial square was already checked a this point.)
 
   for (auto bb = between_bb[king_square][to] | to; bb; reset_lsb(bb))
-  {
     if (b->is_attacked(lsb(bb), ~stm))
       return false;
-  }
+
   return true;
 }
 
@@ -39,12 +40,12 @@ void Moves::generate_moves(MoveSorter *sorter, const Move tt_move, const int fla
   reset(sorter, tt_move, flags);
   max_stage = 3;
 
-  if ((move_flags & STAGES) == 0)
-  {
-    generate_hash_move();
-    generate_captures_and_promotions();
-    generate_quiet_moves();
-  }
+  if ((move_flags & STAGES) != 0)
+    return;
+
+  generate_hash_move();
+  generate_captures_and_promotions();
+  generate_quiet_moves();
 }
 
 void Moves::generate_captures_and_promotions(MoveSorter *sorter) {
@@ -123,27 +124,39 @@ MoveData *Moves::next_move() {
 }
 
 bool Moves::is_pseudo_legal(const Move m) const {
-  // TO DO en passant moves and castle moves
-  if ((b->piece[move_piece(m)] & move_from(m)) == 0)
+  // TODO : en passant moves and castle moves
+
+  const auto from = move_from(m);
+
+  if ((b->piece[move_piece(m)] & from) == 0)
     return false;
 
   const auto to = move_to(m);
 
-  if (is_capture(m))
+  if (const auto move_stm = move_side(m); move_stm != side_to_move)
+    return false;
+  else if (is_capture(m))
   {
-    if ((b->occupied_by_side[~move_side(m)] & to) == 0)
+    if ((b->occupied_by_side[~move_stm] & to) == 0)
       return false;
 
     if ((b->piece[move_captured(m)] & to) == 0)
       return false;
+  //} else if (is_castle_move(m))
+  //{
+  //  // TODO : finish
+  //} else if (is_ep_capture(m))
+  //{
+  //  // TODO : finish
   } else if (b->occupied & to)
     return false;
 
   if (const auto piece = move_piece(m) & 7; piece == Bishop || piece == Rook || piece == Queen)
   {
-    if (between_bb[move_from(m)][to] & b->occupied)
+    if (between_bb[from][to] & b->occupied)
       return false;
   }
+
   return true;
 }
 
@@ -298,9 +311,10 @@ void Moves::add_pawn_quiet_moves(const Bitboard to_squares) {
 }
 
 void Moves::add_pawn_capture_moves(const Bitboard to_squares) {
+  const auto opponents = b->occupied_by_side[~side_to_move];
   const auto pawns = b->pawns(side_to_move);
-  add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & b->occupied_by_side[~side_to_move] & to_squares, pawn_west_attack_dist[side_to_move], CAPTURE);
-  add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & b->occupied_by_side[~side_to_move] & to_squares, pawn_east_attack_dist[side_to_move], CAPTURE);
+  add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & opponents & to_squares, pawn_west_attack_dist[side_to_move], CAPTURE);
+  add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & opponents & to_squares, pawn_east_attack_dist[side_to_move], CAPTURE);
   if (en_passant_square != no_square)
   {
     add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & to_squares & en_passant_square, pawn_west_attack_dist[side_to_move], EPCAPTURE);
@@ -308,7 +322,7 @@ void Moves::add_pawn_capture_moves(const Bitboard to_squares) {
   }
 }
 
-void Moves::add_pawn_moves(const Bitboard to_squares, const Direction dist, const MoveType type) {
+void Moves::add_pawn_moves(const Bitboard to_squares, const Direction distance, const MoveType type) {
 
   const auto mask = side_to_move << 3;
   const auto pawn = Pawn | mask;
@@ -316,18 +330,20 @@ void Moves::add_pawn_moves(const Bitboard to_squares, const Direction dist, cons
   for (auto bb = to_squares; bb; reset_lsb(bb))
   {
     const auto to   = lsb(bb);
-    const auto from = to - dist;
+    const auto from = to - distance;
 
     if (const auto rr = relative_rank(side_to_move, to); rr == RANK_8)
     {
+      const auto promo_type = type | PROMOTION;
+
       if (move_flags & QUEENPROMOTION)
       {
-        add_move(pawn, from, to, type | PROMOTION, Queen | mask);
+        add_move(pawn, from, to, promo_type, Queen | mask);
         return;
       }
 
       for (auto promoted = Queen; promoted >= Knight; promoted--)
-        add_move(pawn, from, to, type | PROMOTION, promoted | mask);
+        add_move(pawn, from, to, promo_type, promoted | mask);
     } else
       add_move(pawn, from, to, type);
   }
@@ -337,23 +353,23 @@ void Moves::add_castle_move(const Square from, const Square to) { add_move(King 
 
 bool Moves::gives_check(const Move m) const {
   b->make_move(m);
-  const bool is_attacked = b->is_attacked(b->king_square[~side_to_move], side_to_move);
+  const auto is_attacked = b->is_attacked(b->king_square[~side_to_move], side_to_move);
   b->unmake_move(m);
   return is_attacked;
 }
 
 bool Moves::is_legal(const Move m, const int piece, const Square from, const MoveType type) const {
-  if (pinned & from || in_check || (piece & 7) == King || type & EPCAPTURE)
-  {
-    b->make_move(m);
+  if (!(pinned & from) && !in_check && (piece & 7) != King && !(type & EPCAPTURE))
+    return true;
 
-    if (b->is_attacked(b->king_square[side_to_move], ~side_to_move))
-    {
-      b->unmake_move(m);
-      return false;
-    }
+  b->make_move(m);
+
+  if (b->is_attacked(b->king_square[side_to_move], ~side_to_move))
+  {
     b->unmake_move(m);
+    return false;
   }
+  b->unmake_move(m);
   return true;
 }
 

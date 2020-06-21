@@ -27,5 +27,3 @@ inline void init() {
 }
 
 }// namespace squares
-
-using namespace squares;

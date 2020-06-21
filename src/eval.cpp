@@ -1,10 +1,8 @@
-#include <optional>
 #include <memory>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include "eval.h"
 #include "types.h"
-#include "square.h"
 #include "game.h"
 #include "parameters.h"
 #include "bitboard.h"

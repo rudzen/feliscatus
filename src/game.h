@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <string_view>
 #include "types.h"
-#include "square.h"
 #include "board.h"
 #include "position.h"
 
