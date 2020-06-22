@@ -7,7 +7,13 @@
 struct MoveData {
   Move move;
   int score;
+  operator Move() const { return move; }
+  void operator=(const Move m) { move = m; }  // NOLINT(misc-unconventional-assign-operator)
 };
+
+inline bool operator<(const MoveData &f, const MoveData &s) {
+  return f.score < s.score;
+}
 
 struct MoveSorter {
   virtual ~MoveSorter() = default;
@@ -16,8 +22,7 @@ struct MoveSorter {
 
 struct Board;
 
-class Moves {
-public:
+struct Moves {
   void generate_moves(MoveSorter *sorter = nullptr, Move tt_move = MOVE_NONE, int flags = 0);
 
   void generate_captures_and_promotions(MoveSorter *sorter);

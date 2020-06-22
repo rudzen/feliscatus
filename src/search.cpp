@@ -18,9 +18,9 @@ void store_pv(const PVEntry *pv, const int pv_length) {
 
 [[nodiscard]]
 int codec_t_table_score(const int score, const int ply) {
-  if (std::abs(score) < Search::MAXSCORE - MAXDEPTH)
-    return score;
-  return score < 0 ? score - ply : score + ply;
+  return std::abs(score) < Search::MAXSCORE - MAXDEPTH
+       ? score
+       : score < 0 ? score - ply : score + ply;
 }
 
 void get_hash_and_evaluate(Position *pos, Game* game, PawnHashTable *pawn_hash_table, const int alpha, const int beta, const int plies) {
@@ -135,9 +135,8 @@ bool Search::search_fail_low(const int depth, const int alpha, const Move exclud
         return false;
     }
   }
-  if (move_count == 0)
-    return false;
-  return true;
+
+  return move_count != 0;
 }
 
 bool Search::should_try_null_move(const int beta) const {

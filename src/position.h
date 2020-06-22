@@ -6,7 +6,7 @@
 
 class HashEntry;
 
-struct Position : public Moves {
+struct Position : Moves {
   void clear();
 
   [[nodiscard]]

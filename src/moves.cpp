@@ -193,11 +193,13 @@ void Moves::generate_hash_move() {
 }
 
 void Moves::generate_captures_and_promotions() {
-  add_moves(b->occupied_by_side[~side_to_move]);
-  const auto pawns = b->pawns(side_to_move);
+  const auto opponent_pieces = b->occupied_by_side[~side_to_move];
+  const auto pawns           = b->pawns(side_to_move);
+
+  add_moves(opponent_pieces);
   add_pawn_moves(pawn_push(side_to_move, pawns & rank_7[side_to_move]) & ~b->occupied, pawn_push(side_to_move), NORMAL);
-  add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & b->occupied_by_side[~side_to_move], pawn_west_attack_dist[side_to_move], CAPTURE);
-  add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & b->occupied_by_side[~side_to_move], pawn_east_attack_dist[side_to_move], CAPTURE);
+  add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & opponent_pieces, pawn_west_attack_dist[side_to_move], CAPTURE);
+  add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & opponent_pieces, pawn_east_attack_dist[side_to_move], CAPTURE);
   if (en_passant_square != no_square)
   {
     add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & en_passant_square, pawn_west_attack_dist[side_to_move], EPCAPTURE);
@@ -215,9 +217,10 @@ void Moves::generate_quiet_moves() {
     if (can_castle_long())
       add_castle_move(ooo_king_from[side_to_move], ooo_king_to[side_to_move]);
   }
-  const auto pushed = pawn_push(side_to_move, b->pawns(side_to_move) & ~rank_7[side_to_move]) & ~b->occupied;
+  const auto empty_squares = ~b->occupied;
+  const auto pushed        = pawn_push(side_to_move, b->pawns(side_to_move) & ~rank_7[side_to_move]) & empty_squares;
   add_pawn_moves(pushed, pawn_push(side_to_move), NORMAL);
-  add_pawn_moves(pawn_push(side_to_move, pushed & rank_3[side_to_move]) & ~b->occupied, pawn_push(side_to_move) * 2, DOUBLEPUSH);
+  add_pawn_moves(pawn_push(side_to_move, pushed & rank_3[side_to_move]) & empty_squares, pawn_push(side_to_move) * 2, DOUBLEPUSH);
   add_moves(~b->occupied);
   stage++;
 }
@@ -241,7 +244,7 @@ void Moves::add_move(const int piece, const Square from, const Square to, const 
     return;
 
   auto &move_data = move_list[number_moves++];
-  move_data.move  = move;
+  move_data  = move;
 
   if (move_sorter)
     move_sorter->sort_move(move_data);
@@ -305,16 +308,17 @@ void Moves::add_moves(const int piece, const Square from, const Bitboard attacks
 }
 
 void Moves::add_pawn_quiet_moves(const Bitboard to_squares) {
-  const auto pushed = pawn_push(side_to_move, b->pawns(side_to_move)) & ~b->occupied;
+  const auto empty_squares = ~b->occupied;
+  const auto pushed        = pawn_push(side_to_move, b->pawns(side_to_move)) & empty_squares;
   add_pawn_moves(pushed & to_squares, pawn_push(side_to_move), NORMAL);
-  add_pawn_moves(pawn_push(side_to_move, pushed & rank_3[side_to_move]) & ~b->occupied & to_squares, pawn_push(side_to_move) * 2, DOUBLEPUSH);
+  add_pawn_moves(pawn_push(side_to_move, pushed & rank_3[side_to_move]) & empty_squares & to_squares, pawn_push(side_to_move) * 2, DOUBLEPUSH);
 }
 
 void Moves::add_pawn_capture_moves(const Bitboard to_squares) {
-  const auto opponents = b->occupied_by_side[~side_to_move];
+  const auto opponent_pieces = b->occupied_by_side[~side_to_move];
   const auto pawns = b->pawns(side_to_move);
-  add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & opponents & to_squares, pawn_west_attack_dist[side_to_move], CAPTURE);
-  add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & opponents & to_squares, pawn_east_attack_dist[side_to_move], CAPTURE);
+  add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & opponent_pieces & to_squares, pawn_west_attack_dist[side_to_move], CAPTURE);
+  add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & opponent_pieces & to_squares, pawn_east_attack_dist[side_to_move], CAPTURE);
   if (en_passant_square != no_square)
   {
     add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & to_squares & en_passant_square, pawn_west_attack_dist[side_to_move], EPCAPTURE);

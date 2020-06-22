@@ -293,12 +293,12 @@ Move Search::get_singular_move(const int depth) {
 template<NodeType NT, bool PV>
 std::optional<int> Search::next_depth_not_pv(const int depth, const int move_count, const MoveData *move_data, const int alpha, int &best_score) const {
 
-  constexpr auto move_count_limit = PV ? 5 : 3;
-
   const auto m = move_data->move;
 
   if (pos->in_check && board->see_last_move(m) >= 0)
     return std::optional<int>(depth);
+
+  constexpr auto move_count_limit = PV ? 5 : 3;
 
   if (move_count >= move_count_limit && !is_queen_promotion(m) && !is_capture(m) && !is_killer_move(m, plies - 1))
   {
@@ -333,8 +333,8 @@ int Search::search_quiesce(int alpha, const int beta, const int qs_ply) {
   if (pos->eval_score >= beta)
   {
     return !pos->transposition || pos->transp_depth <= 0
-             ? store_search_node_score(pos->eval_score, 0, BETA, MOVE_NONE)
-             : search_node_score(pos->eval_score);
+         ? store_search_node_score(pos->eval_score, 0, BETA, MOVE_NONE)
+         : search_node_score(pos->eval_score);
   }
 
   if (plies >= MAXDEPTH - 1 || qs_ply > 6)
@@ -401,9 +401,9 @@ int Search::search_quiesce(int alpha, const int beta, const int qs_ply) {
     }
   }
 
-  if (!pos->transposition || pos->transp_depth <= 0)
-    return store_search_node_score(best_score, 0, node_type(best_score, beta, best_move), best_move);
-  return search_node_score(best_score);
+  return !pos->transposition || pos->transp_depth <= 0
+       ? store_search_node_score(best_score, 0, node_type(best_score, beta, best_move), best_move)
+       : search_node_score(best_score);
 }
 
 template<NodeType NT>
@@ -417,10 +417,12 @@ void Search::update_pv(const Move move, const int score, const int depth) {
   entry->node_type = NT;
   entry->eval      = pos->eval_score;
 
-  pv_length[plies] = pv_length[plies + 1];
+  const auto next_ply = plies + 1;
 
-  for (auto i    = plies + 1; i < pv_length[plies]; ++i)
-    pv[plies][i] = pv[plies + 1][i];
+  pv_length[plies] = pv_length[next_ply];
+
+  for (auto i = next_ply; i < pv_length[plies]; ++i)
+    pv[plies][i] = pv[next_ply][i];
 
   if (plies == 0)
   {
