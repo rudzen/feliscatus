@@ -3,10 +3,10 @@
 #include <memory>
 #include <vector>
 #include "protocol.h"
-#include "worker.h"
+#include "game.h"
+#include "search.h"
 
 struct PawnHashTable;
-class Search;
 
 struct Felis final : public ProtocolListener {
   Felis();
@@ -38,6 +38,5 @@ private:
   std::unique_ptr<Search> search;
   std::unique_ptr<Protocol> protocol;
   std::unique_ptr<PawnHashTable> pawnt;
-  std::vector<Worker> workers{};
   std::size_t num_threads;
 };

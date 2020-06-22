@@ -6,6 +6,7 @@
 #include "perft.h"
 #include "util.h"
 #include "types.h"
+#include "workerpool.h"
 
 namespace {
 
@@ -19,10 +20,7 @@ Felis::Felis()
 }
 
 int Felis::new_game() {
-  //game->new_game(Game::kStartPosition.data());
-  // TODO : test effect of not clearing
-  //pawnt->clear();
-  //TT.clear();
+  game->new_game(Game::kStartPosition.data());
   return 0;
 }
 
@@ -52,20 +50,18 @@ bool Felis::make_move(const std::string_view m) const {
 }
 
 void Felis::go_search(const SearchLimits &limits) {
-  // Shared transposition table
   start_workers();
   search->go(limits, num_threads);
   stop_workers();
 }
 
 void Felis::start_workers() {
-  for (auto &worker : workers)
-    worker.start(game.get());
+  for (auto &worker : Pool)
+    worker->start(game.get());
 }
 
 void Felis::stop_workers() {
-  for (auto &worker : workers)
-    worker.stop();
+  Pool.stop();
 }
 
 int Felis::set_option(const std::string_view name, const std::string_view value) {
@@ -78,8 +74,7 @@ int Felis::set_option(const std::string_view name, const std::string_view value)
     } else if (name == "Threads" || name == "NumThreads")
     {
       num_threads = std::clamp(util::to_integral<uint64_t>(value), 1ULL, 64ULL);
-      workers.resize(num_threads - 1);
-      workers.shrink_to_fit();
+      Pool.set(num_threads - 1);
       fmt::print("info string Threads:{}\n", num_threads);
     } else if (name == "UCI_Chess960")
     {
