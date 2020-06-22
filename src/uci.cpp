@@ -1,6 +1,8 @@
 #include <conio.h>
 #include <windows.h>
 #include <winbase.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 
 #include <iostream>
 
@@ -8,8 +10,20 @@
 #include "util.h"
 #include "game.h"
 #include "position.h"
+#include "workerpool.h"
+#include "search.h"
 
 namespace {
+
+constexpr auto max_log_file_size = 1048576 * 5;
+constexpr auto max_log_files     = 5;
+
+std::shared_ptr<spdlog::logger> uci_logger = spdlog::rotating_logger_mt("uci_logger", "logs/uci.txt", max_log_file_size, max_log_files);
+
+/// nps() convert node count and current time to nodes pr second
+uint64_t nps(const uint64_t nodes, const TimeUnit time) {
+  return static_cast<uint64_t>(static_cast<double>(nodes) * 1000.0 / static_cast<double>(time));
+}
 
 // TODO : Replace with portable code
 
@@ -103,7 +117,8 @@ void UCIProtocol::post_moves(const Move bestmove, const Move pondermove) {
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-void UCIProtocol::post_info(const int d, const int selective_depth, const uint64_t node_count, const uint64_t nodes_per_sec, const TimeUnit time, const int hash_full) {
+void UCIProtocol::post_info(const int d, const int selective_depth, const uint64_t node_count, const TimeUnit time, const int hash_full) {
+  const auto nodes_per_sec = nps(node_count + Pool.node_count(), time);
   fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, hash_full, node_count, nodes_per_sec, time);
 }
 
@@ -111,7 +126,7 @@ void UCIProtocol::post_curr_move(const Move curr_move, const int curr_move_numbe
   fmt::print("info currmove {} currmovenumber {}\n", game->move_to_string(curr_move), curr_move_number);
 }
 
-void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const TimeUnit time, const int hash_full, const int score, fmt::memory_buffer &pv, const NodeType node_type) {
+void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_count, const TimeUnit time, const int hash_full, const int score, fmt::memory_buffer &pv, const NodeType node_type) {
 
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
@@ -121,7 +136,8 @@ void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_co
   else if (node_type == BETA)
     fmt::format_to(buffer, "lowerbound ");
 
-  fmt::print("{}hashfull {} nodes {} nps {} time {} pv {}\n", fmt::to_string(buffer), hash_full, node_count, nodes_per_second, time, fmt::to_string(pv));
+  const auto nodes_per_sec = nps(node_count + Pool.node_count(), time);
+  fmt::print("{}hashfull {} nodes {} nps {} time {} pv {}\n", fmt::to_string(buffer), hash_full, node_count, nodes_per_sec, time, fmt::to_string(pv));
 }
 
 int UCIProtocol::handle_input(const char *params[], const int num_params) {

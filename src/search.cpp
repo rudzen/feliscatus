@@ -6,6 +6,9 @@
 
 namespace {
 
+constexpr int KILLERMOVESCORE    = 124900;
+constexpr int PROMOTIONMOVESCORE = 50000;
+
 void store_pv(const PVEntry *pv, const int pv_length) {
   assert(pv_length > 0);
 
@@ -88,7 +91,7 @@ int Search::go(const SearchLimits &limits, const std::size_t num_workers) {
       while (plies)
         unmake_move();
 
-      if (const int pv_len = pv_length.front(); pv_len)
+      if (const auto pv_len = pv_length.front(); pv_len)
         store_pv(pv[0], pv_len);
     }
   }
@@ -149,9 +152,9 @@ int Search::next_depth_pv(const Move singular_move, const int depth, const MoveD
   if (m == singular_move)
     return depth;
 
-  if ((pos->in_check || board->is_passed_pawn_move(m)) && board->see_last_move(m) >= 0)
-    return depth;
-  return depth - 1;
+  return (pos->in_check || board->is_passed_pawn_move(m)) && board->see_last_move(m) >= 0
+       ? depth
+       : depth - 1;
 }
 
 bool Search::make_move_and_evaluate(const Move m, const int alpha, const int beta) {
@@ -161,7 +164,7 @@ bool Search::make_move_and_evaluate(const Move m, const int alpha, const int bet
   pos = game->pos;
   ++plies;
   pv_length[plies] = plies;
-  ++node_count;
+  ++node_count_;
 
   check_sometimes();
 
@@ -178,7 +181,7 @@ void Search::unmake_move() {
 }
 
 void Search::check_sometimes() {
-  if ((node_count & 0x3fff) == 0)
+  if ((node_count_ & 0x3fff) == 0)
     check_time();
 }
 
@@ -197,30 +200,25 @@ void Search::check_time() {
 
 int Search::is_analysing() const { return protocol ? protocol.value()->is_analysing() : true; }
 
-uint64_t Search::nodes_per_second() const {
-  const auto micros = start_time.elapsed_microseconds();
-  return micros == 0 ? node_count * num_workers_ : node_count * num_workers_ * 1000000 / micros;
-}
-
 void Search::update_history_scores(const Move move, const int depth) {
   history_scores[move_piece(move)][move_to(move)] += depth * depth;
 
-  if (history_scores[move_piece(move)][move_to(move)] > 2048)
-  {
-    for (auto &history_score : history_scores)
-      for (auto &k : history_score)
-        k >>= 2;
-  }
+  if (history_scores[move_piece(move)][move_to(move)] <= 2048)
+    return;
+
+  for (auto &history_score : history_scores)
+    for (auto &k : history_score)
+      k >>= 2;
 }
 
 void Search::update_killer_moves(const Move move) {
   // Same move can be stored twice for a ply.
-  if (!is_capture(move) && !is_promotion(move) && move != killer_moves[0][plies])
-  {
-    killer_moves[2][plies] = killer_moves[1][plies];
-    killer_moves[1][plies] = killer_moves[0][plies];
-    killer_moves[0][plies] = move;
-  }
+  if (is_capture(move) || is_promotion(move) || move == killer_moves[0][plies])
+    return;
+
+  killer_moves[2][plies] = killer_moves[1][plies];
+  killer_moves[1][plies] = killer_moves[0][plies];
+  killer_moves[0][plies] = move;
 }
 
 bool Search::is_killer_move(const Move m, const int ply) const { return m == killer_moves[0][ply] || m == killer_moves[1][ply] || m == killer_moves[2][ply]; }
@@ -260,7 +258,7 @@ void Search::init_search(const SearchLimits &limits) {
   }
   plies          = 0;
   search_depth   = 0;
-  node_count     = 1;
+  node_count_    = 1;
   max_ply        = 0;
   pos->pv_length = 0;
   pv_length.fill(0);

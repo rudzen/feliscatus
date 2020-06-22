@@ -35,6 +35,9 @@ public:
 
   void run();
 
+  [[nodiscard]]
+  uint64_t node_count() const;
+
 private:
   template<NodeType NT, bool PV>
   int search(int depth, int alpha, int beta);
@@ -74,9 +77,6 @@ private:
 
   template<NodeType NT>
   void update_pv(Move move, int score, int depth);
-
-  [[nodiscard]]
-  uint64_t nodes_per_second() const;
 
   void update_history_scores(Move move, int depth);
 
@@ -126,9 +126,6 @@ public:
 
 private:
 
-  static constexpr int KILLERMOVESCORE    = 124900;
-  static constexpr int PROMOTIONMOVESCORE = 50000;
-
   static constexpr std::array<int, 4> futility_margin {150, 150, 150, 400};
   static constexpr std::array<int, 4> razor_margin {0, 125, 125, 400};
 
@@ -141,11 +138,15 @@ private:
   Board *board;
   Position *pos{};
 
-  uint64_t node_count{};
+  uint64_t node_count_{};
   std::size_t num_workers_{};
 
   PawnHashTable *pawn_hash_;
 };
+
+inline uint64_t Search::node_count() const {
+  return node_count_;
+}
 
 template<NodeType NT, bool PV>
 int Search::search(const int depth, int alpha, const int beta) {
@@ -435,7 +436,7 @@ void Search::update_pv(const Move move, const int score, const int depth) {
       for (auto i = plies; i < pv_length[plies]; ++i)
         fmt::format_to(buffer, "{} ", game->move_to_string(pv[plies][i].move));
 
-      protocol.value()->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), start_time.elapsed_milliseconds() + 1, TT.get_load(), score, buffer, NT);
+      protocol.value()->post_pv(search_depth, max_ply, node_count_, start_time.elapsed_milliseconds() + 1, TT.get_load(), score, buffer, NT);
     }
   }
 }
