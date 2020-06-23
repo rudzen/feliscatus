@@ -12,16 +12,17 @@
 
 namespace {
 
-  constexpr Bitboard CenterBB = make_bitboard(d4, e4, d5, e5);
+constexpr Bitboard CenterBB = make_bitboard(d4, e4, d5, e5);
 
-  constexpr auto get_actual_eval = [](const std::array<int, COL_NB> &e) { return e[WHITE] - e[BLACK]; };
+constexpr auto get_actual_eval = [](const std::array<int, COL_NB> &e) { return e[WHITE] - e[BLACK]; };
 
-  constexpr auto max_log_file_size = 1048576 * 5;
-  constexpr auto max_log_files     = 3;
+constexpr auto max_log_file_size = 1048576 * 5;
+constexpr auto max_log_files     = 3;
 
-  std::shared_ptr<spdlog::logger> eval_logger = spdlog::rotating_logger_mt("eval_logger", "logs/eval.txt", max_log_file_size, max_log_files);
+std::shared_ptr<spdlog::logger> eval_logger = spdlog::rotating_logger_mt("eval_logger", "logs/eval.txt", max_log_file_size, max_log_files);
 
-}
+
+}// namespace
 
 template<bool Tuning>
 struct Evaluate {
@@ -63,7 +64,7 @@ private:
   const Board &b{};
   Position *pos{};
   PawnHashTable *pawnt{};
-  PawnHashEntry* pawnp{};
+  PawnHashEntry *pawnp{};
 
   std::array<int, COL_NB> poseval_mg{};
   std::array<int, COL_NB> poseval_eg{};
@@ -129,7 +130,8 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
   const auto pos_eval_mg = static_cast<int>(get_actual_eval(poseval_mg) * stage);
   const auto pos_eval_eg = static_cast<int>(get_actual_eval(poseval_eg) * (1 - stage));
   const auto pos_eval    = pos_eval_mg + pos_eval_eg + get_actual_eval(poseval);
-  const auto eval        = pos->material.evaluate(pos->flags, pos->side_to_move == BLACK ? -pos_eval : pos_eval, pos->side_to_move, &b);;
+  const auto eval        = pos->material.evaluate(pos->flags, pos->side_to_move == BLACK ? -pos_eval : pos_eval, pos->side_to_move, &b);
+  ;
 
   return eval;
 }
@@ -172,15 +174,14 @@ void Evaluate<Tuning>::eval_material() {
   if (const auto bishop_count = pos->material.count(Us, Bishop); bishop_count == 2)
   {
     auto bishops = b.bishops(Us);
-    add = is_opposite_colors(pop_lsb(&bishops), pop_lsb(&bishops));
-  }
-  else if (bishop_count > 2) // edge case with more than two bishops
+    add          = is_opposite_colors(pop_lsb(&bishops), pop_lsb(&bishops));
+  } else if (bishop_count > 2)// edge case with more than two bishops
   {
     auto bishops = b.bishops(Us);
     std::array<bool, COL_NB> cols{};
     while (bishops)
     {
-      const auto sq = pop_lsb(&bishops);
+      const auto sq      = pop_lsb(&bishops);
       cols[color_of(sq)] = true;
     }
 
@@ -192,7 +193,6 @@ void Evaluate<Tuning>::eval_material() {
     poseval_mg[Us] += bishop_pair_mg;
     poseval_eg[Us] += bishop_pair_eg;
   }
-
 }
 
 template<bool Tuning>
