@@ -76,29 +76,30 @@ void UCIProtocol::check_input() {
 
     if (util::strieq(util::trim(str), "stop"))
     {
-      flags &= ~(INFINITE_MOVE_TIME | PONDER_SEARCH);
+      limits.ponder = limits.infinite = false;
       callback->stop();
     } else if (util::strieq(util::trim(str), "ponderhit"))
     {
-      flags &= ~(INFINITE_MOVE_TIME | PONDER_SEARCH);
+      limits.ponder = limits.infinite = false;
       callback->ponder_hit();
     }
   }
 }
 
 void UCIProtocol::post_moves(const Move bestmove, const Move pondermove) {
-  while (flags & (INFINITE_MOVE_TIME | PONDER_SEARCH))
+  while (limits.ponder & limits.infinite)
   {
-    Sleep(10);
+
+    util::sleep(10);
     check_input();
   }
 
   fmt::memory_buffer buffer;
 
-  fmt::format_to(buffer, "bestmove {}", game->move_to_string(bestmove));
+  fmt::format_to(buffer, "bestmove {}", display_uci(bestmove));
 
   if (pondermove)
-    fmt::format_to(buffer, " ponder {}", game->move_to_string(pondermove));
+    fmt::format_to(buffer, " ponder {}", display_uci(pondermove));
 
   fmt::print("{}\n", fmt::to_string(buffer));
 }
@@ -108,7 +109,7 @@ void UCIProtocol::post_info(const int d, const int selective_depth, const uint64
 }
 
 void UCIProtocol::post_curr_move(const Move curr_move, const int curr_move_number) {
-  fmt::print("info currmove {} currmovenumber {}\n", game->move_to_string(curr_move), curr_move_number);
+  fmt::print("info currmove {} currmovenumber {}\n", display_uci(curr_move), curr_move_number);
 }
 
 void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const TimeUnit time, const int hash_full, const int score, fmt::memory_buffer &pv, const NodeType node_type) {
@@ -157,24 +158,22 @@ int UCIProtocol::handle_input(const char *params[], const int num_params) {
 
 int UCIProtocol::handle_go(const char *params[], const int num_params, ProtocolListener *cb) {
 
-  SearchLimits limits{};
-
-  flags = 0;
+  limits.clear();
 
   for (auto param = 1; param < num_params; param++)
   {
     if (util::strieq(params[param], "movetime"))
     {
-      flags |= FIXED_MOVE_TIME;
+      limits.fixed_movetime = true;
 
       if (++param < num_params)
         limits.movetime = strtol(params[param], nullptr, 10);
     } else if (util::strieq(params[param], "depth"))
     {
-      flags |= FIXED_DEPTH;
+      limits.fixed_depth = true;
 
       if (++param < num_params)
-        depth = strtol(params[param], nullptr, 10);
+        limits.depth = strtol(params[param], nullptr, 10);
     } else if (util::strieq(params[param], "wtime"))
     {
       if (++param < num_params)
@@ -196,9 +195,9 @@ int UCIProtocol::handle_go(const char *params[], const int num_params, ProtocolL
       if (++param < num_params)
         limits.inc[BLACK] = strtol(params[param], nullptr, 10);
     } else if (util::strieq(params[param], "infinite"))
-      flags |= INFINITE_MOVE_TIME;
+      limits.infinite = true;
     else if (util::strieq(params[param], "ponder"))
-      flags |= PONDER_SEARCH;
+      limits.ponder = true;
   }
   cb->go(limits);
   return 0;

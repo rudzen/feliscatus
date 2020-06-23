@@ -1,9 +1,26 @@
 #pragma once
 
+#include <concepts>
 #include <cstring>
 #include <cmath>
 
+#if defined(WIN32) || defined(_MSC_VER)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+#else
+#include <thread>
+#endif
+
 namespace util {
+
+constexpr void sleep(const std::integral auto ms) {
+#ifdef __linux__
+  std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+#else
+  Sleep(static_cast<DWORD>(ms));
+#endif
+}
 
 inline double sigmoid(const double x, const double k) {
   return 1 / (1 + std::pow(10, -k * x / 400));

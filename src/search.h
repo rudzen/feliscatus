@@ -433,7 +433,7 @@ void Search::update_pv(const Move move, const int score, const int depth) {
       fmt::memory_buffer buffer;
 
       for (auto i = plies; i < pv_length[plies]; ++i)
-        fmt::format_to(buffer, "{} ", game->move_to_string(pv[plies][i].move));
+        fmt::format_to(buffer, "{} ", pv[plies][i].move);
 
       protocol.value()->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), start_time.elapsed_milliseconds() + 1, TT.get_load(), score, buffer, NT);
     }
