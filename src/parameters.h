@@ -21,6 +21,9 @@ inline std::array<int, 14> bishop_mob_mg {-23, -17, -13, -13, -6, 0, 5, 5, 10, 3
 inline int bishop_pair_eg     = 57;
 inline int bishop_pair_mg     = 29;
 
+inline int bishop_diagonal_eg = 0;
+inline int bishop_diagonal_mg = 45;
+
 inline int king_obstructs_rook  = -49;
 inline std::array<int, 4> king_on_half_open{12, -9, -55, -97};
 inline std::array<int, 4> king_on_open     {29, -13, -63, -221};

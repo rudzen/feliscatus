@@ -12,6 +12,8 @@
 
 namespace {
 
+  constexpr Bitboard CenterBB = make_bitboard(d4, e4, d5, e5);
+
   constexpr auto get_actual_eval = [](const std::array<int, COL_NB> &e) { return e[WHITE] - e[BLACK]; };
 
   constexpr auto max_log_file_size = 1048576 * 5;
@@ -307,13 +309,13 @@ void Evaluate<Tuning>::eval_bishops() {
     all_attacks[Us] |= attacks;
     bishop_attacks[Us] |= attacks;
 
-    const auto free_squares = attacks & ~(b.occupied_by_side[Us]);
-    const int mob           = pop_count(free_squares);
+    const auto free_squares = attacks & ~b.occupied_by_side[Us];
+    const auto mob          = pop_count(free_squares);
 
     score_mg += bishop_mob_mg[mob];
     score_eg += bishop_mob_eg[mob];
 
-    const int not_defended_by_pawns = pop_count(free_squares & ~pawn_attacks[Them]);
+    const auto not_defended_by_pawns = pop_count(free_squares & ~pawn_attacks[Them]);
 
     score_mg += bishop_mob2_mg[not_defended_by_pawns];
     score_eg += bishop_mob2_eg[not_defended_by_pawns];
@@ -322,6 +324,12 @@ void Evaluate<Tuning>::eval_bishops() {
     {
       attack_counter[Us] += pop_count(attacks_on_king) * bishop_attack_king;
       ++attack_count[Us];
+    }
+
+    if (more_than_one(piece_attacks_bb<Bishop>(sq, b.pieces(Pawn, Us) | b.pieces(Pawn, Them)) & CenterBB))
+    {
+      score_mg += bishop_diagonal_mg;
+      score_eg += bishop_diagonal_eg;
     }
 
     if (pawn_attacks[Them] & sq)
