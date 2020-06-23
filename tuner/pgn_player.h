@@ -1,16 +1,17 @@
 #pragma once
 
+#include <memory>
 #include "pgn.h"
 
 class Game;
 
 namespace pgn {
 
-struct PGNPlayer : public PGNFileReader {
+struct PGNPlayer : PGNFileReader {
 
   explicit PGNPlayer(bool check_legal = true);
 
-  virtual ~PGNPlayer();
+  virtual ~PGNPlayer() = default;
 
   void read_pgn_game() override;
 
@@ -19,6 +20,6 @@ struct PGNPlayer : public PGNFileReader {
   void read_san_move() override;
 
 protected:
-  Game *game_;
+  std::unique_ptr<Game> game_;
 };
 }// namespace pgn

@@ -39,10 +39,8 @@ constexpr auto detect_piece = [](const int from, int &piece) {
 }
 
 pgn::PGNPlayer::PGNPlayer([[maybe_unused]] bool check_legal)
-  : PGNFileReader(), game_(new Game()) {
+  : PGNFileReader(), game_(std::make_unique<Game>()) {
 }
-
-pgn::PGNPlayer::~PGNPlayer() { delete game_; }
 
 void pgn::PGNPlayer::read_pgn_game() {
   game_->new_game(Game::kStartPosition);
