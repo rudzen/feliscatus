@@ -129,22 +129,16 @@ int Felis::run() {
       console_mode = false;
     } else if (util::strieq(tokens[0], "go"))
     {
-      protocol->set_flags(INFINITE_MOVE_TIME);
-      SearchLimits limits{};
-      go(limits);
+      protocol->limits.infinite = true;
+      go(protocol->limits);
     } else if (util::strieq(tokens[0], "perft"))
-    {
       Perft(game.get()).perft(6);
-    } else if (util::strieq(tokens[0], "divide"))
-    {
+    else if (util::strieq(tokens[0], "divide"))
       Perft(game.get()).perft_divide(6);
-    } else if (util::strieq(tokens[0], "tune"))
-    {
+    else if (util::strieq(tokens[0], "tune"))
       fmt::print("Tuner is a separate program, please run 'FeliscatusTuner' for help\n");
-    } else if (util::strieq(tokens[0], "quit") || util::strieq(tokens[0], "exit"))
-    {
+    else if (util::strieq(tokens[0], "quit") || util::strieq(tokens[0], "exit"))
       quit = 1;
-    }
 
     for (auto i = 0; i < num_tokens; i++)
       delete[] tokens[i];

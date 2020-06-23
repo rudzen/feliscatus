@@ -100,7 +100,6 @@ constexpr std::ranges::reverse_view ReverseRanks {Ranks};
 
 constexpr Rank relative_rank(const Color c, const Rank r) { return static_cast<Rank>(r ^ (c * 7)); }
 
-
 enum Direction : int {
   NORTH = 8,
   EAST = 1,
