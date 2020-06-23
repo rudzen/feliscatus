@@ -9,6 +9,9 @@ struct Position;
 
 #pragma pack(1)
 struct PawnHashEntry final {
+
+  Bitboard passed_pawn_file(const Color c) { return static_cast<Bitboard>(passed_pawn_files[c]); }
+
   Key zkey;
   int16_t eval_mg;
   int16_t eval_eg;

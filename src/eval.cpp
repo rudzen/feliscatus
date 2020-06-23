@@ -460,9 +460,11 @@ void Evaluate<Tuning>::eval_passed_pawns() {
   if (pawnp == nullptr)
     return;
 
-  for (uint64_t files = pawnp->passed_pawn_files[Us]; files; reset_lsb(files))
+  const auto our_pawns = b.pawns(Us);
+
+  for (auto files = pawnp->passed_pawn_file(Us); files; reset_lsb(files))
   {
-    for (auto bb = bb_file(lsb(files)) & b.pawns(Us); bb; reset_lsb(bb))
+    for (auto bb = bb_file(lsb(files)) & our_pawns; bb; reset_lsb(bb))
     {
       const auto sq         = lsb(bb);
       const auto front_span = pawn_front_span[Us][sq];
