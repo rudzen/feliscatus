@@ -124,7 +124,7 @@ MoveData *Moves::next_move() {
 }
 
 bool Moves::is_pseudo_legal(const Move m) const {
-  // TODO : en passant moves and castle moves
+  // TODO : en passant moves
 
   const auto from = move_from(m);
 
@@ -142,12 +142,10 @@ bool Moves::is_pseudo_legal(const Move m) const {
 
     if ((b->piece[move_captured(m)] & to) == 0)
       return false;
-  //} else if (is_castle_move(m))
-  //{
-  //  // TODO : finish
-  //} else if (is_ep_capture(m))
-  //{
-  //  // TODO : finish
+  } else if (is_castle_move(m))
+  {
+    if (in_check || (!can_castle_short() && !can_castle_long()))
+      return false;
   } else if (b->occupied & to)
     return false;
 
@@ -167,7 +165,7 @@ void Moves::reset(MoveSorter *sorter, const Move move, const int flags) {
 
   if (move)
   {
-    if (is_castle_move(this->transp_move) || is_ep_capture(this->transp_move))
+    if (is_ep_capture(this->transp_move))
     {
       // needed because isPseudoLegal() is not complete yet.
       transp_move = MOVE_NONE;
