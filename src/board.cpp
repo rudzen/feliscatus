@@ -141,8 +141,8 @@ bool Board::is_passed_pawn_move(const Move m) const {
 }
 
 bool Board::is_pawn_isolated(const Square sq, const Color side) const {
-  const auto bb              = bit(sq);
-  const auto neighbour_files = north_fill(south_fill(west_one(bb) | east_one(bb)));
+  const auto f               = bb_file(file_of(sq));
+  const auto neighbour_files = east_one(f) | west_one(f);
   return (pawns(side) & neighbour_files) == 0;
 }
 
