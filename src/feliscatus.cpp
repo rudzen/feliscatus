@@ -1,6 +1,9 @@
 #include <string_view>
 #include <algorithm>
 #include <memory>
+#include <thread>
+#include <iostream>
+#include <sstream>
 #include <fmt/format.h>
 #include "feliscatus.h"
 #include "perft.h"
@@ -9,8 +12,7 @@
 
 namespace {
 
-constexpr std::string_view on  = "ON";
-constexpr std::string_view off = "OFF";
+constexpr std::array<std::string_view, 2> on_off{"OFF", "ON"};
 
 }
 
@@ -51,7 +53,6 @@ bool Felis::make_move(const std::string_view m) const {
 }
 
 void Felis::go_search(const SearchLimits &limits) {
-  // Shared transposition table
   start_workers();
   search->go(limits, num_threads);
   stop_workers();
@@ -67,33 +68,35 @@ void Felis::stop_workers() {
     worker.stop();
 }
 
-int Felis::set_option(const std::string_view name, const std::string_view value) {
-  if (!value.empty())
+bool Felis::set_option(const std::string_view name, const std::string_view value) {
+  if (name == "Hash")
   {
-    if (name == "Hash")
-    {
-      TT.init(std::clamp(util::to_integral<uint64_t>(value), 8ULL, 65536ULL));
-      fmt::print("info string Hash:{}\n", TT.get_size_mb());
-    } else if (name == "Threads" || name == "NumThreads")
-    {
-      num_threads = std::clamp(util::to_integral<uint64_t>(value), 1ULL, 64ULL);
-      workers.resize(num_threads - 1);
-      workers.shrink_to_fit();
-      fmt::print("info string Threads:{}\n", num_threads);
-    } else if (name == "UCI_Chess960")
-    {
-      game->chess960 = value == "true";
-      fmt::print("info string UCI_Chess960:{}\n", game->chess960 ? on : off);
-    } else if (name == "UCI_Chess960_Arena")
-    {
-      game->chess960 = game->xfen = value == "true";
-      fmt::print("info string UCI_Chess960_Arena:{}\n", game->chess960 ? on : off);
-    }
+    TT.init(std::clamp(util::to_integral<uint64_t>(value), 8ULL, 65536ULL));
+    fmt::print("info string Hash:{}\n", TT.get_size_mb());
+  } else if (name == "Threads" || name == "NumThreads")
+  {
+    num_threads = std::clamp(util::to_integral<uint64_t>(value), 1ULL, 64ULL);
+    workers.resize(num_threads - 1);
+    workers.shrink_to_fit();
+    fmt::print("info string Threads:{}\n", num_threads);
+  } else if (name == "UCI_Chess960")
+  {
+    game->chess960 = value == "true";
+    fmt::print("info string UCI_Chess960:{}\n", on_off[game->chess960]);
+  } else if (name == "UCI_Chess960_Arena")
+  {
+    game->chess960 = game->xfen = value == "true";
+    fmt::print("info string UCI_Chess960_Arena:{}\n", on_off[game->chess960]);
+  } else
+  {
+    fmt::print("Unknown option. {}={}", name, value);
+    return false;
   }
-  return 0;
+
+  return true;
 }
 
-int Felis::run() {
+int Felis::run(const int argc, char* argv[]) {
   setbuf(stdout, nullptr);
 
   game     = std::make_unique<Game>();
@@ -103,47 +106,71 @@ int Felis::run() {
 
   new_game();
 
-  auto console_mode = true;
-  auto quit         = 0;
-  char line[16384];
+  // simple jthread to start main search from
+  std::jthread main_go;
 
-  while (quit == 0)
+  const auto stop_threads = [&]() {
+      stop();
+      stop_workers();
+      if (main_go.joinable())
+        main_go.join();
+  };
+
+  std::string command;
+  std::string token;
+
+  // TODO : replace with CLI
+  for (auto argument_index = 1; argument_index < argc; ++argument_index)
+    command += std::string(argv[argument_index]) + ' ';
+
+  do
   {
-    game->pos->generate_moves();
+    if (argc == 1 && !std::getline(std::cin, command))
+      command = "quit";
+    else
+      game->pos->generate_moves();
 
-    (void)fgets(line, 16384, stdin);
+    std::istringstream input(command);
 
-    if (feof(stdin))
-      exit(0);
+    token.clear();
+    input >> std::skipws >> token;
 
-    char *tokens[1024];
-    const auto num_tokens = util::tokenize(util::trim(line), tokens, 1024);
-
-    if (num_tokens == 0)
-      continue;
-
-    if (util::strieq(tokens[0], "uci") || !console_mode)
+    if (token == "quit" || token == "stop")
     {
-      quit         = protocol->handle_input(const_cast<const char **>(tokens), num_tokens);
-      console_mode = false;
-    } else if (util::strieq(tokens[0], "go"))
+      break;
+    } else if (token == "ponder")
     {
-      protocol->limits.infinite = true;
-      go(protocol->limits);
-    } else if (util::strieq(tokens[0], "perft"))
+      ponder_hit();
+    } else if (token == "uci")
     {
-      const auto total_nodes = perft::perft(game.get(), 6);
-      fmt::print("Perft complete, total nodes = {}\n", total_nodes);
+      fmt::print("id name Feliscatus 0.1\n");
+      fmt::print("id author Gunnar Harms, FireFather, Rudy Alex Kohn\n");
+      fmt::print("option name Hash type spin default 1024 min 8 max 65536\n");
+      fmt::print("option name Ponder type check default true\n");
+      fmt::print("option name Threads type spin default 1 min 1 max 64\n");
+      fmt::print("option name UCI_Chess960 type check default false\n");
+      fmt::print("uciok\n");
+    } else if (token == "isready")
+      fmt::print("readyok\n");
+    else if (token == "ucinewgame")
+    {
+      new_game();
+      fmt::print("readyok\n");
+    } else if (token == "setoption")
+      protocol->handle_set_option(input);
+    else if (token == "position")
+      protocol->handle_position(game.get(), input);
+    else if (token == "go")
+    {
+      protocol->handle_go(input);
+      stop_threads();
+      main_go = std::jthread(&Felis::go, this, protocol->limits);
     }
-    else if (util::strieq(tokens[0], "divide"))
-      perft::divide(game.get(), 6);
-    else if (util::strieq(tokens[0], "tune"))
-      fmt::print("Tuner is a separate program, please run 'FeliscatusTuner' for help\n");
-    else if (util::strieq(tokens[0], "quit") || util::strieq(tokens[0], "exit"))
-      quit = 1;
+    else if (token == "quit" || token == "exit")
+      return 1;
+  } while (token != "quit" && argc == 1);
 
-    for (auto i = 0; i < num_tokens; i++)
-      delete[] tokens[i];
-  }
+  stop_threads();
+
   return 0;
 }

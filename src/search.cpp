@@ -183,13 +183,8 @@ void Search::check_sometimes() {
 }
 
 void Search::check_time() {
-  if (protocol)
-  {
-    if (!is_analysing() && !protocol.value()->is_fixed_depth())
-      stop_search = search_depth > 1 && start_time.elapsed_milliseconds() > search_time;
-    else
-      protocol.value()->check_input();
-  }
+  if (protocol && (!is_analysing() && !protocol.value()->is_fixed_depth()))
+    stop_search.store(search_depth > 1 && start_time.elapsed_milliseconds() > search_time, std::memory_order_relaxed);
 
   if (stop_search.load())
     throw 1;
@@ -205,29 +200,29 @@ uint64_t Search::nodes_per_second() const {
 void Search::update_history_scores(const Move move, const int depth) {
   history_scores[move_piece(move)][move_to(move)] += depth * depth;
 
-  if (history_scores[move_piece(move)][move_to(move)] > 2048)
-  {
-    for (auto &history_score : history_scores)
-      for (auto &k : history_score)
-        k >>= 2;
-  }
+  if (history_scores[move_piece(move)][move_to(move)] <= 2048)
+    return;
+
+  for (auto &history_score : history_scores)
+    for (auto &k : history_score)
+      k >>= 2;
 }
 
 void Search::update_killer_moves(const Move move) {
   // Same move can be stored twice for a ply.
-  if (!is_capture(move) && !is_promotion(move) && move != killer_moves[0][plies])
-  {
-    killer_moves[2][plies] = killer_moves[1][plies];
-    killer_moves[1][plies] = killer_moves[0][plies];
-    killer_moves[0][plies] = move;
-  }
+  if (is_capture(move) || is_promotion(move) || move == killer_moves[0][plies])
+    return;
+
+  killer_moves[2][plies] = killer_moves[1][plies];
+  killer_moves[1][plies] = killer_moves[0][plies];
+  killer_moves[0][plies] = move;
 }
 
 bool Search::is_killer_move(const Move m, const int ply) const { return m == killer_moves[0][ply] || m == killer_moves[1][ply] || m == killer_moves[2][ply]; }
 
 void Search::init_search(const SearchLimits &limits) {
-  pos                     = game->pos;// Updated in makeMove and unmakeMove from here on.
-  const auto time_reserve = 72;
+  pos                         = game->pos;// Updated in make_move and unmake_move from here on.
+  constexpr auto time_reserve = 72;
 
   if (protocol)
   {
@@ -252,7 +247,7 @@ void Search::init_search(const SearchLimits &limits) {
         search_time = 2 * (time_left / (moves_left + 1) + time_inc);
         n_          = 2.5;
       }
-      search_time = std::max<int>(0, std::min<int>(search_time, time_left - time_reserve));
+      search_time = std::max<TimeUnit>(0, std::min<int>(search_time, time_left - time_reserve));
     }
     TT.init_search();
     stop_search.store(false);
