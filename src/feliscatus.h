@@ -29,14 +29,14 @@ struct Felis final : public ProtocolListener {
 
   void stop_workers();
 
-  int set_option(std::string_view name, std::string_view value) override;
+  bool set_option(std::string_view name, std::string_view value) override;
 
-  int run();
+  int run(int argc, char* argv[]);
 
 private:
   std::unique_ptr<Game> game;
   std::unique_ptr<Search> search;
-  std::unique_ptr<Protocol> protocol;
+  std::unique_ptr<UCIProtocol> protocol;
   std::unique_ptr<PawnHashTable> pawnt;
   std::vector<Worker> workers{};
   std::size_t num_threads;

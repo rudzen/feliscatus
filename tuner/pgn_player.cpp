@@ -36,6 +36,17 @@ constexpr auto detect_piece = [](const int from, int &piece) {
   return true;
 };
 
+bool strieq(const char *s1, const char *s2) {
+  if (std::strlen(s1) != std::strlen(s2))
+    return false;
+
+  for (std::size_t i = 0; i < std::strlen(s1); i++)
+    if (::tolower(*(s1 + i)) != ::tolower(*(s2 + i)))
+      return false;
+
+  return true;
+}
+
 }
 
 pgn::PGNPlayer::PGNPlayer([[maybe_unused]] bool check_legal)
@@ -50,7 +61,7 @@ void pgn::PGNPlayer::read_pgn_game() {
 void pgn::PGNPlayer::read_tag_pair() {
   PGNFileReader::read_tag_pair();
 
-  if (util::strieq(tag_name_, "FEN"))
+  if (strieq(tag_name_, "FEN"))
     game_->set_fen(std::string(tag_value_).substr(1, strlen(tag_value_) - 2).c_str());
 }
 

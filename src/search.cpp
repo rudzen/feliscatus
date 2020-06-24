@@ -221,8 +221,8 @@ void Search::update_killer_moves(const Move move) {
 bool Search::is_killer_move(const Move m, const int ply) const { return m == killer_moves[0][ply] || m == killer_moves[1][ply] || m == killer_moves[2][ply]; }
 
 void Search::init_search(const SearchLimits &limits) {
-  pos                     = game->pos;// Updated in makeMove and unmakeMove from here on.
-  const auto time_reserve = 72;
+  pos                         = game->pos;// Updated in make_move and unmake_move from here on.
+  constexpr auto time_reserve = 72;
 
   if (protocol)
   {
@@ -247,7 +247,7 @@ void Search::init_search(const SearchLimits &limits) {
         search_time = 2 * (time_left / (moves_left + 1) + time_inc);
         n_          = 2.5;
       }
-      search_time = std::max<int>(0, std::min<int>(search_time, time_left - time_reserve));
+      search_time = std::max<TimeUnit>(0, std::min<int>(search_time, time_left - time_reserve));
     }
     TT.init_search();
     stop_search.store(false);

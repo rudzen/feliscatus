@@ -16,11 +16,9 @@ struct UCIProtocol final : Protocol {
 
   void post_pv(int d, int max_ply, uint64_t node_count, uint64_t nodes_per_second, TimeUnit time, int hash_full, int score, fmt::memory_buffer &pv, NodeType node_type) override;
 
-  int handle_input(const char *params[], int num_params) override;
+  int handle_go(std::istringstream& input);
 
-  int handle_go(const char *params[], int num_params, ProtocolListener *cb);
+  void handle_position(Game* g, std::istringstream& input) const;
 
-  int handle_position(const char *params[], int num_params) const;
-
-  bool handle_set_option(const char *params[], int num_params) const;
+  bool handle_set_option(std::istringstream& input) const;
 };

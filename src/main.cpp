@@ -10,7 +10,7 @@
 constexpr int TT_ENTRY_SIZE   = 16;
 constexpr int PAWN_ENTRY_SIZE = 16;
 
-int main(/*int argc, char *argv[]*/) {
+int main(const int argc, char *argv[]) {
   util::check_size<HashEntry, TT_ENTRY_SIZE>();
   util::check_size<PawnHashEntry, PAWN_ENTRY_SIZE>();
 
@@ -21,5 +21,5 @@ int main(/*int argc, char *argv[]*/) {
 
   TT.init(1);
   Felis engine;
-  engine.run();
+  engine.run(argc, argv);
 }

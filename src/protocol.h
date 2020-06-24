@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <string_view>
 #include <array>
+#include <sstream>
 #include <fmt/format.h>
 #include "stopwatch.h"
 #include "types.h"
@@ -33,21 +34,19 @@ struct SearchLimits {
 };
 
 struct ProtocolListener {
-  virtual ~ProtocolListener()                                           = default;
-  virtual int new_game()                                                = 0;
-  virtual int set_fen(std::string_view fen)                             = 0;
-  virtual int go(const SearchLimits &limits)                            = 0;
-  virtual void ponder_hit()                                             = 0;
-  virtual void stop()                                                   = 0;
-  virtual int set_option(std::string_view name, std::string_view value) = 0;
+  virtual ~ProtocolListener()                                            = default;
+  virtual int new_game()                                                 = 0;
+  virtual int set_fen(std::string_view fen)                              = 0;
+  virtual int go(const SearchLimits &limits)                             = 0;
+  virtual void ponder_hit()                                              = 0;
+  virtual void stop()                                                    = 0;
+  virtual bool set_option(std::string_view name, std::string_view value) = 0;
 };
 
 struct Protocol {
   Protocol(ProtocolListener *cb, Game *g) : callback(cb), game(g) {}
 
   virtual ~Protocol() = default;
-
-  virtual int handle_input(const char *params[], int num_params)  = 0;
 
   virtual void post_moves(Move bestmove, Move pondermove)         = 0;
 

@@ -17,9 +17,13 @@ struct Worker {
   }
 
   void stop() {
-    search_->stop();
-    thread_.request_stop();
-    thread_.join();
+    if (search_)
+      search_->stop();
+    if (thread_.joinable())
+    {
+      thread_.request_stop();
+      thread_.join();
+    }
   }
 
 private:
