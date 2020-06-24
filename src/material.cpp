@@ -309,7 +309,7 @@ int Material::KBKX(const int eval, const uint32_t key1, const uint32_t key2, con
     {
       if (side1 == side_to_move || !board->is_attacked(lsb(board->bishops(side1)), side2))
       {
-        if (const auto bishopbb = board->bishops(side1); pawn_front_span[side2][lsb(board->pawns(side2))] & (piece_attacks_bb<Bishop>(lsb(bishopbb), board->occupied) | bishopbb))
+        if (const auto bishopbb = board->bishops(side1); pawn_front_span[side2][lsb(board->pawns(side2))] & (piece_attacks_bb<Bishop>(lsb(bishopbb), board->pieces()) | bishopbb))
           return draw_score();
       }
     }

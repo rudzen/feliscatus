@@ -309,6 +309,10 @@ inline Bitboard piece_attacks_bb(const int pc, const Square sq, Bitboard occupie
   return 0;
 }
 
+inline Bitboard pawn_attacks_bb(const Color c, const Square s) {
+  return pawn_captures[c][s];
+}
+
 inline Bitboard xray_rook_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
   const auto attacks = piece_attacks_bb<Rook>(sq, occ);
   blockers &= attacks;

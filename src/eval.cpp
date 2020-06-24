@@ -183,11 +183,11 @@ void Evaluate<Tuning>::eval_material() {
 
   if (const auto bishop_count = pos->material.count(Us, Bishop); bishop_count == 2)
   {
-    auto bishops = b.bishops(Us);
+    auto bishops = b.pieces(Bishop, Us);
     add          = is_opposite_colors(pop_lsb(&bishops), pop_lsb(&bishops));
   } else if (bishop_count > 2)// edge case with more than two bishops
   {
-    auto bishops = b.bishops(Us);
+    auto bishops = b.pieces(Bishop, Us);
     std::array<bool, COL_NB> cols{};
     while (bishops)
     {
@@ -212,11 +212,11 @@ void Evaluate<Tuning>::eval_pawns() {
   auto score_mg       = 0;
   auto score_eg       = 0;
 
-  auto bb = b.pawns(Us);
+  auto pawns = b.pawns(Us);
 
-  while (bb)
+  while (pawns)
   {
-    const auto sq     = lsb(bb);
+    const auto sq     = pop_lsb(&pawns);
     const auto file   = file_of(sq);
     const auto flipsq = relative_square(Them, sq);
 
@@ -234,9 +234,8 @@ void Evaluate<Tuning>::eval_pawns() {
       score_mg += pawn_behind_mg[open_file];
       score_eg += pawn_behind_eg[open_file];
     }
-    reset_lsb(bb);
 
-    if (bb & file)
+    if (pawns & file)
     {
       score_mg += pawn_doubled_mg[open_file];
       score_eg += pawn_doubled_eg[open_file];
@@ -256,11 +255,11 @@ void Evaluate<Tuning>::eval_knights() {
   auto score_eg       = 0;
   auto score          = 0;
 
-  auto knights = b.knights(Us);
+  auto pieces = b.knights(Us);
 
-  while (knights)
+  while (pieces)
   {
-    const auto sq     = pop_lsb(&knights);
+    const auto sq     = pop_lsb(&pieces);
     const auto flipsq = relative_square(Them, sq);
 
     score_mg += knight_pst_mg[flipsq];
@@ -270,7 +269,7 @@ void Evaluate<Tuning>::eval_knights() {
 
     set_attacks<Knight, Us>(attacks);
 
-    const auto free_squares = attacks & ~b.occupied_by_side[Us];
+    const auto free_squares = attacks & ~b.pieces(Us);
     const auto mob          = pop_count(free_squares);
 
     score_mg += knight_mob_mg[mob];
@@ -303,21 +302,27 @@ void Evaluate<Tuning>::eval_bishops() {
   auto score_eg       = 0;
   auto score          = 0;
 
-  auto bishops = b.bishops(Us);
+  auto pieces = b.pieces(Bishop, Us);
 
-  while (bishops)
+  while (pieces)
   {
-    const auto sq     = pop_lsb(&bishops);
+    const auto sq     = pop_lsb(&pieces);
     const auto flipsq = relative_square(Them, sq);
 
     score_mg += bishop_pst_mg[flipsq];
     score_eg += bishop_pst_eg[flipsq];
 
-    const auto attacks = piece_attacks_bb<Bishop>(sq, b.occupied ^ b.queens(Them));
+    const auto attacks = piece_attacks_bb<Bishop>(sq, b.pieces() ^ b.queens(Them));
 
     set_attacks<Bishop, Us>(attacks);
 
-    const auto free_squares = attacks & ~b.occupied_by_side[Us];
+    if (const auto attacks_on_king = attacks & king_area[Them]; attacks_on_king)
+    {
+      attack_counter[Us] += pop_count(attacks_on_king) * bishop_attack_king;
+      ++attack_count[Us];
+    }
+
+    const auto free_squares = attacks & ~b.pieces(Us);
     const auto mob          = pop_count(free_squares);
 
     score_mg += bishop_mob_mg[mob];
@@ -327,12 +332,6 @@ void Evaluate<Tuning>::eval_bishops() {
 
     score_mg += bishop_mob2_mg[not_defended_by_pawns];
     score_eg += bishop_mob2_eg[not_defended_by_pawns];
-
-    if (const auto attacks_on_king = attacks & king_area[Them]; attacks_on_king)
-    {
-      attack_counter[Us] += pop_count(attacks_on_king) * bishop_attack_king;
-      ++attack_count[Us];
-    }
 
     if (more_than_one(piece_attacks_bb<Bishop>(sq, b.pieces(Pawn, Us) | b.pieces(Pawn, Them)) & CenterBB))
     {
@@ -356,7 +355,7 @@ void Evaluate<Tuning>::eval_rooks() {
   auto score_eg       = 0;
   auto score          = 0;
 
-  auto rooks = b.rooks(Us);
+  auto rooks = b.pieces(Rook, Us);
 
   while (rooks)
   {
@@ -369,20 +368,20 @@ void Evaluate<Tuning>::eval_rooks() {
     if (open_files & sq)
       score += rook_open_file;
 
-    const auto attacks = piece_attacks_bb<Rook>(sq, b.occupied ^ b.queens(Them) ^ b.rooks(Them));
+    const auto attacks = piece_attacks_bb<Rook>(sq, b.pieces() ^ b.queens(Them) ^ b.rooks(Them));
 
     set_attacks<Rook, Us>(attacks);
-
-    const auto mob = pop_count(attacks & ~b.occupied_by_side[Us]);
-
-    score_mg += rook_mob_mg[mob];
-    score_eg += rook_mob_eg[mob];
 
     if (const auto attacks_on_king = attacks & king_area[Them]; attacks_on_king)
     {
       attack_counter[Us] += pop_count(attacks_on_king) * rook_attack_king;
       ++attack_count[Us];
     }
+
+    const auto mob = pop_count(attacks & ~b.pieces(Us));
+
+    score_mg += rook_mob_mg[mob];
+    score_eg += rook_mob_eg[mob];
 
     if (attacked_by<Them>(Pawn, Knight, Bishop) & sq)
       score += rook_in_danger;
@@ -400,28 +399,30 @@ void Evaluate<Tuning>::eval_queens() {
   auto score_eg       = 0;
   auto score          = 0;
 
-  for (auto queens = b.queens(Us); queens; reset_lsb(queens))
+  auto pieces = b.pieces(Queen, Us);
+
+  while (pieces)
   {
-    const auto sq     = lsb(queens);
+    const auto sq     = pop_lsb(&pieces);
     const auto flipsq = relative_square(Them, sq);
 
     score_mg += queen_pst_mg[flipsq];
     score_eg += queen_pst_eg[flipsq];
 
-    const auto attacks = piece_attacks_bb<Queen>(sq, b.occupied);
+    const auto attacks = piece_attacks_bb<Queen>(sq, b.pieces());
 
     set_attacks<Queen, Us>(attacks);
-
-    const auto mob = pop_count(attacks & ~b.occupied_by_side[Us]);
-
-    score_mg += queen_mob_mg[mob];
-    score_eg += queen_mob_eg[mob];
 
     if (const auto attacks_on_king = attacks & king_area[Them]; attacks_on_king)
     {
       attack_counter[Us] += pop_count(attacks_on_king) * queen_attack_king;
       ++attack_count[Us];
     }
+
+    const auto mob = pop_count(attacks & ~b.pieces(Us));
+
+    score_mg += queen_mob_mg[mob];
+    score_eg += queen_mob_eg[mob];
 
     if (attacked_by<Them>(Pawn, Knight, Bishop, Rook) & sq)
       score += queen_in_danger;
@@ -477,8 +478,8 @@ void Evaluate<Tuning>::eval_passed_pawns() {
       const auto score_mg   = passed_pawn_mg[r];
       auto score_eg         = passed_pawn_eg[r];
 
-      score_eg += passed_pawn_no_us[r] * (front_span & b.occupied_by_side[Us] ? 0 : 1);
-      score_eg += passed_pawn_no_them[r] * (front_span & b.occupied_by_side[Them] ? 0 : 1);
+      score_eg += passed_pawn_no_us[r] * (front_span & b.pieces(Us) ? 0 : 1);
+      score_eg += passed_pawn_no_them[r] * (front_span & b.pieces(Them) ? 0 : 1);
       score_eg += passed_pawn_no_attacks[r] * (front_span & attacked_by<Them>(AllPieces) ? 0 : 1);
       score_eg += passed_pawn_king_dist_them[distance(sq, b.king_square[Them])];
       score_eg += passed_pawn_king_dist_us[distance(sq, b.king_square[Us])];

@@ -5,7 +5,7 @@
 #include <array>
 #include <optional>
 #include "types.h"
-#include "bitboard.h"
+#include "magic.h"
 
 enum Move : uint32_t;
 
@@ -36,6 +36,12 @@ struct Board {
   Bitboard pieces(int p, Color side) const;
 
   [[nodiscard]]
+  Bitboard pieces() const;
+
+  [[nodiscard]]
+  Bitboard pieces(Color side) const;
+
+  [[nodiscard]]
   Bitboard pawns(Color side) const;
 
   [[nodiscard]]
@@ -54,11 +60,8 @@ struct Board {
   Bitboard king(Color side) const;
 
   std::array<Bitboard, 2 << 3> piece{};
-  std::array<Bitboard, COL_NB> occupied_by_side{};
-  std::array<int, 64> board{};
+  std::array<int, sq_nb> board{};
   std::array<Square, COL_NB> king_square{};
-  Bitboard queen_attacks{};
-  Bitboard occupied{};
 
   [[nodiscard]]
   bool is_passed_pawn_move(Move m) const;
@@ -113,8 +116,10 @@ private:
 
   void init_see_move();
 
+  std::array<Bitboard, COL_NB> occupied_by_side{};
   std::array<Bitboard, 2> current_piece_bitboard{};
   std::array<int, 2> current_piece{};
+  Bitboard occupied{};
 };
 
 inline void Board::add_piece(const int p, const Color side, const Square sq) {
@@ -160,19 +165,27 @@ inline bool Board::is_attacked(const Square sq, const Color side) const {
 }
 
 inline bool Board::is_attacked_by_knight(const Square sq, const Color side) const {
-  return (piece[Knight | (side << 3)] & knight_attacks[sq]) != 0;
+  return (piece[Knight | (side << 3)] & piece_attacks_bb(Knight, sq)) != 0;
 }
 
 inline bool Board::is_attacked_by_pawn(const Square sq, const Color side) const {
-  return (piece[Pawn | side << 3] & pawn_captures[sq | (~side) << 6]) != 0;
+  return (piece[Pawn | side << 3] & pawn_attacks_bb(~side, sq)) != 0;
 }
 
 inline bool Board::is_attacked_by_king(const Square sq, const Color side) const {
-  return (piece[King | side << 3] & king_attacks[sq]) != 0;
+  return (piece[King | side << 3] & piece_attacks_bb(King, sq)) != 0;
+}
+
+inline Bitboard Board::pieces() const {
+  return occupied;
 }
 
 inline Bitboard Board::pieces(const int p, const Color side) const {
   return piece[p | side << 3];
+}
+
+inline Bitboard Board::pieces(const Color c) const {
+  return occupied_by_side[c];
 }
 
 inline Bitboard Board::pawns(const Color side) const {

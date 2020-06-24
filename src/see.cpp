@@ -76,7 +76,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
   switch (current_piece[side])
   {
   case Pawn:
-    b = current_piece_bitboard[side] & pawn_captures[to | ((~side) << 6)];
+    b = current_piece_bitboard[side] & pawn_attacks_bb(~side, to);
     if (b)
     {
       const auto from = lsb(b);
@@ -84,7 +84,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
       return std::optional<Square>(from);
     }
     current_piece[side]++;
-    current_piece_bitboard[side] = knights(side);
+    current_piece_bitboard[side] = pieces(Knight, side);
     [[fallthrough]];
   case Knight:
     b = current_piece_bitboard[side] & piece_attacks_bb<Knight>(to);
@@ -95,7 +95,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
       return std::optional<Square>(from);
     }
     current_piece[side]++;
-    current_piece_bitboard[side] = bishops(side);
+    current_piece_bitboard[side] = pieces(Bishop, side);
     [[fallthrough]];
 
   case Bishop:
@@ -107,7 +107,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
       return std::optional<Square>(from);
     }
     current_piece[side]++;
-    current_piece_bitboard[side] = rooks(side);
+    current_piece_bitboard[side] = pieces(Rook, side);
     [[fallthrough]];
   case Rook:
     b = current_piece_bitboard[side] & piece_attacks_bb<Rook>(to, occupied);
@@ -118,7 +118,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
       return std::optional<Square>(from);
     }
     current_piece[side]++;
-    current_piece_bitboard[side] = queens(side);
+    current_piece_bitboard[side] = pieces(Queen, side);
     [[fallthrough]];
   case Queen:
     b = current_piece_bitboard[side] & piece_attacks_bb<Queen>(to, occupied);
@@ -129,7 +129,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
       return std::optional<Square>(from);
     }
     current_piece[side]++;
-    current_piece_bitboard[side] = king(side);
+    current_piece_bitboard[side] = pieces(King, side);
     [[fallthrough]];
   case King:
     b = current_piece_bitboard[side] & piece_attacks_bb<King>(to);
