@@ -4,9 +4,13 @@
 #include <cstdint>
 #include <bit>
 #include <algorithm>
+#include <string_view>
 #include "types.h"
+#include "util.h"
 
 namespace bitboard {
+
+std::string print_bitboard(Bitboard b, std::string_view title);
 
 constexpr static Bitboard AllSquares  = ~Bitboard(0);
 constexpr static Bitboard DarkSquares = 0xAA55AA55AA55AA55ULL;
@@ -99,10 +103,28 @@ constexpr std::array<Bitboard, sq_nb> make_king_attacks()
 
 constexpr std::array<Bitboard, sq_nb> king_attacks = make_king_attacks();
 
+template<typename T1 = Square> inline int distance(const Square x, const Square y);
+template<> constexpr int distance<File>(const Square x, const Square y) { return util::abs(file_of(x) - file_of(y)); }
+template<> constexpr int distance<Rank>(const Square x, const Square y) { return util::abs(rank_of(x) - rank_of(y)); }
+
 inline Bitboard between_bb[sq_nb][sq_nb];
 inline Bitboard passed_pawn_front_span[COL_NB][sq_nb];
 inline Bitboard pawn_front_span[COL_NB][sq_nb];
 inline std::array<Bitboard, sq_nb * 2> pawn_captures{};
+
+constexpr std::array<std::array<int, sq_nb>, sq_nb> make_distance()
+{
+  std::array<std::array<int, sq_nb>, sq_nb> result{};
+  for (const auto sq1 : Squares)
+    for (const auto sq2 : Squares)
+      result[sq1][sq2] = std::max(distance<Rank>(sq1, sq2), distance<File>(sq1, sq2));
+
+  return result;
+}
+
+constexpr std::array<std::array<int, sq_nb>, sq_nb> dist = make_distance(); /// chebyshev distance
+
+template<> constexpr int distance<Square>(const Square x, const Square y) { return dist[x][y]; }
 
 template<Square sq>
 constexpr Bitboard bit() {

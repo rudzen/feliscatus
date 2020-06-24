@@ -1,19 +1,11 @@
 #pragma once
 
 #include "types.h"
+#include "util.h"
 
 namespace squares {
 
 inline void init() {
-  for (const auto sq1 : Squares)
-  {
-    for (const auto sq2 : Squares)
-    {
-      const int ranks = std::abs(rank_of(sq1) - rank_of(sq2));
-      const int files = std::abs(file_of(sq1) - file_of(sq2));
-      dist[sq1][sq2]       = std::max(ranks, files);
-    }
-  }
 
   for (const auto side : Colors)
   {

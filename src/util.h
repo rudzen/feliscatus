@@ -14,6 +14,13 @@
 
 namespace util {
 
+template<typename T>
+constexpr int abs(const T v)
+{
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>);
+  return v < 0 ? v : -v;
+}
+
 constexpr void sleep(const std::integral auto ms) {
 #ifdef __linux__
   std::this_thread::sleep_for(std::chrono::milliseconds(ms));

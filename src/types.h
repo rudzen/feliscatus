@@ -62,10 +62,6 @@ inline std::array<Square, sq_nb> rook_castles_to{};
 /// indexed by the position of the king
 inline std::array<Square, sq_nb> rook_castles_from{};
 
-/// chebyshev distance
-inline int dist[64][64];
-
-
 constexpr std::string_view square_to_string(const Square sq) {
   return SquareString[sq];
 }
@@ -120,26 +116,27 @@ enum Direction : int {
 
 constexpr Direction pawn_push(const Color c) { return c == WHITE ? NORTH : SOUTH; }
 
-constexpr int Pawn    = 0;
-constexpr int Knight  = 1;
-constexpr int Bishop  = 2;
-constexpr int Rook    = 3;
-constexpr int Queen   = 4;
-constexpr int King    = 5;
-constexpr int NoPiece = 6;
+constexpr int Pawn      = 0;
+constexpr int Knight    = 1;
+constexpr int Bishop    = 2;
+constexpr int Rook      = 3;
+constexpr int Queen     = 4;
+constexpr int King      = 5;
+constexpr int NoPiece   = 6;
+constexpr int AllPieces = 7;
 
 constexpr std::array<int, 6> PieceTypes{ Pawn, Knight, Bishop, Rook, Queen, King };
 
 constexpr std::array<int, 6> piece_values{100, 400, 400, 600, 1200, 0};
 
 constexpr int piece_value(const int p) {
-  return piece_values[p & 7];
+  return piece_values[PieceTypes[p & 7]];
 }
 
 constexpr std::array<std::string_view, 6> piece_notation {" ", "n", "b", "r", "q", "k"};
 
 constexpr std::string_view piece_to_string(const int piece) {
-  return piece_notation[piece];
+  return piece_notation[PieceTypes[piece]];
 }
 
 enum Move : uint32_t {
