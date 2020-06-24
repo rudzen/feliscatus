@@ -4,9 +4,13 @@
 #include <cstdint>
 #include <bit>
 #include <algorithm>
+#include <string_view>
 #include "types.h"
+#include "util.h"
 
 namespace bitboard {
+
+std::string print_bitboard(Bitboard b, std::string_view title);
 
 constexpr static Bitboard AllSquares  = ~Bitboard(0);
 constexpr static Bitboard DarkSquares = 0xAA55AA55AA55AA55ULL;
@@ -54,8 +58,17 @@ constexpr std::array<Bitboard, sq_nb> square_bb{
   make_bitboard(a7), make_bitboard(b7), make_bitboard(c7), make_bitboard(d7), make_bitboard(e7), make_bitboard(f7), make_bitboard(g7), make_bitboard(h7),
   make_bitboard(a8), make_bitboard(b8), make_bitboard(c8), make_bitboard(d8), make_bitboard(e8), make_bitboard(f8), make_bitboard(g8), make_bitboard(h8)};
 
-constexpr std::array<Bitboard, 8> RankBB{Rank1BB, Rank2BB, Rank3BB, Rank4BB, Rank5BB, Rank6BB, Rank7BB, Rank8BB};
-constexpr std::array<Bitboard, 8> FileBB{FileABB, FileBBB, FileCBB, FileDBB, FileEBB, FileFBB, FileGBB, FileHBB};
+constexpr std::array<Bitboard, RANK_NB> RankBB{Rank1BB, Rank2BB, Rank3BB, Rank4BB, Rank5BB, Rank6BB, Rank7BB, Rank8BB};
+constexpr std::array<Bitboard, FILE_NB> FileBB{FileABB, FileBBB, FileCBB, FileDBB, FileEBB, FileFBB, FileGBB, FileHBB};
+constexpr std::array<Bitboard, COL_NB> rank_1{Rank1BB, Rank8BB};
+constexpr std::array<Bitboard, COL_NB> rank_3{Rank3BB, Rank6BB};
+constexpr std::array<Bitboard, COL_NB> rank_7{Rank7BB, Rank2BB};
+constexpr std::array<Bitboard, COL_NB> rank_6_and_7{Rank6BB | Rank7BB, Rank2BB | Rank3BB};
+constexpr std::array<Bitboard, COL_NB> rank_7_and_8{Rank7BB | Rank8BB, Rank1BB | Rank2BB};
+constexpr std::array<Direction, COL_NB> pawn_push_dist{NORTH, SOUTH};
+constexpr std::array<Direction, COL_NB> pawn_double_push_dist{NORTH * 2, SOUTH * 2};
+constexpr std::array<Direction, COL_NB> pawn_west_attack_dist{NORTH_EAST, SOUTH_EAST};
+constexpr std::array<Direction, COL_NB> pawn_east_attack_dist{NORTH_WEST, SOUTH_WEST};
 
 constexpr std::array<Bitboard, sq_nb> make_knight_attacks()
 {
@@ -99,10 +112,32 @@ constexpr std::array<Bitboard, sq_nb> make_king_attacks()
 
 constexpr std::array<Bitboard, sq_nb> king_attacks = make_king_attacks();
 
+template<typename T1 = Square>
+constexpr int distance(const Square x, const Square y);
+template<>
+constexpr int distance<File>(const Square x, const Square y) { return util::abs(file_of(x) - file_of(y)); }
+template<>
+constexpr int distance<Rank>(const Square x, const Square y) { return util::abs(rank_of(x) - rank_of(y)); }
+
 inline Bitboard between_bb[sq_nb][sq_nb];
 inline Bitboard passed_pawn_front_span[COL_NB][sq_nb];
 inline Bitboard pawn_front_span[COL_NB][sq_nb];
-inline std::array<Bitboard, sq_nb * 2> pawn_captures{};
+inline Bitboard pawn_captures[COL_NB][sq_nb];
+
+constexpr std::array<std::array<int, sq_nb>, sq_nb> make_distance()
+{
+  std::array<std::array<int, sq_nb>, sq_nb> result{};
+  for (const auto sq1 : Squares)
+    for (const auto sq2 : Squares)
+      result[sq1][sq2] = std::max(distance<Rank>(sq1, sq2), distance<File>(sq1, sq2));
+
+  return result;
+}
+
+constexpr std::array<std::array<int, sq_nb>, sq_nb> dist = make_distance(); /// chebyshev distance
+
+template<>
+constexpr int distance<Square>(const Square x, const Square y) { return dist[x][y]; }
 
 template<Square sq>
 constexpr Bitboard bit() {
@@ -256,13 +291,13 @@ constexpr void init_between_bitboards(const Square from, Bitboard (*step_func)(B
 
   while (bb)
   {
-    if (from < sq_nb && to < sq_nb)
-    {
-      between_bb[from][to] = between;
-      between |= bb;
-      bb = step_func(bb);
-      to += step;
-    }
+    if (from >= sq_nb || to >= sq_nb)
+      continue;
+
+    between_bb[from][to] = between;
+    between |= bb;
+    bb = step_func(bb);
+    to += step;
   }
 }
 
@@ -294,8 +329,8 @@ constexpr void init() {
     init_between_bitboards(sq, west_one, WEST);
     init_between_bitboards(sq, north_west_one, NORTH_WEST);
 
-    pawn_captures[sq] = north_east_one(bbsq) | north_west_one(bbsq);
-    pawn_captures[sq + 64] = south_east_one(bbsq) | south_west_one(bbsq);
+    pawn_captures[WHITE][sq] = north_east_one(bbsq) | north_west_one(bbsq);
+    pawn_captures[BLACK][sq] = south_east_one(bbsq) | south_west_one(bbsq);
   }
 }
 
@@ -315,24 +350,6 @@ constexpr Bitboard pawn_push(const Bitboard bb) {
     return south_one(bb);
 }
 
-constexpr std::array<Bitboard, 2> rank_1{Rank1BB, Rank8BB};
-
-constexpr std::array<Bitboard, 2> rank_3{Rank3BB, Rank6BB};
-
-constexpr std::array<Bitboard, 2> rank_7{Rank7BB, Rank2BB};
-
-constexpr std::array<Bitboard, 2> rank_6_and_7{Rank6BB | Rank7BB, Rank2BB | Rank3BB};
-
-constexpr std::array<Bitboard, 2> rank_7_and_8{Rank7BB | Rank8BB, Rank1BB | Rank2BB};
-
-constexpr std::array<Direction, 2> pawn_push_dist{NORTH, SOUTH};
-
-constexpr std::array<Direction, 2> pawn_double_push_dist{NORTH * 2, SOUTH * 2};
-
-constexpr std::array<Direction, 2> pawn_west_attack_dist{NORTH_EAST, SOUTH_EAST};
-
-constexpr std::array<Direction, 2> pawn_east_attack_dist{NORTH_WEST, SOUTH_WEST};
-
 constexpr void reset_lsb(Bitboard &x) {
   x &= (x - 1);
 }
@@ -346,7 +363,7 @@ constexpr Square lsb(const Bitboard x) {
 }
 
 constexpr Square pop_lsb(Bitboard *b) {
-  const Square s = lsb(*b);
+  const auto s = lsb(*b);
   *b &= *b - 1;
   return s;
 }

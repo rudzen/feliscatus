@@ -282,18 +282,18 @@ int Material::KBNKX(const int eval, const uint32_t key2, const int pc1, const in
 }
 
 int Material::KBNK(const int eval, const Color side1) const {
-  const int loosing_kingsq = board->king_square[~side1];
+  const auto loosing_kingsq = board->king_sq(~side1);
 
   constexpr auto get_winning_squares = [](const bool dark)
   {
     return dark ? std::make_pair(a1, h8) : std::make_pair(a8, h1);
   };
 
-  const auto dark = is_dark(lsb(board->bishops(side1)));
+  const auto dark = is_dark(lsb(board->pieces(Bishop, side1)));
 
   const auto [first_corner, second_corner] = get_winning_squares(dark);
 
-  return eval + 175 - std::min(25 * dist[first_corner][loosing_kingsq], 25 * dist[second_corner][loosing_kingsq]);
+  return eval + 175 - std::min(25 * distance(first_corner, loosing_kingsq), 25 * distance(second_corner, loosing_kingsq));
 }
 
 int Material::KBKX(const int eval, const uint32_t key1, const uint32_t key2, const int pc1, const int pc2, const Color side1, const Color side2, const Color side_to_move) {
@@ -307,9 +307,9 @@ int Material::KBKX(const int eval, const uint32_t key1, const uint32_t key2, con
       return draw_score();
     if (pc1 == 0 && pc2 == 1)
     {
-      if (side1 == side_to_move || !board->is_attacked(lsb(board->bishops(side1)), side2))
+      if (side1 == side_to_move || !board->is_attacked(lsb(board->pieces(Bishop, side1)), side2))
       {
-        if (const auto bishopbb = board->bishops(side1); pawn_front_span[side2][lsb(board->pawns(side2))] & (piece_attacks_bb<Bishop>(lsb(bishopbb), board->occupied) | bishopbb))
+        if (const auto bishopbb = board->pieces(Bishop, side1); pawn_front_span[side2][lsb(board->pieces(Pawn, side2))] & (piece_attacks_bb<Bishop>(lsb(bishopbb), board->pieces()) | bishopbb))
           return draw_score();
       }
     }
@@ -337,9 +337,9 @@ int Material::KNKX(const int eval, const uint32_t key2, const int pc1, const int
 
     if (pc1 == 0 && pc2 == 1)
     {
-      if (side1 == side_to_move || !board->is_attacked(lsb(board->knights(side1)), side2))
+      if (side1 == side_to_move || !board->is_attacked(lsb(board->pieces(Knight, side1)), side2))
       {
-        if (const auto knightbb = board->knights(side1); pawn_front_span[side2][lsb(board->pawns(side2))] & (piece_attacks_bb<Knight>(lsb(knightbb)) | knightbb))
+        if (const auto knightbb = board->pieces(Knight, side1); pawn_front_span[side2][lsb(board->pieces(Pawn, side2))] & (piece_attacks_bb<Knight>(lsb(knightbb)) | knightbb))
           return draw_score();
       }
     }
@@ -382,7 +382,7 @@ int Material::KBxKX(const int eval, const uint32_t key1, const uint32_t key2, co
   switch (key2 & ~all_pawns)
   {
   case kb:
-    if (!same_color(lsb(board->bishops(WHITE)), lsb(board->bishops(BLACK))) && abs(pawn_count(WHITE) - pawn_count(BLACK)) <= 2)
+    if (!same_color(lsb(board->pieces(Bishop, WHITE)), lsb(board->pieces(Bishop, BLACK))) && abs(pawn_count(WHITE) - pawn_count(BLACK)) <= 2)
       return eval / 2;
 
     break;
@@ -404,10 +404,10 @@ int Material::KBxKx(const int eval, const uint32_t key1, const uint32_t key2, co
 }
 
 int Material::KBpK(const int eval, const Color side1) {
-  const auto pawnsq1  = lsb(board->pawns(side1));
+  const auto pawnsq1  = lsb(board->pieces(Pawn, side1));
   const auto promosq1 = static_cast<Square>(side1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
 
-  if (!same_color(promosq1, lsb(board->bishops(side1))))
+  if (!same_color(promosq1, lsb(board->pieces(Bishop, side1))))
   {
     if (const auto bbk2 = board->king(~side1); (promosq1 == h8 && bbk2 & corner_h8) || (promosq1 == a8 && bbk2 & corner_a8) || (promosq1 == h1 && bbk2 & corner_h1) || (
                                                   promosq1 == a1 && bbk2 & corner_a1))
@@ -421,7 +421,7 @@ int Material::KxKx(const int eval, [[maybe_unused]] const uint32_t key1, [[maybe
 }
 
 int Material::KpK(const int eval, const Color side1) {
-  const auto pawnsq1  = lsb(board->pawns(side1));
+  const auto pawnsq1  = lsb(board->pieces(Pawn, side1));
   const auto promosq1 = static_cast<Square>(side1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
 
   if (const auto bbk2 = board->king(~side1); (promosq1 == h8 && bbk2 & corner_h8)

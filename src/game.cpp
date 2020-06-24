@@ -19,57 +19,26 @@ constexpr auto max_log_files     = 3;
 std::shared_ptr<spdlog::logger> logger = spdlog::rotating_logger_mt("castleling_logger", "logs/castleling.txt", max_log_file_size, max_log_files);
 
 [[nodiscard]]
-bool get_ep_square(const char **p, Square &sq) {
+std::optional<Square> get_ep_square(const char **p) {
   if (**p == '-')
-  {
-    sq = no_square;
-    return true;
-  }
+    return std::make_optional(no_square);
 
   if (!util::in_between<'a', 'h'>(**p))
-    return false;
+    return std::nullopt;
 
   (*p)++;
 
-  if (!util::in_between<'3', '6'>(**p))
-    return false;
-
-  sq = static_cast<Square>(*(*p - 1) - 'a' + (**p - '1') * 8);
-  return true;
-}
-
-[[nodiscard]]
-Color get_side_to_move(const char **p) {
-  switch (**p)
-  {
-  case 'w':
-    return WHITE;
-
-  case 'b':
-    return BLACK;
-
-  default:
-    break;
-  }
-  return COL_NB;
-}
-
-[[nodiscard]]
-bool get_delimiter(const char **p) {
-  if (**p != ' ')
-    return false;
-
-  (*p)++;
-  return true;
+  return !util::in_between<'3', '6'>(**p)
+       ? std::nullopt
+       : std::make_optional(static_cast<Square>(*(*p - 1) - 'a' + (**p - '1') * 8));
 }
 
 template<Color Us>
 void add_short_castle_rights(Position *pos, Game *g, std::optional<File> rook_file) {
 
-  //constexpr auto Them         = ~Us;
   constexpr auto CastleRights = Us == WHITE ? 1 : 4;
   constexpr auto Rank_1       = relative_rank(Us, RANK_1);
-  const auto ksq              = g->board.king_square[Us];
+  const auto ksq              = g->board.king_sq(Us);
 
   if (!rook_file.has_value())
   {
@@ -103,7 +72,7 @@ void add_long_castle_rights(Position *pos, Game *g, std::optional<File> rook_fil
   //constexpr auto Them         = ~Us;
   constexpr auto CastleRights = Us == WHITE ? 2 : 8;
   constexpr auto Rank_1       = relative_rank(Us, RANK_1);
-  const auto ksq              = g->board.king_square[Us];
+  const auto ksq              = g->board.king_sq(Us);
 
   if (!rook_file.has_value())
   {
@@ -207,7 +176,7 @@ bool Game::make_move(const Move m, const bool check_legal, const bool calculate_
 
   if (check_legal && !(move_type(m) & CASTLE))
   {
-    if (board.is_attacked(board.king_square[pos->side_to_move], ~pos->side_to_move))
+    if (board.is_attacked(board.king_sq(pos->side_to_move), ~pos->side_to_move))
     {
       board.unmake_move(m);
       return false;
@@ -224,7 +193,7 @@ bool Game::make_move(const Move m, const bool check_legal, const bool calculate_
   pos->key                        = prev->key;
   pos->pawn_structure_key         = prev->pawn_structure_key;
   if (calculate_in_check)
-    pos->in_check = board.is_attacked(board.king_square[pos->side_to_move], ~pos->side_to_move);
+    pos->in_check = board.is_attacked(board.king_sq(pos->side_to_move), ~pos->side_to_move);
   update_key(pos, m);
   pos->material.make_move(m);
 
@@ -297,18 +266,6 @@ int Game::half_move_count() const {
   return pos - position_list.data();
 }
 
-void Game::add_piece(const int p, const Color c, const Square sq) {
-  const auto pc = p | c << 3;
-
-  board.add_piece(p, c, sq);
-  pos->key ^= zobrist::zobrist_pst[pc][sq];
-
-  if (p == Pawn)
-    pos->pawn_structure_key ^= zobrist::zobrist_pst[pc][sq];
-
-  pos->material.add(pc);
-}
-
 int Game::new_game(const std::string_view fen) {
   if (set_fen(fen) == 0)
     return 0;
@@ -321,99 +278,46 @@ int Game::set_fen(const std::string_view fen) {
   pos->clear();
   board.clear();
 
-  const auto *p = fen.data();
-  char f        = 1;
-  char r        = 8;
+  constexpr std::string_view piece_index{"PNBRQK"};
 
-  while (*p != 0 && !(f == 9 && r == 1))
+  Square sq = a8;
+
+  const auto space = fen.find_first_of(' ');
+
+  for (const auto token : fen.substr(0, space))
   {
-    if (isdigit(*p))
+    if (std::isdigit(token))
+      sq += util::from_char<int>(token) * EAST;
+    else if (token == '/')
+      sq += SOUTH * 2;
+    else if (const auto pc_idx = piece_index.find_first_of(toupper(token)); pc_idx != std::string_view::npos)
     {
-      f += *p - '0';
-
-      if (f > 9)
-        return 1;
-      p++;
-      continue;
+      board.add_piece(static_cast<int>(pc_idx) | (islower(token) ? BLACK : WHITE) << 3, sq);
+      ++sq;
     }
-
-    if (*p == '/')
-    {
-      if (f != 9)
-        return 2;
-
-      r--;
-      f = 1;
-      p++;
-      continue;
-    }
-
-    const auto color = islower(*p) ? BLACK : WHITE;
-
-    int piece;
-
-    switch (toupper(*p))
-    {
-    case 'R':
-      piece = Rook;
-      break;
-
-    case 'N':
-      piece = Knight;
-      break;
-
-    case 'B':
-      piece = Bishop;
-      break;
-
-    case 'Q':
-      piece = Queen;
-      break;
-
-    case 'K':
-      piece = King;
-      break;
-
-    case 'P':
-      piece = Pawn;
-      break;
-
-    default:
-      return 3;
-    }
-    add_piece(piece, color, static_cast<Square>(f - 1 + (r - 1) * 8));
-    f++;
-    p++;
   }
 
-  if (!get_delimiter(&p) || (pos->side_to_move = get_side_to_move(&p)) == COL_NB)
-    return 4;
+  const auto *p = fen.substr(space + 1).data();
+
+  pos->side_to_move = *p++ == 'w' ? WHITE : BLACK;
+
   p++;
 
-  if (!get_delimiter(&p) || setup_castling(&p) == -1)
+  if (!setup_castling(&p))
     return 5;
 
-  if (!get_delimiter(&p))
+  p++;
+
+  if (const auto ep_sq = get_ep_square(&p); ep_sq)
+    pos->en_passant_square = ep_sq.value();
+  else
     return 6;
 
-  Square sq;
-  if (!get_ep_square(&p, sq))
-    return 6;
-
-  pos->en_passant_square          = sq;// < 64 ? sq : no_square;
   pos->reversible_half_move_count = 0;
 
-  if (pos->side_to_move == BLACK)
-  {
-    pos->key ^= zobrist::zobrist_side;
-    pos->pawn_structure_key ^= zobrist::zobrist_side;
-  }
-  pos->key ^= zobrist::zobrist_castling[pos->castle_rights];
+  update_position(pos);
 
-  if (pos->en_passant_square != no_square)
-    pos->key ^= zobrist::zobrist_ep_file[file_of(pos->en_passant_square)];
-
-  pos->in_check = board.is_attacked(board.king_square[pos->side_to_move], ~pos->side_to_move);
+  pos->in_check = board.is_attacked(board.king_sq(pos->side_to_move), ~pos->side_to_move);
   return 0;
 }
 
@@ -484,13 +388,13 @@ std::string Game::get_fen() const {
   return s;
 }
 
-int Game::setup_castling(const char **p) {
+bool Game::setup_castling(const char **p) {
   castle_rights_mask.fill(15);
 
   if (**p == '-')
   {
     (*p)++;
-    return 0;
+    return true;
   }
 
   while (**p != 0 && **p != ' ')
@@ -504,7 +408,7 @@ int Game::setup_castling(const char **p) {
 
       const auto rook_file = std::optional<File>(static_cast<File>(c - 'A'));
 
-      if (rook_file.value() > file_of(board.king_square[WHITE]))
+      if (rook_file.value() > file_of(board.king_sq(WHITE)))
         add_short_castle_rights<WHITE>(pos, this, rook_file);
       else
         add_long_castle_rights<WHITE>(pos, this, rook_file);
@@ -515,7 +419,7 @@ int Game::setup_castling(const char **p) {
 
       const auto rook_file = std::optional<File>(static_cast<File>(c - 'a'));
 
-      if (rook_file.value() > file_of(board.king_square[BLACK]))
+      if (rook_file.value() > file_of(board.king_sq(BLACK)))
         add_short_castle_rights<BLACK>(pos, this, rook_file);
       else
         add_long_castle_rights<BLACK>(pos, this, rook_file);
@@ -530,11 +434,11 @@ int Game::setup_castling(const char **p) {
       else if (c == 'q')
         add_long_castle_rights<BLACK>(pos, this, std::nullopt);
       else if (c != '-')
-        return -1;
+        return false;
     }
     (*p)++;
   }
-  return 0;
+  return true;
 }
 
 void Game::copy(Game *other) {
@@ -578,4 +482,31 @@ void Game::print_moves() const {
     fmt::print(move_to_string(m->move));
     fmt::print("   {}\n", m->score);
   }
+}
+
+void Game::update_position(Position *p) const {
+
+  p->key = 0;
+  p->pawn_structure_key = zobrist::zobrist_nopawn;
+
+  auto b = board.pieces();
+
+  while (b)
+  {
+    const auto sq = pop_lsb(&b);
+    const auto pc = board.get_piece(sq);
+    p->key ^= zobrist::zobrist_pst[pc][sq];
+    if ((pc & 7) == Pawn)
+      p->pawn_structure_key ^= zobrist::zobrist_pst[pc][sq];
+
+    p->material.add(pc);
+  }
+
+  if (p->en_passant_square != no_square)
+    p->key ^= zobrist::zobrist_ep_file[file_of(p->en_passant_square)];
+
+  if (p->side_to_move != WHITE)
+    p->key ^= zobrist::zobrist_side;
+
+  p->key ^= zobrist::zobrist_castling[p->castle_rights];
 }

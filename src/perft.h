@@ -2,21 +2,14 @@
 
 #include <cstdint>
 
+#include "types.h"
+
 class Game;
-struct perft_result;
 
-struct Perft final {
-  Perft() = delete;
-  explicit Perft(Game *game);
-  explicit Perft(Game *game, int flags);
+namespace perft {
 
-  void perft(int depth) const;
+  uint64_t perft(Game *g, int depth = 6, int flags = LEGALMOVES);
 
-  void perft_divide(int depth) const;
+  uint64_t divide(Game *g, int depth = 6, int flags = LEGALMOVES);
 
-private:
-  int perft(int depth, perft_result &result) const;
-
-  Game *g{};
-  int perft_flags{};
-};
+}

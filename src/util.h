@@ -14,6 +14,13 @@
 
 namespace util {
 
+template<typename T>
+constexpr int abs(const T v)
+{
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>);
+  return v < 0 ? -v : v;
+}
+
 constexpr void sleep(const std::integral auto ms) {
 #ifdef __linux__
   std::this_thread::sleep_for(std::chrono::milliseconds(ms));
@@ -93,12 +100,12 @@ inline const char *FENfromParams(const char *params[], const int num_params, int
 template<typename T>
 constexpr bool in_between(const T value, const T min, const T max) {
   static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "invalid type.");
-  return (static_cast<unsigned int>(value) - static_cast<unsigned int>(min) <= static_cast<unsigned int>(max) - static_cast<unsigned int>(min));
+  return static_cast<unsigned int>(value) - static_cast<unsigned int>(min) <= static_cast<unsigned int>(max) - static_cast<unsigned int>(min);
 }
 
 template<int Min, int Max>
 constexpr bool in_between(const int value) {
-  return (static_cast<unsigned int>(value) - static_cast<unsigned int>(Min) <= static_cast<unsigned int>(Max) - static_cast<unsigned int>(Min));
+  return static_cast<unsigned int>(value) - static_cast<unsigned int>(Min) <= static_cast<unsigned int>(Max) - static_cast<unsigned int>(Min);
 }
 
 template<typename Integral>
@@ -126,7 +133,9 @@ constexpr T to_integral(std::string_view str) {
     return x;
   };
 
-  return str.front() == '-' ? str.remove_prefix(1), -sv_val() : sv_val();
+  return str.front() == '-'
+       ? str.remove_prefix(1), -sv_val()
+       : sv_val();
 }
 
 template<typename ToCheck, std::size_t ExpectedSize, std::size_t RealSize = sizeof(ToCheck)>

@@ -19,11 +19,10 @@ Felis::Felis()
 }
 
 int Felis::new_game() {
-  //game->new_game(Game::kStartPosition.data());
   // TODO : test effect of not clearing
   //pawnt->clear();
   //TT.clear();
-  return 0;
+  return game->new_game(Game::kStartPosition.data());
 }
 
 int Felis::set_fen(const std::string_view fen) { return game->new_game(fen); }
@@ -132,9 +131,12 @@ int Felis::run() {
       protocol->limits.infinite = true;
       go(protocol->limits);
     } else if (util::strieq(tokens[0], "perft"))
-      Perft(game.get()).perft(6);
+    {
+      const auto total_nodes = perft::perft(game.get(), 6);
+      fmt::print("Perft complete, total nodes = {}\n", total_nodes);
+    }
     else if (util::strieq(tokens[0], "divide"))
-      Perft(game.get()).perft_divide(6);
+      perft::divide(game.get(), 6);
     else if (util::strieq(tokens[0], "tune"))
       fmt::print("Tuner is a separate program, please run 'FeliscatusTuner' for help\n");
     else if (util::strieq(tokens[0], "quit") || util::strieq(tokens[0], "exit"))

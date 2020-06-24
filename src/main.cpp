@@ -19,6 +19,7 @@ int main(/*int argc, char *argv[]*/) {
   attacks::init();
   zobrist::init();
 
+  TT.init(1);
   Felis engine;
   engine.run();
 }

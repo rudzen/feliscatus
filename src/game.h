@@ -26,8 +26,6 @@ public:
   [[nodiscard]]
   int half_move_count() const;
 
-  void add_piece(int p, Color c, Square sq);
-
   int new_game(std::string_view fen);
 
   int set_fen(std::string_view fen);
@@ -36,7 +34,7 @@ public:
   std::string get_fen() const;
 
   [[nodiscard]]
-  int setup_castling(const char **p);
+  bool setup_castling(const char **p);
 
   void copy(Game *other);
 
@@ -55,4 +53,6 @@ public:
 
   static constexpr std::string_view kStartPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+private:
+  void update_position(Position *p) const;
 };

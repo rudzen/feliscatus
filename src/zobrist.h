@@ -8,7 +8,7 @@ namespace zobrist {
 
 inline Key zobrist_pst[14][64];
 inline std::array<Key, 16> zobrist_castling{};
-inline Key zobrist_side;
+inline Key zobrist_side, zobrist_nopawn;
 inline std::array<Key, 8> zobrist_ep_file{};
 
 inline void init() {
@@ -33,5 +33,6 @@ inline void init() {
     i = rng();
 
   zobrist_side = rng();
+  zobrist_nopawn = rng();
 }
 }// namespace zobrist
