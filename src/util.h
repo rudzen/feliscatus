@@ -68,9 +68,18 @@ constexpr T to_integral(std::string_view str) {
     return x;
   };
 
-  return str.front() == '-'
-       ? str.remove_prefix(1), -sv_val()
-       : sv_val();
+  if constexpr (std::is_signed_v<T>)
+  {
+    return str.front() == '-'
+         ? str.remove_prefix(1), -sv_val()
+         : sv_val();
+  } else
+  {
+    if (str.front() == '-')
+      str.remove_prefix(1);
+    return sv_val();
+  }
+
 }
 
 template<typename ToCheck, std::size_t ExpectedSize, std::size_t RealSize = sizeof(ToCheck)>
