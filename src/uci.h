@@ -5,10 +5,8 @@
 
 class Game;
 
-struct UCIProtocol final : public Protocol {
+struct UCIProtocol final : Protocol {
   UCIProtocol(ProtocolListener *cb, Game *g);
-
-  void check_input() override;
 
   void post_moves(Move bestmove, Move pondermove) override;
 

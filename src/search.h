@@ -255,6 +255,9 @@ int Search::search(const int depth, int alpha, const int beta) {
     }
   }
 
+  if (stop_search.load(std::memory_order_relaxed))
+    throw 1;
+
   if (move_count == 0)
     return search_node_score(pos->in_check ? -MAXSCORE + plies : draw_score());
 
@@ -273,9 +276,9 @@ int Search::search(const int depth, int alpha, const int beta) {
 
 template<NodeType NT, bool PV>
 int Search::search_next_depth(const int depth, const int alpha, const int beta) {
-  if ((pos->is_draw() || game->is_repetition()) && !is_null_move(pos->last_move))
-    return search_node_score(-draw_score());
-  return depth <= 0 ? -search_quiesce<PV>(alpha, beta, 0) : -search<NT, PV>(depth, alpha, beta);
+  return (pos->is_draw() || game->is_repetition()) && !is_null_move(pos->last_move)
+       ? search_node_score(-draw_score())
+       : depth <= 0 ? -search_quiesce<PV>(alpha, beta, 0) : -search<NT, PV>(depth, alpha, beta);
 }
 
 template<bool PV>
@@ -284,9 +287,9 @@ Move Search::get_singular_move(const int depth) {
     return MOVE_NONE;
   else
   {
-    if (pos->transp_move && pos->transp_type == EXACT && depth >= 4 && search_fail_low(depth / 2, std::max<int>(-MAXSCORE, pos->eval_score - 75), pos->transp_move))
-      return pos->transp_move;
-    return MOVE_NONE;
+    return pos->transp_move && pos->transp_type == EXACT && depth >= 4 && search_fail_low(depth / 2, std::max<int>(-MAXSCORE, pos->eval_score - 75), pos->transp_move)
+         ? pos->transp_move
+         : MOVE_NONE;
   }
 }
 
@@ -331,11 +334,9 @@ int Search::search_quiesce(int alpha, const int beta, const int qs_ply) {
   }
 
   if (pos->eval_score >= beta)
-  {
     return !pos->transposition || pos->transp_depth <= 0
          ? store_search_node_score(pos->eval_score, 0, BETA, MOVE_NONE)
          : search_node_score(pos->eval_score);
-  }
 
   if (plies >= MAXDEPTH - 1 || qs_ply > 6)
     return search_node_score(pos->eval_score);

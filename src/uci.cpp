@@ -1,7 +1,3 @@
-#include <conio.h>
-#include <windows.h>
-#include <winbase.h>
-
 #include <iostream>
 
 #include "uci.h"
@@ -10,24 +6,6 @@
 #include "position.h"
 
 namespace {
-
-// TODO : Replace with portable code
-
-HANDLE h_input = GetStdHandle(STD_INPUT_HANDLE);
-DWORD mode;
-BOOL console = GetConsoleMode(h_input, &mode);
-
-int input_available() {
-
-  if (!console)
-  {
-    DWORD total_bytes_avail;
-    if (!PeekNamedPipe(h_input, nullptr, 0, nullptr, &total_bytes_avail, nullptr))
-      return true;
-    return total_bytes_avail;
-  }
-  return _kbhit();
-}
 
 bool parse_option_name(int &param, const char *params[], const int num_params, const char **option_name) {
   while (param < num_params)
@@ -65,35 +43,7 @@ UCIProtocol::UCIProtocol(ProtocolListener *cb, Game *g)
   : Protocol(cb, g) {
 }
 
-void UCIProtocol::check_input() {
-  while (input_available())
-  {
-    char str[128];
-    std::cin.getline(str, 128);
-
-    if (!*str)
-      return;
-
-    if (util::strieq(util::trim(str), "stop"))
-    {
-      limits.ponder = limits.infinite = false;
-      callback->stop();
-    } else if (util::strieq(util::trim(str), "ponderhit"))
-    {
-      limits.ponder = limits.infinite = false;
-      callback->ponder_hit();
-    }
-  }
-}
-
 void UCIProtocol::post_moves(const Move bestmove, const Move pondermove) {
-  while (limits.ponder & limits.infinite)
-  {
-
-    util::sleep(10);
-    check_input();
-  }
-
   fmt::memory_buffer buffer;
 
   fmt::format_to(buffer, "bestmove {}", display_uci(bestmove));

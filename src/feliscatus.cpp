@@ -1,6 +1,7 @@
 #include <string_view>
 #include <algorithm>
 #include <memory>
+#include <thread>
 #include <fmt/format.h>
 #include "feliscatus.h"
 #include "perft.h"
@@ -107,6 +108,9 @@ int Felis::run() {
   auto quit         = 0;
   char line[16384];
 
+  // simple jthread to start main search from
+  std::jthread main_go;
+
   while (quit == 0)
   {
     game->pos->generate_moves();
@@ -129,8 +133,16 @@ int Felis::run() {
     } else if (util::strieq(tokens[0], "go"))
     {
       protocol->limits.infinite = true;
-      go(protocol->limits);
-    } else if (util::strieq(tokens[0], "perft"))
+      main_go = std::jthread(&Felis::go, this, protocol->limits);
+    } else if (util::strieq(tokens[0], "stop"))
+    {
+      stop();
+      main_go.join();
+      stop_workers();
+    }
+    else if (util::strieq(tokens[0], "ponderhit"))
+      ponder_hit();
+    else if (util::strieq(tokens[0], "perft"))
     {
       const auto total_nodes = perft::perft(game.get(), 6);
       fmt::print("Perft complete, total nodes = {}\n", total_nodes);
