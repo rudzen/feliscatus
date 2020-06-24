@@ -278,13 +278,13 @@ constexpr void init_between_bitboards(const Square from, Bitboard (*step_func)(B
 
   while (bb)
   {
-    if (from < sq_nb && to < sq_nb)
-    {
-      between_bb[from][to] = between;
-      between |= bb;
-      bb = step_func(bb);
-      to += step;
-    }
+    if (from >= sq_nb || to >= sq_nb)
+      continue;
+
+    between_bb[from][to] = between;
+    between |= bb;
+    bb = step_func(bb);
+    to += step;
   }
 }
 
@@ -368,7 +368,7 @@ constexpr Square lsb(const Bitboard x) {
 }
 
 constexpr Square pop_lsb(Bitboard *b) {
-  const Square s = lsb(*b);
+  const auto s = lsb(*b);
   *b &= *b - 1;
   return s;
 }

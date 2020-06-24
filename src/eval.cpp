@@ -80,8 +80,8 @@ private:
   std::array<int, COL_NB> attack_count{};
   Bitboard piece_attacks[COL_NB][8]{};
   std::array<Bitboard, COL_NB> king_area{};
-  Bitboard open_files{};
   std::array<Bitboard, COL_NB> half_open_files{};
+  Bitboard open_files{};
 };
 
 template<bool Tuning>
@@ -162,7 +162,6 @@ void Evaluate<Tuning>::eval_pawns_both_sides() {
   {
     pawn_eval_mg.fill(0);
     pawn_eval_eg.fill(0);
-
     passed_pawn_files.fill(0);
 
     eval_pawns<WHITE>();
@@ -512,8 +511,8 @@ void Evaluate<Tuning>::init_evaluate() {
   attack_counter[Us] = 0;
 
   const auto ksq = b.king_square[Us];
-
-  king_area[Us] = king_attacks[ksq] | ksq;
+  const auto attacks = king_attacks[ksq];
+  king_area[Us] = attacks | ksq;
 
   const auto our_pawns   = b.pawns(Us);
   const auto their_pawns = b.pawns(Them);
@@ -522,7 +521,7 @@ void Evaluate<Tuning>::init_evaluate() {
   half_open_files[Us] = ~north_fill(south_fill(our_pawns)) & ~open_files;
 
   set_attacks<Pawn, Us>(pawn_east_attacks[Us](our_pawns) | pawn_west_attacks[Us](our_pawns));
-  set_attacks<King, Us>(king_attacks[ksq]);
+  set_attacks<King, Us>(attacks);
 }
 
 namespace Eval {
