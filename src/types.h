@@ -158,11 +158,11 @@ constexpr int STAGES         = 2;
 constexpr int QUEENPROMOTION = 4;
 
 #define ENABLE_BASE_OPERATORS_ON(T)                                \
-constexpr T operator+(const T d1, const T d2) noexcept { return static_cast<T>(static_cast<int>(d1) + static_cast<int>(d2)); } \
-constexpr T operator-(const T d1, const T d2) noexcept { return static_cast<T>(static_cast<int>(d1) - static_cast<int>(d2)); } \
+constexpr T operator+(const T d1, const int d2) noexcept { return static_cast<T>(static_cast<int>(d1) + d2); } \
+constexpr T operator-(const T d1, const int d2) noexcept { return static_cast<T>(static_cast<int>(d1) - d2); } \
 constexpr T operator-(const T d) noexcept { return static_cast<T>(-static_cast<int>(d)); }                  \
-constexpr inline T& operator+=(T& d1, const T d2) noexcept { return d1 = d1 + d2; }         \
-constexpr inline T& operator-=(T& d1, const T d2) noexcept { return d1 = d1 - d2; }
+constexpr inline T& operator+=(T& d1, const int d2) noexcept { return d1 = d1 + d2; }         \
+constexpr inline T& operator-=(T& d1, const int d2) noexcept { return d1 = d1 - d2; }
 
 #define ENABLE_INCR_OPERATORS_ON(T)                                                                     \
   constexpr inline T &operator++(T &d) noexcept { return d = static_cast<T>(static_cast<int>(d) + 1); } \
@@ -178,6 +178,7 @@ constexpr inline T& operator-=(T& d1, const T d2) noexcept { return d1 = d1 - d2
   constexpr inline T &operator/=(T &d, const int i) noexcept { return d = static_cast<T>(static_cast<int>(d) / i); }
 
 ENABLE_FULL_OPERATORS_ON(Direction)
+ENABLE_INCR_OPERATORS_ON(Square)
 ENABLE_INCR_OPERATORS_ON(File)
 ENABLE_INCR_OPERATORS_ON(Rank)
 

@@ -212,7 +212,7 @@ void Evaluate<Tuning>::eval_pawns() {
   auto score_mg       = 0;
   auto score_eg       = 0;
 
-  auto pawns = b.pawns(Us);
+  auto pawns = b.pieces(Pawn, Us);
 
   while (pawns)
   {
@@ -255,7 +255,7 @@ void Evaluate<Tuning>::eval_knights() {
   auto score_eg       = 0;
   auto score          = 0;
 
-  auto pieces = b.knights(Us);
+  auto pieces = b.pieces(Knight, Us);
 
   while (pieces)
   {
@@ -312,7 +312,7 @@ void Evaluate<Tuning>::eval_bishops() {
     score_mg += bishop_pst_mg[flipsq];
     score_eg += bishop_pst_eg[flipsq];
 
-    const auto attacks = piece_attacks_bb<Bishop>(sq, b.pieces() ^ b.queens(Them));
+    const auto attacks = piece_attacks_bb<Bishop>(sq, b.pieces() ^ b.pieces(Queen, Them));
 
     set_attacks<Bishop, Us>(attacks);
 
@@ -368,7 +368,7 @@ void Evaluate<Tuning>::eval_rooks() {
     if (open_files & sq)
       score += rook_open_file;
 
-    const auto attacks = piece_attacks_bb<Rook>(sq, b.pieces() ^ b.queens(Them) ^ b.rooks(Them));
+    const auto attacks = piece_attacks_bb<Rook>(sq, b.pieces() ^ b.pieces(Queen, Them) ^ b.pieces(Rook, Them));
 
     set_attacks<Rook, Us>(attacks);
 
@@ -436,22 +436,21 @@ template<bool Tuning>
 template<Color Us>
 void Evaluate<Tuning>::eval_king() {
   constexpr Direction Up = Us == WHITE ? NORTH : SOUTH;
-  const auto sq          = b.king_square[Us];
+  const auto sq          = b.king_sq(Us);
   const auto bbsq        = bit(sq);
   const auto flipsq      = relative_square(~Us, sq);
+  auto score_mg          = king_pst_mg[flipsq];
+  const auto score_eg    = king_pst_eg[flipsq];
 
-  auto score_mg       = king_pst_mg[flipsq];
-  const auto score_eg = king_pst_eg[flipsq];
-
-  score_mg += king_pawn_shelter[pop_count((pawn_push<Up>(bbsq) | pawn_west_attacks[Us](bbsq) | pawn_east_attacks[Us](bbsq)) & b.pawns(Us))];
+  score_mg += king_pawn_shelter[pop_count((pawn_push<Up>(bbsq) | pawn_west_attacks[Us](bbsq) | pawn_east_attacks[Us](bbsq)) & b.pieces(Pawn, Us))];
 
   const auto eastwest = bbsq | west_one(bbsq) | east_one(bbsq);
 
   score_mg += king_on_open[pop_count(open_files & eastwest)];
   score_mg += king_on_half_open[pop_count(half_open_files[Us] & eastwest)];
 
-  if (((Us == 0) && (((sq == f1 || sq == g1) && (b.rooks(WHITE) & h1)) || ((sq == c1 || sq == b1) && (b.rooks(WHITE) & a1))))
-      || ((Us == 1) && (((sq == f8 || sq == g8) && (b.rooks(BLACK) & h8)) || ((sq == c8 || sq == b8) && (b.rooks(BLACK) & a8)))))
+  if (((Us == 0) && (((sq == f1 || sq == g1) && (b.pieces(Rook, WHITE) & h1)) || ((sq == c1 || sq == b1) && (b.pieces(Rook, WHITE) & a1))))
+      || ((Us == 1) && (((sq == f8 || sq == g8) && (b.pieces(Rook, BLACK) & h8)) || ((sq == c8 || sq == b8) && (b.pieces(Rook, BLACK) & a8)))))
     score_mg += king_obstructs_rook;
 
   poseval_mg[Us] += score_mg;
@@ -466,7 +465,7 @@ void Evaluate<Tuning>::eval_passed_pawns() {
   if (pawnp == nullptr)
     return;
 
-  const auto our_pawns = b.pawns(Us);
+  const auto our_pawns = b.pieces(Pawn, Us);
 
   for (auto files = pawnp->passed_pawn_file(Us); files; reset_lsb(files))
   {
@@ -481,8 +480,8 @@ void Evaluate<Tuning>::eval_passed_pawns() {
       score_eg += passed_pawn_no_us[r] * (front_span & b.pieces(Us) ? 0 : 1);
       score_eg += passed_pawn_no_them[r] * (front_span & b.pieces(Them) ? 0 : 1);
       score_eg += passed_pawn_no_attacks[r] * (front_span & attacked_by<Them>(AllPieces) ? 0 : 1);
-      score_eg += passed_pawn_king_dist_them[distance(sq, b.king_square[Them])];
-      score_eg += passed_pawn_king_dist_us[distance(sq, b.king_square[Us])];
+      score_eg += passed_pawn_king_dist_them[distance(sq, b.king_sq(Them))];
+      score_eg += passed_pawn_king_dist_us[distance(sq, b.king_sq(Us))];
 
       poseval_mg[Us] += score_mg;
       poseval_eg[Us] += score_eg;
@@ -511,18 +510,17 @@ void Evaluate<Tuning>::init_evaluate() {
   attack_count[Us]   = 0;
   attack_counter[Us] = 0;
 
-  const auto ksq = b.king_square[Us];
-  const auto attacks = king_attacks[ksq];
-  king_area[Us] = attacks | ksq;
+  const auto ksq         = b.king_sq(Us);
+  const auto attacks     = king_attacks[ksq];
+  const auto our_pawns   = b.pieces(Pawn, Us);
+  const auto their_pawns = b.pieces(Pawn, Them);
 
-  const auto our_pawns   = b.pawns(Us);
-  const auto their_pawns = b.pawns(Them);
-
-  open_files = ~(pawn_fill[Us](pawn_fill[Them](our_pawns)) | pawn_fill[Us](pawn_fill[Them](their_pawns)));
+  open_files          = ~(pawn_fill[Us](pawn_fill[Them](our_pawns)) | pawn_fill[Us](pawn_fill[Them](their_pawns)));
   half_open_files[Us] = ~north_fill(south_fill(our_pawns)) & ~open_files;
 
   set_attacks<Pawn, Us>(pawn_east_attacks[Us](our_pawns) | pawn_west_attacks[Us](our_pawns));
   set_attacks<King, Us>(attacks);
+  king_area[Us] = attacks | ksq;
 }
 
 namespace Eval {

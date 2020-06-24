@@ -17,7 +17,7 @@ bool is_castle_allowed(const Square to, const Color stm, const Board* b) {
 
   const auto rook_to          = rook_castles_to[to];
   const auto rook_from        = rook_castles_from[to];
-  const auto king_square      = b->king_square[stm];
+  const auto king_square      = b->king_sq(stm);
   const auto bb_castle_pieces = bit(rook_from, king_square);
 
   if (const auto bb_castle_span = bb_castle_pieces | between_bb[king_square][rook_from] | between_bb[rook_from][rook_to] | bit(rook_to, to);
@@ -181,7 +181,7 @@ void Moves::reset(MoveSorter *sorter, const Move move, const int flags) {
   stage        = 0;
 
   if (flags & LEGALMOVES)
-    pinned = b->get_pinned_pieces(side_to_move, b->king_square[side_to_move]);
+    pinned = b->get_pinned_pieces(side_to_move, b->king_sq(side_to_move));
 }
 
 void Moves::generate_hash_move() {
@@ -195,7 +195,7 @@ void Moves::generate_hash_move() {
 
 void Moves::generate_captures_and_promotions() {
   const auto opponent_pieces = b->pieces(~side_to_move);
-  const auto pawns           = b->pawns(side_to_move);
+  const auto pawns           = b->pieces(Pawn, side_to_move);
 
   add_moves(opponent_pieces);
   add_pawn_moves(pawn_push(side_to_move, pawns & rank_7[side_to_move]) & ~b->pieces(), pawn_push(side_to_move), NORMAL);
@@ -219,7 +219,7 @@ void Moves::generate_quiet_moves() {
       add_castle_move(ooo_king_from[side_to_move], ooo_king_to[side_to_move]);
   }
   const auto empty_squares = ~b->pieces();
-  const auto pushed        = pawn_push(side_to_move, b->pawns(side_to_move) & ~rank_7[side_to_move]) & empty_squares;
+  const auto pushed        = pawn_push(side_to_move, b->pieces(Pawn, side_to_move) & ~rank_7[side_to_move]) & empty_squares;
   add_pawn_moves(pushed, pawn_push(side_to_move), NORMAL);
   add_pawn_moves(pawn_push(side_to_move, pushed & rank_3[side_to_move]) & empty_squares, pawn_push(side_to_move) * 2, DOUBLEPUSH);
   add_moves(empty_squares);
@@ -311,14 +311,14 @@ void Moves::add_moves(const int piece, const Square from, const Bitboard attacks
 
 void Moves::add_pawn_quiet_moves(const Bitboard to_squares) {
   const auto empty_squares = ~b->pieces();
-  const auto pushed        = pawn_push(side_to_move, b->pawns(side_to_move)) & empty_squares;
+  const auto pushed        = pawn_push(side_to_move, b->pieces(Pawn, side_to_move)) & empty_squares;
   add_pawn_moves(pushed & to_squares, pawn_push(side_to_move), NORMAL);
   add_pawn_moves(pawn_push(side_to_move, pushed & rank_3[side_to_move]) & empty_squares & to_squares, pawn_push(side_to_move) * 2, DOUBLEPUSH);
 }
 
 void Moves::add_pawn_capture_moves(const Bitboard to_squares) {
   const auto opponent_pieces = b->pieces(~side_to_move);
-  const auto pawns = b->pawns(side_to_move);
+  const auto pawns = b->pieces(Pawn, side_to_move);
   add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & opponent_pieces & to_squares, pawn_west_attack_dist[side_to_move], CAPTURE);
   add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & opponent_pieces & to_squares, pawn_east_attack_dist[side_to_move], CAPTURE);
   if (en_passant_square != no_square)
@@ -359,7 +359,7 @@ void Moves::add_castle_move(const Square from, const Square to) { add_move(King 
 
 bool Moves::gives_check(const Move m) const {
   b->make_move(m);
-  const auto is_attacked = b->is_attacked(b->king_square[~side_to_move], side_to_move);
+  const auto is_attacked = b->is_attacked(b->king_sq(~side_to_move), side_to_move);
   b->unmake_move(m);
   return is_attacked;
 }
@@ -370,7 +370,7 @@ bool Moves::is_legal(const Move m, const int piece, const Square from, const Mov
 
   b->make_move(m);
 
-  if (b->is_attacked(b->king_square[side_to_move], ~side_to_move))
+  if (b->is_attacked(b->king_sq(side_to_move), ~side_to_move))
   {
     b->unmake_move(m);
     return false;

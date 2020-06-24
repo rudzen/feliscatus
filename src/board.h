@@ -12,7 +12,7 @@ enum Move : uint32_t;
 struct Board {
   void clear();
 
-  void add_piece(int p, Color side, Square sq);
+  void add_piece(int p, Square sq);
 
   void make_move(Move m);
 
@@ -39,29 +39,13 @@ struct Board {
   Bitboard pieces() const;
 
   [[nodiscard]]
-  Bitboard pieces(Color side) const;
+  Bitboard pieces(Color c) const;
 
   [[nodiscard]]
-  Bitboard pawns(Color side) const;
+  Bitboard king(Color c) const;
 
   [[nodiscard]]
-  Bitboard knights(Color side) const;
-
-  [[nodiscard]]
-  Bitboard bishops(Color side) const;
-
-  [[nodiscard]]
-  Bitboard rooks(Color side) const;
-
-  [[nodiscard]]
-  Bitboard queens(Color side) const;
-
-  [[nodiscard]]
-  Bitboard king(Color side) const;
-
-  std::array<Bitboard, 2 << 3> piece{};
-  std::array<int, sq_nb> board{};
-  std::array<Square, COL_NB> king_square{};
+  Square king_sq(Color c) const;
 
   [[nodiscard]]
   bool is_passed_pawn_move(Move m) const;
@@ -84,9 +68,10 @@ struct Board {
   [[nodiscard]]
   int see_last_move(Move move);
 
-private:
+  std::array<Bitboard, 2 << 3> piece{};
+  std::array<int, sq_nb> board{};
 
-  void add_piece(int p, Square sq);
+private:
 
   void remove_piece(int p, Square sq);
 
@@ -120,17 +105,17 @@ private:
   std::array<Bitboard, 2> current_piece_bitboard{};
   std::array<int, 2> current_piece{};
   Bitboard occupied{};
+  std::array<Square, COL_NB> king_square{};
 };
 
-inline void Board::add_piece(const int p, const Color side, const Square sq) {
-  const auto pc = p | (side << 3);
-  piece[pc] |= sq;
-  occupied_by_side[side] |= sq;
+inline void Board::add_piece(const int p, const Square sq) {
+  piece[p] |= sq;
+  occupied_by_side[p >> 3] |= sq;
   occupied |= sq;
-  board[sq] = pc;
+  board[sq] = p;
 
-  if (p == King)
-      king_square[side] = sq;
+  if ((p & 7) == King)
+    king_square[p >> 3] = sq;
 }
 
 inline void Board::remove_piece(const int p, const Square sq) {
@@ -139,13 +124,6 @@ inline void Board::remove_piece(const int p, const Square sq) {
   occupied_by_side[p >> 3] &= ~bbsq;
   occupied &= ~bbsq;
   board[sq] = NoPiece;
-}
-
-inline void Board::add_piece(const int p, const Square sq) {
-  piece[p] |= sq;
-  occupied_by_side[p >> 3] |= sq;
-  occupied |= sq;
-  board[sq] = p;
 }
 
 inline int Board::get_piece(const Square sq) const {
@@ -188,32 +166,16 @@ inline Bitboard Board::pieces(const Color c) const {
   return occupied_by_side[c];
 }
 
-inline Bitboard Board::pawns(const Color side) const {
-  return piece[Pawn | side << 3];
+inline Bitboard Board::king(const Color c) const {
+  return bit(king_sq(c));
 }
 
-inline Bitboard Board::knights(const Color side) const {
-  return piece[Knight | side << 3];
-}
-
-inline Bitboard Board::bishops(const Color side) const {
-  return piece[Bishop | side << 3];
-}
-
-inline Bitboard Board::rooks(const Color side) const {
-  return piece[Rook | side << 3];
-}
-
-inline Bitboard Board::queens(const Color side) const {
-  return piece[Queen | side << 3];
-}
-
-inline Bitboard Board::king(const Color side) const {
-  return piece[King | side << 3];
+inline Square Board::king_sq(const Color c) const {
+  return king_square[c];
 }
 
 inline bool Board::is_pawn_passed(const Square sq, const Color side) const {
-  return (passed_pawn_front_span[side][sq] & pawns(~side)) == 0;
+  return (passed_pawn_front_span[side][sq] & pieces(Pawn, ~side)) == 0;
 }
 
 inline bool Board::is_piece_on_square(const int p, const Square sq, const Color side) {
