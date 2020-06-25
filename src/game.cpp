@@ -104,8 +104,9 @@ void add_long_castle_rights(Position *pos, Game *g, std::optional<File> rook_fil
 void update_key(Position *pos, const Move m) {
   pos->key ^= pos->pawn_structure_key;
   pos->pawn_structure_key ^= zobrist::zobrist_side;
+  const auto *prev = (pos - 1);
 
-  if ((pos - 1)->en_passant_square != no_square)
+  if (prev->en_passant_square != no_square)
     pos->key ^= zobrist::zobrist_ep_file[file_of((pos - 1)->en_passant_square)];
 
   if (pos->en_passant_square != no_square)
@@ -117,47 +118,52 @@ void update_key(Position *pos, const Move m) {
     return;
   }
 
+  const auto piece = move_piece(m);
+  const auto is_pawn = (piece & 7) == Pawn;
+  const auto from = move_from(m);
+  const auto to = move_to(m);
+
   // from and to for moving piece
-  if ((move_piece(m) & 7) == Pawn)
-    pos->pawn_structure_key ^= zobrist::zobrist_pst[move_piece(m)][move_from(m)];
+  if (is_pawn)
+    pos->pawn_structure_key ^= zobrist::zobrist_pst[piece][from];
   else
-    pos->key ^= zobrist::zobrist_pst[move_piece(m)][move_from(m)];
+    pos->key ^= zobrist::zobrist_pst[piece][from];
 
   if (move_type(m) & PROMOTION)
-    pos->key ^= zobrist::zobrist_pst[move_promoted(m)][move_to(m)];
+    pos->key ^= zobrist::zobrist_pst[move_promoted(m)][to];
   else
   {
-    if ((move_piece(m) & 7) == Pawn)
-      pos->pawn_structure_key ^= zobrist::zobrist_pst[move_piece(m)][move_to(m)];
+    if (is_pawn)
+      pos->pawn_structure_key ^= zobrist::zobrist_pst[piece][to];
     else
-      pos->key ^= zobrist::zobrist_pst[move_piece(m)][move_to(m)];
+      pos->key ^= zobrist::zobrist_pst[piece][to];
   }
 
   // remove captured piece
   if (is_ep_capture(m))
   {
-    pos->pawn_structure_key ^= zobrist::zobrist_pst[move_captured(m)][move_to(m) + pawn_push(pos->side_to_move)];
+    pos->pawn_structure_key ^= zobrist::zobrist_pst[move_captured(m)][to + pawn_push(pos->side_to_move)];
   } else if (is_capture(m))
   {
-    if ((move_captured(m) & 7) == Pawn)
-      pos->pawn_structure_key ^= zobrist::zobrist_pst[move_captured(m)][move_to(m)];
+    if (is_pawn)
+      pos->pawn_structure_key ^= zobrist::zobrist_pst[move_captured(m)][to];
     else
-      pos->key ^= zobrist::zobrist_pst[move_captured(m)][move_to(m)];
+      pos->key ^= zobrist::zobrist_pst[move_captured(m)][to];
   }
 
   // castling rights
-  if ((pos - 1)->castle_rights != pos->castle_rights)
+  if (prev->castle_rights != pos->castle_rights)
   {
-    pos->key ^= zobrist::zobrist_castling[(pos - 1)->castle_rights];
-    pos->key ^= zobrist::zobrist_castling[pos->castle_rights];
+    pos->key ^= zobrist::zobrist_castling[prev->castle_rights]
+              ^ zobrist::zobrist_castling[pos->castle_rights];
   }
 
   // rook move in castle
   if (is_castle_move(m))
   {
-    const auto piece = Rook + side_mask(m);
-    pos->key ^= zobrist::zobrist_pst[piece][rook_castles_from[move_to(m)]];
-    pos->key ^= zobrist::zobrist_pst[piece][rook_castles_to[move_to(m)]];
+    const auto rook = Rook | side_mask(m);
+    pos->key ^= zobrist::zobrist_pst[rook][rook_castles_from[to]]
+              ^ zobrist::zobrist_pst[rook][rook_castles_to[to]];
   }
   pos->key ^= pos->pawn_structure_key;
 }
