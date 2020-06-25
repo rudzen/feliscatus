@@ -1,4 +1,4 @@
-# Felis Catus
+# Felis Catus v0.1
 UCI Chess engine based on [Bobcat](https://github.com/Bobcat/bobcat) 8.0 by Gunnar Harms
 
 
