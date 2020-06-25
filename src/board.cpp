@@ -54,14 +54,14 @@ void Board::make_move(const Move m) {
       add_piece(pc, to);
   } else
   {
-    const auto rook = Rook | side_mask(m);
+    const auto rook = make_piece(Rook, move_side(m));
     remove_piece(rook, rook_castles_from[to]);
     remove_piece(pc, from);
     add_piece(rook, rook_castles_to[to]);
     add_piece(pc, to);
   }
 
-  if ((pc & 7) == King)
+  if (type_of(pc) == King)
     king_square[move_side(m)] = to;
 }
 
@@ -88,50 +88,45 @@ void Board::unmake_move(const Move m) {
     add_piece(pc, from);
   } else
   {
-    const auto rook = Rook | side_mask(m);
+    const auto rook = make_piece(Rook, move_side(m));
     remove_piece(pc, to);
     remove_piece(rook, rook_castles_to[to]);
     add_piece(pc, from);
     add_piece(rook, rook_castles_from[to]);
   }
 
-  if ((pc & 7) == King)
+  if (type_of(pc) == King)
     king_square[move_side(m)] = from;
 }
 
 Bitboard Board::get_pinned_pieces(const Color side, const Square sq) {
-  Bitboard pinned_pieces = 0;
-  const auto opp_mask    = (~side) << 3;
-  auto pinners           = xray_bishop_attacks(occupied, occupied_by_side[side], sq) & (piece[Bishop | opp_mask] | piece[Queen | opp_mask]);
+  const auto them       = ~side;
+  auto pinners          = xray_bishop_attacks(occupied, occupied_by_side[side], sq) & (piece[make_piece(Bishop, them)] | piece[make_piece(Queen, them)]);
+  auto pinned_pieces    = ZeroBB;
 
   while (pinners)
-  {
-    pinned_pieces |= between_bb[lsb(pinners)][sq] & occupied_by_side[side];
-    reset_lsb(pinners);
-  }
-  pinners = xray_rook_attacks(occupied, occupied_by_side[side], sq) & (piece[Rook | opp_mask] | piece[Queen | opp_mask]);
+    pinned_pieces |= between_bb[pop_lsb(&pinners)][sq] & occupied_by_side[side];
+
+  pinners = xray_rook_attacks(occupied, occupied_by_side[side], sq) & (piece[make_piece(Rook, them)] | piece[make_piece(Queen, them)]);
 
   while (pinners)
-  {
-    pinned_pieces |= between_bb[lsb(pinners)][sq] & occupied_by_side[side];
-    reset_lsb(pinners);
-  }
+    pinned_pieces |= between_bb[pop_lsb(&pinners)][sq] & occupied_by_side[side];
+
   return pinned_pieces;
 }
 
 bool Board::is_attacked_by_slider(const Square sq, const Color side) const {
-  const auto mask = side << 3;
   const auto r_attacks = piece_attacks_bb<Rook>(sq, occupied);
 
-  if (piece[Rook | mask] & r_attacks)
+  if (pieces(Rook, side) & r_attacks)
     return true;
 
   const auto b_attacks = piece_attacks_bb<Bishop>(sq, occupied);
 
-  if (piece[Bishop | mask] & b_attacks)
+  if (pieces(Bishop, side) & b_attacks)
     return true;
 
-  return (piece[Queen | mask] & (b_attacks | r_attacks)) != 0;
+  return (pieces(Queen, side) & (b_attacks | r_attacks)) != 0;
 }
 
 void Board::print() const {

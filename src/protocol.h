@@ -107,7 +107,7 @@ inline std::string display_uci(const Move m) {
   // append piece promotion if the move is a promotion.
   return !is_promotion(m)
        ? fmt::format("{}{}", move_from(m), move_to(m))
-       : fmt::format("{}{}{}", move_from(m), move_to(m), FenPieceNames[move_promoted(m) & 7]);
+       : fmt::format("{}{}{}", move_from(m), move_to(m), FenPieceNames[type_of(move_promoted(m))]);
 }
 
 ///

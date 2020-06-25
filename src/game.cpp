@@ -140,7 +140,7 @@ void update_key(Position *pos, const Move m) {
   }
 
   const auto piece = move_piece(m);
-  const auto is_pawn = (piece & 7) == Pawn;
+  const auto is_pawn = type_of(piece) == Pawn;
   const auto from = move_from(m);
   const auto to = move_to(m);
 
@@ -182,7 +182,7 @@ void update_key(Position *pos, const Move m) {
   // rook move in castle
   if (is_castle_move(m))
   {
-    const auto rook = Rook | side_mask(m);
+    const auto rook = make_piece(Rook, move_side(m));
     pos->key ^= zobrist::zobrist_pst[rook][rook_castles_from[to]]
               ^ zobrist::zobrist_pst[rook][rook_castles_to[to]];
   }
@@ -216,7 +216,7 @@ bool Game::make_move(const Move m, const bool check_legal, const bool calculate_
   pos->last_move                  = m;
   pos->castle_rights              = prev->castle_rights & castle_rights_mask[move_from(m)] & castle_rights_mask[move_to(m)];
   pos->null_moves_in_row          = 0;
-  pos->reversible_half_move_count = is_capture(m) || (move_piece(m) & 7) == Pawn ? 0 : prev->reversible_half_move_count + 1;
+  pos->reversible_half_move_count = is_capture(m) || type_of(move_piece(m)) == Pawn ? 0 : prev->reversible_half_move_count + 1;
   pos->en_passant_square          = move_type(m) & DOUBLEPUSH ? move_to(m) + pawn_push(pos->side_to_move) : no_square;
   pos->key                        = prev->key;
   pos->pawn_structure_key         = prev->pawn_structure_key;
@@ -255,13 +255,17 @@ bool Game::make_null_move() {
 uint64_t Game::calculate_key() {
   uint64_t key = 0;
 
-  for (const auto piece : PieceTypes)
+  for (const auto pt : PieceTypes)
   {
-    for (const auto side : Colors)
+    for (const auto c : Colors)
     {
-      const auto pc = piece | (side << 3);
-      for (auto bb = board.piece[pc]; bb != 0; reset_lsb(bb))
-        key ^= zobrist::zobrist_pst[pc][lsb(bb)];
+      auto bb = board.pieces(pt, c);
+      while (bb)
+      {
+        const auto sq = pop_lsb(&bb);
+        const auto pc = board.get_piece(sq);
+        key ^= zobrist::zobrist_pst[pc][sq];
+      }
     }
   }
   key ^= zobrist::zobrist_castling[pos->castle_rights];
@@ -337,7 +341,7 @@ int Game::set_fen(std::string_view fen) {
       sq += SOUTH * 2;
     else if (const auto pc_idx = piece_index.find_first_of(toupper(token)); pc_idx != std::string_view::npos)
     {
-      board.add_piece(static_cast<int>(pc_idx) | (islower(token) ? BLACK : WHITE) << 3, sq);
+      board.add_piece(make_piece(static_cast<PieceType>(pc_idx), (islower(token) ? BLACK : WHITE)), sq);
       ++sq;
     }
   }
@@ -514,7 +518,7 @@ std::string Game::move_to_string(const Move m) const {
   auto s = fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)));
 
   if (is_promotion(m))
-    s += piece_to_string(move_promoted(m) & 7);
+    s += piece_to_string(type_of(move_promoted(m)));
   return s;
 }
 
@@ -541,7 +545,7 @@ void Game::update_position(Position *p) const {
     const auto sq = pop_lsb(&b);
     const auto pc = board.get_piece(sq);
     p->key ^= zobrist::zobrist_pst[pc][sq];
-    if ((pc & 7) == Pawn)
+    if (type_of(pc) == Pawn)
       p->pawn_structure_key ^= zobrist::zobrist_pst[pc][sq];
 
     p->material.add(pc);

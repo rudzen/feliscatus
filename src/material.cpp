@@ -54,27 +54,29 @@ void Material::clear() {
   material_value.fill(0);
 }
 
-void Material::remove(const int p) {
-  const auto c = static_cast<Color>(p >> 3);
-  update_key(c, p & 7, -1);
-  material_value[p >> 3] -= piece_values[p & 7];
+void Material::remove(const int pc) {
+  const auto c = color_of(pc);
+  const auto pt = type_of(pc);
+  update_key(c, pt, -1);
+  material_value[c] -= piece_values[pt];
 }
 
-void Material::add(const int p) {
-  const auto c = static_cast<Color>(p >> 3);
-  update_key(c, p & 7, 1);
-  material_value[p >> 3] += piece_values[p & 7];
+void Material::add(const int pc) {
+  const auto c = color_of(pc);
+  const auto pt = type_of(pc);
+  update_key(c, pt, 1);
+  material_value[c] += piece_values[pt];
 }
 
-void Material::update_key(const Color c, const int p, const int delta) {
-  if (p == King)
+void Material::update_key(const Color c, const PieceType pt, const int delta) {
+  if (pt == King)
     return;
-  const auto x = count(c, p) + delta;
-  key[c] &= ~(15 << piece_bit_shift[p]);
-  key[c] |= x << piece_bit_shift[p];
+  const auto x = count(c, pt) + delta;
+  key[c] &= ~(15 << piece_bit_shift[pt]);
+  key[c] |= x << piece_bit_shift[pt];
 }
 
-int Material::count(const Color c, const int p) { return key[c] >> piece_bit_shift[p] & 15; }
+int Material::count(const Color c, const PieceType pt) { return key[c] >> piece_bit_shift[pt] & 15; }
 
 void Material::make_move(const Move m) {
   if (is_capture(m))
