@@ -72,23 +72,25 @@ int UCIProtocol::handle_go(std::istringstream& input) {
 
 void UCIProtocol::handle_position(Game *g, std::istringstream &input) const {
 
-  std::string token, fen;
+  std::string token;
 
   input >> token;
 
   if (token == "startpos")
   {
-    fen = Game::kStartPosition;
+    g->set_fen(Game::kStartPosition);
 
     // get rid of "moves" token
     input >> token;
   } else if (token == "fen")
+  {
+    std::string fen;
     while (input >> token && token != "moves")
       fen += token + ' ';
+    g->set_fen(fen);
+  }
   else
     return;
-
-  g->set_fen(fen);
 
   auto m{MOVE_NONE};
 
