@@ -6,7 +6,6 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include "game.h"
 #include "zobrist.h"
-#include "board.h"
 #include "util.h"
 #include "transpositional.h"
 #include "miscellaneous.h"
@@ -19,18 +18,20 @@ constexpr auto max_log_files     = 3;
 std::shared_ptr<spdlog::logger> logger = spdlog::rotating_logger_mt("castleling_logger", "logs/castleling.txt", max_log_file_size, max_log_files);
 
 [[nodiscard]]
-std::optional<Square> get_ep_square(const char **p) {
-  if (**p == '-')
+std::optional<Square> get_ep_square(std::string_view s) {
+  if (s.empty() || s.length() == 1 || s.front() == '-')
     return std::make_optional(no_square);
 
-  if (!util::in_between<'a', 'h'>(**p))
+  const auto first = s.front();
+
+  if (!util::in_between<'a', 'h'>(first))
     return std::nullopt;
 
-  (*p)++;
+  s.remove_prefix(1);
 
-  return !util::in_between<'3', '6'>(**p)
+  return !util::in_between<'3', '6'>(s.front())
        ? std::nullopt
-       : std::make_optional(static_cast<Square>(*(*p - 1) - 'a' + (**p - '1') * 8));
+       : std::make_optional(static_cast<Square>(first - 'a' + (s.front() - '1') * 8));
 }
 
 template<Color Us>
@@ -273,18 +274,35 @@ int Game::new_game(const std::string_view fen) {
   return set_fen(kStartPosition.data());
 }
 
-int Game::set_fen(const std::string_view fen) {
+int Game::set_fen(std::string_view fen) {
   pos = position_list.data();
   pos->clear();
   board.clear();
 
   constexpr std::string_view piece_index{"PNBRQK"};
+  constexpr char Splitter = ' ';
 
   Square sq = a8;
 
-  const auto space = fen.find_first_of(' ');
+  // indicates where in the fen the last space was located
+  std::size_t space{};
 
-  for (const auto token : fen.substr(0, space))
+  // updates the fen and the current view to the next part of the fen
+  const auto update_current = [&fen, &space]() {
+    // remove already parsed section from fen
+    fen.remove_prefix(space);
+
+    // adjust space to next
+    space = fen.find_first_of(Splitter);
+
+    // slice current view
+    return fen.substr(0, space);
+  };
+
+  // the current view of the fen
+  auto current = update_current();
+
+  for (const auto token : current)
   {
     if (std::isdigit(token))
       sq += util::from_char<int>(token) * EAST;
@@ -297,21 +315,26 @@ int Game::set_fen(const std::string_view fen) {
     }
   }
 
-  const auto *p = fen.substr(space + 1).data();
+  // Side to move
+  space++;
+  current = update_current();
+  pos->side_to_move = current.front() == 'w' ? WHITE : BLACK;
 
-  pos->side_to_move = *p++ == 'w' ? WHITE : BLACK;
-
-  p++;
-
-  if (!setup_castling(&p))
+  // Castleling
+  space++;
+  current = update_current();
+  if (!setup_castling(current))
     return 5;
 
-  p++;
-
-  if (const auto ep_sq = get_ep_square(&p); ep_sq)
+  // En-passant
+  space++;
+  current = update_current();
+  if (const auto ep_sq = get_ep_square(current); ep_sq)
     pos->en_passant_square = ep_sq.value();
   else
     return 6;
+
+  // TODO : Parse the rest
 
   pos->reversible_half_move_count = 0;
 
@@ -388,20 +411,26 @@ std::string Game::get_fen() const {
   return s;
 }
 
-bool Game::setup_castling(const char **p) {
+bool Game::setup_castling(const std::string_view s) {
+
   castle_rights_mask.fill(15);
 
-  if (**p == '-')
-  {
-    (*p)++;
+  if (s.front() == '-')
     return true;
-  }
 
-  while (**p != 0 && **p != ' ')
+  //position startpos moves e2e4 e7e5 g1f3 g8f6 f3e5 d7d6 e5f3 f6e4 d2d4 d6d5 f1d3 f8e7 c2c4 e7b4
+
+  for (const auto c : s)
   {
-    const auto c = **p;
-
-    if (util::in_between<'A', 'H'>(c))
+    if (c == 'K')
+      add_short_castle_rights<WHITE>(pos, this, std::nullopt);
+    else if (c == 'Q')
+      add_long_castle_rights<WHITE>(pos, this, std::nullopt);
+    else if (c == 'k')
+      add_short_castle_rights<BLACK>(pos, this, std::nullopt);
+    else if (c == 'q')
+      add_long_castle_rights<BLACK>(pos, this, std::nullopt);
+    else if (util::in_between<'A', 'H'>(c))
     {
       chess960 = true;
       xfen     = false;
@@ -424,20 +453,9 @@ bool Game::setup_castling(const char **p) {
       else
         add_long_castle_rights<BLACK>(pos, this, rook_file);
     } else
-    {
-      if (c == 'K')
-        add_short_castle_rights<WHITE>(pos, this, std::nullopt);
-      else if (c == 'Q')
-        add_long_castle_rights<WHITE>(pos, this, std::nullopt);
-      else if (c == 'k')
-        add_short_castle_rights<BLACK>(pos, this, std::nullopt);
-      else if (c == 'q')
-        add_long_castle_rights<BLACK>(pos, this, std::nullopt);
-      else if (c != '-')
-        return false;
-    }
-    (*p)++;
+      return false;
   }
+
   return true;
 }
 

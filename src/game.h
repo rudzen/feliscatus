@@ -34,7 +34,7 @@ public:
   std::string get_fen() const;
 
   [[nodiscard]]
-  bool setup_castling(const char **p);
+  bool setup_castling(std::string_view s);
 
   void copy(Game *other);
 
