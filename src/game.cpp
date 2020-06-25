@@ -107,7 +107,7 @@ void update_key(Position *pos, const Move m) {
   const auto *prev = (pos - 1);
 
   if (prev->en_passant_square != no_square)
-    pos->key ^= zobrist::zobrist_ep_file[file_of((pos - 1)->en_passant_square)];
+    pos->key ^= zobrist::zobrist_ep_file[file_of(prev->en_passant_square)];
 
   if (pos->en_passant_square != no_square)
     pos->key ^= zobrist::zobrist_ep_file[file_of(pos->en_passant_square)];
