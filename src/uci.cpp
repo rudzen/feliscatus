@@ -5,9 +5,7 @@
 #include "game.h"
 #include "position.h"
 
-UCIProtocol::UCIProtocol(ProtocolListener *cb, Game *g)
-  : Protocol(cb, g) {
-}
+UCIProtocol::UCIProtocol(ProtocolListener *cb, Game *g) : Protocol(cb, g) {}
 
 void UCIProtocol::post_moves(const Move bestmove, const Move pondermove) {
   fmt::memory_buffer buffer;
@@ -41,7 +39,7 @@ void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_co
   fmt::print("{}hashfull {} nodes {} nps {} time {} pv {}\n", fmt::to_string(buffer), hash_full, node_count, nodes_per_second, time, fmt::to_string(pv));
 }
 
-int UCIProtocol::handle_go(std::istringstream& input) {
+int UCIProtocol::handle_go(std::istringstream &input) {
 
   limits.clear();
 
@@ -63,7 +61,7 @@ int UCIProtocol::handle_go(std::istringstream& input) {
     else if (token == "movetime")
       input >> limits.movetime;
     else if (token == "infinite")
-      limits.infinite = 1;
+      limits.infinite = true;
     else if (token == "ponder")
       limits.ponder = true;
 
@@ -88,8 +86,7 @@ void UCIProtocol::handle_position(Game *g, std::istringstream &input) const {
     while (input >> token && token != "moves")
       fen += token + ' ';
     g->set_fen(fen);
-  }
-  else
+  } else
     return;
 
   auto m{MOVE_NONE};
@@ -99,25 +96,25 @@ void UCIProtocol::handle_position(Game *g, std::istringstream &input) const {
     g->make_move(m, false, true);
 }
 
-bool UCIProtocol::handle_set_option(std::istringstream& input) const {
+bool UCIProtocol::handle_set_option(std::istringstream &input) const {
 
-    std::string token, option_name, option_value;
+  std::string token, option_name, option_value;
 
-    // get rid of "name"
-    input >> token;
+  // get rid of "name"
+  input >> token;
 
-    // read possibly spaced name
-    while (input >> token && token != "value")
-      option_name += (option_name.empty() ? "" : " ") + token;
+  // read possibly spaced name
+  while (input >> token && token != "value")
+    option_name += (option_name.empty() ? "" : " ") + token;
 
-    // read possibly spaced value
-    while (input >> token)
-      option_value += (option_value.empty() ? "" : " ") + token;
+  // read possibly spaced value
+  while (input >> token)
+    option_value += (option_value.empty() ? "" : " ") + token;
 
-    auto valid_option = !option_name.empty() || !option_value.empty();
+  auto valid_option = !option_name.empty() || !option_value.empty();
 
-    if (valid_option)
-      valid_option = callback->set_option(option_name, option_value);
+  if (valid_option)
+    valid_option = callback->set_option(option_name, option_value);
 
-    return valid_option;
+  return valid_option;
 }

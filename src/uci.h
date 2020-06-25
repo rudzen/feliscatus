@@ -1,7 +1,7 @@
 #pragma once
 
-#include "protocol.h"
 #include <fmt/format.h>
+#include "protocol.h"
 
 class Game;
 

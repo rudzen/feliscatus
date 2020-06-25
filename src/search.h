@@ -111,7 +111,7 @@ public:
   double n_{};
   int plies{};
   int max_ply{};
-  PVEntry pv[MAXDEPTH][MAXDEPTH]{};
+  std::array<std::array<PVEntry, MAXDEPTH>, MAXDEPTH> pv{};
   std::array<int, MAXDEPTH> pv_length{};
   Stopwatch start_time{};
   TimeUnit search_time{};

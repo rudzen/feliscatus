@@ -9,14 +9,11 @@ namespace {
 constexpr int KILLERMOVESCORE    = 124900;
 constexpr int PROMOTIONMOVESCORE = 50000;
 
-void store_pv(const PVEntry *pv, const int pv_length) {
+void store_pv(const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length) {
   assert(pv_length > 0);
-
-  for (auto i = 0; i < pv_length; ++i)
-  {
-    const auto &entry = pv[i];
+  std::for_each(pv.begin(), pv.begin() + pv_length, [&](const PVEntry &entry) {
     TT.insert(entry.key, entry.depth, entry.score, entry.node_type, entry.move, entry.eval);
-  }
+  });
 }
 
 [[nodiscard]]
@@ -262,7 +259,7 @@ void Search::init_search(const SearchLimits &limits) {
   max_ply        = 0;
   pos->pv_length = 0;
   pv_length.fill(0);
-  std::memset(pv, 0, sizeof pv);
+  std::memset(pv.data(), 0, sizeof pv);
   std::memset(killer_moves, 0, sizeof killer_moves);
   std::memset(history_scores, 0, sizeof history_scores);
   std::memset(counter_moves, 0, sizeof counter_moves);
