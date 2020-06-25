@@ -126,11 +126,13 @@ public:
 
 private:
 
+  using KillerMoves = std::array<Move, 4>;
+
   static constexpr std::array<int, 4> futility_margin {150, 150, 150, 400};
   static constexpr std::array<int, 4> razor_margin {0, 125, 125, 400};
 
   int search_depth{};
-  Move killer_moves[4][MAXDEPTH]{};
+  std::array<KillerMoves, MAXDEPTH> killer_moves{};
   int history_scores[16][64]{};
   Move counter_moves[16][64]{};
   std::array<int, COL_NB> drawScore_{};
@@ -427,13 +429,6 @@ void Search::update_pv(const Move move, const int score, const int depth) {
     pos->pv_length = pv_length[0];
 
     if (protocol && verbosity)
-    {
-      fmt::memory_buffer buffer;
-
-      for (auto i = plies; i < pv_length[plies]; ++i)
-        fmt::format_to(buffer, "{} ", pv[plies][i].move);
-
-      protocol.value()->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), start_time.elapsed_milliseconds() + 1, TT.get_load(), score, buffer, NT);
-    }
+      protocol.value()->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), start_time.elapsed_milliseconds() + 1, TT.get_load(), score, pv[plies], pv_length[plies], plies, NT);
   }
 }

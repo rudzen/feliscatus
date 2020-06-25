@@ -1,10 +1,15 @@
 #include <cassert>
-
-#include <assert.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include "search.h"
 #include "eval.h"
 
 namespace {
+
+constexpr auto max_log_file_size = 1048576 * 5;
+constexpr auto max_log_files     = 3;
+
+std::shared_ptr<spdlog::logger> search_logger = spdlog::rotating_logger_mt("search_logger", "logs/search.txt", max_log_file_size, max_log_files);
 
 constexpr int KILLERMOVESCORE    = 124900;
 constexpr int PROMOTIONMOVESCORE = 50000;
@@ -89,7 +94,7 @@ int Search::go(const SearchLimits &limits, const std::size_t num_workers) {
         unmake_move();
 
       if (const int pv_len = pv_length.front(); pv_len)
-        store_pv(pv[0], pv_len);
+        store_pv(pv.front(), pv_len);
     }
   }
   return 0;
@@ -210,15 +215,21 @@ void Search::update_history_scores(const Move move, const int depth) {
 
 void Search::update_killer_moves(const Move move) {
   // Same move can be stored twice for a ply.
-  if (is_capture(move) || is_promotion(move) || move == killer_moves[0][plies])
+  if (is_capture(move) || is_promotion(move) || move == killer_moves[plies].front())
     return;
 
-  killer_moves[2][plies] = killer_moves[1][plies];
-  killer_moves[1][plies] = killer_moves[0][plies];
-  killer_moves[0][plies] = move;
+  auto &km = killer_moves[plies];
+
+  // Rotate the killer moves, index 2 become 1, index 1 becomes 0 and 0 is replaced with new move
+  // This is the same as std::copy_backward(km.begin(), std::prev(km.end(), 1), std::next(km.begin(), 1));
+  std::rotate(km.begin(), std::prev(km.end(), 1), km.end());
+  km[0] = move;
 }
 
-bool Search::is_killer_move(const Move m, const int ply) const { return m == killer_moves[0][ply] || m == killer_moves[1][ply] || m == killer_moves[2][ply]; }
+bool Search::is_killer_move(const Move m, const int ply) const {
+  const auto &km = killer_moves[ply];
+  return std::find(km.cbegin(), km.cend(), m) != km.cend();
+}
 
 void Search::init_search(const SearchLimits &limits) {
   pos                         = game->pos;// Updated in make_move and unmake_move from here on.
@@ -260,7 +271,7 @@ void Search::init_search(const SearchLimits &limits) {
   pos->pv_length = 0;
   pv_length.fill(0);
   std::memset(pv.data(), 0, sizeof pv);
-  std::memset(killer_moves, 0, sizeof killer_moves);
+  std::memset(killer_moves.data(), 0, sizeof killer_moves);
   std::memset(history_scores, 0, sizeof history_scores);
   std::memset(counter_moves, 0, sizeof counter_moves);
 }
@@ -288,11 +299,11 @@ void Search::sort_move(MoveData &move_data) {
       move_data.score = -100000 + value_captured * 20 - value_piece;
   } else if (is_promotion(m))
     move_data.score = PROMOTIONMOVESCORE + piece_value(move_promoted(m));
-  else if (m == killer_moves[0][plies])
+  else if (m == killer_moves[plies][0])
     move_data.score = KILLERMOVESCORE + 20;
-  else if (m == killer_moves[1][plies])
+  else if (m == killer_moves[plies][1])
     move_data.score = KILLERMOVESCORE + 19;
-  else if (m == killer_moves[2][plies])
+  else if (m == killer_moves[plies][2])
     move_data.score = KILLERMOVESCORE + 18;
   else if (pos->last_move && counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] == m)
     move_data.score = 60000;

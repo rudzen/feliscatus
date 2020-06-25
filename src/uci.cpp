@@ -4,6 +4,7 @@
 #include "util.h"
 #include "game.h"
 #include "position.h"
+#include "search.h"
 
 UCIProtocol::UCIProtocol(ProtocolListener *cb, Game *g) : Protocol(cb, g) {}
 
@@ -26,7 +27,7 @@ void UCIProtocol::post_curr_move(const Move curr_move, const int curr_move_numbe
   fmt::print("info currmove {} currmovenumber {}\n", display_uci(curr_move), curr_move_number);
 }
 
-void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const TimeUnit time, const int hash_full, const int score, fmt::memory_buffer &pv, const NodeType node_type) {
+void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const TimeUnit time, const int hash_full, const int score, const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length, const int ply, const NodeType node_type) {
 
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
@@ -36,7 +37,12 @@ void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_co
   else if (node_type == BETA)
     fmt::format_to(buffer, "lowerbound ");
 
-  fmt::print("{}hashfull {} nodes {} nps {} time {} pv {}\n", fmt::to_string(buffer), hash_full, node_count, nodes_per_second, time, fmt::to_string(pv));
+  fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", hash_full, node_count, nodes_per_second, time);
+
+  for (auto i = ply; i < pv_length; ++i)
+    fmt::format_to(buffer, "{} ", pv[i].move);
+
+  fmt::print("{}\n", fmt::to_string(buffer));
 }
 
 int UCIProtocol::handle_go(std::istringstream &input) {

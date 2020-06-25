@@ -60,7 +60,7 @@ HashEntry *HashTable::insert(const Key key, const int depth, const int score, co
   return transp;
 }
 
-HashEntry *HashTable::get_entry_to_replace(const Key key, const int depth) const {
+HashEntry *HashTable::get_entry_to_replace(const Key key, [[maybe_unused]] const int depth) const {
   auto *transp   = table + (key & mask);
   const auto k32 = key32(key);
 
@@ -68,11 +68,11 @@ HashEntry *HashTable::get_entry_to_replace(const Key key, const int depth) const
     return transp;
 
   auto *replace      = transp++;
-  auto replace_score = (replace->age << 9) + depth;//replace->depth;
+  auto replace_score = (replace->age << 9) + replace->depth; //+ depth;
 
   for (auto i = 1; i < NUMBER_SLOTS; i++, transp++)
   {
-    if (transp->flags == 0 || transp->key == k32)
+    if (transp->flags == Void || transp->key == k32)
       return transp;
 
     const auto score = (transp->age << 9) + transp->depth;

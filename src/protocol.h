@@ -10,6 +10,7 @@
 enum NodeType : uint8_t;
 enum Move : uint32_t;
 class Game;
+struct PVEntry;
 
 constexpr auto static FenPieceNames = std::array<char, 16> {"PNBRQK  pnbrqk "};
 
@@ -54,7 +55,7 @@ struct Protocol {
 
   virtual void post_curr_move(Move curr_move, int curr_move_number) = 0;
 
-  virtual void post_pv(int depth, int max_ply, uint64_t node_count, uint64_t nodes_per_second, TimeUnit time, int hash_full, int score, fmt::memory_buffer &pv, NodeType node_type) = 0;
+  virtual void post_pv(int depth, int max_ply, uint64_t node_count, uint64_t nodes_per_second, TimeUnit time, int hash_full, int score, const std::array<PVEntry, MAXDEPTH> &pv, int pv_length, int ply, NodeType node_type) = 0;
 
   [[nodiscard]]
   bool is_analysing() const noexcept { return limits.infinite | limits.ponder; }
