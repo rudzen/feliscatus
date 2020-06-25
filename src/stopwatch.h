@@ -21,6 +21,7 @@
 #pragma once
 
 #include <chrono>
+
 #include "miscellaneous.h"
 
 struct Stopwatch final {
