@@ -67,15 +67,19 @@ HashEntry *HashTable::get_entry_to_replace(const Key key, [[maybe_unused]] const
   if (transp->flags == 0 || transp->key == k32)
     return transp;
 
+  constexpr auto replacement_score = [](const HashEntry *e) {
+    return (e->age << 9) + e->depth;
+  };
+
   auto *replace      = transp++;
-  auto replace_score = (replace->age << 9) + replace->depth; //+ depth;
+  auto replace_score = replacement_score(replace);
 
   for (auto i = 1; i < NUMBER_SLOTS; i++, transp++)
   {
     if (transp->flags == Void || transp->key == k32)
       return transp;
 
-    const auto score = (transp->age << 9) + transp->depth;
+    const auto score = replacement_score(transp);
 
     if (score < replace_score)
     {

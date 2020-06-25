@@ -16,7 +16,7 @@ constexpr int PROMOTIONMOVESCORE = 50000;
 
 void store_pv(const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length) {
   assert(pv_length > 0);
-  std::for_each(pv.begin(), pv.begin() + pv_length, [&](const PVEntry &entry) {
+  std::for_each(pv.begin(), std::next(pv.begin(), pv_length), [&](const PVEntry &entry) {
     TT.insert(entry.key, entry.depth, entry.score, entry.node_type, entry.move, entry.eval);
   });
 }
@@ -283,7 +283,7 @@ void Search::sort_move(MoveData &move_data) {
     move_data.score = 890010;
   else if (is_queen_promotion(m))
     move_data.score = 890000;
-  else if (is_capture(m))
+  else if (is_capture(m)) // also en-pessant
   {
     const auto value_captured = piece_value(move_captured(m));
     auto value_piece          = piece_value(move_piece(m));
