@@ -118,16 +118,13 @@ public:
   TimeUnit time_left{};
   TimeUnit time_inc{};
   int lag_buffer;
-  std::atomic_bool stop_search;
   bool verbosity{};
+  std::atomic_bool stop_search;
   std::optional<Protocol *> protocol;
 
   static constexpr int MAXSCORE = 0x7fff;
 
 private:
-
-  static constexpr int KILLERMOVESCORE    = 124900;
-  static constexpr int PROMOTIONMOVESCORE = 50000;
 
   static constexpr std::array<int, 4> futility_margin {150, 150, 150, 400};
   static constexpr std::array<int, 4> razor_margin {0, 125, 125, 400};

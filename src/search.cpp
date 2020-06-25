@@ -6,6 +6,9 @@
 
 namespace {
 
+constexpr int KILLERMOVESCORE    = 124900;
+constexpr int PROMOTIONMOVESCORE = 50000;
+
 void store_pv(const PVEntry *pv, const int pv_length) {
   assert(pv_length > 0);
 
@@ -326,13 +329,11 @@ bool Search::is_hash_score_valid(const HashEntry *tt, const int depth, const int
 }
 
 bool Search::move_is_easy() const {
-  if (protocol)
-  {
-    if ((pos->move_count() == 1 && search_depth > 9) || (protocol.value()->is_fixed_depth() && protocol.value()->get_depth() == search_depth) || pv[0][0].score == MAXSCORE - 1)
-      return true;
+  if (!protocol)
+    return false;
 
-    if (!is_analysing() && !protocol.value()->is_fixed_depth() && search_time < start_time.elapsed_milliseconds() * n_)
-      return true;
-  }
-  return false;
+  if ((pos->move_count() == 1 && search_depth > 9) || (protocol.value()->is_fixed_depth() && protocol.value()->get_depth() == search_depth) || pv[0][0].score == MAXSCORE - 1)
+    return true;
+
+  return !is_analysing() && !protocol.value()->is_fixed_depth() && search_time < start_time.elapsed_milliseconds() * n_;
 }
