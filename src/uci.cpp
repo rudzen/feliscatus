@@ -90,11 +90,11 @@ void UCIProtocol::handle_position(Game *g, std::istringstream &input) const {
 
   g->set_fen(fen);
 
-  Move m;
+  auto m{MOVE_NONE};
 
   // parse any moves if they exist
   while (input >> token && (m = *g->pos->string_to_move(token)) != MOVE_NONE)
-    g->make_move(m, false, false);
+    g->make_move(m, false, true);
 }
 
 bool UCIProtocol::handle_set_option(std::istringstream& input) const {
