@@ -22,6 +22,7 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 
 #include "types.h"
 
@@ -44,9 +45,9 @@ struct MoveSorter {
 struct Board;
 
 struct Moves {
-  void generate_moves(MoveSorter *sorter = nullptr, Move tt_move = MOVE_NONE, int flags = 0);
+  void generate_moves(std::optional<MoveSorter *> sorter = std::nullopt, Move tt_move = MOVE_NONE, int flags = 0);
 
-  void generate_captures_and_promotions(MoveSorter *sorter);
+  void generate_captures_and_promotions(std::optional<MoveSorter *> sorter);
 
   void generate_moves(PieceType pt, Bitboard to_squares);
 
@@ -72,7 +73,7 @@ struct Moves {
   Square en_passant_square{};
 
 private:
-  void reset(MoveSorter *sorter, Move move, int flags);
+  void reset(std::optional<MoveSorter *> sorter, Move move, int flags);
 
   void generate_hash_move();
 
@@ -84,7 +85,7 @@ private:
 
   void add_moves(Bitboard to_squares);
 
-  void add_moves(PieceType piece, Square from, Bitboard attacks);
+  void add_moves(PieceType pt, Square from, Bitboard attacks);
 
   void add_pawn_quiet_moves(Bitboard to_squares);
 
@@ -106,20 +107,20 @@ private:
   [[nodiscard]]
   bool can_castle_long() const;
 
-  int iteration{};
-  int stage{};
-  int max_stage{};
-  int number_moves{};
-  Bitboard pinned{};
-  MoveSorter *move_sorter{};
-  Move transp_move{};
-  int move_flags{};
+  int iteration_{};
+  int stage_{};
+  int max_stage_{};
+  int number_moves_{};
+  Bitboard pinned_{};
+  std::optional<MoveSorter *> move_sorter_;
+  Move transp_move_{};
+  int move_flags_{};
 };
 
 inline int Moves::move_count() const {
-  return number_moves;
+  return number_moves_;
 }
 
 inline void Moves::goto_move(const int pos) {
-  iteration = pos;
+  iteration_ = pos;
 }

@@ -58,11 +58,11 @@ bool is_castle_allowed(const Square to, const Color stm, const Board* b) {
 
 }
 
-void Moves::generate_moves(MoveSorter *sorter, const Move tt_move, const int flags) {
+void Moves::generate_moves(std::optional<MoveSorter *> sorter, const Move tt_move, const int flags) {
   reset(sorter, tt_move, flags);
-  max_stage = 3;
+  max_stage_ = 3;
 
-  if ((move_flags & STAGES) != 0)
+  if ((move_flags_ & STAGES) != 0)
     return;
 
   generate_hash_move();
@@ -70,10 +70,10 @@ void Moves::generate_moves(MoveSorter *sorter, const Move tt_move, const int fla
   generate_quiet_moves();
 }
 
-void Moves::generate_captures_and_promotions(MoveSorter *sorter) {
+void Moves::generate_captures_and_promotions(std::optional<MoveSorter *> sorter) {
   reset(sorter, MOVE_NONE, QUEENPROMOTION | STAGES);
-  max_stage = 2;
-  stage     = 1;
+  max_stage_ = 2;
+  stage_     = 1;
 }
 
 void Moves::generate_moves(const PieceType pt, const Bitboard to_squares) {
@@ -99,9 +99,9 @@ void Moves::generate_pawn_moves(const bool capture, const Bitboard to_squares) {
 }
 
 MoveData *Moves::next_move() {
-  while (iteration == number_moves && stage < max_stage)
+  while (iteration_ == number_moves_ && stage_ < max_stage_)
   {
-    switch (stage)
+    switch (stage_)
     {
     case 0:
       generate_hash_move();
@@ -120,15 +120,15 @@ MoveData *Moves::next_move() {
     }
   }
 
-  if (iteration == number_moves)
+  if (iteration_ == number_moves_)
     return nullptr;
 
   do
   {
-    auto best_idx   = iteration;
+    auto best_idx   = iteration_;
     auto best_score = move_list[best_idx].score;
 
-    for (auto i = best_idx + 1; i < number_moves; ++i)
+    for (auto i = best_idx + 1; i < number_moves_; ++i)
     {
       if (move_list[i].score > best_score)
       {
@@ -137,13 +137,13 @@ MoveData *Moves::next_move() {
       }
     }
 
-    if (max_stage > 2 && stage == 2 && move_list[best_idx].score < 0)
+    if (max_stage_ > 2 && stage_ == 2 && move_list[best_idx].score < 0)
     {
       generate_quiet_moves();
       continue;
     }
-    std::swap(move_list[iteration], move_list[best_idx]);
-    return &move_list[iteration++];
+    std::swap(move_list[iteration_], move_list[best_idx]);
+    return &move_list[iteration_++];
   }
   while (true);
 }
@@ -178,36 +178,36 @@ bool Moves::is_pseudo_legal(const Move m) const {
   return true;
 }
 
-void Moves::reset(MoveSorter *sorter, const Move move, const int flags) {
-  move_sorter = sorter;
-  transp_move = move;
-  move_flags  = flags;
+void Moves::reset(std::optional<MoveSorter *> sorter, const Move move, const int flags) {
+  move_sorter_ = sorter;
+  transp_move_ = move;
+  move_flags_  = flags;
 
   if (move)
   {
-    if (is_castle_move(this->transp_move) || is_ep_capture(this->transp_move))
+    if (is_castle_move(this->transp_move_) || is_ep_capture(this->transp_move_))
     {
       // needed because isPseudoLegal() is not complete yet.
-      transp_move = MOVE_NONE;
-      move_flags &= ~STAGES;
+      transp_move_ = MOVE_NONE;
+      move_flags_ &= ~STAGES;
     }
   }
 
-  iteration    = 0;
-  number_moves = 0;
-  stage        = 0;
+  iteration_    = 0;
+  number_moves_ = 0;
+  stage_        = 0;
 
   if (flags & LEGALMOVES)
-    pinned = b->get_pinned_pieces(side_to_move, b->king_sq(side_to_move));
+    pinned_ = b->get_pinned_pieces(side_to_move, b->king_sq(side_to_move));
 }
 
 void Moves::generate_hash_move() {
-  if (transp_move && is_pseudo_legal(transp_move))
+  if (transp_move_ && is_pseudo_legal(transp_move_))
   {
-    move_list[number_moves].score  = 890010;
-    move_list[number_moves++].move = transp_move;
+    move_list[number_moves_].score  = 890010;
+    move_list[number_moves_++].move = transp_move_;
   }
-  stage++;
+  stage_++;
 }
 
 void Moves::generate_captures_and_promotions() {
@@ -223,7 +223,7 @@ void Moves::generate_captures_and_promotions() {
     add_pawn_moves(pawn_west_attacks[side_to_move](pawns) & en_passant_square, pawn_west_attack_dist[side_to_move], EPCAPTURE);
     add_pawn_moves(pawn_east_attacks[side_to_move](pawns) & en_passant_square, pawn_east_attack_dist[side_to_move], EPCAPTURE);
   }
-  stage++;
+  stage_++;
 }
 
 void Moves::generate_quiet_moves() {
@@ -240,7 +240,7 @@ void Moves::generate_quiet_moves() {
   add_pawn_moves(pushed, pawn_push(side_to_move), NORMAL);
   add_pawn_moves(pawn_push(side_to_move, pushed & rank_3[side_to_move]) & empty_squares, pawn_push(side_to_move) * 2, DOUBLEPUSH);
   add_moves(empty_squares);
-  stage++;
+  stage_++;
 }
 
 void Moves::add_move(const Piece piece, const Square from, const Square to, const MoveType type, const Piece promoted) {
@@ -255,17 +255,17 @@ void Moves::add_move(const Piece piece, const Square from, const Square to, cons
 
   const auto move = init_move(piece, captured, from, to, type, promoted);
 
-  if (transp_move == move)
+  if (transp_move_ == move)
     return;
 
-  if ((move_flags & LEGALMOVES) && !is_legal(move, piece, from, type))
+  if (move_flags_ & LEGALMOVES && !is_legal(move, piece, from, type))
     return;
 
-  auto &move_data = move_list[number_moves++];
+  auto &move_data = move_list[number_moves_++];
   move_data  = move;
 
-  if (move_sorter)
-    move_sorter->sort_move(move_data);
+  if (move_sorter_)
+    move_sorter_.value()->sort_move(move_data);
   else
     move_data.score = 0;
 }
@@ -324,7 +324,7 @@ void Moves::add_pawn_moves(const Bitboard to_squares, const Direction distance, 
     {
       const auto promo_type = type | PROMOTION;
 
-      if (move_flags & QUEENPROMOTION)
+      if (move_flags_ & QUEENPROMOTION)
       {
         add_move(pawn, from, to, promo_type, make_piece(Queen, side_to_move));
         return;
@@ -347,7 +347,7 @@ bool Moves::gives_check(const Move m) const {
 }
 
 bool Moves::is_legal(const Move m, const Piece piece, const Square from, const MoveType type) const {
-  if (!(pinned & from) && !in_check && type_of(piece) != King && !(type & EPCAPTURE))
+  if (!(pinned_ & from) && !in_check && type_of(piece) != King && !(type & EPCAPTURE))
     return true;
 
   b->make_move(m);
