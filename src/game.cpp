@@ -196,6 +196,10 @@ Game::Game() : pos(position_list.data()), chess960(false), xfen(false) {
     p.b = &board;
 }
 
+Game::Game(std::string_view fen) : Game() {
+  set_fen(fen);
+}
+
 bool Game::make_move(const Move m, const bool check_legal, const bool calculate_in_check) {
   if (m == 0)
     return make_null_move();

@@ -32,6 +32,7 @@ enum Move : uint32_t;
 class Game final {
 public:
   Game();
+  explicit Game(std::string_view fen);
 
   bool make_move(Move m, bool check_legal, bool calculate_in_check);
 
