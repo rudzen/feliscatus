@@ -374,10 +374,6 @@ constexpr void reset_lsb(Bitboard &x) {
   x &= (x - 1);
 }
 
-constexpr uint8_t pop_count(const Bitboard x) {
-  return std::popcount(x);
-}
-
 constexpr Square lsb(const Bitboard x) {
   return static_cast<Square>(std::countr_zero(x));
 }

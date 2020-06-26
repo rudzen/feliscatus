@@ -54,14 +54,14 @@ void Material::clear() {
   material_value.fill(0);
 }
 
-void Material::remove(const int pc) {
+void Material::remove(const Piece pc) {
   const auto c = color_of(pc);
   const auto pt = type_of(pc);
   update_key(c, pt, -1);
   material_value[c] -= piece_values[pt];
 }
 
-void Material::add(const int pc) {
+void Material::add(const Piece pc) {
   const auto c = color_of(pc);
   const auto pt = type_of(pc);
   update_key(c, pt, 1);
@@ -89,7 +89,7 @@ void Material::make_move(const Move m) {
   }
 }
 
-int Material::pawn_value() { return static_cast<int>(key[WHITE] & 15) * piece_values[Pawn] + static_cast<int>(key[BLACK] & 15) * piece_values[Pawn]; }
+int Material::pawn_value() { return static_cast<int>(key[WHITE] & all_pawns) * piece_values[Pawn] + static_cast<int>(key[BLACK] & all_pawns) * piece_values[Pawn]; }
 
 int Material::evaluate(int &flags, const int eval, const Color side_to_move, const Board *b) {
   material_flags = 0;

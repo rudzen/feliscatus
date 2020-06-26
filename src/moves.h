@@ -80,7 +80,7 @@ private:
 
   void generate_quiet_moves();
 
-  void add_move(int piece, Square from, Square to, MoveType type, int promoted = 0);
+  void add_move(Piece piece, Square from, Square to, MoveType type, Piece promoted = NoPiece);
 
   void add_moves(Bitboard to_squares);
 
@@ -98,7 +98,7 @@ private:
   bool gives_check(Move m) const;
 
   [[nodiscard]]
-  bool is_legal(Move m, int piece, Square from, MoveType type) const;
+  bool is_legal(Move m, Piece piece, Square from, MoveType type) const;
 
   [[nodiscard]]
   bool can_castle_short() const;

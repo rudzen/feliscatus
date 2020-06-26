@@ -136,8 +136,18 @@ enum Direction : int {
 
 constexpr Direction pawn_push(const Color c) { return c == WHITE ? NORTH : SOUTH; }
 
-enum PieceType : uint8_t {
-  Pawn, Knight, Bishop, Rook, Queen, King, NoPiece, AllPieces
+enum PieceType {
+  Pawn = 0, Knight = 1, Bishop = 2, Rook = 3, Queen = 4, King = 5,
+  NoPieceType = 6,
+  AllPieceTypes = 6,
+  PieceType_Nb = 8
+};
+
+enum Piece {
+  WhitePawn = 0, WhiteKnight = 1, WhiteBishop =  2, WhiteRook =  3, WhiteQueen =  4, WhiteKing =  5,
+  BlackPawn = 8, BlackKnight = 9, BlackBishop = 10, BlackRook = 11, BlackQueen = 12, BlackKing = 13,
+  NoPiece   = 6,
+  Piece_Nb  = 16
 };
 
 constexpr std::array<PieceType, 6> PieceTypes{ Pawn, Knight, Bishop, Rook, Queen, King };
@@ -148,24 +158,28 @@ constexpr std::array<int, 6> piece_values{100, 400, 400, 600, 1200, 0};
 
 constexpr std::array<std::string_view, 6> piece_notation {" ", "n", "b", "r", "q", "k"};
 
-constexpr std::string_view piece_to_string(const int piece) {
+constexpr std::string_view piece_to_string(const PieceType piece) {
   return piece_notation[PieceTypes[piece]];
 }
 
-constexpr PieceType type_of(const int pc) {
+constexpr PieceType type_of(const Piece pc) {
   return static_cast<PieceType>(pc & 7);
 }
 
-constexpr int make_piece(const PieceType pt, const Color c) {
-  return pt | (c << 3);
+constexpr Piece make_piece(const PieceType pt, const Color c) {
+  return static_cast<Piece>(pt | (c << 3));
 }
 
-constexpr Color color_of(const int pc) {
+constexpr Color color_of(const Piece pc) {
   return static_cast<Color>(pc >> 3);
 }
 
-constexpr int piece_value(const int pc) {
-  return piece_values[PieceTypes[type_of(pc)]];
+constexpr int piece_value(const PieceType pt) {
+  return piece_values[pt];
+}
+
+constexpr int piece_value(const Piece pc) {
+  return piece_values[type_of(pc)];
 }
 
 enum Move : uint32_t {
@@ -245,11 +259,11 @@ constexpr Square relative_square(const Color c, const Square s) { return static_
 
 constexpr Rank relative_rank(const Color c, const Square s) { return relative_rank(c, rank_of(s)); }
 
-constexpr int move_piece(const Move move) { return move >> 26 & 15; }
+constexpr Piece move_piece(const Move move) { return static_cast<Piece>(move >> 26 & 15); }
 
-constexpr int move_captured(const Move move) { return move >> 22 & 15; }
+constexpr Piece move_captured(const Move move) { return static_cast<Piece>(move >> 22 & 15); }
 
-constexpr int move_promoted(const Move move) { return move >> 18 & 15; }
+constexpr Piece move_promoted(const Move move) { return static_cast<Piece>(move >> 18 & 15); }
 
 constexpr MoveType move_type(const Move move) { return static_cast<MoveType>(move >> 12 & 63); }
 
@@ -257,27 +271,27 @@ constexpr Square move_from(const Move move) { return static_cast<Square>(move >>
 
 constexpr Square move_to(const Move move) { return static_cast<Square>(move & 63); }
 
-constexpr int move_piece_type(const Move move) { return type_of(move_piece(move)); }
+constexpr PieceType move_piece_type(const Move move) { return type_of(move_piece(move)); }
 
 constexpr Color move_side(const Move m) { return static_cast<Color>(m >> 29 & 1); }
 
-constexpr int is_capture(const Move m) { return move_type(m) & (CAPTURE | EPCAPTURE); }
+constexpr bool is_capture(const Move m) { return move_type(m) & (CAPTURE | EPCAPTURE); }
 
-constexpr int is_ep_capture(const Move m) { return move_type(m) & EPCAPTURE; }
+constexpr bool is_ep_capture(const Move m) { return move_type(m) & EPCAPTURE; }
 
-constexpr int is_castle_move(const Move m) { return move_type(m) & CASTLE; }
+constexpr bool is_castle_move(const Move m) { return move_type(m) & CASTLE; }
 
-constexpr int is_promotion(const Move m) { return move_type(m) & PROMOTION; }
+constexpr bool is_promotion(const Move m) { return move_type(m) & PROMOTION; }
 
 constexpr bool is_queen_promotion(const Move m) { return is_promotion(m) && type_of(move_promoted(m)) == Queen; }
 
 constexpr bool is_null_move(const Move m) { return m == 0; }
 
 template<MoveType Type>
-constexpr Move init_move(const int piece, const int captured, const Square from, const Square to, const int promoted) {
+constexpr Move init_move(const Piece piece, const Piece captured, const Square from, const Square to, const Piece promoted) {
   return static_cast<Move>((piece << 26) | (captured << 22) | (promoted << 18) | (Type << 12) | (from << 6) | static_cast<int>(to));
 }
 
-constexpr Move init_move(const int piece, const int captured, const Square from, const Square to, const MoveType type, const int promoted) {
+constexpr Move init_move(const Piece piece, const Piece captured, const Square from, const Square to, const MoveType type, const Piece promoted) {
   return static_cast<Move>((piece << 26) | (captured << 22) | (promoted << 18) | (type << 12) | (from << 6) | static_cast<int>(to));
 }

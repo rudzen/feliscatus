@@ -33,20 +33,16 @@ constexpr auto detect_piece = [](const int from) {
   {
   case 'N':
     return Knight;
-
   case 'B':
     return Bishop;
-
   case 'R':
     return Rook;
-
   case 'Q':
     return Queen;
-
   case 'K':
     return King;
   default:
-    return NoPiece;
+    return NoPieceType;
   };
 };
 
@@ -82,7 +78,7 @@ void pgn::PGNPlayer::read_tag_pair() {
 void pgn::PGNPlayer::read_san_move() {
   PGNFileReader::read_san_move();
 
-  int piece;
+  Piece piece{NoPiece};
 
   if (pawn_move_)
   {
@@ -95,7 +91,7 @@ void pgn::PGNPlayer::read_san_move() {
   } else if (piece_move_)
   {
     const auto pt = detect_piece(from_piece_);
-    if (pt == NoPiece)
+    if (pt == NoPieceType)
     {
       fmt::print("default [{}]\n", std::string(token_str));
       exit(0);
@@ -107,18 +103,20 @@ void pgn::PGNPlayer::read_san_move() {
     fmt::print("else\n");
     exit(0);
   }
-  int promoted;
+
+  Piece promoted{NoPiece};
 
   if (promoted_to != -1)
   {
     const auto pt = detect_piece(promoted_to);
-    if (pt == NoPiece)
+    if (pt == NoPieceType)
     {
       fmt::print("promoted_to error [{}]\n", std::string(token_str));
       exit(0);
     }
     promoted = make_piece(pt, side_to_move);
   }
+
 
   auto found            = false;
   const auto move_count = game_->pos->move_count();
@@ -127,7 +125,7 @@ void pgn::PGNPlayer::read_san_move() {
   {
     const auto m = game_->pos->move_list[i].move;
 
-    if (move_piece(m) != piece || move_to(m) != to_square_ || (promoted_to != -1 && move_promoted(m) != promoted) || (capture_ && !is_capture(m))
+    if (move_piece(m) != piece || move_to(m) != to_square_ || (promoted != NoPiece && move_promoted(m) != promoted) || (capture_ && !is_capture(m))
         || (from_file_ != -1 && file_of(move_from(m)) != from_file_) || (from_rank_ != -1 && rank_of(move_from(m)) != from_rank_))
       continue;
 

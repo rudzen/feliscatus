@@ -288,7 +288,7 @@ inline void init() {
 
 }
 
-template<int Pt>
+template<PieceType Pt>
 inline Bitboard piece_attacks_bb(const Square sq, Bitboard occupied = 0)
 {
   static_assert(util::in_between<Pawn, King>(Pt));
@@ -307,8 +307,8 @@ inline Bitboard piece_attacks_bb(const Square sq, Bitboard occupied = 0)
   return 0;
 }
 
-inline Bitboard piece_attacks_bb(const int pc, const Square sq, Bitboard occupied = 0) {
-  switch (type_of(pc))
+inline Bitboard piece_attacks_bb(const PieceType pt, const Square sq, Bitboard occupied = 0) {
+  switch (pt)
   {
   case Knight:
     return piece_attacks_bb<Knight>(sq);

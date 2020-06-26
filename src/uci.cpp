@@ -95,7 +95,7 @@ int UCIProtocol::handle_go(std::istringstream &input) {
   return 0;
 }
 
-void UCIProtocol::handle_position(Game *g, std::istringstream &input) const {
+void UCIProtocol::handle_position(std::istringstream &input) const {
 
   std::string token;
 
@@ -103,7 +103,7 @@ void UCIProtocol::handle_position(Game *g, std::istringstream &input) const {
 
   if (token == "startpos")
   {
-    g->set_fen(Game::kStartPosition);
+    game->set_fen(Game::kStartPosition);
 
     // get rid of "moves" token
     input >> token;
@@ -112,15 +112,18 @@ void UCIProtocol::handle_position(Game *g, std::istringstream &input) const {
     std::string fen;
     while (input >> token && token != "moves")
       fen += token + ' ';
-    g->set_fen(fen);
+    game->set_fen(fen);
   } else
     return;
 
-  auto m{MOVE_NONE};
-
   // parse any moves if they exist
-  while (input >> token && (m = *g->pos->string_to_move(token)) != MOVE_NONE)
-    g->make_move(m, false, true);
+  while (input >> token)
+  {
+    const auto *const m = game->pos->string_to_move(token);
+      if (!m || *m == MOVE_NONE)
+          break;
+      game->make_move(*m, false, true);
+  }
 }
 
 bool UCIProtocol::handle_set_option(std::istringstream &input) const {

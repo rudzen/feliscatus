@@ -32,7 +32,7 @@ constexpr int material_change(const Move move) {
   return (is_capture(move) ? piece_value(move_captured(move)) : 0) + (is_promotion(move) ? (piece_value(move_promoted(move)) - piece_value(Pawn)) : 0);
 }
 
-constexpr int next_to_capture(const Move move) {
+constexpr Piece next_to_capture(const Move move) {
   return is_promotion(move) ? move_promoted(move) : move_piece(move);
 }
 
@@ -58,7 +58,7 @@ int Board::see_last_move(const Move move) {
   return see_rec(material_change(move), next_to_capture(move), move_to(move), ~move_side(move));
 }
 
-int Board::see_rec(const int mat_change, const int next_capture, const Square to, const Color side_to_move) {
+int Board::see_rec(const int mat_change, const Piece next_capture, const Square to, const Color side_to_move) {
   const auto rr = relative_rank(side_to_move, to);
 
   Move move;
@@ -71,7 +71,7 @@ int Board::see_rec(const int mat_change, const int next_capture, const Square to
 
     move = current_piece[side_to_move] == Pawn && rr == RANK_8
          ? init_move<PROMOTION | CAPTURE>(make_piece(current_piece[side_to_move], side_to_move), next_capture, from.value(), to, make_piece(Queen, side_to_move))
-         : init_move<CAPTURE>(make_piece(current_piece[side_to_move], side_to_move), next_capture, from.value(), to, 0);
+         : init_move<CAPTURE>(make_piece(current_piece[side_to_move], side_to_move), next_capture, from.value(), to, NoPiece);
 
     make_move(move);
 

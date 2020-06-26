@@ -243,15 +243,15 @@ void Moves::generate_quiet_moves() {
   stage++;
 }
 
-void Moves::add_move(const int piece, const Square from, const Square to, const MoveType type, const int promoted) {
-  int captured;
+void Moves::add_move(const Piece piece, const Square from, const Square to, const MoveType type, const Piece promoted) {
+  Piece captured;
 
   if (type & CAPTURE)
     captured = b->get_piece(to);
   else if (type & EPCAPTURE)
     captured = make_piece(Pawn, ~side_to_move);
   else
-    captured = 0;
+    captured = NoPiece;
 
   const auto move = init_move(piece, captured, from, to, type, promoted);
 
@@ -346,7 +346,7 @@ bool Moves::gives_check(const Move m) const {
   return is_attacked;
 }
 
-bool Moves::is_legal(const Move m, const int piece, const Square from, const MoveType type) const {
+bool Moves::is_legal(const Move m, const Piece piece, const Square from, const MoveType type) const {
   if (!(pinned & from) && !in_check && type_of(piece) != King && !(type & EPCAPTURE))
     return true;
 

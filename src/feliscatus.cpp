@@ -181,7 +181,7 @@ int Felis::run(const int argc, char* argv[]) {
     } else if (token == "setoption")
       protocol->handle_set_option(input);
     else if (token == "position")
-      protocol->handle_position(game.get(), input);
+      protocol->handle_position(input);
     else if (token == "go")
     {
       protocol->handle_go(input);

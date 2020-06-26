@@ -261,10 +261,10 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     }
 
     if (settings->weakness)
-      params.emplace_back("knight_in_danger", knight_in_danger, 0, step);
+      params.emplace_back("knight_in_danger", piece_in_danger[Knight], 0, step);
 
     if (settings->strength)
-      params.emplace_back("knight_attack_king", knight_attack_king, 0, step);
+      params.emplace_back("knight_attack_king", attacks_on_king[Knight], 0, step);
   }
 
   if (settings->bishop)
@@ -300,10 +300,10 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     }
 
     if (settings->weakness)
-      params.emplace_back("bishop_in_danger", bishop_in_danger, 0, step);
+      params.emplace_back("bishop_in_danger", piece_in_danger[Bishop], 0, step);
 
     if (settings->strength)
-      params.emplace_back("bishop_attack_king", bishop_attack_king, 0, step);
+      params.emplace_back("bishop_attack_king", attacks_on_king[Bishop], 0, step);
   }
 
   if (settings->rook)
@@ -331,7 +331,7 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     params.emplace_back("rook_open_file", rook_open_file, 0, step);
 
     if (settings->weakness)
-      params.emplace_back("rook_in_danger", rook_in_danger, 0, step);
+      params.emplace_back("rook_in_danger", piece_in_danger[Rook], 0, step);
 
     if (settings->strength)
       params.emplace_back("rook_attack_king", rook_attack_king, 0, step);
@@ -358,7 +358,7 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     }
 
     if (settings->weakness)
-      params.emplace_back("queen_in_danger", queen_in_danger, 0, step);
+      params.emplace_back("queen_in_danger", piece_in_danger[Queen], 0, step);
 
     if (settings->strength)
       params.emplace_back("queen_attack_king", queen_attack_king, 0, step);
