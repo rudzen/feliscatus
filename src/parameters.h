@@ -21,6 +21,7 @@
 #pragma once
 
 #include <array>
+#include "types.h"
 
 // TODO : Join eg and mg values into a single int (or simular)
 
@@ -30,8 +31,17 @@ inline int lazy_margin = 500;
 
 inline int tempo = 10;
 
-inline int bishop_attack_king = 5;
-inline int bishop_in_danger   = -56;
+inline std::array<int, PieceType_Nb> attacks_on_king
+{
+      0,      3,      5,   11,    39,    0
+// Pawn  Knight  Bishop  Rook  Queen  King
+};
+
+inline std::array<int, PieceType_Nb> piece_in_danger
+{
+      0,     41,     56,   34,    38,    0
+// Pawn  Knight  Bishop  Rook  Queen  King
+};
 
 inline std::array<int, 14> bishop_mob2_eg{-60, -27, -20, -10, -8, -2, 2, 3, 4, 1, 6, 10, 16, 3};
 inline std::array<int, 14> bishop_mob2_mg{-27, -14, -6, -1, 3, 7, 5, 7, 11, 15, 10, 18, 12, 29};
@@ -49,8 +59,6 @@ inline std::array<int, 4> king_on_half_open{12, -9, -55, -97};
 inline std::array<int, 4> king_on_open     {29, -13, -63, -221};
 inline std::array<int, 4> king_pawn_shelter{-20, 1, 6, -7};
 
-inline int knight_attack_king = 3;
-inline int knight_in_danger   = -41;
 inline std::array<int, 9> knight_mob2_eg{-137, -56, -38, -17, -7, 0, 0, -5, -15};
 inline std::array<int, 9> knight_mob2_mg{-59, -41, -21, -10, 1, 8, 14, 22, 24};
 inline std::array<int, 9> knight_mob_eg {-40, 8, 14, 0, -5, -9, -10, -15, -8};
@@ -72,11 +80,9 @@ inline std::array<int, 2> pawn_isolated_eg         {-7, -32};
 inline std::array<int, 2> pawn_isolated_mg         {-13, -28};
 
 inline int queen_attack_king = 39;
-inline int queen_in_danger   = -38;
 inline std::array<int, 28> queen_mob_eg {-3, -30, -17, -27, -36, -37, -30, -24, -27, -21, -17, -11, -1, 4, 2, 5, 2, 6, 3, 1, -15, -16, -15, -34, -34, -28, -12, -16};
 inline std::array<int, 28> queen_mob_mg {-19, -34, -15, -15, -13, -10, -10, -11, -6, -1, 2, -1, -3, 2, 3, 5, 7, 3, 9, 13, 25, 34, 33, 58, 44, 41, 14, 19};
 inline int rook_attack_king  = 11;
-inline int rook_in_danger    = -34;
 inline std::array<int, 15> rook_mob_eg {-46, -28, -24, -9, -5, -2, 5, 9, 14, 19, 21, 27, 27, 15, 3};
 inline std::array<int, 15> rook_mob_mg {-28, -20, -13, -16, -17, -10, -9, -3, -1, 2, 4, 1, 6, 20, 28};
 inline int rook_open_file    = 13;

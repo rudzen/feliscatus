@@ -32,14 +32,14 @@ enum Move : uint32_t;
 struct Board {
   void clear();
 
-  void add_piece(int pc, Square sq);
+  void add_piece(Piece pc, Square sq);
 
   void make_move(Move m);
 
   void unmake_move(Move m);
 
   [[nodiscard]]
-  int get_piece(Square sq) const;
+  Piece get_piece(Square sq) const;
 
   [[nodiscard]]
   PieceType get_piece_type(Square sq) const;
@@ -88,12 +88,12 @@ struct Board {
   [[nodiscard]]
   int see_last_move(Move move);
 
-  std::array<Bitboard, 2 << 3> piece{};
-  std::array<int, sq_nb> board{};
+  std::array<Bitboard, Piece_Nb> piece{};
+  std::array<Piece, sq_nb> board{};
 
 private:
 
-  void remove_piece(int pc, Square sq);
+  void remove_piece(Piece pc, Square sq);
 
   [[nodiscard]]
   bool is_occupied(Square sq) const;
@@ -114,7 +114,7 @@ private:
   bool is_piece_on_square(PieceType pt, Square sq, Color side);
 
   [[nodiscard]]
-  int see_rec(int mat_change, int next_capture, Square to, Color side_to_move);
+  int see_rec(int mat_change, Piece next_capture, Square to, Color side_to_move);
 
   [[nodiscard]]
   std::optional<Square> lookup_best_attacker(Square to, Color side);
@@ -128,7 +128,7 @@ private:
   std::array<Square, COL_NB> king_square{};
 };
 
-inline void Board::add_piece(const int pc, const Square sq) {
+inline void Board::add_piece(const Piece pc, const Square sq) {
   piece[pc] |= sq;
   occupied_by_side[color_of(pc)] |= sq;
   occupied |= sq;
@@ -138,7 +138,7 @@ inline void Board::add_piece(const int pc, const Square sq) {
     king_square[color_of(pc)] = sq;
 }
 
-inline void Board::remove_piece(const int pc, const Square sq) {
+inline void Board::remove_piece(const Piece pc, const Square sq) {
   const auto bbsq = ~bit(sq);
   piece[pc] &= bbsq;
   occupied_by_side[color_of(pc)] &= bbsq;
@@ -146,7 +146,7 @@ inline void Board::remove_piece(const int pc, const Square sq) {
   board[sq] = NoPiece;
 }
 
-inline int Board::get_piece(const Square sq) const {
+inline Piece Board::get_piece(const Square sq) const {
   return board[sq];
 }
 

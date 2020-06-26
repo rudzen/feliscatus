@@ -39,7 +39,7 @@ struct UCIProtocol final : Protocol {
 
   int handle_go(std::istringstream& input);
 
-  void handle_position(Game* g, std::istringstream& input) const;
+  void handle_position(std::istringstream& input) const;
 
   bool handle_set_option(std::istringstream& input) const;
 };

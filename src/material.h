@@ -30,9 +30,9 @@ enum Move : uint32_t;
 struct Material {
   void clear();
 
-  void remove(int pc);
+  void remove(Piece pc);
 
-  void add(int pc);
+  void add(Piece pc);
 
   void update_key(Color c, PieceType pt, int delta);
 
