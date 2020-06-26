@@ -93,11 +93,11 @@ void Felis::stop_workers() {
 bool Felis::set_option(const std::string_view name, const std::string_view value) {
   if (name == "Hash")
   {
-    TT.init(std::clamp(util::to_integral<uint64_t>(value), 8ULL, 65536ULL));
+    TT.init(std::clamp(util::to_integral<uint64_t>(value), 8UL, 65536UL));
     fmt::print("info string Hash:{}\n", TT.get_size_mb());
   } else if (name == "Threads" || name == "NumThreads")
   {
-    num_threads = std::clamp(util::to_integral<uint64_t>(value), 1ULL, 64ULL);
+    num_threads = std::clamp(util::to_integral<uint64_t>(value), 1UL, 64UL);
     workers.resize(num_threads - 1);
     workers.shrink_to_fit();
     fmt::print("info string Threads:{}\n", num_threads);
