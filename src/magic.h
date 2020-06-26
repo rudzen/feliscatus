@@ -289,7 +289,7 @@ inline void init() {
 }
 
 template<PieceType Pt>
-inline Bitboard piece_attacks_bb(const Square sq, Bitboard occupied = 0)
+inline Bitboard piece_attacks_bb(const Square sq, const Bitboard occupied = 0)
 {
   static_assert(util::in_between<Pawn, King>(Pt));
   if constexpr (Pt == Knight)
@@ -307,7 +307,7 @@ inline Bitboard piece_attacks_bb(const Square sq, Bitboard occupied = 0)
   return 0;
 }
 
-inline Bitboard piece_attacks_bb(const PieceType pt, const Square sq, Bitboard occupied = 0) {
+inline Bitboard piece_attacks_bb(const PieceType pt, const Square sq, const Bitboard occupied = 0) {
   switch (pt)
   {
   case Knight:

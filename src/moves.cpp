@@ -58,7 +58,7 @@ bool is_castle_allowed(const Square to, const Color stm, const Board* b) {
 
 }
 
-void Moves::generate_moves(std::optional<MoveSorter *> sorter, const Move tt_move, const int flags) {
+void Moves::generate_moves(const std::optional<MoveSorter *> sorter, const Move tt_move, const int flags) {
   reset(sorter, tt_move, flags);
   max_stage_ = 3;
 
@@ -70,7 +70,7 @@ void Moves::generate_moves(std::optional<MoveSorter *> sorter, const Move tt_mov
   generate_quiet_moves();
 }
 
-void Moves::generate_captures_and_promotions(std::optional<MoveSorter *> sorter) {
+void Moves::generate_captures_and_promotions(const std::optional<MoveSorter *> sorter) {
   reset(sorter, MOVE_NONE, QUEENPROMOTION | STAGES);
   max_stage_ = 2;
   stage_     = 1;
@@ -149,7 +149,7 @@ MoveData *Moves::next_move() {
 }
 
 bool Moves::is_pseudo_legal(const Move m) const {
-  // TODO : castleling & en passant moves
+  // TODO : en passant moves
 
   const auto from = move_from(m);
 
@@ -166,9 +166,9 @@ bool Moves::is_pseudo_legal(const Move m) const {
       return false;
     if ((b->piece[move_captured(m)] & to) == 0)
       return false;
-  // } else if (is_castle_move(m))
-  //   return !b->is_attacked(b->king_sq(side_to_move), side_to_move) && !in_check && ((from < to && can_castle_short()) || (from > to && can_castle_long()));
-  } else if (b->pieces() & to)
+  } else if (is_castle_move(m))
+     return !b->is_attacked(b->king_sq(side_to_move), side_to_move) && !in_check && ((from < to && can_castle_short()) || (from > to && can_castle_long()));
+  else if (b->pieces() & to)
      return false;
 
   if (const auto piece = type_of(move_piece(m)); piece == Bishop || piece == Rook || piece == Queen)
@@ -178,16 +178,16 @@ bool Moves::is_pseudo_legal(const Move m) const {
   return true;
 }
 
-void Moves::reset(std::optional<MoveSorter *> sorter, const Move move, const int flags) {
+void Moves::reset(const std::optional<MoveSorter *> sorter, const Move move, const int flags) {
   move_sorter_ = sorter;
   transp_move_ = move;
   move_flags_  = flags;
 
   if (move)
   {
-    if (is_castle_move(this->transp_move_) || is_ep_capture(this->transp_move_))
+    if (is_ep_capture(this->transp_move_))
     {
-      // needed because isPseudoLegal() is not complete yet.
+      // needed because is_pseudo_legal() is not complete yet.
       transp_move_ = MOVE_NONE;
       move_flags_ &= ~STAGES;
     }

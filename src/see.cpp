@@ -38,7 +38,7 @@ constexpr Piece next_to_capture(const Move move) {
 
 }
 
-int Board::see_move(Move move) {
+int Board::see_move(const Move move) {
   int score;
   make_move(move);
 

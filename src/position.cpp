@@ -49,7 +49,7 @@ void Position::clear() {
   material.clear();
 }
 
-const Move *Position::string_to_move(std::string_view m) {
+const Move *Position::string_to_move(const std::string_view m) {
   // 0 = short, 1 = long
   auto castle_type = is_string_castle_move(b, m);
 

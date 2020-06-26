@@ -45,7 +45,7 @@ struct PVEntry {
 class Search final : public MoveSorter {
 public:
   Search() = delete;
-  Search(std::optional<Protocol *> p, Game *g, PawnHashTable *pawnt) : lag_buffer(-1), verbosity(true), protocol(p), game(g), board(g->pos->b), pawn_hash_(pawnt) { }
+  Search(const std::optional<Protocol *> p, Game *g, PawnHashTable *pawnt) : lag_buffer(-1), verbosity(true), protocol(p), game(g), board(g->pos->b), pawn_hash_(pawnt) { }
   Search(Game *g, PawnHashTable *pawnt) : Search(std::nullopt, g, pawnt) {
     stop_search.store(false);
   }

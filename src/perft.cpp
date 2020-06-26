@@ -122,10 +122,10 @@ uint64_t Perft::perft_divide(const int depth) const {
   return nodes;
 }
 
-uint64_t perft::perft(Game *g, int depth, int flags) {
+uint64_t perft::perft(Game *g, const int depth, const int flags) {
   return Perft(g, flags).perft(depth);
 }
 
-uint64_t perft::divide(Game *g, int depth, int flags) {
+uint64_t perft::divide(Game *g, const int depth, const int flags) {
   return Perft(g, flags).perft_divide(depth);
 }

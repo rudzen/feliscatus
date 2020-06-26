@@ -142,7 +142,7 @@ std::string emit_code(const std::vector<eval::Param> &params0) {
   return fmt::to_string(s);
 }
 
-void print_best_values(double E, const std::vector<eval::Param> &params) {
+void print_best_values(const double E, const std::vector<eval::Param> &params) {
   auto finished = 0;
 
   for (std::size_t i = 0; i < params.size(); ++i)
@@ -538,7 +538,7 @@ Tune::Tune(std::unique_ptr<Game> game, const ParserSettings *settings) : game_(s
   fmt::print("{}\n", emit_code<true>(params));
 }
 
-double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, double K) {
+double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, const double K) {
   auto x = 0.0;
 
   for (const auto &node : nodes)
