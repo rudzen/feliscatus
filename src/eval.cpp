@@ -60,7 +60,7 @@ struct Evaluate {
   int evaluate(int alpha, int beta);
 
 private:
-  template<int Pt, Color Us>
+  template<PieceType Pt, Color Us>
   void set_attacks(Bitboard attacks);
   template<Color C, typename... PieceTypes>
   [[nodiscard]]
@@ -157,7 +157,7 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 }
 
 template<bool Tuning>
-template<int Pt, Color Us>
+template<PieceType Pt, Color Us>
 void Evaluate<Tuning>::set_attacks(const Bitboard attacks) {
   piece_attacks[Us][AllPieces] |= attacks;
   piece_attacks[Us][Pt] |= attacks;
