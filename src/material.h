@@ -30,14 +30,14 @@ enum Move : uint32_t;
 struct Material {
   void clear();
 
-  void remove(int p);
+  void remove(int pc);
 
-  void add(int p);
+  void add(int pc);
 
-  void update_key(Color c, int p, int delta);
+  void update_key(Color c, PieceType pt, int delta);
 
   [[nodiscard]]
-  int count(Color c, int p);
+  int count(Color c, PieceType pt);
 
   void make_move(Move m);
 

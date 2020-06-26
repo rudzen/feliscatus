@@ -136,27 +136,36 @@ enum Direction : int {
 
 constexpr Direction pawn_push(const Color c) { return c == WHITE ? NORTH : SOUTH; }
 
-constexpr int Pawn      = 0;
-constexpr int Knight    = 1;
-constexpr int Bishop    = 2;
-constexpr int Rook      = 3;
-constexpr int Queen     = 4;
-constexpr int King      = 5;
-constexpr int NoPiece   = 6;
-constexpr int AllPieces = 7;
+enum PieceType : uint8_t {
+  Pawn, Knight, Bishop, Rook, Queen, King, NoPiece, AllPieces
+};
 
-constexpr std::array<int, 6> PieceTypes{ Pawn, Knight, Bishop, Rook, Queen, King };
+constexpr std::array<PieceType, 6> PieceTypes{ Pawn, Knight, Bishop, Rook, Queen, King };
+
+constexpr std::array<PieceType, 4> PromotionPieceTypes{ Queen, Rook, Bishop, Knight };
 
 constexpr std::array<int, 6> piece_values{100, 400, 400, 600, 1200, 0};
-
-constexpr int piece_value(const int p) {
-  return piece_values[PieceTypes[p & 7]];
-}
 
 constexpr std::array<std::string_view, 6> piece_notation {" ", "n", "b", "r", "q", "k"};
 
 constexpr std::string_view piece_to_string(const int piece) {
   return piece_notation[PieceTypes[piece]];
+}
+
+constexpr PieceType type_of(const int pc) {
+  return static_cast<PieceType>(pc & 7);
+}
+
+constexpr int make_piece(const PieceType pt, const Color c) {
+  return pt | (c << 3);
+}
+
+constexpr Color color_of(const int pc) {
+  return static_cast<Color>(pc >> 3);
+}
+
+constexpr int piece_value(const int pc) {
+  return piece_values[PieceTypes[type_of(pc)]];
 }
 
 enum Move : uint32_t {
@@ -201,6 +210,7 @@ ENABLE_FULL_OPERATORS_ON(Direction)
 ENABLE_INCR_OPERATORS_ON(Square)
 ENABLE_INCR_OPERATORS_ON(File)
 ENABLE_INCR_OPERATORS_ON(Rank)
+ENABLE_INCR_OPERATORS_ON(PieceType)
 
 #undef ENABLE_FULL_OPERATORS_ON
 #undef ENABLE_INCR_OPERATORS_ON
@@ -247,11 +257,9 @@ constexpr Square move_from(const Move move) { return static_cast<Square>(move >>
 
 constexpr Square move_to(const Move move) { return static_cast<Square>(move & 63); }
 
-constexpr int move_piece_type(const Move move) { return move >> 26 & 7; }
+constexpr int move_piece_type(const Move move) { return type_of(move_piece(move)); }
 
 constexpr Color move_side(const Move m) { return static_cast<Color>(m >> 29 & 1); }
-
-constexpr int side_mask(const Move m) { return move_side(m) << 3; }
 
 constexpr int is_capture(const Move m) { return move_type(m) & (CAPTURE | EPCAPTURE); }
 
@@ -261,7 +269,7 @@ constexpr int is_castle_move(const Move m) { return move_type(m) & CASTLE; }
 
 constexpr int is_promotion(const Move m) { return move_type(m) & PROMOTION; }
 
-constexpr bool is_queen_promotion(const Move m) { return is_promotion(m) && (move_promoted(m) & 7) == Queen; }
+constexpr bool is_queen_promotion(const Move m) { return is_promotion(m) && type_of(move_promoted(m)) == Queen; }
 
 constexpr bool is_null_move(const Move m) { return m == 0; }
 

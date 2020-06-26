@@ -48,7 +48,7 @@ struct Moves {
 
   void generate_captures_and_promotions(MoveSorter *sorter);
 
-  void generate_moves(int piece, Bitboard to_squares);
+  void generate_moves(PieceType pt, Bitboard to_squares);
 
   void generate_pawn_moves(bool capture, Bitboard to_squares);
 
@@ -84,7 +84,7 @@ private:
 
   void add_moves(Bitboard to_squares);
 
-  void add_moves(int piece, Square from, Bitboard attacks);
+  void add_moves(PieceType piece, Square from, Bitboard attacks);
 
   void add_pawn_quiet_moves(Bitboard to_squares);
 

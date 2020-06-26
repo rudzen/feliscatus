@@ -111,7 +111,7 @@ bool Felis::set_option(const std::string_view name, const std::string_view value
     fmt::print("info string UCI_Chess960_Arena:{}\n", on_off[game->chess960]);
   } else
   {
-    fmt::print("Unknown option. {}={}", name, value);
+    fmt::print("Unknown option. {}={}\n", name, value);
     return false;
   }
 

@@ -95,7 +95,7 @@ const Move *Position::string_to_move(std::string_view m) {
         continue;
 
       if (is_promotion(*move))
-        if (tolower(m.back()) != piece_notation[move_promoted(*move) & 7].front())
+        if (tolower(m.back()) != piece_notation[type_of(move_promoted(*move))].front())
           continue;
 
       return move;

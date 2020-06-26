@@ -308,7 +308,7 @@ inline Bitboard piece_attacks_bb(const Square sq, Bitboard occupied = 0)
 }
 
 inline Bitboard piece_attacks_bb(const int pc, const Square sq, Bitboard occupied = 0) {
-  switch (pc & 7)
+  switch (type_of(pc))
   {
   case Knight:
     return piece_attacks_bb<Knight>(sq);

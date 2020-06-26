@@ -70,8 +70,8 @@ int Board::see_rec(const int mat_change, const int next_capture, const Square to
       return mat_change;
 
     move = current_piece[side_to_move] == Pawn && rr == RANK_8
-         ? init_move<PROMOTION | CAPTURE>(current_piece[side_to_move] | (side_to_move << 3), next_capture, from.value(), to, Queen | (side_to_move << 3))
-         : init_move<CAPTURE>(current_piece[side_to_move] | (side_to_move << 3), next_capture, from.value(), to, 0);
+         ? init_move<PROMOTION | CAPTURE>(make_piece(current_piece[side_to_move], side_to_move), next_capture, from.value(), to, make_piece(Queen, side_to_move))
+         : init_move<CAPTURE>(make_piece(current_piece[side_to_move], side_to_move), next_capture, from.value(), to, 0);
 
     make_move(move);
 
@@ -103,7 +103,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
       current_piece_bitboard[side] &= ~bit(from);
       return std::optional<Square>(from);
     }
-    current_piece[side]++;
+    ++current_piece[side];
     current_piece_bitboard[side] = pieces(Knight, side);
     [[fallthrough]];
   case Knight:
@@ -114,7 +114,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
       current_piece_bitboard[side] &= ~bit(from);
       return std::optional<Square>(from);
     }
-    current_piece[side]++;
+    ++current_piece[side];
     current_piece_bitboard[side] = pieces(Bishop, side);
     [[fallthrough]];
 
@@ -126,7 +126,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
       current_piece_bitboard[side] &= ~bit(from);
       return std::optional<Square>(from);
     }
-    current_piece[side]++;
+    ++current_piece[side];
     current_piece_bitboard[side] = pieces(Rook, side);
     [[fallthrough]];
   case Rook:
@@ -137,7 +137,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
       current_piece_bitboard[side] &= ~bit(from);
       return std::optional<Square>(from);
     }
-    current_piece[side]++;
+    ++current_piece[side];
     current_piece_bitboard[side] = pieces(Queen, side);
     [[fallthrough]];
   case Queen:
@@ -148,7 +148,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
       current_piece_bitboard[side] &= ~bit(from);
       return std::optional<Square>(from);
     }
-    current_piece[side]++;
+    ++current_piece[side];
     current_piece_bitboard[side] = pieces(King, side);
     [[fallthrough]];
   case King:
@@ -160,6 +160,8 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
       return std::optional<Square>(from);
     }
     break;
+  default:
+    break;
   }
 
   return std::nullopt;
@@ -167,6 +169,6 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
 
 void Board::init_see_move() {
   current_piece.fill(Pawn);
-  current_piece_bitboard[WHITE] = piece[Pawn];
-  current_piece_bitboard[BLACK] = piece[Pawn | 8];
+  current_piece_bitboard[WHITE] = pieces(Pawn, WHITE);
+  current_piece_bitboard[BLACK] = pieces(Pawn, BLACK);
 }

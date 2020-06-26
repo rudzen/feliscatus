@@ -28,33 +28,26 @@
 
 namespace {
 
-constexpr auto detect_piece = [](const int from, int &piece) {
+constexpr auto detect_piece = [](const int from) {
   switch (from)
   {
   case 'N':
-    piece |= Knight;
-    break;
+    return Knight;
 
   case 'B':
-    piece |= Bishop;
-    break;
+    return Bishop;
 
   case 'R':
-    piece |= Rook;
-    break;
+    return Rook;
 
   case 'Q':
-    piece |= Queen;
-    break;
+    return Queen;
 
   case 'K':
-    piece |= King;
-    break;
-    default:
-    return false;
+    return King;
+  default:
+    return NoPiece;
   };
-
-  return true;
 };
 
 bool strieq(const char *s1, const char *s2) {
@@ -89,38 +82,42 @@ void pgn::PGNPlayer::read_tag_pair() {
 void pgn::PGNPlayer::read_san_move() {
   PGNFileReader::read_san_move();
 
-  auto piece = side_to_move << 3;
+  int piece;
 
   if (pawn_move_)
   {
-    piece |= Pawn;
+    piece = make_piece(Pawn, side_to_move);
     game_->pos->generate_pawn_moves(capture_, bit(to_square_));
   } else if (castle_move_)
   {
-    piece |= King;
+    piece = make_piece(King, side_to_move);
     game_->pos->generate_moves();
   } else if (piece_move_)
   {
-    if (!detect_piece(from_piece_, piece))
+    const auto pt = detect_piece(from_piece_);
+    if (pt == NoPiece)
     {
       fmt::print("default [{}]\n", std::string(token_str));
       exit(0);
     }
-    game_->pos->generate_moves(piece, bit(to_square_));
+    piece = make_piece(pt, side_to_move);
+    game_->pos->generate_moves(pt, bit(to_square_));
   } else
   {
     fmt::print("else\n");
     exit(0);
   }
-  auto promoted = side_to_move << 3;
+  int promoted;
 
   if (promoted_to != -1)
   {
-    if (!detect_piece(promoted_to, promoted))
+    const auto pt = detect_piece(promoted_to);
+    if (pt == NoPiece)
     {
       fmt::print("promoted_to error [{}]\n", std::string(token_str));
       exit(0);
     }
+    promoted = make_piece(pt, side_to_move);
   }
 
   auto found            = false;

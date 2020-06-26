@@ -27,6 +27,8 @@
 
 namespace {
 
+constexpr std::array<PieceType, 5> MoveGenPieceTypes { Queen, Rook, Bishop, Knight, King };
+
 [[nodiscard]]
 bool is_castle_allowed(const Square to, const Color stm, const Board* b) {
   // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
@@ -74,16 +76,16 @@ void Moves::generate_captures_and_promotions(MoveSorter *sorter) {
   stage     = 1;
 }
 
-void Moves::generate_moves(const int piece, const Bitboard to_squares) {
+void Moves::generate_moves(const PieceType pt, const Bitboard to_squares) {
   reset(nullptr, MOVE_NONE, 0);
 
   const auto pieces = b->pieces();
-  auto bb = b->piece[piece];
+  auto bb = b->pieces(pt, side_to_move);
 
   while (bb)
   {
     const auto from = pop_lsb(&bb);
-    add_moves(piece, from, piece_attacks_bb(piece, from, pieces) & to_squares);
+    add_moves(pt, from, piece_attacks_bb(pt, from, pieces) & to_squares);
   }
 }
 
@@ -126,7 +128,7 @@ MoveData *Moves::next_move() {
     auto best_idx   = iteration;
     auto best_score = move_list[best_idx].score;
 
-    for (auto i = best_idx + 1; i < number_moves; i++)
+    for (auto i = best_idx + 1; i < number_moves; ++i)
     {
       if (move_list[i].score > best_score)
       {
@@ -169,7 +171,7 @@ bool Moves::is_pseudo_legal(const Move m) const {
   } else if (b->pieces() & to)
      return false;
 
-  if (const auto piece = move_piece(m) & 7; piece == Bishop || piece == Rook || piece == Queen)
+  if (const auto piece = type_of(move_piece(m)); piece == Bishop || piece == Rook || piece == Queen)
     if (between_bb[from][to] & b->pieces())
       return false;
 
@@ -247,7 +249,7 @@ void Moves::add_move(const int piece, const Square from, const Square to, const 
   if (type & CAPTURE)
     captured = b->get_piece(to);
   else if (type & EPCAPTURE)
-    captured = Pawn | ((~side_to_move) << 3);
+    captured = make_piece(Pawn, ~side_to_move);
   else
     captured = 0;
 
@@ -269,57 +271,23 @@ void Moves::add_move(const int piece, const Square from, const Square to, const 
 }
 
 void Moves::add_moves(const Bitboard to_squares) {
-  Bitboard bb;
-  Square from;
-  const auto mask = side_to_move << 3;
   const auto pieces = b->pieces();
-
-  auto pc = Queen | mask;
-
-  for (bb = b->piece[pc]; bb; reset_lsb(bb))
+  for (const auto pt : MoveGenPieceTypes)
   {
-    from = lsb(bb);
-    add_moves(pc, from, piece_attacks_bb<Queen>(from, pieces) & to_squares);
-  }
-
-  pc = Rook | mask;
-
-  for (bb = b->piece[pc]; bb; reset_lsb(bb))
-  {
-    from = lsb(bb);
-    add_moves(pc, from, piece_attacks_bb<Rook>(from, pieces) & to_squares);
-  }
-
-  pc = Bishop | mask;
-
-  for (bb = b->piece[pc]; bb; reset_lsb(bb))
-  {
-    from = lsb(bb);
-    add_moves(pc, from, piece_attacks_bb<Bishop>(from, pieces) & to_squares);
-  }
-
-  pc = Knight | mask;
-
-  for (bb = b->piece[pc]; bb; reset_lsb(bb))
-  {
-    from = lsb(bb);
-    add_moves(pc, from,  piece_attacks_bb<Knight>(from) & to_squares);
-  }
-
-  pc = King | mask;
-
-  for (bb = b->piece[pc]; bb; reset_lsb(bb))
-  {
-    from = lsb(bb);
-    add_moves(pc, from, piece_attacks_bb<King>(from) & to_squares);
+    auto bb = b->pieces(pt, side_to_move);
+    while (bb)
+    {
+      const auto from = pop_lsb(&bb);
+      add_moves(pt, from, piece_attacks_bb(pt, from, pieces) & to_squares);
+    }
   }
 }
 
-void Moves::add_moves(const int piece, const Square from, const Bitboard attacks) {
-  const auto pc = piece | (side_to_move << 3);
-  for (auto bb = attacks; bb; reset_lsb(bb))
+void Moves::add_moves(const PieceType pt, const Square from, const Bitboard attacks) {
+  const auto pc = make_piece(pt, side_to_move);
+  for (auto bb = attacks; bb;)
   {
-    const auto to = lsb(bb);
+    const auto to = pop_lsb(&bb);
     add_move(pc, from, to, b->get_piece(to) == NoPiece ? NORMAL : CAPTURE);
   }
 }
@@ -345,8 +313,7 @@ void Moves::add_pawn_capture_moves(const Bitboard to_squares) {
 
 void Moves::add_pawn_moves(const Bitboard to_squares, const Direction distance, const MoveType type) {
 
-  const auto mask = side_to_move << 3;
-  const auto pawn = Pawn | mask;
+  const auto pawn = make_piece(Pawn, side_to_move);
 
   for (auto bb = to_squares; bb; reset_lsb(bb))
   {
@@ -359,18 +326,18 @@ void Moves::add_pawn_moves(const Bitboard to_squares, const Direction distance, 
 
       if (move_flags & QUEENPROMOTION)
       {
-        add_move(pawn, from, to, promo_type, Queen | mask);
+        add_move(pawn, from, to, promo_type, make_piece(Queen, side_to_move));
         return;
       }
 
-      for (auto promoted = Queen; promoted >= Knight; promoted--)
-        add_move(pawn, from, to, promo_type, promoted | mask);
+      for (const auto promoted : PromotionPieceTypes)
+        add_move(pawn, from, to, promo_type, make_piece(promoted, side_to_move));
     } else
       add_move(pawn, from, to, type);
   }
 }
 
-void Moves::add_castle_move(const Square from, const Square to) { add_move(King | (side_to_move << 3), from, to, CASTLE); }
+void Moves::add_castle_move(const Square from, const Square to) { add_move(make_piece(King, side_to_move), from, to, CASTLE); }
 
 bool Moves::gives_check(const Move m) const {
   b->make_move(m);
@@ -380,7 +347,7 @@ bool Moves::gives_check(const Move m) const {
 }
 
 bool Moves::is_legal(const Move m, const int piece, const Square from, const MoveType type) const {
-  if (!(pinned & from) && !in_check && (piece & 7) != King && !(type & EPCAPTURE))
+  if (!(pinned & from) && !in_check && type_of(piece) != King && !(type & EPCAPTURE))
     return true;
 
   b->make_move(m);
