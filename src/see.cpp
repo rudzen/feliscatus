@@ -42,10 +42,13 @@ int Board::see_move(Move move) {
   int score;
   make_move(move);
 
-  if (!is_attacked(king_square[move_side(move)], ~move_side(move)))
+  const auto us   = move_side(move);
+  const auto them = ~us;
+
+  if (!is_attacked(king_square[us], them))
   {
     init_see_move();
-    score = see_rec(material_change(move), next_to_capture(move), move_to(move), ~move_side(move));
+    score = see_rec(material_change(move), next_to_capture(move), move_to(move), them);
   } else
     score = SEE_INVALID_SCORE;
 
@@ -69,9 +72,11 @@ int Board::see_rec(const int mat_change, const Piece next_capture, const Square 
     if (!from)
       return mat_change;
 
-    move = current_piece[side_to_move] == Pawn && rr == RANK_8
-         ? init_move<PROMOTION | CAPTURE>(make_piece(current_piece[side_to_move], side_to_move), next_capture, from.value(), to, make_piece(Queen, side_to_move))
-         : init_move<CAPTURE>(make_piece(current_piece[side_to_move], side_to_move), next_capture, from.value(), to, NoPiece);
+    const auto current_pt = current_piece[side_to_move];
+
+    move = current_pt == Pawn && rr == RANK_8
+         ? init_move<PROMOTION | CAPTURE>(make_piece(current_pt, side_to_move), next_capture, from.value(), to, make_piece(Queen, side_to_move))
+         : init_move<CAPTURE>(make_piece(current_pt, side_to_move), next_capture, from.value(), to, NoPiece);
 
     make_move(move);
 
@@ -93,27 +98,26 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
 
   Bitboard b;
 
+  const auto get_from_sq = [&](const Bitboard bb)
+  {
+    const auto from = lsb(bb);
+    current_piece_bitboard[side] &= ~bit(from);
+    return std::optional<Square>(from);
+  };
+
   switch (current_piece[side])
   {
   case Pawn:
     b = current_piece_bitboard[side] & pawn_attacks_bb(~side, to);
     if (b)
-    {
-      const auto from = lsb(b);
-      current_piece_bitboard[side] &= ~bit(from);
-      return std::optional<Square>(from);
-    }
+      return get_from_sq(b);
     ++current_piece[side];
     current_piece_bitboard[side] = pieces(Knight, side);
     [[fallthrough]];
   case Knight:
     b = current_piece_bitboard[side] & piece_attacks_bb<Knight>(to);
     if (b)
-    {
-      const auto from = lsb(b);
-      current_piece_bitboard[side] &= ~bit(from);
-      return std::optional<Square>(from);
-    }
+      return get_from_sq(b);
     ++current_piece[side];
     current_piece_bitboard[side] = pieces(Bishop, side);
     [[fallthrough]];
@@ -121,50 +125,35 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
   case Bishop:
     b = current_piece_bitboard[side] & piece_attacks_bb<Bishop>(to, occupied);
     if (b)
-    {
-      const auto from = lsb(b);
-      current_piece_bitboard[side] &= ~bit(from);
-      return std::optional<Square>(from);
-    }
+      return get_from_sq(b);
     ++current_piece[side];
     current_piece_bitboard[side] = pieces(Rook, side);
     [[fallthrough]];
   case Rook:
     b = current_piece_bitboard[side] & piece_attacks_bb<Rook>(to, occupied);
     if (b)
-    {
-      const auto from = lsb(b);
-      current_piece_bitboard[side] &= ~bit(from);
-      return std::optional<Square>(from);
-    }
+      return get_from_sq(b);
     ++current_piece[side];
     current_piece_bitboard[side] = pieces(Queen, side);
     [[fallthrough]];
   case Queen:
     b = current_piece_bitboard[side] & piece_attacks_bb<Queen>(to, occupied);
     if (b)
-    {
-      const auto from = lsb(b);
-      current_piece_bitboard[side] &= ~bit(from);
-      return std::optional<Square>(from);
-    }
+      return get_from_sq(b);
     ++current_piece[side];
     current_piece_bitboard[side] = pieces(King, side);
     [[fallthrough]];
   case King:
     b = current_piece_bitboard[side] & piece_attacks_bb<King>(to);
     if (b)
-    {
-      const auto from = lsb(b);
-      current_piece_bitboard[side] &= ~bit(from);
-      return std::optional<Square>(from);
-    }
+      return get_from_sq(b);
     break;
   default:
     break;
   }
 
   return std::nullopt;
+
 }
 
 void Board::init_see_move() {
