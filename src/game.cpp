@@ -58,7 +58,7 @@ std::optional<Square> get_ep_square(std::string_view s) {
 template<Color Us>
 void add_short_castle_rights(Position *pos, Game *g, std::optional<File> rook_file) {
 
-  constexpr auto CastleRights = Us == WHITE ? 1 : 4;
+  constexpr auto CastleRights = Us == WHITE ? WHITE_OO : BLACK_OO;
   constexpr auto Rank_1       = relative_rank(Us, RANK_1);
   const auto ksq              = g->board.king_sq(Us);
 
@@ -92,7 +92,7 @@ template<Color Us>
 void add_long_castle_rights(Position *pos, Game *g, std::optional<File> rook_file) {
 
   //constexpr auto Them         = ~Us;
-  constexpr auto CastleRights = Us == WHITE ? 2 : 8;
+  constexpr auto CastleRights = Us == WHITE ? WHITE_OOO : BLACK_OOO;
   constexpr auto Rank_1       = relative_rank(Us, RANK_1);
   const auto ksq              = g->board.king_sq(Us);
 
@@ -410,27 +410,27 @@ std::string Game::get_fen() const {
     if (r > 0)
       s += '/';
   }
+
   s += pos->side_to_move == WHITE ? " w " : " b ";
 
-  if (pos->castle_rights == 0)
+  if (pos->can_castle())
   {
-    s += "- ";
-  } else
-  {
-    if (pos->castle_rights & 1)
+    if (pos->can_castle(WHITE_OO))
       s += 'K';
 
-    if (pos->castle_rights & 2)
+    if (pos->can_castle(WHITE_OOO))
       s += 'Q';
 
-    if (pos->castle_rights & 4)
+    if (pos->can_castle(BLACK_OO))
       s += 'k';
 
-    if (pos->castle_rights & 8)
+    if (pos->can_castle(BLACK_OOO))
       s += 'q';
 
     s += ' ';
   }
+  else
+    s += "- ";
 
   if (pos->en_passant_square != no_square)
   {

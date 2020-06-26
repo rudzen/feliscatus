@@ -36,6 +36,12 @@ struct Position : Moves {
   [[nodiscard]]
   bool is_draw() const;
 
+  [[nodiscard]]
+  bool can_castle() const;
+
+  [[nodiscard]]
+  bool can_castle(CastlingRight r) const;
+
   int reversible_half_move_count{};
   Key pawn_structure_key{};
   Key key{};
@@ -51,3 +57,15 @@ struct Position : Moves {
   int flags{};
   HashEntry *transposition{};
 };
+
+inline bool Position::is_draw() const {
+  return flags & Material::recognize_draw();
+}
+
+inline bool Position::can_castle() const {
+  return castle_rights != 0;
+}
+
+inline bool Position::can_castle(const CastlingRight r) const {
+  return castle_rights & r;
+}

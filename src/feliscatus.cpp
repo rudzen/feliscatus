@@ -81,6 +81,8 @@ void Felis::go_search(const SearchLimits &limits) {
 }
 
 void Felis::start_workers() {
+  if (workers.empty())
+    return;
   const auto fen = game->get_fen(); 
   for (auto &worker : workers)
     worker.start(fen);

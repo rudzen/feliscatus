@@ -96,9 +96,9 @@ constexpr Color operator~(const Color c) noexcept { return static_cast<Color>(c 
 constexpr std::array<Color, COL_NB> Colors {WHITE, BLACK};
 
 enum NodeType : uint8_t {
-  Void = 0, // TODO : rename
+  Void  = 0,// TODO : rename
   EXACT = 1,
-  BETA = 2,
+  BETA  = 2,
   ALPHA = 4
 };
 
@@ -118,14 +118,14 @@ constexpr Rank relative_rank(const Color c, const Rank r) { return static_cast<R
 
 enum Direction : int {
   NORTH = 8,
-  EAST = 1,
+  EAST  = 1,
   SOUTH = -NORTH,
-  WEST = -EAST,
+  WEST  = -EAST,
 
-  NORTH_EAST = NORTH + EAST,// 9
-  SOUTH_EAST = SOUTH + EAST,// -7
-  SOUTH_WEST = SOUTH + WEST,// -9
-  NORTH_WEST = NORTH + WEST,// 7
+  NORTH_EAST       = NORTH + EAST,        // 9
+  SOUTH_EAST       = SOUTH + EAST,        // -7
+  SOUTH_WEST       = SOUTH + WEST,        // -9
+  NORTH_WEST       = NORTH + WEST,        // 7
   NORTH_NORTH_WEST = NORTH + NORTH + WEST,// 15
   NORTH_NORTH_EAST = NORTH + NORTH + EAST,// 17
   SOUTH_SOUTH_WEST = SOUTH + SOUTH + WEST,// -17
@@ -195,10 +195,22 @@ enum MoveType : uint8_t {
   CAPTURE    = 1 << 4
 };
 
-// Move generation flags
-constexpr int LEGALMOVES     = 1;
-constexpr int STAGES         = 2;
-constexpr int QUEENPROMOTION = 4;
+enum CastlingRight {
+  NO_CASTLING       = 0,
+  WHITE_OO          = 1,
+  WHITE_OOO         = WHITE_OO << 1,
+  BLACK_OO          = WHITE_OO << 2,
+  BLACK_OOO         = WHITE_OO << 3,
+  ANY_CASTLING      = WHITE_OO | WHITE_OOO | BLACK_OO | BLACK_OOO,
+  CASTLING_RIGHT_NB = 16
+};
+
+enum MoveGenFlags {
+  NONE           = 0,
+  LEGALMOVES     = 1,
+  STAGES         = 1 << 1,
+  QUEENPROMOTION = 1 << 2
+};
 
 #define ENABLE_BASE_OPERATORS_ON(T)                                \
 constexpr T operator+(const T d1, const int d2) noexcept { return static_cast<T>(static_cast<int>(d1) + d2); } \
