@@ -64,7 +64,7 @@ public:
 
   void print_moves() const;
 
-  std::array<Position, 256> position_list{};
+  std::array<Position, 512> position_list{};
   Position *pos;
   Board board{};
   bool chess960;

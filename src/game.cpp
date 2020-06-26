@@ -466,7 +466,7 @@ bool Game::setup_castling(const std::string_view s) {
       chess960 = true;
       xfen     = false;
 
-      const auto rook_file = std::optional<File>(static_cast<File>(c - 'A'));
+      const auto rook_file = std::make_optional(static_cast<File>(c - 'A'));
 
       if (rook_file.value() > file_of(board.king_sq(WHITE)))
         add_short_castle_rights<WHITE>(pos, this, rook_file);
@@ -477,7 +477,7 @@ bool Game::setup_castling(const std::string_view s) {
       chess960 = true;
       xfen     = false;
 
-      const auto rook_file = std::optional<File>(static_cast<File>(c - 'a'));
+      const auto rook_file = std::make_optional(static_cast<File>(c - 'a'));
 
       if (rook_file.value() > file_of(board.king_sq(BLACK)))
         add_short_castle_rights<BLACK>(pos, this, rook_file);
