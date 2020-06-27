@@ -55,10 +55,9 @@ inline std::array<Score, 14> bishop_mob {
   Score(  5,   0), Score( 10,   5), Score(  3,   8), Score(  2,  -1), Score( 6,   5), Score(-14,  7), Score(16,  2)
 };
 
-inline Score bishop_pair     = Score(29, 57);
-inline Score bishop_diagonal = Score(45,  0);
-
-inline int king_obstructs_rook  = 49;
+inline Score bishop_pair         = Score(29, 57);
+inline Score bishop_diagonal     = Score(45,  0);
+inline Score king_obstructs_rook = Score(49, 9);
 
 inline std::array<int, 4> king_on_half_open{12, -9, -55, -97};
 inline std::array<int, 4> king_on_open     {29, -13, -63, -221};

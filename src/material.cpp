@@ -173,9 +173,9 @@ int Material::evaluate(int &flags, const int eval, const Color side_to_move, con
     if (const auto drawish_score = score / drawish; pc1 + pc2 == 0)
       score = drawish_score;
     else if (pc1 == 0)
-      score = std::min(drawish_score, score);
+      score = std::min<int>(drawish_score, score);
     else if (pc2 == 0)
-      score = std::max(drawish_score, score);
+      score = std::max<int>(drawish_score, score);
   }
 
   flags = material_flags;

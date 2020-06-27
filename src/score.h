@@ -29,14 +29,20 @@
 
 struct Score final {
 
+  [[nodiscard]]
+  constexpr Score() = default;
+  [[nodiscard]]
   constexpr Score(const int mg, const int eg) : value(static_cast<int>(static_cast<unsigned int>(eg) << 16) + mg) {}
+  [[nodiscard]]
   constexpr Score(const int v) : value(v) {}
 
+  [[nodiscard]]
   constexpr Score &operator=(const int v) noexcept {
     value = v;
     return *this;
   }
 
+  [[nodiscard]]
   constexpr bool operator==(const Score &b) const { return value == b.value; }
 
   [[nodiscard]]
@@ -60,22 +66,54 @@ struct Score final {
   [[nodiscard]]
   constexpr int raw() const noexcept { return value; }
 
+  [[nodiscard]]
+  constexpr int combine() const noexcept { return mg() - eg(); }
+
 private:
   int value{};
 };
 
 constexpr Score ZeroScor = Score(0);
 
-constexpr Score operator+(const Score d1, const int d2) noexcept { return d1.raw() + d2; }
-constexpr Score operator-(const Score d1, const int d2) noexcept { return d1.raw() - d2; }
-constexpr Score operator-(const Score d) noexcept { return -d.raw(); }
-constexpr Score& operator+=(Score& d1, const int d2) noexcept { return d1 = d1.raw() + d2; }
-constexpr Score& operator-=(Score& d1, const int d2) noexcept { return d1 = d1.raw() - d2; }
-constexpr Score &operator+=(Score &d1, const Score d2) noexcept { return d1 = d1.raw() + d2.raw(); }
-constexpr Score &operator-=(Score &d1, const Score d2) noexcept { return d1 = d1.raw() - d2.raw(); }
+// TODO : Move some operators inside Score
+
+constexpr Score operator+(const Score d1, const int d2) noexcept {
+  return d1.raw() + d2;
+}
+
+constexpr Score operator-(const Score d1, const int d2) noexcept {
+  return d1.raw() - d2;
+}
+
+constexpr Score operator-(const Score d1, const Score d2) noexcept {
+  return Score(d1.mg() - d2.mg(), d1.eg() - d2.eg());
+}
+
+constexpr Score operator-(const Score d) noexcept {
+  return -d.raw();
+}
+
+constexpr Score &operator+=(Score &d1, const int d2) noexcept {
+  return d1 = d1.raw() + d2;
+}
+
+constexpr Score &operator-=(Score &d1, const int d2) noexcept {
+  return d1 = d1.raw() - d2;
+}
+
+constexpr Score &operator+=(Score &d1, const Score d2) noexcept {
+  return d1 = d1.raw() + d2.raw();
+}
+
+constexpr Score &operator-=(Score &d1, const Score d2) noexcept {
+  return d1 = d1.raw() - d2.raw();
+}
 
 /// Division of a Score must be handled separately for each term
-constexpr Score operator/(const Score s, const int i) { return Score(s.mg() / i, s.eg() / i); }
+constexpr Score operator/(const Score s, const int i) {
+  return Score(s.mg() / i, s.eg() / i);
+}
+
 Score operator*(Score, Score) = delete;
 
 /// Multiplication of a Score by an integer. We check for overflow in debug mode.
@@ -91,7 +129,9 @@ constexpr Score operator*(const Score s, const int i) {
 }
 
 /// Multiplication of a Score by a boolean
-constexpr Score operator*(const Score s, const bool b) { return b ? s : ZeroScor; }
+constexpr Score operator*(const Score s, const bool b) {
+  return b ? s : ZeroScor;
+}
 
 ///
 /// Score formatter for fmt

@@ -149,7 +149,7 @@ MoveData *Moves::next_move() {
 }
 
 bool Moves::is_pseudo_legal(const Move m) const {
-  // TODO : en passant moves
+  // TODO : castleling & en passant moves
 
   const auto from = move_from(m);
 
@@ -166,12 +166,13 @@ bool Moves::is_pseudo_legal(const Move m) const {
       return false;
     if ((b->piece[move_captured(m)] & to) == 0)
       return false;
-  } else if (is_castle_move(m))
-     return !b->is_attacked(b->king_sq(side_to_move), side_to_move) && !in_check && ((from < to && can_castle_short()) || (from > to && can_castle_long()));
+  }
+  // } else if (is_castle_move(m))
+  //    return !b->is_attacked(b->king_sq(side_to_move), side_to_move) && !in_check && ((from < to && can_castle_short()) || (from > to && can_castle_long()));
   else if (b->pieces() & to)
      return false;
 
-  if (const auto piece = type_of(move_piece(m)); piece == Bishop || piece == Rook || piece == Queen)
+  if (const auto pt = type_of(move_piece(m)); util::in_between<Bishop, Queen>(pt))
     if (between_bb[from][to] & b->pieces())
       return false;
 
@@ -182,20 +183,17 @@ void Moves::reset(const std::optional<MoveSorter *> sorter, const Move move, con
   move_sorter_ = sorter;
   transp_move_ = move;
   move_flags_  = flags;
+  iteration_   = number_moves_ = stage_ = 0;
 
   if (move)
   {
-    if (is_ep_capture(this->transp_move_))
+    if (is_castle_move(move) || is_ep_capture(move))
     {
       // needed because is_pseudo_legal() is not complete yet.
       transp_move_ = MOVE_NONE;
       move_flags_ &= ~STAGES;
     }
   }
-
-  iteration_    = 0;
-  number_moves_ = 0;
-  stage_        = 0;
 
   if (flags & LEGALMOVES)
     pinned_ = b->get_pinned_pieces(side_to_move, b->king_sq(side_to_move));
