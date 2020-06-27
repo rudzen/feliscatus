@@ -35,7 +35,7 @@ uint64_t p(Game *g, const int depth, const int flags) {
 
   uint64_t nodes{};
 
-  if ((flags & STAGES) == 0 && depth == 1)
+  if (!(flags & STAGES) && depth == 1)
     nodes = g->pos->move_count();
   else
   {
