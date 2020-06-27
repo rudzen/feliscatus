@@ -81,8 +81,11 @@ void Felis::go_search(const SearchLimits &limits) {
 }
 
 void Felis::start_workers() {
+  if (workers.empty())
+    return;
+  const auto fen = game->get_fen();
   for (auto &worker : workers)
-    worker.start(game.get());
+    worker.start(fen);
 }
 
 void Felis::stop_workers() {
@@ -93,11 +96,17 @@ void Felis::stop_workers() {
 bool Felis::set_option(const std::string_view name, const std::string_view value) {
   if (name == "Hash")
   {
-    TT.init(std::clamp(util::to_integral<uint64_t>(value), 8ULL, 65536ULL));
+    constexpr auto min = 8;
+    constexpr auto max = 64 * 1024;
+    const auto val     = util::to_integral<int>(value);
+    TT.init(std::clamp(val, min, max));
     fmt::print("info string Hash:{}\n", TT.get_size_mb());
   } else if (name == "Threads" || name == "NumThreads")
   {
-    num_threads = std::clamp(util::to_integral<uint64_t>(value), 1ULL, 64ULL);
+    constexpr auto min = 1;
+    constexpr auto max = 64;
+    const auto val     = util::to_integral<int>(value);
+    num_threads = std::clamp(val, min, max);
     workers.resize(num_threads - 1);
     workers.shrink_to_fit();
     fmt::print("info string Threads:{}\n", num_threads);
@@ -149,8 +158,8 @@ int Felis::run(const int argc, char* argv[]) {
   {
     if (argc == 1 && !std::getline(std::cin, command))
       command = "quit";
-    else
-      game->pos->generate_moves();
+    // else
+    //   game->pos->generate_moves();
 
     std::istringstream input(command);
 
@@ -158,12 +167,10 @@ int Felis::run(const int argc, char* argv[]) {
     input >> std::skipws >> token;
 
     if (token == "quit" || token == "stop")
-    {
       break;
-    } else if (token == "ponder")
-    {
+    else if (token == "ponder")
       ponder_hit();
-    } else if (token == "uci")
+    else if (token == "uci")
     {
       fmt::print("id name Feliscatus 0.1\n");
       fmt::print("id author Gunnar Harms, FireFather, Rudy Alex Kohn\n");
@@ -189,7 +196,7 @@ int Felis::run(const int argc, char* argv[]) {
       main_go = std::jthread(&Felis::go, this, protocol->limits);
     }
     else if (token == "quit" || token == "exit")
-      return 1;
+      break;
   } while (token != "quit" && argc == 1);
 
   stop_threads();

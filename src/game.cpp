@@ -58,7 +58,7 @@ std::optional<Square> get_ep_square(std::string_view s) {
 template<Color Us>
 void add_short_castle_rights(Position *pos, Game *g, std::optional<File> rook_file) {
 
-  constexpr auto CastleRights = Us == WHITE ? 1 : 4;
+  constexpr auto CastleRights = Us == WHITE ? WHITE_OO : BLACK_OO;
   constexpr auto Rank_1       = relative_rank(Us, RANK_1);
   const auto ksq              = g->board.king_sq(Us);
 
@@ -92,7 +92,7 @@ template<Color Us>
 void add_long_castle_rights(Position *pos, Game *g, std::optional<File> rook_file) {
 
   //constexpr auto Them         = ~Us;
-  constexpr auto CastleRights = Us == WHITE ? 2 : 8;
+  constexpr auto CastleRights = Us == WHITE ? WHITE_OOO : BLACK_OOO;
   constexpr auto Rank_1       = relative_rank(Us, RANK_1);
   const auto ksq              = g->board.king_sq(Us);
 
@@ -194,6 +194,10 @@ void update_key(Position *pos, const Move m) {
 Game::Game() : pos(position_list.data()), chess960(false), xfen(false) {
   for (auto &p : position_list)
     p.b = &board;
+}
+
+Game::Game(std::string_view fen) : Game() {
+  set_fen(fen);
 }
 
 bool Game::make_move(const Move m, const bool check_legal, const bool calculate_in_check) {
@@ -406,27 +410,27 @@ std::string Game::get_fen() const {
     if (r > 0)
       s += '/';
   }
+
   s += pos->side_to_move == WHITE ? " w " : " b ";
 
-  if (pos->castle_rights == 0)
+  if (pos->can_castle())
   {
-    s += "- ";
-  } else
-  {
-    if (pos->castle_rights & 1)
+    if (pos->can_castle(WHITE_OO))
       s += 'K';
 
-    if (pos->castle_rights & 2)
+    if (pos->can_castle(WHITE_OOO))
       s += 'Q';
 
-    if (pos->castle_rights & 4)
+    if (pos->can_castle(BLACK_OO))
       s += 'k';
 
-    if (pos->castle_rights & 8)
+    if (pos->can_castle(BLACK_OOO))
       s += 'q';
 
     s += ' ';
   }
+  else
+    s += "- ";
 
   if (pos->en_passant_square != no_square)
   {
@@ -466,7 +470,7 @@ bool Game::setup_castling(const std::string_view s) {
       chess960 = true;
       xfen     = false;
 
-      const auto rook_file = std::optional<File>(static_cast<File>(c - 'A'));
+      const auto rook_file = std::make_optional(static_cast<File>(c - 'A'));
 
       if (rook_file.value() > file_of(board.king_sq(WHITE)))
         add_short_castle_rights<WHITE>(pos, this, rook_file);
@@ -477,7 +481,7 @@ bool Game::setup_castling(const std::string_view s) {
       chess960 = true;
       xfen     = false;
 
-      const auto rook_file = std::optional<File>(static_cast<File>(c - 'a'));
+      const auto rook_file = std::make_optional(static_cast<File>(c - 'a'));
 
       if (rook_file.value() > file_of(board.king_sq(BLACK)))
         add_short_castle_rights<BLACK>(pos, this, rook_file);

@@ -101,7 +101,8 @@
         "typeindex": "cpp",
         "valarray": "cpp",
         "source_location": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "*.msg": "cpp"
     },
     "git.ignoreLimitWarning": true
 }

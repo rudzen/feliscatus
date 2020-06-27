@@ -102,7 +102,3 @@ const Move *Position::string_to_move(const std::string_view m) {
   }
   return nullptr;
 }
-
-bool Position::is_draw() const {
-  return flags & Material::recognize_draw();
-}

@@ -22,6 +22,7 @@
 
 #include <thread>
 #include <memory>
+#include <string_view>
 
 #include "game.h"
 #include "eval.h"
@@ -30,9 +31,8 @@
 
 struct Worker {
 
-  void start(Game *master) {
-    game_ = std::make_unique<Game>();
-    game_->copy(master);
+  void start(std::string_view fen) {
+    game_ = std::make_unique<Game>(fen);
     search_ = std::make_unique<Search>(game_.get(), &pawn_hash_);
     thread_ = std::jthread(&Search::run, search_.get());
   }

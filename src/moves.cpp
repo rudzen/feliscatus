@@ -62,7 +62,7 @@ void Moves::generate_moves(const std::optional<MoveSorter *> sorter, const Move 
   reset(sorter, tt_move, flags);
   max_stage_ = 3;
 
-  if ((move_flags_ & STAGES) != 0)
+  if (move_flags_ & STAGES)
     return;
 
   generate_hash_move();
