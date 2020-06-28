@@ -39,14 +39,14 @@ void Board::make_move(const Move m) {
 
   if (!is_castle_move(m))
   {
-    remove_piece(pc, from);
+    remove_piece(from);
 
     if (is_ep_capture(m))
     {
-      const auto direction = pc < 8 ? SOUTH : NORTH;
-      remove_piece(move_captured(m), to + direction);
+      const auto direction = pawn_push(color_of(pc));
+      remove_piece(to - direction);
     } else if (is_capture(m))
-      remove_piece(move_captured(m), to);
+      remove_piece(to);
 
     if (is_promotion(m))
       add_piece(move_promoted(m), to);
@@ -55,8 +55,8 @@ void Board::make_move(const Move m) {
   } else
   {
     const auto rook = make_piece(Rook, move_side(m));
-    remove_piece(rook, rook_castles_from[to]);
-    remove_piece(pc, from);
+    remove_piece(rook_castles_from[to]);
+    remove_piece(from);
     add_piece(rook, rook_castles_to[to]);
     add_piece(pc, to);
   }
@@ -74,14 +74,14 @@ void Board::unmake_move(const Move m) {
   if (!is_castle_move(m))
   {
     if (is_promotion(m))
-      remove_piece(move_promoted(m), to);
+      remove_piece(to);
     else
-      remove_piece(pc, to);
+      remove_piece(to);
 
     if (is_ep_capture(m))
     {
-      const auto direction = pc < 8 ? SOUTH : NORTH;
-      add_piece(move_captured(m), to + direction);
+      const auto direction = pawn_push(color_of(pc));
+      add_piece(move_captured(m), to - direction);
     } else if (is_capture(m))
       add_piece(move_captured(m), to);
 
@@ -89,8 +89,8 @@ void Board::unmake_move(const Move m) {
   } else
   {
     const auto rook = make_piece(Rook, move_side(m));
-    remove_piece(pc, to);
-    remove_piece(rook, rook_castles_to[to]);
+    remove_piece(to);
+    remove_piece(rook_castles_to[to]);
     add_piece(pc, from);
     add_piece(rook, rook_castles_from[to]);
   }

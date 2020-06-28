@@ -137,7 +137,6 @@ int Felis::run(const int argc, char* argv[]) {
   Pool.set(1);
   game     = std::make_unique<Game>();
   protocol = std::make_unique<UCIProtocol>(this, game.get());
-  // pawnt    = std::make_unique<PawnHashTable>();
   search   = std::make_unique<Search>(protocol.get(), game.get(), 0);
 
   new_game();
@@ -163,8 +162,8 @@ int Felis::run(const int argc, char* argv[]) {
   {
     if (argc == 1 && !std::getline(std::cin, command))
       command = "quit";
-    // else
-    //   game->pos->generate_moves();
+    else
+      game->pos->generate_moves();
 
     std::istringstream input(command);
 
@@ -199,6 +198,11 @@ int Felis::run(const int argc, char* argv[]) {
       protocol->handle_go(input);
       stop_threads();
       main_go = std::jthread(&Felis::go, this, protocol->limits);
+    }
+    else if (token == "perft")
+    {
+      const auto total = perft::perft(game.get(), 6);
+      fmt::print("Total nodes: {}\n", total);
     }
     else if (token == "quit" || token == "exit")
       break;

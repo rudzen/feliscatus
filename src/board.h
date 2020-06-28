@@ -93,7 +93,7 @@ struct Board {
 
 private:
 
-  void remove_piece(Piece pc, Square sq);
+  void remove_piece(Square sq);
 
   [[nodiscard]]
   bool is_occupied(Square sq) const;
@@ -138,7 +138,8 @@ inline void Board::add_piece(const Piece pc, const Square sq) {
     king_square[color_of(pc)] = sq;
 }
 
-inline void Board::remove_piece(const Piece pc, const Square sq) {
+inline void Board::remove_piece(const Square sq) {
+  const auto pc   = board[sq];
   const auto bbsq = ~bit(sq);
   piece[pc] &= bbsq;
   occupied_by_side[color_of(pc)] &= bbsq;
