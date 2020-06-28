@@ -31,6 +31,7 @@ inline Key zobrist_pst[14][64];
 inline std::array<Key, 16> zobrist_castling{};
 inline Key zobrist_side, zobrist_nopawn;
 inline std::array<Key, 8> zobrist_ep_file{};
+constexpr Key ZeroKey = 0;
 
 inline void init() {
 

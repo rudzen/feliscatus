@@ -46,6 +46,9 @@ struct HashEntry {
 #pragma pack()
 
 struct HashTable final {
+
+  ~HashTable();
+
   void init(uint64_t new_size_mb);
 
   void clear();

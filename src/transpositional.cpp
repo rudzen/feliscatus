@@ -33,6 +33,10 @@ constexpr uint32_t key32(const Key key) {
 
 }
 
+HashTable::~HashTable() {
+  delete table;
+}
+
 void HashTable::init(const uint64_t new_size_mb) {
   if (new_size_mb == size_mb)
     return;
@@ -99,9 +103,7 @@ HashEntry *HashTable::get_entry_to_replace(const Key key, [[maybe_unused]] const
     if (transp->flags == Void || transp->key == k32)
       return transp;
 
-    const auto score = replacement_score(transp);
-
-    if (score < replace_score)
+    if (const auto score = replacement_score(transp); score < replace_score)
     {
       replace_score = score;
       replace       = transp;

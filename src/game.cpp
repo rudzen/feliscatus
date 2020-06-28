@@ -539,8 +539,8 @@ void Game::print_moves() const {
 
 void Game::update_position(Position *p) const {
 
-  Key key               = 0;
-  Key pawn_key          = zobrist::zobrist_nopawn;
+  auto key               = zobrist::ZeroKey;
+  auto pawn_key          = zobrist::zobrist_nopawn;
 
   auto b = board.pieces();
 
