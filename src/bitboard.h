@@ -90,7 +90,7 @@ constexpr std::array<Direction, COL_NB> pawn_double_push_dist{NORTH * 2, SOUTH *
 constexpr std::array<Direction, COL_NB> pawn_west_attack_dist{NORTH_EAST, SOUTH_EAST};
 constexpr std::array<Direction, COL_NB> pawn_east_attack_dist{NORTH_WEST, SOUTH_WEST};
 
-constexpr std::array<Bitboard, sq_nb> make_knight_attacks()
+consteval std::array<Bitboard, sq_nb> make_knight_attacks()
 {
   std::array<Bitboard, sq_nb> result{};
   for (const auto sq : Squares)
@@ -111,7 +111,7 @@ constexpr std::array<Bitboard, sq_nb> make_knight_attacks()
 
 constexpr std::array<Bitboard, sq_nb> knight_attacks = make_knight_attacks();
 
-constexpr std::array<Bitboard, sq_nb> make_king_attacks()
+consteval std::array<Bitboard, sq_nb> make_king_attacks()
 {
   std::array<Bitboard, sq_nb> result{};
   for (const auto sq : Squares)
@@ -144,7 +144,7 @@ inline Bitboard passed_pawn_front_span[COL_NB][sq_nb];
 inline Bitboard pawn_front_span[COL_NB][sq_nb];
 inline Bitboard pawn_captures[COL_NB][sq_nb];
 
-constexpr std::array<std::array<int, sq_nb>, sq_nb> make_distance()
+consteval std::array<std::array<int, sq_nb>, sq_nb> make_distance()
 {
   std::array<std::array<int, sq_nb>, sq_nb> result{};
   for (const auto sq1 : Squares)

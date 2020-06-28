@@ -180,7 +180,7 @@ void update_key(Position *pos, const Move m) {
   if (prev->castle_rights != pos->castle_rights)
   {
     key ^= zobrist::zobrist_castling[prev->castle_rights]
-              ^ zobrist::zobrist_castling[pos->castle_rights];
+         ^ zobrist::zobrist_castling[pos->castle_rights];
   }
 
   // rook move in castle
@@ -188,7 +188,7 @@ void update_key(Position *pos, const Move m) {
   {
     const auto rook = make_piece(Rook, move_side(m));
     key ^= zobrist::zobrist_pst[rook][rook_castles_from[to]]
-              ^ zobrist::zobrist_pst[rook][rook_castles_to[to]];
+         ^ zobrist::zobrist_pst[rook][rook_castles_to[to]];
   }
   key ^= pawn_key;
   pos->key = key;

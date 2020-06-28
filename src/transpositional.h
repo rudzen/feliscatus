@@ -48,6 +48,11 @@ struct HashEntry {
 struct HashTable final {
 
   ~HashTable();
+  HashTable()                             = default;
+  HashTable(const HashTable &other)       = delete;
+  HashTable(HashTable &&other)            = delete;
+  HashTable &operator=(const HashTable &) = delete;
+  HashTable &operator=(HashTable &&other) = delete;
 
   void init(uint64_t new_size_mb);
 
@@ -90,4 +95,4 @@ inline int HashTable::get_size_mb() const {
   return static_cast<int>(size_mb);
 }
 
-inline HashTable TT;
+constinit inline HashTable TT;

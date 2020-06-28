@@ -48,7 +48,7 @@ constexpr void sleep(const std::integral auto ms) {
 #endif
 }
 
-inline double sigmoid(const double x, const double k) {
+constexpr double sigmoid(const double x, const double k) {
   return 1 / (1 + std::pow(10, -k * x / 400));
 }
 
