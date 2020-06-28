@@ -27,6 +27,19 @@
 #include "position.h"
 #include "search.h"
 
+namespace {
+
+constexpr uint64_t nps(const uint64_t nodes, const TimeUnit time) {
+  return nodes * 1000 / time;
+}
+
+auto node_info(const TimeUnit time) {
+  const auto nodes = Pool.node_count();
+  return std::make_pair(nodes, nps(nodes, time));
+}
+
+}
+
 UCIProtocol::UCIProtocol(ProtocolListener *cb, Game *g) : Protocol(cb, g) {}
 
 void UCIProtocol::post_moves(const Move bestmove, const Move pondermove) {
@@ -40,15 +53,16 @@ void UCIProtocol::post_moves(const Move bestmove, const Move pondermove) {
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-void UCIProtocol::post_info(const int d, const int selective_depth, const uint64_t node_count, const uint64_t nodes_per_sec, const TimeUnit time, const int hash_full) {
-  fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, hash_full, node_count, nodes_per_sec, time);
+void UCIProtocol::post_info(const int d, const int selective_depth, const TimeUnit time, const int hash_full) {
+  const auto [node_count, nodes_per_second] = node_info(time);
+  fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, hash_full, node_count, nodes_per_second, time);
 }
 
 void UCIProtocol::post_curr_move(const Move curr_move, const int curr_move_number) {
   fmt::print("info currmove {} currmovenumber {}\n", display_uci(curr_move), curr_move_number);
 }
 
-void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const TimeUnit time, const int hash_full, const int score, const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length, const int ply, const NodeType node_type) {
+void UCIProtocol::post_pv(const int d, const int max_ply, const TimeUnit time, const int hash_full, const int score, const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length, const int ply, const NodeType node_type) {
 
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
@@ -57,6 +71,8 @@ void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_co
     fmt::format_to(buffer, "upperbound ");
   else if (node_type == BETA)
     fmt::format_to(buffer, "lowerbound ");
+
+  const auto [node_count, nodes_per_second] = node_info(time);
 
   fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", hash_full, node_count, nodes_per_second, time);
 

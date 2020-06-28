@@ -19,6 +19,8 @@
 */
 
 #include <cstring>
+#include <numeric>
+
 #include "datapool.h"
 
 Data::Data(const std::size_t data_index) : index(data_index) {}
@@ -26,6 +28,7 @@ Data::Data(const std::size_t data_index) : index(data_index) {}
 void Data::clear_data() {
   std::memset(history_scores, 0, sizeof history_scores);
   std::memset(counter_moves, 0, sizeof counter_moves);
+  node_count.store(0);
 }
 
 void DataPool::set(const std::size_t v) {
@@ -47,4 +50,9 @@ void DataPool::set(const std::size_t v) {
 void DataPool::clear_data() {
   for (auto &w: *this)
     w->clear_data();
+}
+
+uint64_t DataPool::node_count() const {
+  const auto accumulator = [](const uint64_t r, const std::unique_ptr<Data> &d) { return r + d->node_count.load(std::memory_order_relaxed); };
+  return std::accumulate(cbegin(), cend(), 0ull, accumulator);
 }

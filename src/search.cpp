@@ -25,7 +25,6 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 
 #include "search.h"
-
 #include "eval.h"
 
 namespace {
@@ -190,7 +189,7 @@ bool Search::make_move_and_evaluate(const Move m, const int alpha, const int bet
   pos = game->pos;
   ++plies;
   pv_length[plies] = plies;
-  ++node_count;
+  data_->node_count.fetch_add(1, std::memory_order_relaxed);
 
   check_sometimes();
 
@@ -207,7 +206,7 @@ void Search::unmake_move() {
 }
 
 void Search::check_sometimes() {
-  if ((node_count & 0x3fff) == 0)
+  if ((data_->node_count.load(std::memory_order_relaxed) & 0x3fff) == 0)
     check_time();
 }
 
@@ -220,11 +219,6 @@ void Search::check_time() {
 }
 
 int Search::is_analysing() const { return protocol ? protocol.value()->is_analysing() : true; }
-
-uint64_t Search::nodes_per_second() const {
-  const auto micros = start_time.elapsed_microseconds();
-  return micros == 0 ? node_count * num_workers_ : node_count * num_workers_ * 1000000 / micros;
-}
 
 void Search::update_history_scores(const Move move, const int depth) const {
   auto &history_scores = data_->history_scores;
@@ -290,11 +284,11 @@ void Search::init_search(const SearchLimits &limits) {
     stop_search.store(false);
     start_time.start();
   }
-  plies          = 0;
-  search_depth   = 0;
-  node_count     = 1;
-  max_ply        = 0;
-  pos->pv_length = 0;
+  data_->node_count = 0;
+  plies             = 0;
+  search_depth      = 0;
+  max_ply           = 0;
+  pos->pv_length    = 0;
   pv_length.fill(0);
   std::memset(pv.data(), 0, sizeof pv);
   std::memset(killer_moves.data(), 0, sizeof killer_moves);

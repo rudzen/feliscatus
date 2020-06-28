@@ -95,9 +95,6 @@ private:
   template<NodeType NT>
   void update_pv(Move move, int score, int depth);
 
-  [[nodiscard]]
-  uint64_t nodes_per_second() const;
-
   void update_history_scores(Move move, int depth) const;
 
   void update_killer_moves(Move move);
@@ -156,7 +153,7 @@ private:
   Game *game;
   Board *board;
   Position *pos{};
-  uint64_t node_count{};
+  //uint64_t node_count{};
   std::size_t num_workers_{};
   std::size_t data_index_;
   Data* data_;
@@ -446,6 +443,6 @@ void Search::update_pv(const Move move, const int score, const int depth) {
     pos->pv_length = pv_length[0];
 
     if (protocol && verbosity)
-      protocol.value()->post_pv(search_depth, max_ply, node_count * num_workers_, nodes_per_second(), start_time.elapsed_milliseconds() + 1, TT.get_load(), score, pv[plies], pv_length[plies], plies, NT);
+      protocol.value()->post_pv(search_depth, max_ply, start_time.elapsed_milliseconds() + 1, TT.get_load(), score, pv[plies], pv_length[plies], plies, NT);
   }
 }

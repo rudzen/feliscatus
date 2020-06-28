@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <vector>
 #include <memory>
+#include <atomic>
 #include "types.h"
 #include "pawnhashtable.h"
 
@@ -35,6 +36,8 @@ struct Data {
   PawnHashTable pawn_hash{};
   int history_scores[16][64]{};
   Move counter_moves[16][64]{};
+
+  std::atomic_uint64_t node_count;
 
 private:
   std::size_t index;
@@ -56,7 +59,7 @@ struct DataPool : std::vector<std::unique_ptr<Data>> {
   void clear_data();
 
   [[nodiscard]]
-  uint64_t nodes_searched() const;
+  uint64_t node_count() const;
 };
 
 // global data object

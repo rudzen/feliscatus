@@ -74,11 +74,11 @@ struct Protocol {
 
   virtual void post_moves(Move bestmove, Move pondermove)         = 0;
 
-  virtual void post_info(int depth, int selective_depth, uint64_t node_count, uint64_t nodes_per_sec, TimeUnit time, int hash_full) = 0;
+  virtual void post_info(int depth, int selective_depth, TimeUnit time, int hash_full) = 0;
 
   virtual void post_curr_move(Move curr_move, int curr_move_number) = 0;
 
-  virtual void post_pv(int depth, int max_ply, uint64_t node_count, uint64_t nodes_per_second, TimeUnit time, int hash_full, int score, const std::array<PVEntry, MAXDEPTH> &pv, int pv_length, int ply, NodeType node_type) = 0;
+  virtual void post_pv(int depth, int max_ply, TimeUnit time, int hash_full, int score, const std::array<PVEntry, MAXDEPTH> &pv, int pv_length, int ply, NodeType node_type) = 0;
 
   [[nodiscard]]
   bool is_analysing() const noexcept { return limits.infinite | limits.ponder; }
