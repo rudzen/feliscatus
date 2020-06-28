@@ -381,7 +381,7 @@ int Game::set_fen(std::string_view fen) {
 
 std::string Game::get_fen() const {
   constexpr std::string_view piece_letter = "PNBRQK  pnbrqk";
-  std::string s;
+  fmt::memory_buffer s;
 
   for (const Rank r : ReverseRanks)
   {
@@ -396,54 +396,48 @@ std::string Game::get_fen() const {
       {
         if (empty)
         {
-          s += empty + '0';
+          fmt::format_to(s, "{}", util::to_char(empty));
           empty = 0;
         }
-        s += piece_letter[pc];
+        fmt::format_to(s, "{}", piece_letter[pc]);
       } else
         empty++;
     }
 
     if (empty)
-      s += empty + '0';
+      fmt::format_to(s, "{}", util::to_char(empty));
 
     if (r > 0)
-      s += '/';
+      fmt::format_to(s, "/");
   }
 
-  s += pos->side_to_move == WHITE ? " w " : " b ";
+  fmt::format_to(s, " {} ", pos->side_to_move ? 'w' : 'b');
 
   if (pos->can_castle())
   {
     if (pos->can_castle(WHITE_OO))
-      s += 'K';
+      fmt::format_to(s, "K");
 
     if (pos->can_castle(WHITE_OOO))
-      s += 'Q';
+      fmt::format_to(s, "Q");
 
     if (pos->can_castle(BLACK_OO))
-      s += 'k';
+      fmt::format_to(s, "k");
 
     if (pos->can_castle(BLACK_OOO))
-      s += 'q';
-
-    s += ' ';
+      fmt::format_to(s, "q");
   }
   else
-    s += "- ";
+    fmt::format_to(s, "-");
 
   if (pos->en_passant_square != no_square)
-  {
-    s += square_to_string(pos->en_passant_square);
-    s += ' ';
-  } else
-    s += "- ";
+    fmt::format_to(s, " {} ", square_to_string(pos->en_passant_square));
+  else
+    fmt::format_to(s, " - ");
 
-  s += std::to_string(pos->reversible_half_move_count);
-  s += ' ';
-  s += std::to_string(static_cast<int>((pos - position_list.data()) / 2 + 1));
+  fmt::format_to(s, "{} {}", pos->reversible_half_move_count, static_cast<int>((pos - position_list.data()) / 2 + 1));
 
-  return s;
+  return fmt::to_string(s);
 }
 
 bool Game::setup_castling(const std::string_view s) {
