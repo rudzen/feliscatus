@@ -53,7 +53,13 @@ struct Board {
   void print() const;
 
   [[nodiscard]]
+  Bitboard pieces(PieceType pt) const;
+
+  [[nodiscard]]
   Bitboard pieces(PieceType pt, Color side) const;
+
+  [[nodiscard]]
+  Bitboard pieces(PieceType pt, PieceType pt2, Color side) const;
 
   [[nodiscard]]
   Bitboard pieces() const;
@@ -89,7 +95,6 @@ struct Board {
   int see_last_move(Move move);
 
   std::array<Bitboard, Piece_Nb> piece{};
-  std::array<Piece, sq_nb> board{};
 
 private:
 
@@ -121,11 +126,13 @@ private:
 
   void init_see_move();
 
+  std::array<Piece, sq_nb> board{};
   std::array<Bitboard, COL_NB> occupied_by_side{};
   std::array<Bitboard, 2> current_piece_bitboard{};
   std::array<PieceType, 2> current_piece{};
   Bitboard occupied{};
   std::array<Square, COL_NB> king_square{};
+
 };
 
 inline void Board::add_piece(const Piece pc, const Square sq) {
@@ -179,8 +186,16 @@ inline Bitboard Board::pieces() const {
   return occupied;
 }
 
+inline Bitboard Board::pieces(const PieceType pt) const {
+  return piece[make_piece(pt, WHITE)] | piece[make_piece(pt, BLACK)];
+}
+
 inline Bitboard Board::pieces(const PieceType pt, const Color side) const {
   return piece[make_piece(pt, side)];
+}
+
+inline Bitboard Board::pieces(const PieceType pt, const PieceType pt2, const Color side) const {
+  return piece[make_piece(pt, side)] | piece[make_piece(pt2, side)];
 }
 
 inline Bitboard Board::pieces(const Color c) const {

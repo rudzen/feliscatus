@@ -257,6 +257,8 @@ void Search::init_search(const SearchLimits &limits) {
 
   if (protocol)
   {
+    start_time.start();
+
     if (protocol.value()->is_fixed_time())
       search_time = 950 * limits.movetime / 1000;
     else
@@ -282,13 +284,13 @@ void Search::init_search(const SearchLimits &limits) {
     }
     TT.init_search();
     stop_search.store(false);
-    start_time.start();
   }
   data_->node_count = 0;
   plies             = 0;
   search_depth      = 0;
   max_ply           = 0;
   pos->pv_length    = 0;
+  data_->clear_data();
   pos->killer_moves.fill(MOVE_NONE);
 }
 

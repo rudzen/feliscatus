@@ -207,7 +207,7 @@ Game::Game(std::string_view fen) : Game() {
 }
 
 bool Game::make_move(const Move m, const bool check_legal, const bool calculate_in_check) {
-  if (m == 0)
+  if (!m)
     return make_null_move();
 
   board.make_move(m);
@@ -263,7 +263,7 @@ bool Game::make_null_move() {
 }
 
 uint64_t Game::calculate_key() const {
-  uint64_t key = 0;
+  auto key = zobrist::zero;
 
   for (const auto pt : PieceTypes)
   {
@@ -316,7 +316,7 @@ int Game::new_game(const std::string_view fen) {
 }
 
 int Game::set_fen(std::string_view fen) {
-  pos = position_list.begin();
+  pos = position_list.data();
   pos->clear();
   board.clear();
 
@@ -539,7 +539,7 @@ void Game::print_moves() const {
 
 void Game::update_position(Position *p) const {
 
-  auto key               = zobrist::ZeroKey;
+  auto key               = zobrist::zero;
   auto pawn_key          = zobrist::zobrist_nopawn;
 
   auto b = board.pieces();

@@ -65,10 +65,10 @@ public:
 
   void print_moves() const;
 
-  using PositionList = std::array<Position, 512>;
+  using PositionList = std::array<Position, MAXDEPTH * 3>;
 
   PositionList position_list{};
-  PositionList::iterator pos;
+  Position *pos;
   Board board{};
   bool chess960;
   bool xfen;

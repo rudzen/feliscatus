@@ -102,7 +102,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
   {
     const auto from = lsb(bb);
     current_piece_bitboard[side] &= ~bit(from);
-    return std::optional<Square>(from);
+    return std::make_optional(from);
   };
 
   switch (current_piece[side])

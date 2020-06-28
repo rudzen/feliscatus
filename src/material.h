@@ -69,6 +69,8 @@ struct Material {
 
 private:
 
+  using Keys = std::array<uint32_t, COL_NB>;
+
   [[nodiscard]]
   int pawn_count(Color side);
 
@@ -135,7 +137,7 @@ private:
 
   int drawish{};
   int material_flags{};
-  std::array<uint32_t, COL_NB> key{};
+  Keys key{};
   const Board *board{};
 
   static constexpr int RECOGNIZEDDRAW = 1;

@@ -316,7 +316,7 @@ int Material::KBNK(const int eval, const Color side1) const {
 
   const auto [first_corner, second_corner] = get_winning_squares(dark);
 
-  return eval + 175 - std::min(25 * distance(first_corner, loosing_kingsq), 25 * distance(second_corner, loosing_kingsq));
+  return eval + 175 - std::min<int>(25 * distance(first_corner, loosing_kingsq), 25 * distance(second_corner, loosing_kingsq));
 }
 
 int Material::KBKX(const int eval, const uint32_t key1, const uint32_t key2, const int pc1, const int pc2, const Color side1, const Color side2, const Color side_to_move) {

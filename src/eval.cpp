@@ -142,10 +142,10 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
   eval_king_attack<WHITE>();
   eval_king_attack<BLACK>();
 
-  posistion_value[pos->side_to_move] += tempo;
-
   // finally add the remaining poseval scores
   result += poseval[WHITE] - poseval[BLACK];
+
+  posistion_value[pos->side_to_move] += tempo;
 
   const auto [stage_mg, stage_eg] = get_stages(pos->material);
   const auto pos_eval_mg          = static_cast<int>(result.mg() * stage_mg);
@@ -253,12 +253,12 @@ Score Evaluate<Tuning>::eval_pieces() {
     const auto sq     = pop_lsb(&pieces);
     const auto flipsq = relative_square(Them, sq);
 
-    if constexpr (Pt == Knight || Pt == King)
+    if constexpr (Pt == Knight)
       attacks = piece_attacks_bb<Pt>(sq);
     else if constexpr (Pt == Bishop)
-      attacks = piece_attacks_bb<Pt>(sq, all_pieces ^ b.pieces(Queen, Them));
+      attacks = piece_attacks_bb<Pt>(sq, all_pieces ^ b.pieces(Queen));
     else if constexpr (Pt == Rook)
-      attacks = piece_attacks_bb<Pt>(sq, all_pieces ^ b.pieces(Queen, Them) ^ b.pieces(Rook, Them));
+      attacks = piece_attacks_bb<Pt>(sq, all_pieces ^ b.pieces(Queen) ^ b.pieces(Rook, Us));
     else if constexpr (Pt == Queen)
       attacks = piece_attacks_bb<Pt>(sq, all_pieces);
 
@@ -283,7 +283,7 @@ Score Evaluate<Tuning>::eval_pieces() {
       result += bishop_mob[mob];
       result += bishop_mob2[not_defended_by_pawns];
 
-      if (more_than_one(piece_attacks_bb<Bishop>(sq, b.pieces(Pawn, Us) | b.pieces(Pawn, Them)) & CenterBB))
+      if (more_than_one(piece_attacks_bb<Bishop>(sq, b.pieces(Pawn)) & CenterBB))
         result += bishop_diagonal;
 
       if (attacked_by<Them>(Pawn) & sq)

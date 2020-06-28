@@ -39,7 +39,10 @@ HashTable::~HashTable() {
 
 void HashTable::init(const uint64_t new_size_mb) {
   if (new_size_mb == size_mb)
+  {
+    clear();
     return;
+  }
 
   size_mb = new_size_mb;
   size    = 1024 * 1024 * new_size_mb / sizeof(HashEntry);

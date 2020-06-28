@@ -114,7 +114,7 @@ constexpr std::array<Bitboard, sq_nb> knight_attacks = make_knight_attacks();
 constexpr std::array<Bitboard, sq_nb> make_king_attacks()
 {
   std::array<Bitboard, sq_nb> result{};
-  for (const Square sq : Squares)
+  for (const auto sq : Squares)
   {
     const auto bbsq = square_bb[sq];
     result[sq] =  (bbsq & ~FileABB) >> 1;
@@ -159,9 +159,9 @@ constexpr std::array<std::array<int, sq_nb>, sq_nb> dist = make_distance(); /// 
 template<>
 constexpr int distance<Square>(const Square x, const Square y) { return dist[x][y]; }
 
-template<Square sq>
+template<Square Sq>
 constexpr Bitboard bit() {
-  return square_bb[sq];
+  return square_bb[Sq];
 }
 
 template<typename... Squares>
