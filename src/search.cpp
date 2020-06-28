@@ -235,19 +235,19 @@ void Search::update_history_scores(const Move move, const int depth) const {
 
 void Search::update_killer_moves(const Move move) {
   // Same move can be stored twice for a ply.
-  if (is_capture(move) || is_promotion(move) || move == killer_moves[plies].front())
+  if (is_capture(move) || is_promotion(move) || move == pos->killer_moves.front())
     return;
 
-  auto &km = killer_moves[plies];
+  auto &km = pos->killer_moves;
 
-  // Rotate the killer moves, index 2 become 1, index 1 becomes 0 and 0 is replaced with new move
+  // Rotate the killer moves, index 3 become 2, index 2 becomes 1 and index 1 becomes 0 which is replaced with new move
   // This is the same as std::copy_backward(km.begin(), std::prev(km.end(), 1), std::next(km.begin(), 1));
   std::rotate(km.begin(), std::prev(km.end(), 1), km.end());
   km[0] = move;
 }
 
-bool Search::is_killer_move(const Move m, const int ply) const {
-  const auto &km = killer_moves[ply];
+bool Search::is_killer_move(const Move m, const Position *p) const {
+  const auto &km = p->killer_moves;
   return std::find(km.cbegin(), km.cend(), m) != km.cend();
 }
 
@@ -289,7 +289,7 @@ void Search::init_search(const SearchLimits &limits) {
   search_depth      = 0;
   max_ply           = 0;
   pos->pv_length    = 0;
-  std::memset(killer_moves.data(), 0, sizeof killer_moves);
+  pos->killer_moves.fill(MOVE_NONE);
 }
 
 void Search::sort_move(MoveData &move_data) {
@@ -315,12 +315,14 @@ void Search::sort_move(MoveData &move_data) {
       move_data.score = -100000 + value_captured * 20 - value_piece;
   } else if (is_promotion(m))
     move_data.score = PROMOTIONMOVESCORE + piece_value(move_promoted(m));
-  else if (m == killer_moves[plies][0])
+  else if (m == pos->killer_moves[0])
     move_data.score = KILLERMOVESCORE + 20;
-  else if (m == killer_moves[plies][1])
+  else if (m == pos->killer_moves[1])
     move_data.score = KILLERMOVESCORE + 19;
-  else if (m == killer_moves[plies][2])
+  else if (m == pos->killer_moves[2])
     move_data.score = KILLERMOVESCORE + 18;
+  else if (m == pos->killer_moves[3])
+    move_data.score = KILLERMOVESCORE + 17;
   else if (pos->last_move && data_->counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] == m)
     move_data.score = 60000;
   else
@@ -356,9 +358,9 @@ bool Search::move_is_easy() const {
   if (!protocol)
     return false;
 
-  if (pos->move_count() == 1 && search_depth > 9
-      || protocol.value()->is_fixed_depth() && protocol.value()->get_depth() == search_depth
-      || data_->pv[0][0].score == MAXSCORE - 1)
+  if ((pos->move_count() == 1 && search_depth > 9)
+      || (protocol.value()->is_fixed_depth() && protocol.value()->get_depth() == search_depth)
+      || (data_->pv[0][0].score == MAXSCORE - 1))
     return true;
 
   return !is_analysing() && !protocol.value()->is_fixed_depth() && search_time < start_time.elapsed_milliseconds() * n_;

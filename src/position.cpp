@@ -47,6 +47,7 @@ void Position::clear() {
   transposition              = nullptr;
   last_move                  = MOVE_NONE;
   material.clear();
+  killer_moves.fill(MOVE_NONE);
 }
 
 const Move *Position::string_to_move(const std::string_view m) {

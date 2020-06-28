@@ -56,6 +56,7 @@ struct Position : Moves {
   Move transp_move{};
   int flags{};
   HashEntry *transposition{};
+  std::array<Move, 4> killer_moves{};
 };
 
 inline bool Position::is_draw() const {

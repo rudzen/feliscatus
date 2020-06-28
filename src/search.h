@@ -92,7 +92,7 @@ private:
   void update_killer_moves(Move move);
 
   [[nodiscard]]
-  bool is_killer_move(Move m, int ply) const;
+  bool is_killer_move(Move m, const Position *p) const;
 
   void init_search(const SearchLimits &limits);
 
@@ -132,18 +132,14 @@ public:
 
 private:
 
-  using KillerMoves = std::array<Move, 4>;
-
   static constexpr std::array<int, 4> futility_margin {150, 150, 150, 400};
   static constexpr std::array<int, 4> razor_margin {0, 125, 125, 400};
 
   int search_depth{};
-  std::array<KillerMoves, MAXDEPTH> killer_moves{};
   std::array<int, COL_NB> drawScore_{};
   Game *game;
   Board *board;
   Position *pos{};
-  //uint64_t node_count{};
   std::size_t num_workers_{};
   std::size_t data_index_;
   Data* data_;
@@ -306,7 +302,7 @@ std::optional<int> Search::next_depth_not_pv(const int depth, const int move_cou
 
   constexpr auto move_count_limit = PV ? 5 : 3;
 
-  if (move_count >= move_count_limit && !is_queen_promotion(m) && !is_capture(m) && !is_killer_move(m, plies - 1))
+  if (move_count >= move_count_limit && !is_queen_promotion(m) && !is_capture(m) && !is_killer_move(m, (pos - 1)))
   {
     auto next_depth = depth - 2 - depth / 8 - (move_count - 6) / 10;
 
@@ -315,7 +311,7 @@ std::optional<int> Search::next_depth_not_pv(const int depth, const int move_cou
 
     if (next_depth <= 3)
     {
-      const auto score = -pos->eval_score + futility_margin[std::min<int>(3, std::max<int>(0, next_depth))];
+      const auto score = -pos->eval_score + futility_margin[std::clamp(next_depth, 0, 3)];
 
       if (score < alpha)
       {
