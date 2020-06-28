@@ -55,13 +55,13 @@ int Felis::set_fen(const std::string_view fen) { return game->new_game(fen); }
 int Felis::go(const SearchLimits &limits) {
   game->pos->pv_length = 0;
 
-  if (game->pos->pv_length == 0)
-    go_search(limits);
+  go_search(limits);
 
   if (game->pos->pv_length)
   {
-    protocol->post_moves(search->pv[0][0].move, game->pos->pv_length > 1 ? search->pv[0][1].move : MOVE_NONE);
-    game->make_move(search->pv[0][0].move, true, true);
+    auto &pv = Pool.main()->pv;
+    protocol->post_moves(pv[0][0].move, game->pos->pv_length > 1 ? pv[0][1].move : MOVE_NONE);
+    game->make_move(pv[0][0].move, true, true);
   }
   return 0;
 }
@@ -120,7 +120,9 @@ bool Felis::set_option(const std::string_view name, const std::string_view value
   {
     game->chess960 = game->xfen = value == "true";
     fmt::print("info string UCI_Chess960_Arena:{}\n", on_off[game->chess960]);
-  } else
+  } else if (name == "ponder")
+    protocol->limits.ponder = value == "true";
+  else
   {
     fmt::print("Unknown option. {}={}\n", name, value);
     return false;

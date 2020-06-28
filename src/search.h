@@ -32,15 +32,7 @@
 #include "position.h"
 #include "transpositional.h"
 #include "datapool.h"
-
-struct PVEntry {
-  uint64_t key;
-  int depth;
-  int score;
-  Move move;
-  NodeType node_type;
-  int eval;
-};
+#include "pv_entry.h"
 
 struct Search final : MoveSorter {
   Search() = delete;
@@ -128,8 +120,6 @@ public:
   double n_{};
   int plies{};
   int max_ply{};
-  std::array<std::array<PVEntry, MAXDEPTH>, MAXDEPTH> pv{};
-  std::array<int, MAXDEPTH> pv_length{};
   Stopwatch start_time{};
   TimeUnit search_time{};
   TimeUnit time_left{};
@@ -422,6 +412,7 @@ int Search::search_quiesce(int alpha, const int beta, const int qs_ply) {
 
 template<NodeType NT>
 void Search::update_pv(const Move move, const int score, const int depth) {
+  auto &pv          = data_->pv;
   auto *const entry = &pv[plies][plies];
 
   entry->score     = score;
@@ -433,16 +424,18 @@ void Search::update_pv(const Move move, const int score, const int depth) {
 
   const auto next_ply = plies + 1;
 
-  pv_length[plies] = pv_length[next_ply];
+  auto &pv_len  = data_->pv_length;
 
-  for (auto i = next_ply; i < pv_length[plies]; ++i)
+  pv_len[plies] = pv_len[next_ply];
+
+  for (auto i = next_ply; i < pv_len[plies]; ++i)
     pv[plies][i] = pv[next_ply][i];
 
   if (plies == 0)
   {
-    pos->pv_length = pv_length[0];
+    pos->pv_length = pv_len[0];
 
     if (protocol && verbosity)
-      protocol.value()->post_pv(search_depth, max_ply, start_time.elapsed_milliseconds() + 1, TT.get_load(), score, pv[plies], pv_length[plies], plies, NT);
+      protocol.value()->post_pv(search_depth, max_ply, start_time.elapsed_milliseconds() + 1, TT.get_load(), score, pv[plies], pv_len[plies], plies, NT);
   }
 }

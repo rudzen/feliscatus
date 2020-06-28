@@ -20,50 +20,13 @@
 
 #pragma once
 
-#include <cstdint>
-#include <vector>
-#include <memory>
-#include <atomic>
 #include "types.h"
-#include "pawnhashtable.h"
-#include "pv_entry.h"
 
-struct Data {
-
-  explicit Data(std::size_t data_index);
-
-  void clear_data();
-
-  PawnHashTable pawn_hash{};
-  int history_scores[16][64]{};
-  Move counter_moves[16][64]{};
-  std::array<std::array<PVEntry, MAXDEPTH>, MAXDEPTH> pv{};
-  std::array<int, MAXDEPTH> pv_length{};
-
-  std::atomic_uint64_t node_count;
-
-private:
-  std::size_t index;
-
+struct PVEntry final {
+  uint64_t key;
+  int depth;
+  int score;
+  Move move;
+  NodeType node_type;
+  int eval;
 };
-
-struct MainData : Data {
-
-  using Data::Data;
-};
-
-struct DataPool : std::vector<std::unique_ptr<Data>> {
-
-  void set(std::size_t v);
-
-  [[nodiscard]]
-  MainData *main() const { return static_cast<MainData *>(front().get()); }
-
-  void clear_data();
-
-  [[nodiscard]]
-  uint64_t node_count() const;
-};
-
-// global data object
-inline DataPool Pool{};

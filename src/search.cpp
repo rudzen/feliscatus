@@ -88,7 +88,7 @@ int Search::go(const SearchLimits &limits, const std::size_t num_workers) {
 
       do
       {
-        pv_length[0] = 0;
+        data_->pv_length[0] = 0;
 
         get_hash_and_evaluate(pos, game, data_index_, alpha, beta, plies);
 
@@ -104,20 +104,20 @@ int Search::go(const SearchLimits &limits, const std::size_t num_workers) {
       }
       while (true);
 
-      store_pv(pv[0], pv_length.front());
+      store_pv(data_->pv[0], data_->pv_length.front());
 
       if (move_is_easy())
         break;
 
-      alpha = std::max<int>(-MAXSCORE, pv[0][0].score - 20);
-      beta  = std::min<int>(MAXSCORE, pv[0][0].score + 20);
+      alpha = std::max<int>(-MAXSCORE, data_->pv[0][0].score - 20);
+      beta  = std::min<int>(MAXSCORE, data_->pv[0][0].score + 20);
     } catch (const int)
     {
       while (plies)
         unmake_move();
 
-      if (const auto pv_len = pv_length.front(); pv_len)
-        store_pv(pv.front(), pv_len);
+      if (const auto pv_len = data_->pv_length.front(); pv_len)
+        store_pv(data_->pv.front(), pv_len);
     }
   }
   return 0;
@@ -188,7 +188,7 @@ bool Search::make_move_and_evaluate(const Move m, const int alpha, const int bet
 
   pos = game->pos;
   ++plies;
-  pv_length[plies] = plies;
+  data_->pv_length[plies] = plies;
   data_->node_count.fetch_add(1, std::memory_order_relaxed);
 
   check_sometimes();
@@ -289,8 +289,6 @@ void Search::init_search(const SearchLimits &limits) {
   search_depth      = 0;
   max_ply           = 0;
   pos->pv_length    = 0;
-  pv_length.fill(0);
-  std::memset(pv.data(), 0, sizeof pv);
   std::memset(killer_moves.data(), 0, sizeof killer_moves);
 }
 
@@ -358,7 +356,9 @@ bool Search::move_is_easy() const {
   if (!protocol)
     return false;
 
-  if ((pos->move_count() == 1 && search_depth > 9) || (protocol.value()->is_fixed_depth() && protocol.value()->get_depth() == search_depth) || pv[0][0].score == MAXSCORE - 1)
+  if (pos->move_count() == 1 && search_depth > 9
+      || protocol.value()->is_fixed_depth() && protocol.value()->get_depth() == search_depth
+      || data_->pv[0][0].score == MAXSCORE - 1)
     return true;
 
   return !is_analysing() && !protocol.value()->is_fixed_depth() && search_time < start_time.elapsed_milliseconds() * n_;

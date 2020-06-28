@@ -28,7 +28,8 @@ Data::Data(const std::size_t data_index) : index(data_index) {}
 void Data::clear_data() {
   std::memset(history_scores, 0, sizeof history_scores);
   std::memset(counter_moves, 0, sizeof counter_moves);
-  node_count.store(0);
+  pv_length.fill(0);
+  std::memset(pv.data(), 0, sizeof pv);
 }
 
 void DataPool::set(const std::size_t v) {
