@@ -33,6 +33,7 @@
 #include "position.h"
 #include "pawnhashtable.h"
 #include "score.h"
+#include "datapool.h"
 
 namespace {
 
@@ -44,7 +45,7 @@ constexpr auto max_log_files     = 3;
 std::shared_ptr<spdlog::logger> eval_logger = spdlog::rotating_logger_mt("eval_logger", "logs/eval.txt", max_log_file_size, max_log_files);
 
 [[nodiscard]]
-const auto get_stages(Material &mat) {
+auto get_stages(Material &mat) {
   const auto stage = (mat.value() - mat.pawn_value()) / static_cast<double>(Material::max_value_without_pawns);
   return std::make_pair(stage, 1 - stage);
 }
@@ -60,7 +61,7 @@ struct Evaluate {
   Evaluate(Evaluate &&other)            = delete;
   Evaluate &operator=(const Evaluate &) = delete;
   Evaluate &operator=(Evaluate &&other) = delete;
-  Evaluate(const Game *g, PawnHashTable *pawntable) : b(g->board), pos(g->pos), pawnt(pawntable) {}
+  Evaluate(const Game *g, const std::size_t pool_index) : b(g->board), pos(g->pos), pool_index_(pool_index) {}
 
   template<Color Us>
   int evaluate(int alpha, int beta);
@@ -94,7 +95,7 @@ private:
 
   const Board &b{};
   Position *pos{};
-  PawnHashTable *pawnt{};
+  std::size_t pool_index_;
   PawnHashEntry *pawnp{};
 
   std::array<Score, COL_NB> poseval{};
@@ -188,6 +189,7 @@ Score Evaluate<Tuning>::eval_pawns_both_sides() {
     return result;
   }
 
+  auto pawnt = &Pool[pool_index_]->pawn_hash;
   pawnp = pawnt->find(pos);
 
   if (pawnp->zkey == 0 || pawnp->zkey != pos->pawn_structure_key)
@@ -441,12 +443,12 @@ void Evaluate<Tuning>::init_evaluate() {
 
 namespace Eval {
 
-int evaluate(Game *g, PawnHashTable *pawnTable, const int alpha, const int beta) {
-  return g->pos->side_to_move == WHITE ? Evaluate<false>(g, pawnTable).evaluate<WHITE>(alpha, beta) : Evaluate<false>(g, pawnTable).evaluate<BLACK>(alpha, beta);
+int evaluate(Game *g, std::size_t pool_index, const int alpha, const int beta) {
+  return g->pos->side_to_move == WHITE ? Evaluate<false>(g, pool_index).evaluate<WHITE>(alpha, beta) : Evaluate<false>(g, pool_index).evaluate<BLACK>(alpha, beta);
 }
 
-int tune(Game *g, PawnHashTable *pawnTable, const int alpha, const int beta) {
-  return g->pos->side_to_move == WHITE ? Evaluate<true>(g, pawnTable).evaluate<WHITE>(alpha, beta) : Evaluate<true>(g, pawnTable).evaluate<BLACK>(alpha, beta);
+int tune(Game *g, std::size_t pool_index, const int alpha, const int beta) {
+  return g->pos->side_to_move == WHITE ? Evaluate<true>(g, pool_index).evaluate<WHITE>(alpha, beta) : Evaluate<true>(g, pool_index).evaluate<BLACK>(alpha, beta);
 }
 
 }// namespace Eval

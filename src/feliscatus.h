@@ -27,7 +27,7 @@
 #include "worker.h"
 
 struct PawnHashTable;
-class Search;
+struct Search;
 
 struct Felis final : public ProtocolListener {
   Felis();
@@ -58,7 +58,6 @@ private:
   std::unique_ptr<Game> game;
   std::unique_ptr<Search> search;
   std::unique_ptr<UCIProtocol> protocol;
-  std::unique_ptr<PawnHashTable> pawnt;
   std::vector<Worker> workers{};
-  std::size_t num_threads;
+  uint64_t num_threads;
 };

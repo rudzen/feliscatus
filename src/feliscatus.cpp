@@ -31,6 +31,7 @@
 #include "perft.h"
 #include "util.h"
 #include "types.h"
+#include "datapool.h"
 
 namespace {
 
@@ -84,8 +85,8 @@ void Felis::start_workers() {
   if (workers.empty())
     return;
   const auto fen = game->get_fen();
-  for (auto &worker : workers)
-    worker.start(fen);
+  for (std::size_t idx = 1; auto &worker : workers)
+    worker.start(fen, idx++);
 }
 
 void Felis::stop_workers() {
@@ -96,17 +97,18 @@ void Felis::stop_workers() {
 bool Felis::set_option(const std::string_view name, const std::string_view value) {
   if (name == "Hash")
   {
-    constexpr auto min = 8;
-    constexpr auto max = 64 * 1024;
-    const auto val     = util::to_integral<int>(value);
+    constexpr uint64_t min = 8;
+    constexpr uint64_t max = 64 * 1024;
+    const auto val     = util::to_integral<uint64_t>(value);
     TT.init(std::clamp(val, min, max));
     fmt::print("info string Hash:{}\n", TT.get_size_mb());
   } else if (name == "Threads" || name == "NumThreads")
   {
-    constexpr auto min = 1;
-    constexpr auto max = 64;
-    const auto val     = util::to_integral<int>(value);
+    constexpr std::size_t min = 1;
+    constexpr std::size_t max = 64;
+    const auto val     = util::to_integral<std::size_t>(value);
     num_threads = std::clamp(val, min, max);
+    Pool.set(num_threads);
     workers.resize(num_threads - 1);
     workers.shrink_to_fit();
     fmt::print("info string Threads:{}\n", num_threads);
@@ -130,10 +132,11 @@ bool Felis::set_option(const std::string_view name, const std::string_view value
 int Felis::run(const int argc, char* argv[]) {
   setbuf(stdout, nullptr);
 
+  Pool.set(1);
   game     = std::make_unique<Game>();
   protocol = std::make_unique<UCIProtocol>(this, game.get());
-  pawnt    = std::make_unique<PawnHashTable>();
-  search   = std::make_unique<Search>(protocol.get(), game.get(), pawnt.get());
+  // pawnt    = std::make_unique<PawnHashTable>();
+  search   = std::make_unique<Search>(protocol.get(), game.get(), 0);
 
   new_game();
 

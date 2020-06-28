@@ -19,11 +19,13 @@
 */
 
 #include <cassert>
+#include <assert.h>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
 #include "search.h"
+
 #include "eval.h"
 
 namespace {
@@ -50,10 +52,10 @@ int codec_t_table_score(const int score, const int ply) {
        : score < 0 ? score - ply : score + ply;
 }
 
-void get_hash_and_evaluate(Position *pos, Game* game, PawnHashTable *pawn_hash_table, const int alpha, const int beta, const int plies) {
+void get_hash_and_evaluate(Position *pos, Game* game, const std::size_t pool_index, const int alpha, const int beta, const int plies) {
   if ((pos->transposition = TT.find(pos->key)) == nullptr)
   {
-    pos->eval_score  = Eval::evaluate(game, pawn_hash_table, alpha, beta);
+    pos->eval_score  = Eval::evaluate(game, pool_index, alpha, beta);
     pos->transp_type = Void;
     pos->transp_move = MOVE_NONE;
     return;
@@ -89,7 +91,7 @@ int Search::go(const SearchLimits &limits, const std::size_t num_workers) {
       {
         pv_length[0] = 0;
 
-        get_hash_and_evaluate(pos, game, pawn_hash_, alpha, beta, plies);
+        get_hash_and_evaluate(pos, game, data_index_, alpha, beta, plies);
 
         const auto score = search<EXACT, true>(search_depth, alpha, beta);
 
@@ -115,7 +117,7 @@ int Search::go(const SearchLimits &limits, const std::size_t num_workers) {
       while (plies)
         unmake_move();
 
-      if (const int pv_len = pv_length.front(); pv_len)
+      if (const auto pv_len = pv_length.front(); pv_len)
         store_pv(pv.front(), pv_len);
     }
   }
@@ -192,7 +194,7 @@ bool Search::make_move_and_evaluate(const Move m, const int alpha, const int bet
 
   check_sometimes();
 
-  get_hash_and_evaluate(pos, game, pawn_hash_, -beta, -alpha, plies);
+  get_hash_and_evaluate(pos, game, data_index_, -beta, -alpha, plies);
 
   max_ply = std::max<int>(max_ply, plies);
   return true;
@@ -224,7 +226,9 @@ uint64_t Search::nodes_per_second() const {
   return micros == 0 ? node_count * num_workers_ : node_count * num_workers_ * 1000000 / micros;
 }
 
-void Search::update_history_scores(const Move move, const int depth) {
+void Search::update_history_scores(const Move move, const int depth) const {
+  auto &history_scores = data_->history_scores;
+
   history_scores[move_piece(move)][move_to(move)] += depth * depth;
 
   if (history_scores[move_piece(move)][move_to(move)] <= 2048)
@@ -294,8 +298,6 @@ void Search::init_search(const SearchLimits &limits) {
   pv_length.fill(0);
   std::memset(pv.data(), 0, sizeof pv);
   std::memset(killer_moves.data(), 0, sizeof killer_moves);
-  std::memset(history_scores, 0, sizeof history_scores);
-  std::memset(counter_moves, 0, sizeof counter_moves);
 }
 
 void Search::sort_move(MoveData &move_data) {
@@ -327,10 +329,10 @@ void Search::sort_move(MoveData &move_data) {
     move_data.score = KILLERMOVESCORE + 19;
   else if (m == killer_moves[plies][2])
     move_data.score = KILLERMOVESCORE + 18;
-  else if (pos->last_move && counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] == m)
+  else if (pos->last_move && data_->counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] == m)
     move_data.score = 60000;
   else
-    move_data.score = history_scores[move_piece(m)][move_to(m)];
+    move_data.score = data_->history_scores[move_piece(m)][move_to(m)];
 }
 
 int Search::store_search_node_score(const int score, const int depth, const NodeType node_type, const Move move) const {

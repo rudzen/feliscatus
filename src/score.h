@@ -23,6 +23,8 @@
 #include <cstdint>
 #include <cassert>
 
+#include <fmt/format.h>
+
 ///
 /// Multi-valued type which is used to hold the mg and mg scores.
 ///

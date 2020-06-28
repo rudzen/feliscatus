@@ -27,8 +27,8 @@
 #include "pawnhashtable.h"
 #include "transpositional.h"
 
-constexpr int TT_ENTRY_SIZE   = 16;
-constexpr int PAWN_ENTRY_SIZE = 16;
+constexpr std::size_t TT_ENTRY_SIZE   = 16;
+constexpr std::size_t PAWN_ENTRY_SIZE = 16;
 
 int main(const int argc, char *argv[]) {
   util::check_size<HashEntry, TT_ENTRY_SIZE>();

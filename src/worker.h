@@ -29,11 +29,11 @@
 #include "search.h"
 #include "pawnhashtable.h"
 
-struct Worker {
+struct Worker final {
 
-  void start(std::string_view fen) {
+  void start(std::string_view fen, const std::size_t index) {
     game_ = std::make_unique<Game>(fen);
-    search_ = std::make_unique<Search>(game_.get(), &pawn_hash_);
+    search_ = std::make_unique<Search>(game_.get(), index);
     thread_ = std::jthread(&Search::run, search_.get());
   }
 
@@ -48,7 +48,6 @@ struct Worker {
   }
 
 private:
-  PawnHashTable pawn_hash_{};
   std::unique_ptr<Game> game_{};
   std::unique_ptr<Search> search_{};
   std::jthread thread_{};

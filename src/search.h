@@ -30,8 +30,8 @@
 #include "game.h"
 #include "stopwatch.h"
 #include "position.h"
-#include "pawnhashtable.h"
 #include "transpositional.h"
+#include "datapool.h"
 
 struct PVEntry {
   uint64_t key;
@@ -42,11 +42,10 @@ struct PVEntry {
   int eval;
 };
 
-class Search final : public MoveSorter {
-public:
+struct Search final : MoveSorter {
   Search() = delete;
-  Search(const std::optional<Protocol *> p, Game *g, PawnHashTable *pawnt) : lag_buffer(-1), verbosity(true), protocol(p), game(g), board(g->pos->b), pawn_hash_(pawnt) { }
-  Search(Game *g, PawnHashTable *pawnt) : Search(std::nullopt, g, pawnt) {
+  Search(const std::optional<Protocol *> p, Game *g, const std::size_t data_index) : lag_buffer(-1), protocol(p), game(g), board(g->pos->b), data_index_(data_index), data_(Pool[data_index].get()), verbosity(true) { }
+  Search(Game *g, const std::size_t data_index) : Search(std::nullopt, g, data_index) {
     stop_search.store(false);
   }
 
@@ -99,7 +98,7 @@ private:
   [[nodiscard]]
   uint64_t nodes_per_second() const;
 
-  void update_history_scores(Move move, int depth);
+  void update_history_scores(Move move, int depth) const;
 
   void update_killer_moves(Move move);
 
@@ -139,7 +138,6 @@ public:
   TimeUnit time_left{};
   TimeUnit time_inc{};
   int lag_buffer;
-  bool verbosity{};
   std::atomic_bool stop_search;
   std::optional<Protocol *> protocol;
 
@@ -154,17 +152,15 @@ private:
 
   int search_depth{};
   std::array<KillerMoves, MAXDEPTH> killer_moves{};
-  int history_scores[16][64]{};
-  Move counter_moves[16][64]{};
   std::array<int, COL_NB> drawScore_{};
   Game *game;
   Board *board;
   Position *pos{};
-
   uint64_t node_count{};
   std::size_t num_workers_{};
-
-  PawnHashTable *pawn_hash_;
+  std::size_t data_index_;
+  Data* data_;
+  bool verbosity{};
 };
 
 template<NodeType NT, bool PV>
@@ -289,7 +285,7 @@ int Search::search(const int depth, int alpha, const int beta) {
     update_history_scores(best_move, depth);
     update_killer_moves(best_move);
 
-    counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] = best_move;
+    data_->counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] = best_move;
   }
   return store_search_node_score(best_score, depth, node_type(best_score, beta, best_move), best_move);
 }

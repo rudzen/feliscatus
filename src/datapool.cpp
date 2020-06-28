@@ -18,15 +18,33 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include <cstring>
+#include "datapool.h"
 
-class Game;
-struct PawnHashTable;
+Data::Data(const std::size_t data_index) : index(data_index) {}
 
-namespace Eval {
+void Data::clear_data() {
+  std::memset(history_scores, 0, sizeof history_scores);
+  std::memset(counter_moves, 0, sizeof counter_moves);
+}
 
-int evaluate(Game *g, std::size_t pool_index, int alpha, int beta);
+void DataPool::set(const std::size_t v) {
 
-int tune(Game *g, std::size_t pool_index, int alpha, int beta);
+  while (!empty())
+    pop_back();
 
+  if (v > 0)
+  {
+    emplace_back(std::make_unique<MainData>(0));
+
+    while (size() < v)
+      emplace_back(std::make_unique<Data>(size()));
+
+    clear_data();
+  }
+}
+
+void DataPool::clear_data() {
+  for (auto &w: *this)
+    w->clear_data();
 }

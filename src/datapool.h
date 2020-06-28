@@ -20,13 +20,44 @@
 
 #pragma once
 
-class Game;
-struct PawnHashTable;
+#include <cstdint>
+#include <vector>
+#include <memory>
+#include "types.h"
+#include "pawnhashtable.h"
 
-namespace Eval {
+struct Data {
 
-int evaluate(Game *g, std::size_t pool_index, int alpha, int beta);
+  explicit Data(std::size_t data_index);
 
-int tune(Game *g, std::size_t pool_index, int alpha, int beta);
+  void clear_data();
 
-}
+  PawnHashTable pawn_hash{};
+  int history_scores[16][64]{};
+  Move counter_moves[16][64]{};
+
+private:
+  std::size_t index;
+
+};
+
+struct MainData : Data {
+
+  using Data::Data;
+};
+
+struct DataPool : std::vector<std::unique_ptr<Data>> {
+
+  void set(std::size_t v);
+
+  [[nodiscard]]
+  MainData *main() const { return static_cast<MainData *>(front().get()); }
+
+  void clear_data();
+
+  [[nodiscard]]
+  uint64_t nodes_searched() const;
+};
+
+// global data object
+inline DataPool Pool{};
