@@ -61,7 +61,7 @@ HashEntry *HashTable::find(const Key key) const {
   return nullptr;
 }
 
-HashEntry *HashTable::insert(const Key key, const int depth, const int score, const NodeType type, const int move, const int eval) {
+HashEntry *HashTable::insert(const Key key, const int depth, const int score, const NodeType type, const Move move, const int eval) {
   auto *transp = get_entry_to_replace(key, depth);
 
   if (transp->flags == 0)
@@ -69,7 +69,7 @@ HashEntry *HashTable::insert(const Key key, const int depth, const int score, co
 
   const auto k32 = key32(key);
 
-  if (transp->key != k32 || move != 0)
+  if (transp->key != k32 || move != MOVE_NONE)
     transp->move = move;
   transp->key   = k32;
   transp->score = static_cast<int16_t>(score);

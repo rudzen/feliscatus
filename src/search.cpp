@@ -64,7 +64,7 @@ void get_hash_and_evaluate(Position *pos, Game* game, const std::size_t pool_ind
   pos->eval_score   = codec_t_table_score(pos->transposition->eval, -plies);
   pos->transp_depth = pos->transposition->depth;
   pos->transp_type  = static_cast<NodeType>(pos->transposition->flags & 7);
-  pos->transp_move  = pos->transposition->m();
+  pos->transp_move  = pos->transposition->move;
   pos->flags        = 0;
 }
 

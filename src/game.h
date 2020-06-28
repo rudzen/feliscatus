@@ -46,7 +46,7 @@ public:
   bool is_repetition() const;
 
   [[nodiscard]]
-  int half_move_count() const;
+  int64_t half_move_count() const;
 
   int new_game(std::string_view fen);
 
@@ -65,8 +65,10 @@ public:
 
   void print_moves() const;
 
-  std::array<Position, 512> position_list{};
-  Position *pos;
+  using PositionList = std::array<Position, 512>;
+
+  PositionList position_list{};
+  PositionList::iterator pos;
   Board board{};
   bool chess960;
   bool xfen;

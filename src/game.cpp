@@ -297,7 +297,7 @@ bool Game::is_repetition() const {
   return false;
 }
 
-int Game::half_move_count() const {
+int64_t Game::half_move_count() const {
   // TODO : fix implementation defined behaviour
   return pos - position_list.data();
 }
@@ -310,7 +310,7 @@ int Game::new_game(const std::string_view fen) {
 }
 
 int Game::set_fen(std::string_view fen) {
-  pos = position_list.data();
+  pos = position_list.begin();
   pos->clear();
   board.clear();
 

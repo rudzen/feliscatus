@@ -31,11 +31,8 @@ struct HashEntry {
   uint8_t depth;
   NodeType flags;// 5 bits left
   int16_t score;
-  uint32_t move;
+  Move move;
   int16_t eval;
-
-  [[nodiscard]]
-  Move m() const noexcept { return static_cast<Move>(move); }
 
   [[nodiscard]]
   bool is_exact() const noexcept { return flags & EXACT; }
@@ -58,7 +55,7 @@ struct HashTable final {
   [[nodiscard]]
   HashEntry *find(Key key) const;
 
-  HashEntry *insert(Key key, int depth, int score, NodeType type, int move, int eval);
+  HashEntry *insert(Key key, int depth, int score, NodeType type, Move move, int eval);
 
   [[nodiscard]]
   HashEntry *get_entry_to_replace(Key key, [[maybe_unused]] int depth) const;
