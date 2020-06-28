@@ -306,7 +306,7 @@ Score Evaluate<Tuning>::eval_pieces() {
         if ((king_file < FILE_E) == (file_of(sq) < king_file))
         {
           const auto modifier = 1 + (Us & !pos->castle_rights);
-          result += king_obstructs_rook * modifier;
+          result -= king_obstructs_rook * modifier;
         }
       }
     } else if constexpr (Pt == Queen)
