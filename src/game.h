@@ -40,7 +40,7 @@ public:
 
   bool make_null_move();
 
-  uint64_t calculate_key();
+  uint64_t calculate_key() const;
 
   [[nodiscard]]
   bool is_repetition() const;
