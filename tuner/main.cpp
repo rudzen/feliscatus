@@ -34,6 +34,7 @@
 #include "../src/transpositional.h"
 #include "file_resolver.h"
 #include "../cli/cli_parser.h"
+#include "../src/datapool.h"
 
 namespace {
 
@@ -60,6 +61,8 @@ int main(const int argc, char **argv) {
   bitboard::init();
   attacks::init();
   zobrist::init();
+
+  Pool.set(1);
 
   const Stopwatch sw;
   eval::Tune(std::make_unique<Game>(), cli_parser_settings.get());

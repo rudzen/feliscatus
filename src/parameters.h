@@ -59,9 +59,9 @@ inline Score bishop_pair         = Score(29, 57);
 inline Score bishop_diagonal     = Score(45,  0);
 inline Score king_obstructs_rook = Score(49, 9);
 
-inline std::array<int, 4> king_on_half_open{12, -9, -55, -97};
-inline std::array<int, 4> king_on_open     {29, -13, -63, -221};
-inline std::array<int, 4> king_pawn_shelter{-20, 1, 6, -7};
+inline std::array<Score, 4> king_on_half_open{Score( 12, 0), Score( -9, 0), Score(-55, 0), Score( -97, 0)};
+inline std::array<Score, 4> king_on_open     {Score( 29, 0), Score(-13, 0), Score(-63, 0), Score(-221, 0)};
+inline std::array<Score, 4> king_pawn_shelter{Score(-20, 0), Score(  1, 0), Score(  6, 0), Score(  -7, 0)};
 
 inline std::array<Score, 9> knight_mob2 {
   Score(-59, -137), Score(-41, -56), Score(-21, -38),
@@ -79,17 +79,15 @@ inline std::array<Score, 8> passed_pawn {
   Score(0, 0), Score(-16, -16), Score(-16, -7), Score(-12, 2), Score(23, 12), Score(68, 13), Score(95, -115), Score(0, 0),
 };
 
-inline std::array<int, 8> passed_pawn_king_dist_them {0, -66, -24,  5,  22,  33,  39,  21};
-inline std::array<int, 8> passed_pawn_king_dist_us   {0,  23,  24,  0, -10, -11,   0, -17};
-inline std::array<int, 8> passed_pawn_no_attacks     {0,   3,   3, 13,  24,  48,  85,   0};
-inline std::array<int, 8> passed_pawn_no_them        {0,   2,   6, 22,  36,  64, 129,   0};
-inline std::array<int, 8> passed_pawn_no_us          {0,   0,  -1,  3,  17,  32, 121,   0};
+inline std::array<Score, RANK_NB> passed_pawn_king_dist_them { Score(0, 0), Score(0, -66), Score(0, -24), Score(0,  5), Score(0,  22), Score(0,  33), Score(0,  39), Score(0,  21)};
+inline std::array<Score, RANK_NB> passed_pawn_king_dist_us   { Score(0, 0), Score(0,  23), Score(0,  24), Score(0,  0), Score(0, -10), Score(0, -11), Score(0,   0), Score(0, -17)};
+inline std::array<Score, RANK_NB> passed_pawn_no_attacks     { Score(0, 0), Score(0,   3), Score(0,   3), Score(0, 13), Score(0,  24), Score(0,  48), Score(0,  85), Score(0,   0)};
+inline std::array<Score, RANK_NB> passed_pawn_no_them        { Score(0, 0), Score(0,   2), Score(0,   6), Score(0, 22), Score(0,  36), Score(0,  64), Score(0, 129), Score(0,   0)};
+inline std::array<Score, RANK_NB> passed_pawn_no_us          { Score(0, 0), Score(0,   0), Score(0,  -1), Score(0,  3), Score(0,  17), Score(0,  32), Score(0, 121), Score(0,   0)};
 
 inline std::array<Score, 2> pawn_behind   { Score( -4,   4), Score(-28,  -8)};
 inline std::array<Score, 2> pawn_doubled  { Score(-15, -20), Score(  1, -15)};
 inline std::array<Score, 2> pawn_isolated { Score(-13,  -7), Score(-28, -32)};
-
-inline int queen_attack_king = 39;
 
 inline std::array<Score, 28> queen_mob {
   Score(-19,  -3), Score(-34, -30), Score(-15, -17), Score(-15, -27), Score(-13, -36), Score(-10, -37), Score(-10, -30),
@@ -97,8 +95,6 @@ inline std::array<Score, 28> queen_mob {
   Score(  3,   2), Score(  5,   5), Score(  7,   2), Score(  3,   6), Score(  9,   3), Score( 13,   1), Score( 25, -15),
   Score( 34, -16), Score( 33, -15), Score( 58, -34), Score( 44, -34), Score( 41, -28), Score( 14, -12), Score( 19, -16)
 };
-
-inline int rook_attack_king  = 11;
 
 inline std::array<Score, 15> rook_mob {
   Score(-28, -46), Score(-20, -28), Score(-13, -24), Score(-16, -9), Score(-17, -5),
