@@ -48,7 +48,8 @@ struct Node final {
 inline bool x_;
 
 struct Param final {
-  Param(std::string name, Score &value, const Score initial_value, const int step, const int stages = 2) : name_(std::move(name)), initial_value_(initial_value), value_(value), step_(step), stages_(stages) {
+  Param(std::string name, Score &value, const Score initial_value, const int step, const bool begin_stage = 1, const int end_stage = 2)
+  : name_(std::move(name)), initial_value_(initial_value), value_(value), step_(step), begin_stage_(begin_stage), end_stage_(end_stage) {
     if (x_)
       value = initial_value;
   }
@@ -57,7 +58,8 @@ struct Param final {
   Score initial_value_;
   Score &value_;
   int step_;
-  int stages_;
+  int begin_stage_;
+  int end_stage_;
 };
 
 struct ParamIndexRecord final {
@@ -212,19 +214,19 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
         params.emplace_back("passed_pawn", v, 0, step);
 
       for (auto &v : passed_pawn_no_us)
-        params.emplace_back("passed_pawn_no_us", v, 0, step);
+        params.emplace_back("passed_pawn_no_us", v, 0, step, 2);
 
       for (auto &v : passed_pawn_no_them)
-        params.emplace_back("passed_pawn_no_them", v, 0, step);
+        params.emplace_back("passed_pawn_no_them", v, 0, step, 2);
 
       for (auto &v : passed_pawn_no_attacks)
-        params.emplace_back("passed_pawn_no_attacks", v, 0, step);
+        params.emplace_back("passed_pawn_no_attacks", v, 0, step, 2);
 
       for (auto &v : passed_pawn_king_dist_us)
-        params.emplace_back("passed_pawn_king_dist_us", v, 0, step);
+        params.emplace_back("passed_pawn_king_dist_us", v, 0, step, 2);
 
       for (auto &v : passed_pawn_king_dist_them)
-        params.emplace_back("passed_pawn_king_dist_them", v, 0, step);
+        params.emplace_back("passed_pawn_king_dist_them", v, 0, step, 2);
     }
   }
 
@@ -250,11 +252,11 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
         params.emplace_back("knight_mob2", v, 0, step);
     }
 
-    // if (settings->weakness)
-    //   params.emplace_back("knight_in_danger", piece_in_danger[Knight], 0, step);
+    if (settings->weakness)
+      params.emplace_back("knight_in_danger", piece_in_danger[Knight], 0, step, 1, 1);
 
-    // if (settings->strength)
-    //   params.emplace_back("knight_attack_king", attacks_on_king[Knight], 0, step);
+    if (settings->strength)
+      params.emplace_back("knight_attack_king", attacks_on_king[Knight], 0, step, 1, 1);
   }
 
   if (settings->bishop)
@@ -279,11 +281,11 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
       params.emplace_back("bishop_pair", bishop_pair, 0, step);
     }
 
-    // if (settings->weakness)
-    //   params.emplace_back("bishop_in_danger", piece_in_danger[Bishop], 0, step);
+    if (settings->weakness)
+      params.emplace_back("bishop_in_danger", piece_in_danger[Bishop], 0, step, 1, 1);
 
-    // if (settings->strength)
-    //   params.emplace_back("attacks_on_king[Bishop]", attacks_on_king[Bishop], 0, step);
+    if (settings->strength)
+      params.emplace_back("attacks_on_king[Bishop]", attacks_on_king[Bishop], 0, step, 1, 1);
   }
 
   if (settings->rook)
@@ -304,13 +306,13 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
       params.emplace_back("king_obstructs_rook", king_obstructs_rook, 0, step);
     }
 
-    // params.emplace_back("rook_open_file", rook_open_file, 0, step);
+    params.emplace_back("rook_open_file", rook_open_file, 0, step, 1, 1);
 
-    // if (settings->weakness)
-    //   params.emplace_back("rook_in_danger", piece_in_danger[Rook], 0, step);
+    if (settings->weakness)
+      params.emplace_back("rook_in_danger", piece_in_danger[Rook], 0, step, 1, 1);
 
-    // if (settings->strength)
-    //   params.emplace_back("attacks_on_king[Rook]", attacks_on_king[Rook], 0, step);
+    if (settings->strength)
+      params.emplace_back("attacks_on_king[Rook]", attacks_on_king[Rook], 0, step, 1, 1);
   }
 
   if (settings->queen)
@@ -327,11 +329,11 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
         params.emplace_back("queen_mob", v, 0, step);
     }
 
-    // if (settings->weakness)
-    //   params.emplace_back("queen_in_danger", piece_in_danger[Queen], 0, step);
+    if (settings->weakness)
+      params.emplace_back("queen_in_danger", piece_in_danger[Queen], 0, step, 1, 1);
 
-    // if (settings->strength)
-    //   params.emplace_back("attacks_on_king[Queen]", attacks_on_king[Queen], 0, step);
+    if (settings->strength)
+      params.emplace_back("attacks_on_king[Queen]", attacks_on_king[Queen], 0, step, 1, 1);
   }
 
   if (settings->king)
@@ -352,11 +354,11 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
       params.emplace_back("king_on_half_open", v, 0, step);
   }
 
-  // if (settings->lazy_margin)
-  //   params.emplace_back("lazy_margin", lazy_margin, 0, step);
+  if (settings->lazy_margin)
+    params.emplace_back("lazy_margin", lazy_margin, 0, step, 1, 1);
 
-  // if (settings->tempo)
-  //   params.emplace_back("tempo", tempo, 0, step);
+  if (settings->tempo)
+    params.emplace_back("tempo", tempo, 0, step, 1, 1);
 }
 
 }// namespace
@@ -450,6 +452,8 @@ Tune::Tune(std::unique_ptr<Game> game, const ParserSettings *settings) : game_(s
       auto idx    = params_index[i].idx_;
       auto &step  = params[idx].step_;
       auto &value = params[idx].value_;
+      stage = params[idx].begin_stage_;
+
       do {
 
         if (step == 0)
@@ -459,7 +463,7 @@ Tune::Tune(std::unique_ptr<Game> game, const ParserSettings *settings) : game_(s
 
         original = value;
 
-        if (stage++ == 0)
+        if (stage++ == 1)
           value += step;
         else
           value = Score(value.mg(), value.eg() + step);
@@ -503,8 +507,7 @@ Tune::Tune(std::unique_ptr<Game> game, const ParserSettings *settings) : game_(s
           value                     = original;
           step                      = 0;
         }
-
-      } while(stage <= params[idx].stages_);
+      } while(stage <= params[idx].end_stage_);
     }
 
     if (improved)
