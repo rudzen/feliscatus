@@ -28,6 +28,8 @@
 #include "pawnhashtable.h"
 #include "pv_entry.h"
 
+struct Protocol;
+
 struct Data {
 
   explicit Data(std::size_t data_index);
@@ -50,11 +52,13 @@ private:
 struct MainData : Data {
 
   using Data::Data;
+
+  Protocol *protocol;
 };
 
 struct DataPool : std::vector<std::unique_ptr<Data>> {
 
-  void set(std::size_t v);
+  void set(std::size_t v, Protocol *protocol);
 
   [[nodiscard]]
   MainData *main() const { return static_cast<MainData *>(front().get()); }

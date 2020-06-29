@@ -32,7 +32,7 @@ void Data::clear_data() {
   std::memset(pv.data(), 0, sizeof pv);
 }
 
-void DataPool::set(const std::size_t v) {
+void DataPool::set(const std::size_t v, Protocol *p) {
 
   while (!empty())
     pop_back();
@@ -40,19 +40,18 @@ void DataPool::set(const std::size_t v) {
   if (v > 0)
   {
     emplace_back(std::make_unique<MainData>(0));
-    back()->clear_data();
+    main()->protocol = p;
 
     while (size() < v)
-    {
       emplace_back(std::make_unique<Data>(size()));
-      back()->clear_data();
-    }
+
+    clear_data();
   }
 }
 
 void DataPool::clear_data() {
-  // for (auto &w: *this)
-  //   w->clear_data();
+  for (auto &w: *this)
+    w->clear_data();
 }
 
 uint64_t DataPool::node_count() const {

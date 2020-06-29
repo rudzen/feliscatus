@@ -36,9 +36,9 @@
 
 struct Search final : MoveSorter {
   Search() = delete;
-  Search(const std::optional<Protocol *> p, Game *g, const std::size_t data_index) : lag_buffer(-1), protocol(p), game(g), board(g->pos->b), data_index_(data_index), data_(Pool[data_index].get()), verbosity(true) { }
-  Search(Game *g, const std::size_t data_index) : Search(std::nullopt, g, data_index) {
-    stop_search.store(false);
+  Search(Game *g, const std::size_t data_index) : game(g), board(g->pos->b), data_index_(data_index), data_(Pool[data_index].get()), verbosity(Pool.main()->protocol && data_index == 0) {
+    if (data_index != 0)
+      stop_search.store(false);
   }
 
   int go(const SearchLimits &limits, std::size_t num_workers);
@@ -124,9 +124,7 @@ public:
   TimeUnit search_time{};
   TimeUnit time_left{};
   TimeUnit time_inc{};
-  int lag_buffer;
   std::atomic_bool stop_search;
-  std::optional<Protocol *> protocol;
 
   static constexpr int MAXSCORE = 0x7fff;
 
@@ -201,8 +199,8 @@ int Search::search(const int depth, int alpha, const int beta) {
     {
       ++move_count;
 
-      if (protocol && plies == 1 && search_depth >= 20 && (search_time > 5000 || is_analysing()))
-        protocol.value()->post_curr_move(move_data->move, move_count);
+      if (verbosity && plies == 1 && search_depth >= 20 && (search_time > 5000 || is_analysing()))
+        Pool.main()->protocol->post_curr_move(move_data->move, move_count);
 
       if (PV && move_count == 1)
         score = search_next_depth<EXACT, true>(next_depth_pv(singular_move, depth, move_data), -beta, -alpha);
@@ -431,7 +429,7 @@ void Search::update_pv(const Move move, const int score, const int depth) {
   {
     pos->pv_length = pv_len[0];
 
-    if (protocol && verbosity)
-      protocol.value()->post_pv(search_depth, max_ply, start_time.elapsed_milliseconds() + 1, TT.get_load(), score, pv[plies], pv_len[plies], plies, NT);
+    if (verbosity)
+      Pool.main()->protocol->post_pv(search_depth, max_ply, start_time.elapsed_milliseconds() + 1, TT.get_load(), score, pv[plies], pv_len[plies], plies, NT);
   }
 }

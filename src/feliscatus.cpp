@@ -108,7 +108,7 @@ bool Felis::set_option(const std::string_view name, const std::string_view value
     constexpr std::size_t max = 64;
     const auto val     = util::to_integral<std::size_t>(value);
     num_threads = std::clamp(val, min, max);
-    Pool.set(num_threads);
+    Pool.set(num_threads, protocol.get());
     workers.resize(num_threads - 1);
     workers.shrink_to_fit();
     fmt::print("info string Threads:{}\n", num_threads);
@@ -134,10 +134,10 @@ bool Felis::set_option(const std::string_view name, const std::string_view value
 int Felis::run(const int argc, char* argv[]) {
   setbuf(stdout, nullptr);
 
-  Pool.set(1);
   game     = std::make_unique<Game>();
   protocol = std::make_unique<UCIProtocol>(this, game.get());
-  search   = std::make_unique<Search>(protocol.get(), game.get(), 0);
+  Pool.set(1, protocol.get());
+  search   = std::make_unique<Search>(game.get(), 0);
 
   new_game();
 
