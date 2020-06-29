@@ -39,6 +39,9 @@ struct Material {
   [[nodiscard]]
   int count(Color c, PieceType pt);
 
+  [[nodiscard]]
+  int count(PieceType pt);
+
   void make_move(Move m);
 
   [[nodiscard]]

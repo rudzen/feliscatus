@@ -78,6 +78,8 @@ void Material::update_key(const Color c, const PieceType pt, const int delta) {
 
 int Material::count(const Color c, const PieceType pt) { return key[c] >> piece_bit_shift[pt] & 15; }
 
+int Material::count(const PieceType pt) { return count(WHITE, pt) + count(BLACK, pt); }
+
 void Material::make_move(const Move m) {
   if (is_capture(m))
     remove(move_captured(m));

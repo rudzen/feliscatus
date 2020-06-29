@@ -50,6 +50,18 @@ auto get_stages(Material &mat) {
   return std::make_pair(stage, 1 - stage);
 }
 
+int game_phase(Material &mat)
+{
+  constexpr auto initial      = 24;
+  const auto game_phase_check = initial - mat.count(Knight) - mat.count(Bishop) - mat.count(Rook) * 2 - mat.count(Queen) * 4;
+  return (std::min(game_phase_check, 0) * 256 + 12) / initial;
+}
+
+constexpr phase_scale(const int phase, const Score s)
+{
+  return (s.mg() * (256 - phase) + s.eg() * phase) / 256;
+}
+
 }// namespace
 
 template<bool Tuning>
@@ -147,11 +159,23 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 
   posistion_value[pos->side_to_move] += tempo;
 
-  const auto [stage_mg, stage_eg] = get_stages(pos->material);
-  const auto pos_eval_mg          = static_cast<int>(result.mg() * stage_mg);
-  const auto pos_eval_eg          = static_cast<int>(result.eg() * stage_eg);
-  const auto pos_eval             = pos_eval_mg + pos_eval_eg + get_actual_eval(posistion_value);
+  // experimental score scaling
+  const auto phase = game_phase(pos->material);
+  const auto score = phase_scale(phase, result);
+
+  const auto pos_eval             = score + get_actual_eval(posistion_value);
   const auto eval                 = pos->material.evaluate(pos->flags, pos->side_to_move == BLACK ? -pos_eval : pos_eval, pos->side_to_move, &b);
+
+  // const auto [stage_mg, stage_eg] = get_stages(pos->material);
+  // const auto pos_eval_mg          = static_cast<int>(result.mg() * stage_mg);
+  // const auto pos_eval_eg          = static_cast<int>(result.eg() * stage_eg);
+  // const auto pos_eval             = pos_eval_mg + pos_eval_eg + get_actual_eval(posistion_value);
+  // const auto eval                 = pos->material.evaluate(pos->flags, pos->side_to_move == BLACK ? -pos_eval : pos_eval, pos->side_to_move, &b);
+
+  // const auto phase = game_phase(b);
+  // const auto score = phase_scale(phase, result);
+
+  // eval_logger->info("Old:{}/{}={}, New:{}={}", pos_eval_mg, pos_eval_eg, pos_eval_mg + pos_eval_eg, phase, score);
 
   return eval;
 }
