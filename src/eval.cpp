@@ -363,16 +363,13 @@ Score Evaluate<Tuning>::eval_king() {
   const auto bbsq        = bit(sq);
   const auto flipsq      = relative_square(~Us, sq);
   auto result            = king_pst[flipsq];
-  auto pos_score         = 0;
 
-  pos_score += king_pawn_shelter[std::popcount((pawn_push<Up>(bbsq) | pawn_west_attacks[Us](bbsq) | pawn_east_attacks[Us](bbsq)) & b.pieces(Pawn, Us))];
+  result += king_pawn_shelter[std::popcount((pawn_push<Up>(bbsq) | pawn_west_attacks[Us](bbsq) | pawn_east_attacks[Us](bbsq)) & b.pieces(Pawn, Us))];
 
   const auto east_west = bbsq | west_one(bbsq) | east_one(bbsq);
 
-  pos_score += king_on_open[std::popcount(open_files & east_west)];
-  pos_score += king_on_half_open[std::popcount(half_open_files[Us] & east_west)];
-
-  result += pos_score;
+  result += king_on_open[std::popcount(open_files & east_west)];
+  result += king_on_half_open[std::popcount(half_open_files[Us] & east_west)];
 
   return result;
 }
@@ -386,7 +383,6 @@ Score Evaluate<Tuning>::eval_passed_pawns() const {
   if (pawnp == nullptr)
     return result;
 
-  auto score_pos       = 0;
   const auto our_pawns = b.pieces(Pawn, Us);
 
   for (auto files = pawnp->passed_pawn_file(Us); files; reset_lsb(files))
@@ -397,16 +393,13 @@ Score Evaluate<Tuning>::eval_passed_pawns() const {
       const auto front_span = pawn_front_span[Us][sq];
       const auto r          = relative_rank(Us, sq);
       result += passed_pawn[r];
-
-      score_pos += passed_pawn_no_us[r] * (front_span & b.pieces(Us) ? 0 : 1);
-      score_pos += passed_pawn_no_them[r] * (front_span & b.pieces(Them) ? 0 : 1);
-      score_pos += passed_pawn_no_attacks[r] * (front_span & attacked_by<Them>(AllPieceTypes) ? 0 : 1);
-      score_pos += passed_pawn_king_dist_them[distance(sq, b.king_sq(Them))];
-      score_pos += passed_pawn_king_dist_us[distance(sq, b.king_sq(Us))];
+      result += passed_pawn_no_us[r] * (front_span & b.pieces(Us) ? 0 : 1);
+      result += passed_pawn_no_them[r] * (front_span & b.pieces(Them) ? 0 : 1);
+      result += passed_pawn_no_attacks[r] * (front_span & attacked_by<Them>(AllPieceTypes) ? 0 : 1);
+      result += passed_pawn_king_dist_them[distance(sq, b.king_sq(Them))];
+      result += passed_pawn_king_dist_us[distance(sq, b.king_sq(Us))];
     }
   }
-
-  result += Score(0, score_pos);
 
   return result;
 }

@@ -18,6 +18,10 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if defined(__unix__)
+#include <unistd.h>
+#endif
+
 #include <fcntl.h>
 #include <cstdlib>
 #include <cstring>
@@ -97,6 +101,10 @@ constexpr bool start_of_tag_value(const Token token) { return token == String; }
 
 struct PGNFile {
   PGNFile(const char *path, const int oflag, const int pmode) {
+#if defined(__unix__)
+    constexpr int O_BINARY = 0;
+#endif
+
     if ((fd = open(path, oflag | O_BINARY, pmode)) == -1)
     {
       fmt::print(stderr, "File::File: cannot open file");

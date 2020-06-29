@@ -31,7 +31,7 @@ uint64_t p(Game *g, const int depth, const int flags) {
   if (depth == 0)
     return 1;
 
-  g->pos->generate_moves(std::nullopt, MOVE_NONE, flags);
+  g->pos->generate_moves(nullptr, MOVE_NONE, flags);
 
   uint64_t nodes{};
 
