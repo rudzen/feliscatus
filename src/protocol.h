@@ -61,7 +61,7 @@ struct ProtocolListener {
   virtual ~ProtocolListener()                                            = default;
   virtual int new_game()                                                 = 0;
   virtual int set_fen(std::string_view fen)                              = 0;
-  virtual int go(const SearchLimits &limits)                             = 0;
+  virtual int go(SearchLimits *limits)                             = 0;
   virtual void ponder_hit()                                              = 0;
   virtual void stop()                                                    = 0;
   virtual bool set_option(std::string_view name, std::string_view value) = 0;
@@ -79,18 +79,6 @@ struct Protocol {
   virtual void post_curr_move(Move curr_move, int curr_move_number) = 0;
 
   virtual void post_pv(int depth, int max_ply, TimeUnit time, int hash_full, int score, const std::array<PVEntry, MAXDEPTH> &pv, int pv_length, int ply, NodeType node_type) = 0;
-
-  [[nodiscard]]
-  bool is_analysing() const noexcept { return limits.infinite | limits.ponder; }
-
-  [[nodiscard]]
-  bool is_fixed_time() const noexcept { return limits.fixed_movetime; }
-
-  [[nodiscard]]
-  bool is_fixed_depth() const noexcept { return limits.fixed_depth; }
-
-  [[nodiscard]]
-  int get_depth() const noexcept { return limits.depth; }
 
   SearchLimits limits{};
 

@@ -36,12 +36,12 @@
 
 struct Search final : MoveSorter {
   Search() = delete;
-  Search(Game *g, const std::size_t data_index) : game(g), board(g->pos->b), data_index_(data_index), data_(Pool[data_index].get()), verbosity(Pool.main()->protocol && data_index == 0) {
+  Search(Game *g, const std::size_t data_index) : game(g), board(g->board), data_index_(data_index), data_(Pool[data_index].get()), verbosity(Pool.main()->protocol && data_index == 0) {
     if (data_index != 0)
       stop_search.store(false);
   }
 
-  int go(const SearchLimits &limits, std::size_t num_workers);
+  int go(SearchLimits *limits);
 
   void stop();
 
@@ -94,7 +94,7 @@ private:
   [[nodiscard]]
   bool is_killer_move(Move m, const Position *p) const;
 
-  void init_search(const SearchLimits &limits);
+  void init_search(SearchLimits *limits);
 
   void sort_move(MoveData &move_data) override;
 
@@ -117,13 +117,8 @@ private:
   bool move_is_easy() const;
 
 public:
-  double n_{};
   int plies{};
   int max_ply{};
-  Stopwatch start_time{};
-  TimeUnit search_time{};
-  TimeUnit time_left{};
-  TimeUnit time_inc{};
   std::atomic_bool stop_search;
 
   static constexpr int MAXSCORE = 0x7fff;
@@ -138,7 +133,6 @@ private:
   Game *game;
   Board *board;
   Position *pos{};
-  std::size_t num_workers_{};
   std::size_t data_index_;
   Data* data_;
   bool verbosity{};
@@ -199,7 +193,7 @@ int Search::search(const int depth, int alpha, const int beta) {
     {
       ++move_count;
 
-      if (verbosity && plies == 1 && search_depth >= 20 && (search_time > 5000 || is_analysing()))
+      if (verbosity && plies == 1 && search_depth >= 20 && (Pool.time.search_time > 5000 || is_analysing()))
         Pool.main()->protocol->post_curr_move(move_data->move, move_count);
 
       if (PV && move_count == 1)
@@ -430,6 +424,6 @@ void Search::update_pv(const Move move, const int score, const int depth) {
     pos->pv_length = pv_len[0];
 
     if (verbosity)
-      Pool.main()->protocol->post_pv(search_depth, max_ply, start_time.elapsed_milliseconds() + 1, TT.get_load(), score, pv[plies], pv_len[plies], plies, NT);
+      Pool.main()->protocol->post_pv(search_depth, max_ply, Pool.time.start_time.elapsed_milliseconds() + 1, TT.get_load(), score, pv[plies], pv_len[plies], plies, NT);
   }
 }

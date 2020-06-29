@@ -27,6 +27,7 @@
 #include "types.h"
 #include "pawnhashtable.h"
 #include "pv_entry.h"
+#include "timemanager.h"
 
 struct Protocol;
 
@@ -67,6 +68,8 @@ struct DataPool : std::vector<std::unique_ptr<Data>> {
 
   [[nodiscard]]
   uint64_t node_count() const;
+
+  TimeManager time{};
 };
 
 // global data object

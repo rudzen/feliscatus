@@ -70,8 +70,7 @@ void get_hash_and_evaluate(Position *pos, Game* game, const std::size_t pool_ind
 
 }
 
-int Search::go(const SearchLimits &limits, const std::size_t num_workers) {
-  num_workers_ = num_workers;
+int Search::go(SearchLimits *limits) {
   init_search(limits);
 
   drawScore_[pos->side_to_move]  = 0;//-25;
@@ -126,8 +125,8 @@ int Search::go(const SearchLimits &limits, const std::size_t num_workers) {
 void Search::stop() { stop_search.store(true); }
 
 void Search::run() {
-  const SearchLimits limits{};
-  go(limits, 0);
+  SearchLimits limits{};
+  go(&limits);
 }
 
 bool Search::search_fail_low(const int depth, const int alpha, const Move exclude_move) {
@@ -211,19 +210,21 @@ void Search::check_sometimes() {
 }
 
 void Search::check_time() {
-  if (verbosity && (!is_analysing() && !Pool.main()->protocol->is_fixed_depth()))
-    stop_search.store(search_depth > 1 && start_time.elapsed_milliseconds() > search_time, std::memory_order_relaxed);
+  const auto stop = verbosity && (!is_analysing() && !Pool.time.is_fixed_depth()) && search_depth > 1 && Pool.time.start_time.elapsed_milliseconds() > Pool.time.search_time;
 
-  if (stop_search.load())
+  if (stop)
+  {
+    stop_search.store(true);
     throw 1;
+  }
 }
 
-int Search::is_analysing() const { return verbosity ? Pool.main()->protocol->is_analysing() : true; }
+int Search::is_analysing() const { return verbosity ? Pool.time.is_analysing() : true; }
 
 void Search::update_history_scores(const Move move, const int depth) const {
   auto &history_scores = data_->history_scores;
 
-  history_scores[move_piece(move)][move_to(move)] += depth * depth;
+  history_scores[move_piece(move)][move_to(move)] += (depth * depth);
 
   if (history_scores[move_piece(move)][move_to(move)] <= 2048)
     return;
@@ -251,37 +252,12 @@ bool Search::is_killer_move(const Move m, const Position *p) const {
   return std::find(km.cbegin(), km.cend(), m) != km.cend();
 }
 
-void Search::init_search(const SearchLimits &limits) {
+void Search::init_search(SearchLimits *limits) {
   pos                         = game->pos;// Updated in make_move and unmake_move from here on.
-  constexpr auto time_reserve = 72;
 
   if (verbosity)
   {
-    start_time.start();
-
-    if (Pool.main()->protocol->is_fixed_time())
-      search_time = 950 * limits.movetime / 1000;
-    else
-    {
-      auto moves_left = limits.movestogo > 30 ? 30 : limits.movestogo;
-
-      if (moves_left == 0)
-        moves_left = 30;
-
-      time_left = limits.time[pos->side_to_move];
-      time_inc  = limits.inc[pos->side_to_move];
-
-      if (time_inc == 0 && time_left < 1000)
-      {
-        search_time = time_left / (moves_left * 2);
-        n_          = 1;
-      } else
-      {
-        search_time = 2 * (time_left / (moves_left + 1) + time_inc);
-        n_          = 2.5;
-      }
-      search_time = std::max<TimeUnit>(0, std::min<int>(search_time, time_left - time_reserve));
-    }
+    Pool.time.init(pos->side_to_move, limits);
     TT.init_search();
     stop_search.store(false);
   }
@@ -361,9 +337,9 @@ bool Search::move_is_easy() const {
     return false;
 
   if ((pos->move_count() == 1 && search_depth > 9)
-      || (Pool.main()->protocol->is_fixed_depth() && Pool.main()->protocol->get_depth() == search_depth)
+      || (Pool.time.is_fixed_depth() && Pool.time.get_depth() == search_depth)
       || (data_->pv[0][0].score == MAXSCORE - 1))
     return true;
 
-  return !is_analysing() && !Pool.main()->protocol->is_fixed_depth() && search_time < start_time.elapsed_milliseconds() * n_;
+  return !is_analysing() && !Pool.time.is_fixed_depth() && Pool.time.search_time < Pool.time.start_time.elapsed_milliseconds() * Pool.time.n_;
 }

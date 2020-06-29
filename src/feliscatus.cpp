@@ -52,7 +52,7 @@ int Felis::new_game() {
 
 int Felis::set_fen(const std::string_view fen) { return game->new_game(fen); }
 
-int Felis::go(const SearchLimits &limits) {
+int Felis::go(SearchLimits *limits) {
   game->pos->pv_length = 0;
 
   go_search(limits);
@@ -66,7 +66,7 @@ int Felis::go(const SearchLimits &limits) {
   return 0;
 }
 
-void Felis::ponder_hit() { search->search_time += search->start_time.elapsed_milliseconds(); }
+void Felis::ponder_hit() { Pool.time.search_time += Pool.time.start_time.elapsed_milliseconds(); }
 
 void Felis::stop() { search->stop_search.store(true); }
 
@@ -75,9 +75,9 @@ bool Felis::make_move(const std::string_view m) const {
   return move ? game->make_move(*move, true, true) : false;
 }
 
-void Felis::go_search(const SearchLimits &limits) {
+void Felis::go_search(SearchLimits *limits) {
   start_workers();
-  search->go(limits, num_threads);
+  search->go(limits);
   stop_workers();
 }
 
@@ -197,7 +197,7 @@ int Felis::run(const int argc, char* argv[]) {
     {
       protocol->handle_go(input);
       stop_threads();
-      main_go = std::jthread(&Felis::go, this, protocol->limits);
+      main_go = std::jthread(&Felis::go, this, &protocol->limits);
     }
     else if (token == "perft")
     {
