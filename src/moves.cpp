@@ -58,7 +58,7 @@ bool is_castle_allowed(const Square to, const Color stm, const Board* b) {
 
 }
 
-void Moves::generate_moves(const std::optional<MoveSorter *> sorter, const Move tt_move, const int flags) {
+void Moves::generate_moves(MoveSorter *sorter, const Move tt_move, const int flags) {
   reset(sorter, tt_move, flags);
   max_stage_ = 3;
 
@@ -70,7 +70,7 @@ void Moves::generate_moves(const std::optional<MoveSorter *> sorter, const Move 
   generate_quiet_moves();
 }
 
-void Moves::generate_captures_and_promotions(const std::optional<MoveSorter *> sorter) {
+void Moves::generate_captures_and_promotions(MoveSorter *sorter) {
   reset(sorter, MOVE_NONE, QUEENPROMOTION | STAGES);
   max_stage_ = 2;
   stage_     = 1;
@@ -179,7 +179,7 @@ bool Moves::is_pseudo_legal(const Move m) const {
   return true;
 }
 
-void Moves::reset(const std::optional<MoveSorter *> sorter, const Move move, const int flags) {
+void Moves::reset(MoveSorter *sorter, const Move move, const int flags) {
   move_sorter_ = sorter;
   transp_move_ = move;
   move_flags_  = flags;
@@ -263,7 +263,7 @@ void Moves::add_move(const Piece piece, const Square from, const Square to, cons
   move_data  = move;
 
   if (move_sorter_)
-    move_sorter_.value()->sort_move(move_data);
+    move_sorter_->sort_move(move_data);
   else
     move_data.score = 0;
 }

@@ -22,7 +22,6 @@
 
 #include <array>
 #include <cstdint>
-#include <optional>
 
 #include "types.h"
 
@@ -45,9 +44,9 @@ struct MoveSorter {
 struct Board;
 
 struct Moves {
-  void generate_moves(std::optional<MoveSorter *> sorter = std::nullopt, Move tt_move = MOVE_NONE, int flags = 0);
+  void generate_moves(MoveSorter *sorter = nullptr, Move tt_move = MOVE_NONE, int flags = 0);
 
-  void generate_captures_and_promotions(std::optional<MoveSorter *> sorter);
+  void generate_captures_and_promotions(MoveSorter *sorter);
 
   void generate_moves(PieceType pt, Bitboard to_squares);
 
@@ -73,7 +72,7 @@ struct Moves {
   Square en_passant_square{};
 
 private:
-  void reset(std::optional<MoveSorter *> sorter, Move move, int flags);
+  void reset(MoveSorter *sorter, Move move, int flags);
 
   void generate_hash_move();
 
@@ -112,7 +111,7 @@ private:
   int max_stage_{};
   int number_moves_{};
   Bitboard pinned_{};
-  std::optional<MoveSorter *> move_sorter_;
+  MoveSorter *move_sorter_;
   Move transp_move_{};
   int move_flags_{};
 };
