@@ -26,6 +26,27 @@
 #include "bitboard.h"
 #include "types.h"
 
+namespace {
+
+template<Direction Step>
+constexpr void init_between_bitboards(const Square from) {
+  auto bb      = shift_bb<Step>(bit(from));
+  auto to      = from + Step;
+  auto between = ZeroBB;
+
+  while (bb)
+  {
+    if (from >= sq_nb || to >= sq_nb)
+      continue;
+
+    between_bb[from][to] = between;
+    between |= bb;
+    bb = shift_bb<Step>(bb);
+    to += Step;
+  }
+}
+}// namespace
+
 std::string bitboard::print_bitboard(Bitboard b, std::string_view title) {
 
   fmt::memory_buffer buffer;
@@ -47,4 +68,36 @@ std::string bitboard::print_bitboard(Bitboard b, std::string_view title) {
   fmt::format_to(buffer, "  a   b   c   d   e   f   g   h\n");
 
   return fmt::to_string(buffer);
+}
+
+void bitboard::init() {
+  std::array<std::array<Bitboard, sq_nb>, COL_NB> pawn_east_attack_span{};
+  std::array<std::array<Bitboard, sq_nb>, COL_NB> pawn_west_attack_span{};
+
+  for (const auto sq : Squares)
+  {
+    const auto bbsq = square_bb[sq];
+
+    pawn_front_span[WHITE][sq]        = north_fill(shift_bb<NORTH     >(bbsq));
+    pawn_front_span[BLACK][sq]        = south_fill(shift_bb<SOUTH     >(bbsq));
+    pawn_east_attack_span[WHITE][sq]  = north_fill(shift_bb<NORTH_WEST>(bbsq));
+    pawn_east_attack_span[BLACK][sq]  = south_fill(shift_bb<SOUTH_EAST>(bbsq));
+    pawn_west_attack_span[WHITE][sq]  = north_fill(shift_bb<NORTH_WEST>(bbsq));
+    pawn_west_attack_span[BLACK][sq]  = south_fill(shift_bb<WEST      >(bbsq));
+    passed_pawn_front_span[WHITE][sq] = pawn_east_attack_span[WHITE][sq] | pawn_front_span[WHITE][sq] | pawn_west_attack_span[WHITE][sq];
+    passed_pawn_front_span[BLACK][sq] = pawn_east_attack_span[BLACK][sq] | pawn_front_span[BLACK][sq] | pawn_west_attack_span[BLACK][sq];
+
+    std::fill(std::begin(between_bb[sq]), std::end(between_bb[sq]), 0);
+    init_between_bitboards<NORTH     >(sq);
+    init_between_bitboards<NORTH_EAST>(sq);
+    init_between_bitboards<EAST      >(sq);
+    init_between_bitboards<SOUTH_EAST>(sq);
+    init_between_bitboards<SOUTH     >(sq);
+    init_between_bitboards<SOUTH_WEST>(sq);
+    init_between_bitboards<WEST      >(sq);
+    init_between_bitboards<NORTH_WEST>(sq);
+
+    pawn_captures[WHITE][sq] = shift_bb<NORTH_EAST>(bbsq) | shift_bb<NORTH_WEST>(bbsq);
+    pawn_captures[BLACK][sq] = shift_bb<SOUTH_EAST>(bbsq) | shift_bb<SOUTH_WEST>(bbsq);
+  }
 }

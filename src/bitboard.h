@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <cstdint>
 #include <bit>
 #include <algorithm>
@@ -31,6 +32,9 @@
 namespace bitboard {
 
 std::string print_bitboard(Bitboard b, std::string_view title);
+void init();
+
+}// namespace bitboard
 
 constexpr static Bitboard AllSquares  = ~Bitboard(0);
 constexpr static Bitboard DarkSquares = 0xAA55AA55AA55AA55ULL;
@@ -255,37 +259,27 @@ constexpr Bitboard &operator^=(Bitboard &b, const Rank r) noexcept {
   return b ^= RankBB[r];
 }
 
+template<Direction D>
+constexpr Bitboard shift_bb(const Bitboard bb)
+{
+  if constexpr (D == NORTH)
+    return bb << 8;
+  else if constexpr (D == SOUTH)
+    return bb >> 8;
+  else if constexpr (D == EAST)
+    return (bb & ~FileHBB) << 1;
+  else if constexpr (D == WEST)
+    return (bb & ~FileABB) >> 1;
+  else if constexpr (D == NORTH_EAST)
+    return (bb & ~FileHBB) << 9;
+  else if constexpr (D == SOUTH_EAST)
+    return (bb & ~FileHBB) >> 7;
+  else if constexpr (D == SOUTH_WEST)
+    return (bb & ~FileABB) >> 9;
+  else if constexpr (D == NORTH_WEST)
+    return (bb & ~FileABB) << 7;
 
-constexpr Bitboard north_one(const Bitboard bb) {
-  return bb << 8;
-}
-
-constexpr Bitboard south_one(const Bitboard bb) {
-  return bb >> 8;
-}
-
-constexpr Bitboard east_one(const Bitboard bb) {
-  return (bb & ~FileHBB) << 1;
-}
-
-constexpr Bitboard west_one(const Bitboard bb) {
-  return (bb & ~FileABB) >> 1;
-}
-
-constexpr Bitboard north_east_one(const Bitboard bb) {
-  return (bb & ~FileHBB) << 9;
-}
-
-constexpr Bitboard south_east_one(const Bitboard bb) {
-  return (bb & ~FileHBB) >> 7;
-}
-
-constexpr Bitboard south_west_one(const Bitboard bb) {
-  return (bb & ~FileABB) >> 9;
-}
-
-constexpr Bitboard north_west_one(const Bitboard bb) {
-  return (bb & ~FileABB) << 7;
+  assert(false);
 }
 
 constexpr Bitboard north_fill(const Bitboard bb) {
@@ -303,72 +297,11 @@ constexpr Bitboard south_fill(const Bitboard bb) {
   fill |= (fill >> 32);
   return fill;
 }
+constexpr Bitboard (*pawn_east_attacks[COL_NB])(Bitboard) = {shift_bb<NORTH_WEST>, shift_bb<SOUTH_WEST>};
+constexpr Bitboard (*pawn_west_attacks[COL_NB])(Bitboard) = {shift_bb<NORTH_EAST>, shift_bb<SOUTH_EAST>};
+constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard) = {north_fill, south_fill};
 
-constexpr void init_between_bitboards(const Square from, Bitboard (*step_func)(Bitboard), const Direction step) {
-  auto bb      = step_func(bit(from));
-  auto to      = from + step;
-  auto between = ZeroBB;
-
-  while (bb)
-  {
-    if (from >= sq_nb || to >= sq_nb)
-      continue;
-
-    between_bb[from][to] = between;
-    between |= bb;
-    bb = step_func(bb);
-    to += step;
-  }
-}
-
-constexpr void init() {
-  std::array<std::array<Bitboard, sq_nb>, COL_NB> pawn_east_attack_span{};
-  std::array<std::array<Bitboard, sq_nb>, COL_NB> pawn_west_attack_span{};
-
-  for (const auto sq : Squares)
-  {
-    const auto bbsq = square_bb[sq];
-
-    pawn_front_span[WHITE][sq]        = north_fill(north_one(bbsq));
-    pawn_front_span[BLACK][sq]        = south_fill(south_one(bbsq));
-    pawn_east_attack_span[WHITE][sq]  = north_fill(north_east_one(bbsq));
-    pawn_east_attack_span[BLACK][sq]  = south_fill(south_east_one(bbsq));
-    pawn_west_attack_span[WHITE][sq]  = north_fill(north_west_one(bbsq));
-    pawn_west_attack_span[BLACK][sq]  = south_fill(south_west_one(bbsq));
-    passed_pawn_front_span[WHITE][sq] = pawn_east_attack_span[WHITE][sq] | pawn_front_span[WHITE][sq] | pawn_west_attack_span[WHITE][sq];
-    passed_pawn_front_span[BLACK][sq] = pawn_east_attack_span[BLACK][sq] | pawn_front_span[BLACK][sq] | pawn_west_attack_span[BLACK][sq];
-
-    std::fill(std::begin(between_bb[sq]), std::end(between_bb[sq]), 0);
-
-    init_between_bitboards(sq, north_one, NORTH);
-    init_between_bitboards(sq, north_east_one, NORTH_EAST);
-    init_between_bitboards(sq, east_one, EAST);
-    init_between_bitboards(sq, south_east_one, SOUTH_EAST);
-    init_between_bitboards(sq, south_one, SOUTH);
-    init_between_bitboards(sq, south_west_one, SOUTH_WEST);
-    init_between_bitboards(sq, west_one, WEST);
-    init_between_bitboards(sq, north_west_one, NORTH_WEST);
-
-    pawn_captures[WHITE][sq] = north_east_one(bbsq) | north_west_one(bbsq);
-    pawn_captures[BLACK][sq] = south_east_one(bbsq) | south_west_one(bbsq);
-  }
-}
-
-constexpr Bitboard (*pawn_push_shift[COL_NB])(Bitboard)   = {north_one, south_one};
-constexpr Bitboard (*pawn_east_attacks[COL_NB])(Bitboard) = {north_west_one, south_west_one};
-constexpr Bitboard (*pawn_west_attacks[COL_NB])(Bitboard) = {north_east_one, south_east_one};
-constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard)         = {north_fill, south_fill};
-
-constexpr Bitboard pawn_push(const Color c, const Bitboard bb) { return pawn_push_shift[c](bb); }
-
-template<Direction D>
-constexpr Bitboard pawn_push(const Bitboard bb) {
-  static_assert(D != NORTH || D != SOUTH);
-  if constexpr (D == NORTH)
-    return north_one(bb);
-  else
-    return south_one(bb);
-}
+constexpr Bitboard pawn_push(const Color c, const Bitboard bb) { return c == WHITE ? shift_bb<NORTH>(bb) : shift_bb<SOUTH>(bb); }
 
 constexpr void reset_lsb(Bitboard &x) {
   x &= (x - 1);
@@ -395,7 +328,3 @@ constexpr bool is_opposite_colors(const Square s1, const Square s2) {
 constexpr int color_of(const Square square) {
   return static_cast<int>((DarkSquares >> square) & 1);
 }
-
-}// namespace bitboard
-
-using namespace bitboard;

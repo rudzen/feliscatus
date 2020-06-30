@@ -158,11 +158,11 @@ bool Board::is_passed_pawn_move(const Move m) const {
 
 bool Board::is_pawn_isolated(const Square sq, const Color side) const {
   const auto f               = bb_file(file_of(sq));
-  const auto neighbour_files = east_one(f) | west_one(f);
+  const auto neighbour_files = shift_bb<WEST>(f) | shift_bb<EAST>(f);
   return (pieces(Pawn, side) & neighbour_files) == 0;
 }
 
 bool Board::is_pawn_behind(const Square sq, const Color side) const {
   const auto bbsq = bit(sq);
-  return (pieces(Pawn, side) & pawn_fill[~side](west_one(bbsq) | east_one(bbsq))) == 0;
+  return (pieces(Pawn, side) & pawn_fill[~side](shift_bb<WEST>(bbsq) | shift_bb<EAST>(bbsq))) == 0;
 }

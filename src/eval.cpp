@@ -359,15 +359,17 @@ Score Evaluate<Tuning>::eval_pawns() {
 template<bool Tuning>
 template<Color Us>
 Score Evaluate<Tuning>::eval_king() {
-  constexpr Direction Up = Us == WHITE ? NORTH : SOUTH;
-  const auto sq          = b.king_sq(Us);
-  const auto bbsq        = bit(sq);
-  const auto flipsq      = relative_square(~Us, sq);
-  auto result            = king_pst[flipsq];
+  constexpr auto Up        = Us == WHITE ? NORTH : SOUTH;
+  constexpr auto NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
+  constexpr auto NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
+  const auto sq            = b.king_sq(Us);
+  const auto bbsq          = bit(sq);
+  const auto flipsq        = relative_square(~Us, sq);
+  auto result              = king_pst[flipsq];
 
-  result += king_pawn_shelter[std::popcount((pawn_push<Up>(bbsq) | pawn_west_attacks[Us](bbsq) | pawn_east_attacks[Us](bbsq)) & b.pieces(Pawn, Us))];
+  result += king_pawn_shelter[std::popcount((shift_bb<Up>(bbsq) | shift_bb<NorthEast>(bbsq) | shift_bb<NorthWest>(bbsq)) & b.pieces(Pawn, Us))];
 
-  const auto east_west = bbsq | west_one(bbsq) | east_one(bbsq);
+  const auto east_west = bbsq | shift_bb<WEST>(bbsq) | shift_bb<EAST>(bbsq);
 
   result += king_on_open[std::popcount(open_files & east_west)];
   result += king_on_half_open[std::popcount(half_open_files[Us] & east_west)];
@@ -416,21 +418,23 @@ template<bool Tuning>
 template<Color Us>
 void Evaluate<Tuning>::init_evaluate() {
 
-  constexpr auto Them    = ~Us;
-  pos->flags             = 0;
-  posistion_value[Us]    = 0;
-  attack_count[Us]       = 0;
-  attack_counter[Us]     = 0;
-  const auto ksq         = b.king_sq(Us);
-  const auto attacks     = king_attacks[ksq];
-  const auto our_pawns   = b.pieces(Pawn, Us);
-  const auto their_pawns = b.pieces(Pawn, Them);
-  open_files             = ~(pawn_fill[Us](pawn_fill[Them](our_pawns)) | pawn_fill[Us](pawn_fill[Them](their_pawns)));
-  half_open_files[Us]    = ~north_fill(south_fill(our_pawns)) & ~open_files;
+  constexpr auto Them      = ~Us;
+  constexpr auto NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
+  constexpr auto NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
+  pos->flags               = 0;
+  posistion_value[Us]      = 0;
+  attack_count[Us]         = 0;
+  attack_counter[Us]       = 0;
+  const auto ksq           = b.king_sq(Us);
+  const auto attacks       = king_attacks[ksq];
+  const auto our_pawns     = b.pieces(Pawn, Us);
+  const auto their_pawns   = b.pieces(Pawn, Them);
+  open_files               = ~(pawn_fill[Us](pawn_fill[Them](our_pawns)) | pawn_fill[Us](pawn_fill[Them](their_pawns)));
+  half_open_files[Us]      = ~north_fill(south_fill(our_pawns)) & ~open_files;
 
   poseval.fill(ZeroScor);
 
-  set_attacks<Pawn, Us>(pawn_east_attacks[Us](our_pawns) | pawn_west_attacks[Us](our_pawns));
+  set_attacks<Pawn, Us>(shift_bb<NorthEast>(our_pawns) | shift_bb<NorthWest>(our_pawns));
   set_attacks<King, Us>(attacks);
   king_area[Us] = attacks | ksq;
 }
