@@ -43,12 +43,12 @@ int Felis::new_game() {
   return game->new_game(Game::kStartPosition.data());
 }
 
-int Felis::set_fen(const std::string_view fen) { return game->new_game(fen); }
-
 int Felis::go() {
   game->pos->pv_length = 0;
 
-  go_search(Pool.limits);
+  start_workers();
+  search->go(Pool.limits);
+  stop_workers();
 
   if (game->pos->pv_length)
   {
@@ -60,18 +60,7 @@ int Felis::go() {
   return 0;
 }
 
-void Felis::stop() { search->stop_search.store(true); }
-
-bool Felis::make_move(const std::string_view m) const {
-  const auto *const move = game->pos->string_to_move(m);
-  return move ? game->make_move(*move, true, true) : false;
-}
-
-void Felis::go_search(SearchLimits &limits) {
-  start_workers();
-  search->go(limits);
-  stop_workers();
-}
+void Felis::stop() const { search->stop_search.store(true); }
 
 void Felis::start_workers() {
   if (workers.empty())

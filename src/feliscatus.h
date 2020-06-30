@@ -34,15 +34,9 @@ struct Felis final {
 
   int new_game();
 
-  int set_fen(std::string_view fen);
-
   int go();
 
-  void stop();
-
-  bool make_move(std::string_view m) const;
-
-  void go_search(SearchLimits &limits);
+  void stop() const;
 
   void start_workers();
 
