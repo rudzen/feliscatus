@@ -18,16 +18,18 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <iostream>
-#include <string>
+#include <fmt/format.h>
 
 #include "uci.h"
 #include "util.h"
 #include "game.h"
 #include "position.h"
 #include "search.h"
+#include "feliscatus.h"
 
 namespace {
+
+constexpr auto FenPieceNames = std::array<char, 16> {"PNBRQK  pnbrqk "};
 
 constexpr uint64_t nps(const uint64_t nodes, const TimeUnit time) {
   return nodes * 1000 / time;
@@ -40,9 +42,7 @@ auto node_info(const TimeUnit time) {
 
 }
 
-UCIProtocol::UCIProtocol(ProtocolListener *cb, Game *g) : Protocol(cb, g) {}
-
-void UCIProtocol::post_moves(const Move bestmove, const Move pondermove) {
+void uci::post_moves(const Move bestmove, const Move pondermove) {
   fmt::memory_buffer buffer;
 
   fmt::format_to(buffer, "bestmove {}", display_uci(bestmove));
@@ -53,16 +53,16 @@ void UCIProtocol::post_moves(const Move bestmove, const Move pondermove) {
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-void UCIProtocol::post_info(const int d, const int selective_depth, const TimeUnit time, const int hash_full) {
+void uci::post_info(const int d, const int selective_depth, const TimeUnit time, const int hash_full) {
   const auto [node_count, nodes_per_second] = node_info(time);
   fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, hash_full, node_count, nodes_per_second, time);
 }
 
-void UCIProtocol::post_curr_move(const Move curr_move, const int curr_move_number) {
+void uci::post_curr_move(const Move curr_move, const int curr_move_number) {
   fmt::print("info currmove {} currmovenumber {}\n", display_uci(curr_move), curr_move_number);
 }
 
-void UCIProtocol::post_pv(const int d, const int max_ply, const TimeUnit time, const int hash_full, const int score, const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length, const int ply, const NodeType node_type) {
+void uci::post_pv(const int d, const int max_ply, const TimeUnit time, const int hash_full, const int score, const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length, const int ply, const NodeType node_type) {
 
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
@@ -82,7 +82,7 @@ void UCIProtocol::post_pv(const int d, const int max_ply, const TimeUnit time, c
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-int UCIProtocol::handle_go(std::istringstream &input) {
+int uci::handle_go(std::istringstream &input, SearchLimits &limits) {
 
   limits.clear();
 
@@ -111,7 +111,7 @@ int UCIProtocol::handle_go(std::istringstream &input) {
   return 0;
 }
 
-void UCIProtocol::handle_position(std::istringstream &input) const {
+void uci::handle_position(Game *g, std::istringstream &input) {
 
   std::string token;
 
@@ -119,7 +119,7 @@ void UCIProtocol::handle_position(std::istringstream &input) const {
 
   if (token == "startpos")
   {
-    game->set_fen(Game::kStartPosition);
+    g->set_fen(Game::kStartPosition);
 
     // get rid of "moves" token
     input >> token;
@@ -128,21 +128,21 @@ void UCIProtocol::handle_position(std::istringstream &input) const {
     std::string fen;
     while (input >> token && token != "moves")
       fen += token + ' ';
-    game->set_fen(fen);
+    g->set_fen(fen);
   } else
     return;
 
   // parse any moves if they exist
   while (input >> token)
   {
-    const auto *const m = game->pos->string_to_move(token);
+    const auto *const m = g->pos->string_to_move(token);
       if (!m || *m == MOVE_NONE)
           break;
-      game->make_move(*m, false, true);
+      g->make_move(*m, false, true);
   }
 }
 
-bool UCIProtocol::handle_set_option(std::istringstream &input) const {
+bool uci::handle_set_option(std::istringstream &input, Felis *felis) {
 
   std::string token, option_name, option_value;
 
@@ -160,7 +160,18 @@ bool UCIProtocol::handle_set_option(std::istringstream &input) const {
   auto valid_option = !option_name.empty() || !option_value.empty();
 
   if (valid_option)
-    valid_option = callback->set_option(option_name, option_value);
+    valid_option = felis->set_option(option_name, option_value);
 
   return valid_option;
+}
+
+std::string uci::display_uci(const Move m) {
+
+  if (m == MOVE_NONE)
+    return "0000";
+
+  // append piece promotion if the move is a promotion.
+  return !is_promotion(m)
+       ? fmt::format("{}{}", move_from(m), move_to(m))
+       : fmt::format("{}{}{}", move_from(m), move_to(m), FenPieceNames[type_of(move_promoted(m))]);
 }

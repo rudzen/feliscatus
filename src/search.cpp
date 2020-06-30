@@ -70,7 +70,7 @@ void get_hash_and_evaluate(Position *pos, Game* game, const std::size_t pool_ind
 
 }
 
-int Search::go(SearchLimits *limits) {
+int Search::go(SearchLimits &limits) {
   init_search(limits);
 
   drawScore_[pos->side_to_move]  = 0;//-25;
@@ -126,7 +126,7 @@ void Search::stop() { stop_search.store(true); }
 
 void Search::run() {
   SearchLimits limits{};
-  go(&limits);
+  go(limits);
 }
 
 bool Search::search_fail_low(const int depth, const int alpha, const Move exclude_move) {
@@ -176,7 +176,7 @@ int Search::next_depth_pv(const Move singular_move, const int depth, const MoveD
   if (m == singular_move)
     return depth;
 
-  if ((pos->in_check || board->is_passed_pawn_move(m)) && board->see_last_move(m) >= 0)
+  if ((pos->in_check || board.is_passed_pawn_move(m)) && board.see_last_move(m) >= 0)
     return depth;
   return depth - 1;
 }
@@ -252,7 +252,7 @@ bool Search::is_killer_move(const Move m, const Position *p) const {
   return std::find(km.cbegin(), km.cend(), m) != km.cend();
 }
 
-void Search::init_search(SearchLimits *limits) {
+void Search::init_search(SearchLimits &limits) {
   pos                         = game->pos;// Updated in make_move and unmake_move from here on.
 
   if (verbosity)
@@ -287,7 +287,7 @@ void Search::sort_move(MoveData &move_data) {
 
     if (value_piece <= value_captured)
       move_data.score = 300000 + value_captured * 20 - value_piece;
-    else if (board->see_move(m) >= 0)
+    else if (board.see_move(m) >= 0)
       move_data.score = 160000 + value_captured * 20 - value_piece;
     else
       move_data.score = -100000 + value_captured * 20 - value_piece;

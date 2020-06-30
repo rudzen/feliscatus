@@ -20,26 +20,69 @@
 
 #pragma once
 
-#include <fmt/format.h>
-
+#include <array>
+#include <iostream>
+#include <string>
+#include "miscellaneous.h"
+#include "types.h"
+#include "pv_entry.h"
 #include "protocol.h"
 
-class Game;
+struct Felis;
+struct Game;
 
-struct UCIProtocol final : Protocol {
-  UCIProtocol(ProtocolListener *cb, Game *g);
+namespace uci {
 
-  void post_moves(Move bestmove, Move pondermove) override;
+  void post_moves(Move bestmove, Move pondermove);
 
-  void post_info(int d, int selective_depth, TimeUnit time, int hash_full) override;
+  void post_info(int d, int selective_depth, TimeUnit time, int hash_full);
 
-  void post_curr_move(Move curr_move, int curr_move_number) override;
+  void post_curr_move(Move curr_move, int curr_move_number);
 
-  void post_pv(int d, int max_ply, TimeUnit time, int hash_full, int score, const std::array<PVEntry, MAXDEPTH> &pv, int pv_length, int ply, NodeType node_type) override;
+  void post_pv(int d, int max_ply, TimeUnit time, int hash_full, int score, const std::array<PVEntry, MAXDEPTH> &pv, int pv_length, int ply, NodeType node_type);
 
-  int handle_go(std::istringstream& input);
+  int handle_go(std::istringstream& input, SearchLimits &limits);
 
-  void handle_position(std::istringstream& input) const;
+  void handle_position(Game *g, std::istringstream& input);
 
-  bool handle_set_option(std::istringstream& input) const;
+  bool handle_set_option(std::istringstream& input, Felis *felis);
+
+  std::string display_uci(const Move m);
+
+}
+
+///
+/// Move formatter
+///
+template<>
+struct fmt::formatter<Move> : formatter<std::string_view> {
+  // parse is inherited from formatter<string_view>.
+  template<typename FormatContext>
+  auto format(const Move c, FormatContext &ctx) {
+    return formatter<std::string_view>::format(uci::display_uci(c), ctx);
+  }
+};
+
+///
+/// Square formatter
+///
+template<>
+struct fmt::formatter<Square> : formatter<std::string_view> {
+  // parse is inherited from formatter<string_view>.
+  template<typename FormatContext>
+  auto format(const Square sq, FormatContext &ctx) {
+    return formatter<std::string_view>::format(SquareString[sq], ctx);
+  }
+};
+
+///
+/// File formatter
+///
+template<>
+struct fmt::formatter<File> : formatter<std::string_view> {
+  // parse is inherited from formatter<string_view>.
+  template<typename FormatContext>
+  auto format(const File f, FormatContext &ctx) {
+    return formatter<std::string_view>::format('a' + static_cast<char>(f), ctx);
+  }
 };

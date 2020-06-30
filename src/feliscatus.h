@@ -36,7 +36,7 @@ struct Felis final : public ProtocolListener {
 
   int set_fen(std::string_view fen) override;
 
-  int go(SearchLimits *limits) override;
+  int go() override;
 
   void ponder_hit() override;
 
@@ -44,7 +44,7 @@ struct Felis final : public ProtocolListener {
 
   bool make_move(std::string_view m) const;
 
-  void go_search(SearchLimits *limits);
+  void go_search(SearchLimits &limits);
 
   void start_workers();
 
@@ -57,7 +57,6 @@ struct Felis final : public ProtocolListener {
 private:
   std::unique_ptr<Game> game;
   std::unique_ptr<Search> search;
-  std::unique_ptr<UCIProtocol> protocol;
   std::vector<Worker> workers{};
   uint64_t num_threads;
 };

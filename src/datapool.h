@@ -28,6 +28,7 @@
 #include "pawnhashtable.h"
 #include "pv_entry.h"
 #include "timemanager.h"
+#include "protocol.h"
 
 struct Protocol;
 
@@ -53,13 +54,11 @@ private:
 struct MainData : Data {
 
   using Data::Data;
-
-  Protocol *protocol;
 };
 
 struct DataPool : std::vector<std::unique_ptr<Data>> {
 
-  void set(std::size_t v, Protocol *protocol);
+  void set(std::size_t v);
 
   [[nodiscard]]
   MainData *main() const { return static_cast<MainData *>(front().get()); }
@@ -70,6 +69,8 @@ struct DataPool : std::vector<std::unique_ptr<Data>> {
   uint64_t node_count() const;
 
   TimeManager time{};
+
+  SearchLimits limits{};
 };
 
 // global data object

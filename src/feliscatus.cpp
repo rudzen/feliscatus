@@ -52,15 +52,15 @@ int Felis::new_game() {
 
 int Felis::set_fen(const std::string_view fen) { return game->new_game(fen); }
 
-int Felis::go(SearchLimits *limits) {
+int Felis::go() {
   game->pos->pv_length = 0;
 
-  go_search(limits);
+  go_search(Pool.limits);
 
   if (game->pos->pv_length)
   {
     auto &pv = Pool.main()->pv;
-    protocol->post_moves(pv[0][0].move, game->pos->pv_length > 1 ? pv[0][1].move : MOVE_NONE);
+    uci::post_moves(pv[0][0].move, game->pos->pv_length > 1 ? pv[0][1].move : MOVE_NONE);
     game->make_move(pv[0][0].move, true, true);
   }
   return 0;
@@ -75,7 +75,7 @@ bool Felis::make_move(const std::string_view m) const {
   return move ? game->make_move(*move, true, true) : false;
 }
 
-void Felis::go_search(SearchLimits *limits) {
+void Felis::go_search(SearchLimits &limits) {
   start_workers();
   search->go(limits);
   stop_workers();
@@ -108,7 +108,7 @@ bool Felis::set_option(const std::string_view name, const std::string_view value
     constexpr std::size_t max = 64;
     const auto val     = util::to_integral<std::size_t>(value);
     num_threads = std::clamp(val, min, max);
-    Pool.set(num_threads, protocol.get());
+    Pool.set(num_threads);
     workers.resize(num_threads - 1);
     workers.shrink_to_fit();
     fmt::print("info string Threads:{}\n", num_threads);
@@ -121,7 +121,7 @@ bool Felis::set_option(const std::string_view name, const std::string_view value
     game->chess960 = game->xfen = value == "true";
     fmt::print("info string UCI_Chess960_Arena:{}\n", on_off[game->chess960]);
   } else if (name == "ponder")
-    protocol->limits.ponder = value == "true";
+    Pool.time.limits.ponder = value == "true";
   else
   {
     fmt::print("Unknown option. {}={}\n", name, value);
@@ -135,8 +135,7 @@ int Felis::run(const int argc, char* argv[]) {
   setbuf(stdout, nullptr);
 
   game     = std::make_unique<Game>();
-  protocol = std::make_unique<UCIProtocol>(this, game.get());
-  Pool.set(1, protocol.get());
+  Pool.set(1);
   search   = std::make_unique<Search>(game.get(), 0);
 
   new_game();
@@ -190,14 +189,14 @@ int Felis::run(const int argc, char* argv[]) {
       new_game();
       fmt::print("readyok\n");
     } else if (token == "setoption")
-      protocol->handle_set_option(input);
+      uci::handle_set_option(input, this);
     else if (token == "position")
-      protocol->handle_position(input);
+      uci::handle_position(game.get(), input);
     else if (token == "go")
     {
-      protocol->handle_go(input);
+      uci::handle_go(input, Pool.limits);
       stop_threads();
-      main_go = std::jthread(&Felis::go, this, &protocol->limits);
+      main_go = std::jthread(&Felis::go, this);
     }
     else if (token == "perft")
     {

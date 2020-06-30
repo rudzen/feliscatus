@@ -35,8 +35,6 @@ enum Move : uint32_t;
 class Game;
 struct PVEntry;
 
-constexpr auto static FenPieceNames = std::array<char, 16> {"PNBRQK  pnbrqk "};
-
 struct SearchLimits {
   std::array<TimeUnit, COL_NB> time{};
   std::array<TimeUnit, COL_NB> inc{};
@@ -61,75 +59,8 @@ struct ProtocolListener {
   virtual ~ProtocolListener()                                            = default;
   virtual int new_game()                                                 = 0;
   virtual int set_fen(std::string_view fen)                              = 0;
-  virtual int go(SearchLimits *limits)                             = 0;
+  virtual int go()                             = 0;
   virtual void ponder_hit()                                              = 0;
   virtual void stop()                                                    = 0;
   virtual bool set_option(std::string_view name, std::string_view value) = 0;
-};
-
-struct Protocol {
-  Protocol(ProtocolListener *cb, Game *g) : callback(cb), game(g) {}
-
-  virtual ~Protocol() = default;
-
-  virtual void post_moves(Move bestmove, Move pondermove)         = 0;
-
-  virtual void post_info(int depth, int selective_depth, TimeUnit time, int hash_full) = 0;
-
-  virtual void post_curr_move(Move curr_move, int curr_move_number) = 0;
-
-  virtual void post_pv(int depth, int max_ply, TimeUnit time, int hash_full, int score, const std::array<PVEntry, MAXDEPTH> &pv, int pv_length, int ply, NodeType node_type) = 0;
-
-  SearchLimits limits{};
-
-protected:
-  ProtocolListener *callback;
-  Game *game;
-};
-
-inline std::string display_uci(const Move m) {
-
-  if (m == MOVE_NONE)
-    return "0000";
-
-  // append piece promotion if the move is a promotion.
-  return !is_promotion(m)
-       ? fmt::format("{}{}", move_from(m), move_to(m))
-       : fmt::format("{}{}{}", move_from(m), move_to(m), FenPieceNames[type_of(move_promoted(m))]);
-}
-
-///
-/// Move formatter
-///
-template<>
-struct fmt::formatter<Move> : formatter<std::string_view> {
-  // parse is inherited from formatter<string_view>.
-  template<typename FormatContext>
-  auto format(const Move c, FormatContext &ctx) {
-    return formatter<std::string_view>::format(display_uci(c), ctx);
-  }
-};
-
-///
-/// Square formatter
-///
-template<>
-struct fmt::formatter<Square> : formatter<std::string_view> {
-  // parse is inherited from formatter<string_view>.
-  template<typename FormatContext>
-  auto format(const Square sq, FormatContext &ctx) {
-    return formatter<std::string_view>::format(SquareString[sq], ctx);
-  }
-};
-
-///
-/// File formatter
-///
-template<>
-struct fmt::formatter<File> : formatter<std::string_view> {
-  // parse is inherited from formatter<string_view>.
-  template<typename FormatContext>
-  auto format(const File f, FormatContext &ctx) {
-    return formatter<std::string_view>::format('a' + static_cast<char>(f), ctx);
-  }
 };

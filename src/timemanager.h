@@ -29,40 +29,40 @@
 
 struct TimeManager final {
 
-  void init(Color side_to_move, SearchLimits *limits);
+  void init(Color side_to_move, SearchLimits &limits);
 
   [[nodiscard]]
-  bool is_analysing() const noexcept { return search_limits->infinite | search_limits->ponder; }
+  bool is_analysing() const noexcept { return limits.infinite | limits.ponder; }
 
   [[nodiscard]]
-  bool is_fixed_depth() const noexcept { return search_limits->fixed_depth; }
+  bool is_fixed_depth() const noexcept { return limits.fixed_depth; }
 
   [[nodiscard]]
-  int get_depth() const noexcept { return search_limits->depth; }
+  int get_depth() const noexcept { return limits.depth; }
 
   double n_{};
   Stopwatch start_time{};
   TimeUnit search_time{};
   TimeUnit time_left{};
   TimeUnit time_inc{};
-  SearchLimits *search_limits;
+  SearchLimits limits{};
 };
 
-inline void TimeManager::init(const Color side_to_move, SearchLimits *limits) {
+inline void TimeManager::init(const Color side_to_move, SearchLimits &search_limits) {
   constexpr auto time_reserve = 72;
 
-  search_limits = limits;
+  limits = search_limits;
 
   start_time.start();
 
-  if (limits->fixed_movetime)
-    search_time = 950 * limits->movetime / 1000;
+  if (limits.fixed_movetime)
+    search_time = 950 * limits.movetime / 1000;
   else
   {
-    auto moves_left = util::in_between<1, 30>(limits->movestogo) ? limits->movestogo : 30;
+    auto moves_left = util::in_between<1, 30>(limits.movestogo) ? limits.movestogo : 30;
 
-    time_left = limits->time[side_to_move];
-    time_inc  = limits->inc[side_to_move];
+    time_left = limits.time[side_to_move];
+    time_inc  = limits.inc[side_to_move];
 
     if (time_inc == 0 && time_left < 1000)
     {
