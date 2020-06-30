@@ -57,7 +57,6 @@ int main(const int argc, char **argv) {
   auto cli_parser_settings = cli::make_parser(argc, argv, title, ParserType::Tuner);
 
   TT.init(256);
-  Pool.set(1);
   
   squares::init();
   bitboard::init();

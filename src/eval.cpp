@@ -145,7 +145,8 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
   // finally add the remaining poseval scores
   result += poseval[WHITE] - poseval[BLACK];
 
-  posistion_value[pos->side_to_move] += tempo;
+  if (pos->side_to_move == WHITE)
+    posistion_value[WHITE] += tempo;
 
   const auto [stage_mg, stage_eg] = get_stages(pos->material);
   const auto pos_eval_mg          = static_cast<int>(result.mg() * stage_mg);

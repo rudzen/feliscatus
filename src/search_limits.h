@@ -20,41 +20,29 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
+#include <cstdint>
+#include <string_view>
+#include <array>
 
-#include "search_limits.h"
-#include "worker.h"
+#include "miscellaneous.h"
+#include "types.h"
 
-struct PawnHashTable;
-struct Search;
+struct SearchLimits {
+  std::array<TimeUnit, COL_NB> time{};
+  std::array<TimeUnit, COL_NB> inc{};
+  TimeUnit movetime{};
+  int movestogo{};
+  int depth{};
+  bool ponder{};
+  bool infinite{};
+  bool fixed_movetime{};
+  bool fixed_depth{};
 
-struct Felis final {
-  Felis();
-
-  int new_game();
-
-  int set_fen(std::string_view fen);
-
-  int go();
-
-  void stop();
-
-  bool make_move(std::string_view m) const;
-
-  void go_search(SearchLimits &limits);
-
-  void start_workers();
-
-  void stop_workers();
-
-  bool set_option(std::string_view name, std::string_view value);
-
-  int run(int argc, char* argv[]);
-
-private:
-  std::unique_ptr<Game> game;
-  std::unique_ptr<Search> search;
-  std::vector<Worker> workers{};
-  uint64_t num_threads;
+  void clear() {
+    time.fill(0);
+    inc.fill(0);
+    movetime          = 0;
+    movestogo = depth = 0;
+    ponder = infinite = fixed_movetime = fixed_depth = false;
+  }
 };

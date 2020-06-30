@@ -36,12 +36,12 @@
 
 struct Search final : MoveSorter {
   Search() = delete;
-  Search(const std::optional<Protocol *> p, Game *g, const std::size_t data_index) : lag_buffer(-1), protocol(p), game(g), board(g->pos->b), data_index_(data_index), data_(Pool[data_index].get()), verbosity(true) { }
-  Search(Game *g, const std::size_t data_index) : Search(std::nullopt, g, data_index) {
-    stop_search.store(false);
+  Search(Game *g, const std::size_t data_index) : game(g), board(g->board), data_index_(data_index), data_(Pool[data_index].get()), verbosity(data_index == 0) {
+    if (data_index != 0)
+      stop_search.store(false);
   }
 
-  int go(const SearchLimits &limits, std::size_t num_workers);
+  int go(SearchLimits &limits);
 
   void stop();
 
@@ -94,7 +94,7 @@ private:
   [[nodiscard]]
   bool is_killer_move(Move m, const Position *p) const;
 
-  void init_search(const SearchLimits &limits);
+  void init_search(SearchLimits &limits);
 
   void sort_move(MoveData &move_data) override;
 
@@ -117,16 +117,9 @@ private:
   bool move_is_easy() const;
 
 public:
-  double n_{};
   int plies{};
   int max_ply{};
-  Stopwatch start_time{};
-  TimeUnit search_time{};
-  TimeUnit time_left{};
-  TimeUnit time_inc{};
-  int lag_buffer;
   std::atomic_bool stop_search;
-  std::optional<Protocol *> protocol;
 
   static constexpr int MAXSCORE = 0x7fff;
 
@@ -138,9 +131,8 @@ private:
   int search_depth{};
   std::array<int, COL_NB> drawScore_{};
   Game *game;
-  Board *board;
+  Board &board;
   Position *pos{};
-  std::size_t num_workers_{};
   std::size_t data_index_;
   Data* data_;
   bool verbosity{};
@@ -201,8 +193,8 @@ int Search::search(const int depth, int alpha, const int beta) {
     {
       ++move_count;
 
-      if (protocol && plies == 1 && search_depth >= 20 && (search_time > 5000 || is_analysing()))
-        protocol.value()->post_curr_move(move_data->move, move_count);
+      if (verbosity && plies == 1 && search_depth >= 20 && (Pool.time.should_post_curr_move() || is_analysing()))
+        uci::post_curr_move(move_data->move, move_count);
 
       if (PV && move_count == 1)
         score = search_next_depth<EXACT, true>(next_depth_pv(singular_move, depth, move_data), -beta, -alpha);
@@ -297,7 +289,7 @@ std::optional<int> Search::next_depth_not_pv(const int depth, const int move_cou
 
   const auto m = move_data->move;
 
-  if (pos->in_check && board->see_last_move(m) >= 0)
+  if (pos->in_check && board.see_last_move(m) >= 0)
     return std::optional<int>(depth);
 
   constexpr auto move_count_limit = PV ? 5 : 3;
@@ -431,7 +423,7 @@ void Search::update_pv(const Move move, const int score, const int depth) {
   {
     pos->pv_length = pv_len[0];
 
-    if (protocol && verbosity)
-      protocol.value()->post_pv(search_depth, max_ply, start_time.elapsed_milliseconds() + 1, TT.get_load(), score, pv[plies], pv_len[plies], plies, NT);
+    if (verbosity)
+      uci::post_pv(search_depth, max_ply, score, pv[plies], pv_len[plies], plies, NT);
   }
 }

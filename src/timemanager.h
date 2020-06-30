@@ -20,56 +20,41 @@
 
 #pragma once
 
-#include <cstdint>
-#include <vector>
-#include <memory>
-#include <atomic>
-#include "types.h"
-#include "pawnhashtable.h"
-#include "pv_entry.h"
-#include "timemanager.h"
+#include "stopwatch.h"
+#include "miscellaneous.h"
 #include "search_limits.h"
+#include "position.h"
 
-struct Data {
+struct TimeManager final {
 
-  explicit Data(std::size_t data_index);
+  void init(Color side_to_move, SearchLimits &limits);
 
-  void clear_data();
+  [[nodiscard]]
+  bool time_up() const noexcept;
 
-  PawnHashTable pawn_hash{};
-  int history_scores[16][64]{};
-  Move counter_moves[16][64]{};
-  std::array<std::array<PVEntry, MAXDEPTH>, MAXDEPTH> pv{};
-  std::array<int, MAXDEPTH> pv_length{};
+  [[nodiscard]]
+  bool plenty_time() const noexcept;
 
-  std::atomic_uint64_t node_count;
+  void ponder_hit() noexcept;
+
+  [[nodiscard]]
+  TimeUnit elapsed() const noexcept;
+
+  [[nodiscard]]
+  bool should_post_curr_move() const noexcept;
+
+  [[nodiscard]]
+  bool is_analysing() const noexcept { return limits.infinite | limits.ponder; }
+
+  [[nodiscard]]
+  bool is_fixed_depth() const noexcept { return limits.fixed_depth; }
+
+  [[nodiscard]]
+  int get_depth() const noexcept { return limits.depth; }
 
 private:
-  std::size_t index;
-
-};
-
-struct MainData : Data {
-
-  using Data::Data;
-};
-
-struct DataPool : std::vector<std::unique_ptr<Data>> {
-
-  void set(std::size_t v);
-
-  [[nodiscard]]
-  MainData *main() const { return static_cast<MainData *>(front().get()); }
-
-  void clear_data();
-
-  [[nodiscard]]
-  uint64_t node_count() const;
-
-  TimeManager time{};
-
+  Stopwatch start_time{};
+  double n_{};
   SearchLimits limits{};
+  TimeUnit search_time{};
 };
-
-// global data object
-inline DataPool Pool{};
