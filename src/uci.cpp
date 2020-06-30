@@ -26,6 +26,8 @@
 #include "position.h"
 #include "search.h"
 #include "feliscatus.h"
+#include "datapool.h"
+#include "transpositional.h"
 
 namespace {
 
@@ -62,7 +64,7 @@ void uci::post_curr_move(const Move curr_move, const int curr_move_number) {
   fmt::print("info currmove {} currmovenumber {}\n", display_uci(curr_move), curr_move_number);
 }
 
-void uci::post_pv(const int d, const int max_ply, const TimeUnit time, const int hash_full, const int score, const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length, const int ply, const NodeType node_type) {
+void uci::post_pv(const int d, const int max_ply, const int score, const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length, const int ply, const NodeType node_type) {
 
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
@@ -72,9 +74,9 @@ void uci::post_pv(const int d, const int max_ply, const TimeUnit time, const int
   else if (node_type == BETA)
     fmt::format_to(buffer, "lowerbound ");
 
-  const auto [node_count, nodes_per_second] = node_info(time);
+  const auto [node_count, nodes_per_second] = node_info(Pool.time.elapsed() + 1);
 
-  fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", hash_full, node_count, nodes_per_second, time);
+  fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", TT.get_load(), node_count, nodes_per_second, time);
 
   for (auto i = ply; i < pv_length; ++i)
     fmt::format_to(buffer, "{} ", pv[i].move);

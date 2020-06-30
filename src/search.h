@@ -424,6 +424,6 @@ void Search::update_pv(const Move move, const int score, const int depth) {
     pos->pv_length = pv_len[0];
 
     if (verbosity)
-      uci::post_pv(search_depth, max_ply, Pool.time.elapsed() + 1, TT.get_load(), score, pv[plies], pv_len[plies], plies, NT);
+      uci::post_pv(search_depth, max_ply, score, pv[plies], pv_len[plies], plies, NT);
   }
 }

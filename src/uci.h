@@ -42,7 +42,7 @@ namespace uci {
 
   void post_curr_move(Move curr_move, int curr_move_number);
 
-  void post_pv(int d, int max_ply, TimeUnit time, int hash_full, int score, const std::array<PVEntry, MAXDEPTH> &pv, int pv_length, int ply, NodeType node_type);
+  void post_pv(int d, int max_ply, int score, const std::array<PVEntry, MAXDEPTH> &pv, int pv_length, int ply, NodeType node_type);
 
   int handle_go(std::istringstream& input, SearchLimits &limits);
 
