@@ -20,16 +20,28 @@
 
 #pragma once
 
-#include <algorithm>
 #include "stopwatch.h"
 #include "miscellaneous.h"
 #include "search_limits.h"
 #include "position.h"
-#include "util.h"
 
 struct TimeManager final {
 
   void init(Color side_to_move, SearchLimits &limits);
+
+  [[nodiscard]]
+  bool time_up() const noexcept;
+
+  [[nodiscard]]
+  bool plenty_time() const noexcept;
+
+  void ponder_hit() noexcept;
+
+  [[nodiscard]]
+  TimeUnit elapsed() const noexcept;
+
+  [[nodiscard]]
+  bool should_post_curr_move() const noexcept;
 
   [[nodiscard]]
   bool is_analysing() const noexcept { return limits.infinite | limits.ponder; }
@@ -40,39 +52,9 @@ struct TimeManager final {
   [[nodiscard]]
   int get_depth() const noexcept { return limits.depth; }
 
-  double n_{};
+private:
   Stopwatch start_time{};
-  TimeUnit search_time{};
-  TimeUnit time_left{};
-  TimeUnit time_inc{};
+  double n_{};
   SearchLimits limits{};
+  TimeUnit search_time{};
 };
-
-inline void TimeManager::init(const Color side_to_move, SearchLimits &search_limits) {
-  constexpr auto time_reserve = 72;
-
-  limits = search_limits;
-
-  start_time.start();
-
-  if (limits.fixed_movetime)
-    search_time = 950 * limits.movetime / 1000;
-  else
-  {
-    auto moves_left = util::in_between<1, 30>(limits.movestogo) ? limits.movestogo : 30;
-
-    time_left = limits.time[side_to_move];
-    time_inc  = limits.inc[side_to_move];
-
-    if (time_inc == 0 && time_left < 1000)
-    {
-      search_time = time_left / (moves_left * 2);
-      n_          = 1;
-    } else
-    {
-      search_time = 2 * (time_left / (moves_left + 1) + time_inc);
-      n_          = 2.5;
-    }
-    search_time = std::max<TimeUnit>(0, std::min<int>(search_time, time_left - time_reserve));
-  }
-}

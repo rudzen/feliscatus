@@ -193,7 +193,7 @@ int Search::search(const int depth, int alpha, const int beta) {
     {
       ++move_count;
 
-      if (verbosity && plies == 1 && search_depth >= 20 && (Pool.time.search_time > 5000 || is_analysing()))
+      if (verbosity && plies == 1 && search_depth >= 20 && (Pool.time.should_post_curr_move() || is_analysing()))
         uci::post_curr_move(move_data->move, move_count);
 
       if (PV && move_count == 1)
@@ -424,6 +424,6 @@ void Search::update_pv(const Move move, const int score, const int depth) {
     pos->pv_length = pv_len[0];
 
     if (verbosity)
-      uci::post_pv(search_depth, max_ply, Pool.time.start_time.elapsed_milliseconds() + 1, TT.get_load(), score, pv[plies], pv_len[plies], plies, NT);
+      uci::post_pv(search_depth, max_ply, Pool.time.elapsed() + 1, TT.get_load(), score, pv[plies], pv_len[plies], plies, NT);
   }
 }

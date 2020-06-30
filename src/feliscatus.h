@@ -38,8 +38,6 @@ struct Felis final {
 
   int go();
 
-  void ponder_hit();
-
   void stop();
 
   bool make_move(std::string_view m) const;

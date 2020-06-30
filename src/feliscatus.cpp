@@ -66,8 +66,6 @@ int Felis::go() {
   return 0;
 }
 
-void Felis::ponder_hit() { Pool.time.search_time += Pool.time.start_time.elapsed_milliseconds(); }
-
 void Felis::stop() { search->stop_search.store(true); }
 
 bool Felis::make_move(const std::string_view m) const {
@@ -121,7 +119,7 @@ bool Felis::set_option(const std::string_view name, const std::string_view value
     game->chess960 = game->xfen = value == "true";
     fmt::print("info string UCI_Chess960_Arena:{}\n", on_off[game->chess960]);
   } else if (name == "ponder")
-    Pool.time.limits.ponder = value == "true";
+    Pool.limits.ponder = value == "true";
   else
   {
     fmt::print("Unknown option. {}={}\n", name, value);
@@ -171,8 +169,9 @@ int Felis::run(const int argc, char* argv[]) {
 
     if (token == "quit" || token == "stop")
       break;
-    else if (token == "ponder")
-      ponder_hit();
+
+    if (token == "ponder")
+      Pool.time.ponder_hit();
     else if (token == "uci")
     {
       fmt::print("id name Feliscatus 0.1\n");

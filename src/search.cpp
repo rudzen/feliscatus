@@ -210,7 +210,7 @@ void Search::check_sometimes() {
 }
 
 void Search::check_time() {
-  const auto stop = verbosity && (!is_analysing() && !Pool.time.is_fixed_depth()) && search_depth > 1 && Pool.time.start_time.elapsed_milliseconds() > Pool.time.search_time;
+  const auto stop = verbosity && (!is_analysing() && !Pool.time.is_fixed_depth()) && search_depth > 1 && Pool.time.time_up();
 
   if (stop)
   {
@@ -341,5 +341,5 @@ bool Search::move_is_easy() const {
       || (data_->pv[0][0].score == MAXSCORE - 1))
     return true;
 
-  return !is_analysing() && !Pool.time.is_fixed_depth() && Pool.time.search_time < Pool.time.start_time.elapsed_milliseconds() * Pool.time.n_;
+  return !is_analysing() && !Pool.time.is_fixed_depth() && Pool.time.plenty_time();
 }
