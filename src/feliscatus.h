@@ -30,7 +30,7 @@ struct PawnHashTable;
 struct Search;
 
 struct Felis final {
-  Felis();
+  Felis() = default;
 
   int new_game();
 
@@ -48,13 +48,10 @@ struct Felis final {
 
   void stop_workers();
 
-  bool set_option(std::string_view name, std::string_view value);
-
   int run(int argc, char* argv[]);
 
 private:
   std::unique_ptr<Game> game;
   std::unique_ptr<Search> search;
   std::vector<Worker> workers{};
-  uint64_t num_threads;
 };

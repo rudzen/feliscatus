@@ -33,20 +33,13 @@
 #include "types.h"
 #include "datapool.h"
 
-namespace {
-
-constexpr std::array<std::string_view, 2> on_off{"OFF", "ON"};
-
-}
-
-Felis::Felis()
-  : num_threads(1) {
-}
-
 int Felis::new_game() {
-  // TODO : test effect of not clearing
-  //pawnt->clear();
-  //TT.clear();
+  const auto num_threads = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::THREADS>()]);
+  Pool.set(num_threads);
+  if (const auto num_helpers = num_threads - 1; num_helpers == 0)
+    workers.clear();
+  else
+    workers.resize(num_helpers);
   return game->new_game(Game::kStartPosition.data());
 }
 
@@ -60,8 +53,9 @@ int Felis::go() {
   if (game->pos->pv_length)
   {
     auto &pv = Pool.main()->pv;
-    uci::post_moves(pv[0][0].move, game->pos->pv_length > 1 ? pv[0][1].move : MOVE_NONE);
-    game->make_move(pv[0][0].move, true, true);
+    const auto [move, ponder_move] = std::make_pair(pv[0][0].move, pv[0][1].move ? pv[0][1].move : MOVE_NONE);
+    uci::post_moves(move, ponder_move);
+    game->make_move(move, true, true);
   }
   return 0;
 }
@@ -90,43 +84,6 @@ void Felis::start_workers() {
 void Felis::stop_workers() {
   for (auto &worker : workers)
     worker.stop();
-}
-
-bool Felis::set_option(const std::string_view name, const std::string_view value) {
-  if (name == "Hash")
-  {
-    constexpr uint64_t min = 8;
-    constexpr uint64_t max = 64 * 1024;
-    const auto val     = util::to_integral<uint64_t>(value);
-    TT.init(std::clamp(val, min, max));
-    fmt::print("info string Hash:{}\n", TT.get_size_mb());
-  } else if (name == "Threads" || name == "NumThreads")
-  {
-    constexpr std::size_t min = 1;
-    constexpr std::size_t max = 64;
-    const auto val     = util::to_integral<std::size_t>(value);
-    num_threads = std::clamp(val, min, max);
-    Pool.set(num_threads);
-    workers.resize(num_threads - 1);
-    workers.shrink_to_fit();
-    fmt::print("info string Threads:{}\n", num_threads);
-  } else if (name == "UCI_Chess960")
-  {
-    game->chess960 = value == "true";
-    fmt::print("info string UCI_Chess960:{}\n", on_off[game->chess960]);
-  } else if (name == "UCI_Chess960_Arena")
-  {
-    game->chess960 = game->xfen = value == "true";
-    fmt::print("info string UCI_Chess960_Arena:{}\n", on_off[game->chess960]);
-  } else if (name == "ponder")
-    Pool.limits.ponder = value == "true";
-  else
-  {
-    fmt::print("Unknown option. {}={}\n", name, value);
-    return false;
-  }
-
-  return true;
 }
 
 int Felis::run(const int argc, char* argv[]) {
@@ -175,19 +132,18 @@ int Felis::run(const int argc, char* argv[]) {
     {
       fmt::print("id name Feliscatus 0.1\n");
       fmt::print("id author Gunnar Harms, FireFather, Rudy Alex Kohn\n");
-      fmt::print("option name Hash type spin default 1024 min 8 max 65536\n");
-      fmt::print("option name Ponder type check default true\n");
-      fmt::print("option name Threads type spin default 1 min 1 max 64\n");
-      fmt::print("option name UCI_Chess960 type check default false\n");
+      fmt::print("{}\n", Options);
       fmt::print("uciok\n");
     } else if (token == "isready")
       fmt::print("readyok\n");
     else if (token == "ucinewgame")
     {
+      if (Options[uci::get_uci_name<uci::UciOptions::CLEAR_HASH_NEW_GAME>()])
+        TT.clear();
       new_game();
       fmt::print("readyok\n");
     } else if (token == "setoption")
-      uci::handle_set_option(input, this);
+      uci::handle_set_option(input);
     else if (token == "position")
       uci::handle_position(game.get(), input);
     else if (token == "go")

@@ -31,9 +31,9 @@
 
 namespace {
 
-constexpr TimeUnit SafetyValue = 1;
+constexpr TimeUnit time_safety_margin = 1;
 
-constexpr auto FenPieceNames = std::array<char, 16> {"PNBRQK  pnbrqk "};
+constexpr std::string_view fen_piece_names {"PNBRQK  pnbrqk "};
 
 constexpr uint64_t nps(const uint64_t nodes, const TimeUnit time) {
   return nodes * 1000 / time;
@@ -58,7 +58,7 @@ void uci::post_moves(const Move bestmove, const Move pondermove) {
 }
 
 void uci::post_info(const int d, const int selective_depth) {
-  const auto time = Pool.time.elapsed() + SafetyValue;
+  const auto time = Pool.time.elapsed() + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
   fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, TT.get_load(), node_count, nodes_per_second, time);
 }
@@ -77,7 +77,7 @@ void uci::post_pv(const int d, const int max_ply, const int score, const std::ar
   else if (node_type == BETA)
     fmt::format_to(buffer, "lowerbound ");
 
-  const auto time = Pool.time.elapsed() + SafetyValue;
+  const auto time = Pool.time.elapsed() + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
 
   fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", TT.get_load(), node_count, nodes_per_second, time);
@@ -148,9 +148,9 @@ void uci::handle_position(Game *g, std::istringstream &input) {
   }
 }
 
-bool uci::handle_set_option(std::istringstream &input, Felis *felis) {
+void uci::handle_set_option(std::istringstream &input) {
 
-  std::string token, option_name, option_value;
+  std::string token, option_name, option_value, output;
 
   // get rid of "name"
   input >> token;
@@ -163,12 +163,15 @@ bool uci::handle_set_option(std::istringstream &input, Felis *felis) {
   while (input >> token)
     option_value += (option_value.empty() ? "" : " ") + token;
 
-  auto valid_option = !option_name.empty() || !option_value.empty();
+  if (Options.contains(option_name))
+  {
+    Options[option_name] = option_value;
+    output = "Option {} = {}\n";
+  }
+  else
+    output = "Uknown option {} = {}\n";
 
-  if (valid_option)
-    valid_option = felis->set_option(option_name, option_value);
-
-  return valid_option;
+  fmt::print(info(fmt::format(output, option_name, option_value)));
 }
 
 std::string uci::display_uci(const Move m) {
@@ -179,5 +182,9 @@ std::string uci::display_uci(const Move m) {
   // append piece promotion if the move is a promotion.
   return !is_promotion(m)
        ? fmt::format("{}{}", move_from(m), move_to(m))
-       : fmt::format("{}{}{}", move_from(m), move_to(m), FenPieceNames[type_of(move_promoted(m))]);
+       : fmt::format("{}{}{}", move_from(m), move_to(m), fen_piece_names[type_of(move_promoted(m))]);
+}
+
+std::string uci::info(const std::string_view info_string) {
+  return fmt::format("info string {}", info_string);
 }

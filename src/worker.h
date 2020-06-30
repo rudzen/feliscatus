@@ -31,8 +31,10 @@
 
 struct Worker final {
 
+  Worker() : game_(std::make_unique<Game>()) {}
+
   void start(std::string_view fen, const std::size_t index) {
-    game_ = std::make_unique<Game>(fen);
+    game_->set_fen(fen);
     search_ = std::make_unique<Search>(game_.get(), index);
     thread_ = std::jthread(&Search::run, search_.get());
   }

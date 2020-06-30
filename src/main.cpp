@@ -26,6 +26,7 @@
 #include "util.h"
 #include "pawnhashtable.h"
 #include "transpositional.h"
+#include "uci.h"
 
 constexpr std::size_t TT_ENTRY_SIZE   = 16;
 constexpr std::size_t PAWN_ENTRY_SIZE = 16;
@@ -38,6 +39,7 @@ int main(const int argc, char *argv[]) {
   bitboard::init();
   attacks::init();
   zobrist::init();
+  uci::init(Options);
 
   TT.init(1);
   Felis engine;
