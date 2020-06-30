@@ -23,10 +23,13 @@
 #include <array>
 #include <iostream>
 #include <string>
+
+#include <fmt/format.h>
+
 #include "miscellaneous.h"
 #include "types.h"
 #include "pv_entry.h"
-#include "protocol.h"
+#include "search_limits.h"
 
 struct Felis;
 struct Game;

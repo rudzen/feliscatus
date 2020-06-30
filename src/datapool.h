@@ -28,9 +28,7 @@
 #include "pawnhashtable.h"
 #include "pv_entry.h"
 #include "timemanager.h"
-#include "protocol.h"
-
-struct Protocol;
+#include "search_limits.h"
 
 struct Data {
 

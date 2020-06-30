@@ -23,7 +23,7 @@
 #include <algorithm>
 #include "stopwatch.h"
 #include "miscellaneous.h"
-#include "protocol.h"
+#include "search_limits.h"
 #include "position.h"
 #include "util.h"
 

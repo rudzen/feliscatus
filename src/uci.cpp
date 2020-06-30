@@ -18,7 +18,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <fmt/format.h>
+#include <sstream>
 
 #include "uci.h"
 #include "util.h"

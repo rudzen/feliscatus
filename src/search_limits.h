@@ -23,17 +23,9 @@
 #include <cstdint>
 #include <string_view>
 #include <array>
-#include <sstream>
 
-#include <fmt/format.h>
-
-#include "stopwatch.h"
+#include "miscellaneous.h"
 #include "types.h"
-
-enum NodeType : uint8_t;
-enum Move : uint32_t;
-class Game;
-struct PVEntry;
 
 struct SearchLimits {
   std::array<TimeUnit, COL_NB> time{};
@@ -53,14 +45,4 @@ struct SearchLimits {
     movestogo = depth = 0;
     ponder = infinite = fixed_movetime = fixed_depth = false;
   }
-};
-
-struct ProtocolListener {
-  virtual ~ProtocolListener()                                            = default;
-  virtual int new_game()                                                 = 0;
-  virtual int set_fen(std::string_view fen)                              = 0;
-  virtual int go()                             = 0;
-  virtual void ponder_hit()                                              = 0;
-  virtual void stop()                                                    = 0;
-  virtual bool set_option(std::string_view name, std::string_view value) = 0;
 };
