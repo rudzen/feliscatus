@@ -38,7 +38,7 @@ namespace uci {
 
   void post_moves(Move bestmove, Move pondermove);
 
-  void post_info(int d, int selective_depth, TimeUnit time, int hash_full);
+  void post_info(int d, int selective_depth);
 
   void post_curr_move(Move curr_move, int curr_move_number);
 

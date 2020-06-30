@@ -153,7 +153,7 @@ int Felis::run(const int argc, char* argv[]) {
 
   // TODO : replace with CLI
   for (auto argument_index = 1; argument_index < argc; ++argument_index)
-    command += std::string(argv[argument_index]) + ' ';
+    command += fmt::format("{} ", argv[argument_index]);
 
   do
   {
@@ -168,9 +168,8 @@ int Felis::run(const int argc, char* argv[]) {
     input >> std::skipws >> token;
 
     if (token == "quit" || token == "stop")
-      break;
-
-    if (token == "ponder")
+      stop_threads();
+    else if (token == "ponder")
       Pool.time.ponder_hit();
     else if (token == "uci")
     {
@@ -193,8 +192,8 @@ int Felis::run(const int argc, char* argv[]) {
       uci::handle_position(game.get(), input);
     else if (token == "go")
     {
-      uci::handle_go(input, Pool.limits);
       stop_threads();
+      uci::handle_go(input, Pool.limits);
       main_go = std::jthread(&Felis::go, this);
     }
     else if (token == "perft")

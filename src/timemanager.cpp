@@ -24,12 +24,13 @@
 
 namespace {
 
+constexpr TimeUnit time_reserve = 72;
+
 constexpr TimeUnit curr_move_post_limit = 5000;
 
 }
 
 void TimeManager::init(const Color side_to_move, SearchLimits &search_limits) {
-  constexpr auto time_reserve = 72;
 
   limits = search_limits;
 

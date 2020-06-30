@@ -31,6 +31,8 @@
 
 namespace {
 
+constexpr TimeUnit SafetyValue = 1;
+
 constexpr auto FenPieceNames = std::array<char, 16> {"PNBRQK  pnbrqk "};
 
 constexpr uint64_t nps(const uint64_t nodes, const TimeUnit time) {
@@ -55,9 +57,10 @@ void uci::post_moves(const Move bestmove, const Move pondermove) {
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-void uci::post_info(const int d, const int selective_depth, const TimeUnit time, const int hash_full) {
+void uci::post_info(const int d, const int selective_depth) {
+  const auto time = Pool.time.elapsed() + SafetyValue;
   const auto [node_count, nodes_per_second] = node_info(time);
-  fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, hash_full, node_count, nodes_per_second, time);
+  fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, TT.get_load(), node_count, nodes_per_second, time);
 }
 
 void uci::post_curr_move(const Move curr_move, const int curr_move_number) {
@@ -74,7 +77,8 @@ void uci::post_pv(const int d, const int max_ply, const int score, const std::ar
   else if (node_type == BETA)
     fmt::format_to(buffer, "lowerbound ");
 
-  const auto [node_count, nodes_per_second] = node_info(Pool.time.elapsed() + 1);
+  const auto time = Pool.time.elapsed() + SafetyValue;
+  const auto [node_count, nodes_per_second] = node_info(time);
 
   fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", TT.get_load(), node_count, nodes_per_second, time);
 
