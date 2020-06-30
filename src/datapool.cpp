@@ -29,7 +29,7 @@ void Data::clear_data() {
   std::memset(history_scores, 0, sizeof history_scores);
   std::memset(counter_moves, 0, sizeof counter_moves);
   pv_length.fill(0);
-  std::memset(pv.data(), 0, sizeof pv);
+  pv.fill({});
 }
 
 void DataPool::set(const std::size_t v) {

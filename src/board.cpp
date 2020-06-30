@@ -29,6 +29,7 @@ void Board::clear() {
   board.fill(NoPiece);
   king_square.fill(no_square);
   occupied = 0;
+  max_ply = plies = search_depth = 0;
 }
 
 void Board::make_move(const Move m) {

@@ -117,8 +117,6 @@ private:
   bool move_is_easy() const;
 
 public:
-  int plies{};
-  int max_ply{};
   std::atomic_bool stop_search;
 
   static constexpr int MAXSCORE = 0x7fff;
@@ -128,8 +126,7 @@ private:
   static constexpr std::array<int, 4> futility_margin {150, 150, 150, 400};
   static constexpr std::array<int, 4> razor_margin {0, 125, 125, 400};
 
-  int search_depth{};
-  std::array<int, COL_NB> drawScore_{};
+  std::array<int, COL_NB> draw_score_{};
   Game *game;
   Board &board;
   Position *pos{};
@@ -146,7 +143,7 @@ int Search::search(const int depth, int alpha, const int beta) {
       return search_node_score(pos->transp_score);
   }
 
-  if (plies >= MAXDEPTH - 1)
+  if (board.plies >= MAXDEPTH - 1)
     return search_node_score(pos->eval_score);
 
   if constexpr (!PV)
@@ -193,7 +190,7 @@ int Search::search(const int depth, int alpha, const int beta) {
     {
       ++move_count;
 
-      if (verbosity && plies == 1 && search_depth >= 20 && (Pool.time.should_post_curr_move() || is_analysing()))
+      if (verbosity && board.plies == 1 && board.search_depth >= 20 && (Pool.time.should_post_curr_move() || is_analysing()))
         uci::post_curr_move(move_data->move, move_count);
 
       if (PV && move_count == 1)
@@ -231,7 +228,7 @@ int Search::search(const int depth, int alpha, const int beta) {
 
           if (score >= beta)
           {
-            if (plies == 0)
+            if (board.plies == 0)
               update_pv<BETA>(best_move, best_score, depth);
 
             break;
@@ -250,7 +247,7 @@ int Search::search(const int depth, int alpha, const int beta) {
     throw 1;
 
   if (move_count == 0)
-    return search_node_score(pos->in_check ? -MAXSCORE + plies : draw_score());
+    return search_node_score(pos->in_check ? -MAXSCORE + board.plies : draw_score());
 
   if (pos->reversible_half_move_count >= 100)
     return search_node_score(draw_score());
@@ -290,7 +287,7 @@ std::optional<int> Search::next_depth_not_pv(const int depth, const int move_cou
   const auto m = move_data->move;
 
   if (pos->in_check && board.see_last_move(m) >= 0)
-    return std::optional<int>(depth);
+    return std::make_optional(depth);
 
   constexpr auto move_count_limit = PV ? 5 : 3;
 
@@ -311,9 +308,9 @@ std::optional<int> Search::next_depth_not_pv(const int depth, const int move_cou
         return std::nullopt;
       }
     }
-    return std::optional<int>(next_depth);
+    return std::make_optional(next_depth);
   }
-  return std::optional<int>(depth - 1);
+  return std::make_optional(depth - 1);
 }
 
 template<bool PV>
@@ -329,7 +326,7 @@ int Search::search_quiesce(int alpha, const int beta, const int qs_ply) {
          ? store_search_node_score(pos->eval_score, 0, BETA, MOVE_NONE)
          : search_node_score(pos->eval_score);
 
-  if (plies >= MAXDEPTH - 1 || qs_ply > 6)
+  if (board.plies >= MAXDEPTH - 1 || qs_ply > 6)
     return search_node_score(pos->eval_score);
 
   auto best_move  = MOVE_NONE;
@@ -401,7 +398,7 @@ int Search::search_quiesce(int alpha, const int beta, const int qs_ply) {
 template<NodeType NT>
 void Search::update_pv(const Move move, const int score, const int depth) {
   auto &pv          = data_->pv;
-  auto *const entry = &pv[plies][plies];
+  auto *const entry = &pv[board.plies][board.plies];
 
   entry->score     = score;
   entry->depth     = depth;
@@ -410,20 +407,20 @@ void Search::update_pv(const Move move, const int score, const int depth) {
   entry->node_type = NT;
   entry->eval      = pos->eval_score;
 
-  const auto next_ply = plies + 1;
+  const auto next_ply = board.plies + 1;
 
   auto &pv_len  = data_->pv_length;
 
-  pv_len[plies] = pv_len[next_ply];
+  pv_len[board.plies] = pv_len[next_ply];
 
-  for (auto i = next_ply; i < pv_len[plies]; ++i)
-    pv[plies][i] = pv[next_ply][i];
+  for (auto i = next_ply; i < pv_len[board.plies]; ++i)
+    pv[board.plies][i] = pv[next_ply][i];
 
-  if (plies == 0)
+  if (board.plies == 0)
   {
     pos->pv_length = pv_len[0];
 
     if (verbosity)
-      uci::post_pv(search_depth, max_ply, score, pv[plies], pv_len[plies], plies, NT);
+      uci::post_pv(board.search_depth, board.max_ply, score, pv[board.plies], pv_len[board.plies], board.plies, NT);
   }
 }

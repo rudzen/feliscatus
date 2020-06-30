@@ -95,6 +95,9 @@ struct Board {
   int see_last_move(Move move);
 
   std::array<Bitboard, Piece_Nb> piece{};
+  int plies{};
+  int max_ply{};
+  int search_depth{};
 
 private:
 

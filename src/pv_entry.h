@@ -26,6 +26,7 @@ struct PVEntry final {
   uint64_t key;
   int depth;
   int score;
+  int previous_score;
   Move move;
   NodeType node_type;
   int eval;
