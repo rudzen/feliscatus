@@ -104,11 +104,11 @@ constexpr Score &operator-=(Score &d1, const int d2) noexcept {
 }
 
 constexpr Score &operator+=(Score &d1, const Score d2) noexcept {
-  return d1 = d1.raw() + d2.raw();
+  return d1 = Score(d1.mg() + d2.mg(), d1.eg() + d2.eg());
 }
 
 constexpr Score &operator-=(Score &d1, const Score d2) noexcept {
-  return d1 = d1.raw() - d2.raw();
+  return d1 = Score(d1.mg() - d2.mg(), d1.eg() - d2.eg());
 }
 
 /// Division of a Score must be handled separately for each term
