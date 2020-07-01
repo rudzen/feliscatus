@@ -123,11 +123,13 @@ MoveData *Moves::next_move() {
   if (iteration_ == number_moves_)
     return nullptr;
 
+  if (!move_sorter_)
+    return &move_list[iteration_++];
+
   do
   {
     auto best_idx   = iteration_;
     auto best_score = move_list[best_idx].score;
-
     for (auto i = best_idx + 1; i < number_moves_; ++i)
     {
       if (move_list[i].score > best_score)
@@ -144,8 +146,7 @@ MoveData *Moves::next_move() {
     }
     std::swap(move_list[iteration_], move_list[best_idx]);
     return &move_list[iteration_++];
-  }
-  while (true);
+  } while (true);
 }
 
 bool Moves::is_pseudo_legal(const Move m) const {

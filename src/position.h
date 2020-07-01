@@ -27,6 +27,8 @@
 
 class HashEntry;
 
+using KillerMoves = std::array<Move, 4>;
+
 struct Position : Moves {
   void clear();
 
@@ -56,7 +58,7 @@ struct Position : Moves {
   Move transp_move{};
   int flags{};
   HashEntry *transposition{};
-  std::array<Move, 4> killer_moves{};
+  KillerMoves killer_moves{};
 };
 
 inline bool Position::is_draw() const {
