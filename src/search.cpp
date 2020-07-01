@@ -123,6 +123,7 @@ void update_killer_moves(KillerMoves &km, const Move move) {
 }
 
 int Search::go(SearchLimits &limits) {
+  data_ = Pool[data_index_].get();
   init_search(limits);
 
   draw_score_[pos->side_to_move]  = 0;//-25;
