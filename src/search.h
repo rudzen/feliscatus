@@ -78,10 +78,6 @@ private:
   template<NodeType NT>
   void update_pv(Move move, int score, int depth) const;
 
-  void update_history_scores(Move move, int depth) const;
-
-  void update_killer_moves(Move move) const;
-
   void init_search(SearchLimits &limits);
 
   void sort_move(MoveData &move_data) override;

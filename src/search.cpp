@@ -98,6 +98,28 @@ bool is_killer_move(const Move m, const Position *p) {
   return std::find(km.cbegin(), km.cend(), m) != km.cend();
 }
 
+void update_history_scores(HistoryScores &history_scores, const Move move, const int depth) {
+  history_scores[move_piece(move)][move_to(move)] += (depth * depth);
+
+  if (history_scores[move_piece(move)][move_to(move)] <= 2048)
+    return;
+
+  for (auto &history_score : history_scores)
+    for (auto &k : history_score)
+      k >>= 2;
+}
+
+void update_killer_moves(KillerMoves &km, const Move move) {
+  // Same move can be stored twice for a ply.
+  if (is_capture(move) || is_promotion(move) || move == km.front())
+    return;
+
+  // Rotate the killer moves, index 3 become 2, index 2 becomes 1 and index 1 becomes 0 which is replaced with new move
+  // This is the same as std::copy_backward(km.begin(), std::prev(km.end(), 1), std::next(km.begin(), 1));
+  std::rotate(km.begin(), std::prev(km.end(), 1), km.end());
+  km[0] = move;
+}
+
 }
 
 int Search::go(SearchLimits &limits) {
@@ -250,32 +272,6 @@ void Search::check_time() {
 }
 
 int Search::is_analysing() const { return verbosity ? Pool.time.is_analysing() : true; }
-
-void Search::update_history_scores(const Move move, const int depth) const {
-  auto &history_scores = data_->history_scores;
-
-  history_scores[move_piece(move)][move_to(move)] += (depth * depth);
-
-  if (history_scores[move_piece(move)][move_to(move)] <= 2048)
-    return;
-
-  for (auto &history_score : history_scores)
-    for (auto &k : history_score)
-      k >>= 2;
-}
-
-void Search::update_killer_moves(const Move move) const {
-  // Same move can be stored twice for a ply.
-  if (is_capture(move) || is_promotion(move) || move == pos->killer_moves.front())
-    return;
-
-  auto &km = pos->killer_moves;
-
-  // Rotate the killer moves, index 3 become 2, index 2 becomes 1 and index 1 becomes 0 which is replaced with new move
-  // This is the same as std::copy_backward(km.begin(), std::prev(km.end(), 1), std::next(km.begin(), 1));
-  std::rotate(km.begin(), std::prev(km.end(), 1), km.end());
-  km[0] = move;
-}
 
 void Search::init_search(SearchLimits &limits) {
   pos = b->pos;// Updated in make_move and unmake_move from here on.
@@ -479,8 +475,8 @@ int Search::search(const int depth, int alpha, const int beta) {
 
   if (best_move && !is_capture(best_move) && !is_promotion(best_move))
   {
-    update_history_scores(best_move, depth);
-    update_killer_moves(best_move);
+    update_history_scores(data_->history_scores, best_move, depth);
+    update_killer_moves(pos->killer_moves, best_move);
 
     data_->counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] = best_move;
   }

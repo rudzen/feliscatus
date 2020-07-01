@@ -30,6 +30,9 @@
 #include "timemanager.h"
 #include "search_limits.h"
 
+using HistoryScores = std::array<std::array<int, sq_nb>, 16>;
+using CounterMoves = std::array<std::array<Move, sq_nb>, 16>;
+
 struct Data {
 
   explicit Data(std::size_t data_index);
@@ -37,8 +40,8 @@ struct Data {
   void clear_data();
 
   PawnHashTable pawn_hash{};
-  int history_scores[16][64]{};
-  Move counter_moves[16][64]{};
+  HistoryScores history_scores{};
+  CounterMoves counter_moves{};
   std::array<std::array<PVEntry, MAXDEPTH>, MAXDEPTH> pv{};
   std::array<int, MAXDEPTH> pv_length{};
 
