@@ -33,6 +33,8 @@
 #include "util.h"
 #include "types.h"
 #include "datapool.h"
+#include "transpositional.h"
+#include "uci.h"
 
 int Felis::new_game() {
   const auto num_threads = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::THREADS>()]);

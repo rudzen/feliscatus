@@ -27,6 +27,7 @@
 #include <fmt/format.h>
 
 #include "tune.h"
+#include "../src/board.h"
 #include "../src/square.h"
 #include "../src/bitboard.h"
 #include "../src/magic.h"
@@ -57,7 +58,7 @@ int main(const int argc, char **argv) {
   const auto cli_parser_settings = cli::make_parser(argc, argv, title, ParserType::Tuner);
 
   TT.init(256);
-  
+
   squares::init();
   bitboard::init();
   attacks::init();
