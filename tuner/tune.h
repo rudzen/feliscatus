@@ -32,7 +32,7 @@
 #include "../src/search.h"
 #include "../cli/cli_parser.h"
 
-class Game;
+struct Board;
 struct PVEntry;
 struct FileResolver;
 
@@ -67,7 +67,7 @@ private:
 
 class Tune final : public MoveSorter {
 public:
-  explicit Tune(std::unique_ptr<Game> game, const ParserSettings *settings);
+  explicit Tune(std::unique_ptr<Board> game, const ParserSettings *settings);
 
   double e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, double K);
 
@@ -88,7 +88,7 @@ public:
   void sort_move(MoveData &move_data) override;
 
 private:
-  std::unique_ptr<Game> game_;
+  std::unique_ptr<Board> board_;
   PawnHashTable pawn_table_{};
 
   PVEntry pv[MAXDEPTH][MAXDEPTH]{};

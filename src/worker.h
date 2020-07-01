@@ -24,18 +24,18 @@
 #include <memory>
 #include <string_view>
 
-#include "game.h"
+#include "board.h"
 #include "eval.h"
 #include "search.h"
 #include "pawnhashtable.h"
 
 struct Worker final {
 
-  Worker() : game_(std::make_unique<Game>()) {}
+  Worker() : board_(std::make_unique<Board>()) {}
 
   void start(std::string_view fen, const std::size_t index) {
-    game_->set_fen(fen);
-    search_ = std::make_unique<Search>(game_.get(), index);
+    board_->set_fen(fen);
+    search_ = std::make_unique<Search>(board_.get(), index);
     thread_ = std::jthread(&Search::run, search_.get());
   }
 
@@ -50,7 +50,7 @@ struct Worker final {
   }
 
 private:
-  std::unique_ptr<Game> game_{};
+  std::unique_ptr<Board> board_{};
   std::unique_ptr<Search> search_{};
   std::jthread thread_{};
 };

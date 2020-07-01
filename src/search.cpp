@@ -51,10 +51,10 @@ int codec_t_table_score(const int score, const int ply) {
        : score < 0 ? score - ply : score + ply;
 }
 
-void get_hash_and_evaluate(Position *pos, Game* game, const std::size_t pool_index, const int alpha, const int beta, const int plies) {
+void get_hash_and_evaluate(Position *pos, Board *b, const std::size_t pool_index, const int alpha, const int beta, const int plies) {
   if ((pos->transposition = TT.find(pos->key)) == nullptr)
   {
-    pos->eval_score  = Eval::evaluate(game, pool_index, alpha, beta);
+    pos->eval_score  = Eval::evaluate(b, pool_index, alpha, beta);
     pos->transp_type = Void;
     pos->transp_move = MOVE_NONE;
     return;
@@ -79,19 +79,19 @@ int Search::go(SearchLimits &limits) {
   auto alpha = -MAXSCORE;
   auto beta  = MAXSCORE;
 
-  while (!stop_search && board.search_depth < MAXDEPTH)
+  while (!stop_search && b->search_depth < MAXDEPTH)
   {
     try
     {
-      board.search_depth++;
+      b->search_depth++;
 
       do
       {
         data_->pv_length[0] = 0;
 
-        get_hash_and_evaluate(pos, game, data_index_, alpha, beta, board.plies);
+        get_hash_and_evaluate(pos, b, data_index_, alpha, beta, b->plies);
 
-        const auto score = search<EXACT, true>(board.search_depth, alpha, beta);
+        const auto score = search<EXACT, true>(b->search_depth, alpha, beta);
 
         if (score > alpha && score < beta)
           break;
@@ -112,7 +112,7 @@ int Search::go(SearchLimits &limits) {
       beta  = std::min<int>(MAXSCORE, data_->pv[0][0].score + 20);
     } catch (const int)
     {
-      while (board.plies)
+      while (b->plies)
         unmake_move();
 
       if (const auto pv_len = data_->pv_length.front(); pv_len)
@@ -176,32 +176,32 @@ int Search::next_depth_pv(const Move singular_move, const int depth, const MoveD
   if (m == singular_move)
     return depth;
 
-  if ((pos->in_check || board.is_passed_pawn_move(m)) && board.see_last_move(m) >= 0)
+  if ((pos->in_check || b->is_passed_pawn_move(m)) && b->see_last_move(m) >= 0)
     return depth;
   return depth - 1;
 }
 
 bool Search::make_move_and_evaluate(const Move m, const int alpha, const int beta) {
-  if (!game->make_move(m, true, true))
+  if (!b->make_move(m, true, true))
     return false;
 
-  pos = game->pos;
-  ++board.plies;
-  data_->pv_length[board.plies] = board.plies;
+  pos = b->pos;
+  ++b->plies;
+  data_->pv_length[b->plies] = b->plies;
   data_->node_count.fetch_add(1, std::memory_order_relaxed);
 
   check_sometimes();
 
-  get_hash_and_evaluate(pos, game, data_index_, -beta, -alpha, board.plies);
+  get_hash_and_evaluate(pos, b, data_index_, -beta, -alpha, b->plies);
 
-  board.max_ply = std::max<int>(board.max_ply, board.plies);
+  b->max_ply = std::max<int>(b->max_ply, b->plies);
   return true;
 }
 
 void Search::unmake_move() {
-  game->unmake_move();
-  pos = game->pos;
-  board.plies--;
+  b->unmake_move();
+  pos = b->pos;
+  b->plies--;
 }
 
 void Search::check_sometimes() {
@@ -210,7 +210,7 @@ void Search::check_sometimes() {
 }
 
 void Search::check_time() {
-  const auto stop = verbosity && (!is_analysing() && !Pool.time.is_fixed_depth()) && board.search_depth > 1 && Pool.time.time_up();
+  const auto stop = verbosity && (!is_analysing() && !Pool.time.is_fixed_depth()) && b->search_depth > 1 && Pool.time.time_up();
 
   if (stop)
   {
@@ -253,7 +253,7 @@ bool Search::is_killer_move(const Move m, const Position *p) const {
 }
 
 void Search::init_search(SearchLimits &limits) {
-  pos = game->pos;// Updated in make_move and unmake_move from here on.
+  pos = b->pos;// Updated in make_move and unmake_move from here on.
 
   if (verbosity)
   {
@@ -283,7 +283,7 @@ void Search::sort_move(MoveData &move_data) {
 
     if (value_piece <= value_captured)
       move_data.score = 300000 + value_captured * 20 - value_piece;
-    else if (board.see_move(m) >= 0)
+    else if (b->see_move(m) >= 0)
       move_data.score = 160000 + value_captured * 20 - value_piece;
     else
       move_data.score = -100000 + value_captured * 20 - value_piece;
@@ -311,7 +311,7 @@ int Search::store_search_node_score(const int score, const int depth, const Node
 int Search::draw_score() const { return draw_score_[pos->side_to_move]; }
 
 void Search::store_hash(const int depth, int score, const NodeType node_type, const Move move) const {
-  score = codec_t_table_score(score, board.plies);
+  score = codec_t_table_score(score, b->plies);
 
   if (node_type == BETA)
     pos->eval_score = std::max<int>(pos->eval_score, score);
@@ -332,8 +332,8 @@ bool Search::move_is_easy() const {
   if (!verbosity)
     return false;
 
-  if ((pos->move_count() == 1 && board.search_depth > 9)
-      || (Pool.time.is_fixed_depth() && Pool.time.get_depth() == board.search_depth)
+  if ((pos->move_count() == 1 && b->search_depth > 9)
+      || (Pool.time.is_fixed_depth() && Pool.time.get_depth() == b->search_depth)
       || (data_->pv[0][0].score == MAXSCORE - 1))
     return true;
 

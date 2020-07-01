@@ -22,7 +22,7 @@
 
 #include "uci.h"
 #include "util.h"
-#include "game.h"
+#include "board.h"
 #include "position.h"
 #include "search.h"
 #include "feliscatus.h"
@@ -117,7 +117,7 @@ int uci::handle_go(std::istringstream &input, SearchLimits &limits) {
   return 0;
 }
 
-void uci::handle_position(Game *g, std::istringstream &input) {
+void uci::handle_position(Board *b, std::istringstream &input) {
 
   std::string token;
 
@@ -125,7 +125,7 @@ void uci::handle_position(Game *g, std::istringstream &input) {
 
   if (token == "startpos")
   {
-    g->set_fen(Game::kStartPosition);
+    b->set_fen(Board::kStartPosition);
 
     // get rid of "moves" token
     input >> token;
@@ -134,17 +134,17 @@ void uci::handle_position(Game *g, std::istringstream &input) {
     std::string fen;
     while (input >> token && token != "moves")
       fen += token + ' ';
-    g->set_fen(fen);
+    b->set_fen(fen);
   } else
     return;
 
   // parse any moves if they exist
   while (input >> token)
   {
-    const auto *const m = g->pos->string_to_move(token);
+    const auto *const m = b->pos->string_to_move(token);
       if (!m || *m == MOVE_NONE)
           break;
-      g->make_move(*m, false, true);
+      b->make_move(*m, false, true);
   }
 }
 

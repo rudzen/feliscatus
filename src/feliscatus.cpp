@@ -28,6 +28,7 @@
 #include <fmt/format.h>
 
 #include "feliscatus.h"
+#include "board.h"
 #include "perft.h"
 #include "util.h"
 #include "types.h"
@@ -40,22 +41,22 @@ int Felis::new_game() {
     workers.clear();
   else
     workers.resize(num_helpers);
-  return game->new_game(Game::kStartPosition.data());
+  return board->new_game(Board::kStartPosition.data());
 }
 
 int Felis::go() {
-  game->pos->pv_length = 0;
+  board->pos->pv_length = 0;
 
   start_workers();
   search->go(Pool.limits);
   stop_workers();
 
-  if (game->pos->pv_length)
+  if (board->pos->pv_length)
   {
     auto &pv = Pool.main()->pv;
     const auto [move, ponder_move] = std::make_pair(pv[0][0].move, pv[0][1].move ? pv[0][1].move : MOVE_NONE);
     uci::post_moves(move, ponder_move);
-    game->make_move(move, true, true);
+    board->make_move(move, true, true);
   }
   return 0;
 }
@@ -65,7 +66,7 @@ void Felis::stop() const { search->stop_search.store(true); }
 void Felis::start_workers() {
   if (workers.empty())
     return;
-  const auto fen = game->get_fen();
+  const auto fen = board->get_fen();
   for (std::size_t idx = 1; auto &worker : workers)
     worker.start(fen, idx++);
 }
@@ -78,11 +79,9 @@ void Felis::stop_workers() {
 int Felis::run(const int argc, char* argv[]) {
   setbuf(stdout, nullptr);
 
-  game     = std::make_unique<Game>();
+  board     = std::make_unique<Board>(Board::kStartPosition);
   Pool.set(1);
-  search   = std::make_unique<Search>(game.get(), 0);
-
-  new_game();
+  search   = std::make_unique<Search>(board.get(), 0);
 
   // simple jthread to start main search from
   std::jthread main_go;
@@ -106,7 +105,7 @@ int Felis::run(const int argc, char* argv[]) {
     if (argc == 1 && !std::getline(std::cin, command))
       command = "quit";
     else
-      game->pos->generate_moves();
+      board->pos->generate_moves();
 
     std::istringstream input(command);
 
@@ -134,7 +133,7 @@ int Felis::run(const int argc, char* argv[]) {
     } else if (token == "setoption")
       uci::handle_set_option(input);
     else if (token == "position")
-      uci::handle_position(game.get(), input);
+      uci::handle_position(board.get(), input);
     else if (token == "go")
     {
       stop_threads();
@@ -143,7 +142,7 @@ int Felis::run(const int argc, char* argv[]) {
     }
     else if (token == "perft")
     {
-      const auto total = perft::perft(game.get(), 6);
+      const auto total = perft::perft(board.get(), 6);
       fmt::print("Total nodes: {}\n", total);
     }
     else if (token == "quit" || token == "exit")

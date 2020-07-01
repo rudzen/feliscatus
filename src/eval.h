@@ -20,13 +20,13 @@
 
 #pragma once
 
-class Game;
+struct Board;
 struct PawnHashTable;
 
 namespace Eval {
 
-int evaluate(Game *g, std::size_t pool_index, int alpha, int beta);
+int evaluate(Board *b, std::size_t pool_index, int alpha, int beta);
 
-int tune(Game *g, std::size_t pool_index, int alpha, int beta);
+int tune(Board *b, std::size_t pool_index, int alpha, int beta);
 
 }

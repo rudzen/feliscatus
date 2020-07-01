@@ -338,9 +338,9 @@ void Moves::add_pawn_moves(const Bitboard to_squares, const Direction distance, 
 void Moves::add_castle_move(const Square from, const Square to) { add_move(make_piece(King, side_to_move), from, to, CASTLE); }
 
 bool Moves::gives_check(const Move m) const {
-  b->make_move(m);
+  b->perform_move(m);
   const auto is_attacked = b->is_attacked(b->king_sq(~side_to_move), side_to_move);
-  b->unmake_move(m);
+  b->unperform_move(m);
   return is_attacked;
 }
 
@@ -348,15 +348,11 @@ bool Moves::is_legal(const Move m, const Piece piece, const Square from, const M
   if (!(pinned_ & from) && !in_check && type_of(piece) != King && !(type & EPCAPTURE))
     return true;
 
-  b->make_move(m);
+  b->perform_move(m);
 
-  if (b->is_attacked(b->king_sq(side_to_move), ~side_to_move))
-  {
-    b->unmake_move(m);
-    return false;
-  }
-  b->unmake_move(m);
-  return true;
+  const auto is_attacked = b->is_attacked(b->king_sq(side_to_move), ~side_to_move);
+  b->unperform_move(m);
+  return !is_attacked;
 }
 
 bool Moves::can_castle_short() const { return castle_rights & oo_allowed_mask[side_to_move] && is_castle_allowed(oo_king_to[side_to_move], side_to_move, b); }

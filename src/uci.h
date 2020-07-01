@@ -33,7 +33,8 @@
 #include "search_limits.h"
 
 struct Felis;
-struct Game;
+struct Board;
+
 namespace uci {
 
 enum class UciOptions {
@@ -147,7 +148,7 @@ void post_pv(int d, int max_ply, int score, const std::array<PVEntry, MAXDEPTH> 
 
 int handle_go(std::istringstream &input, SearchLimits &limits);
 
-void handle_position(Game *g, std::istringstream &input);
+void handle_position(Board *b, std::istringstream &input);
 
 void handle_set_option(std::istringstream &input);
 

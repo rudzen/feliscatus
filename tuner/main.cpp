@@ -54,7 +54,7 @@ int main(const int argc, char **argv) {
 
   fmt::print("{}\n", title);
 
-  auto cli_parser_settings = cli::make_parser(argc, argv, title, ParserType::Tuner);
+  const auto cli_parser_settings = cli::make_parser(argc, argv, title, ParserType::Tuner);
 
   TT.init(256);
   
@@ -64,7 +64,7 @@ int main(const int argc, char **argv) {
   zobrist::init();
 
   const Stopwatch sw;
-  eval::Tune(std::make_unique<Game>(), cli_parser_settings.get());
+  eval::Tune(std::make_unique<Board>(), cli_parser_settings.get());
   const auto seconds = sw.elapsed_seconds();
   fmt::print("{} seconds\n", seconds);
 }

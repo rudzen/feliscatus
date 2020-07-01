@@ -27,7 +27,7 @@
 
 #include "moves.h"
 #include "uci.h"
-#include "game.h"
+#include "board.h"
 #include "stopwatch.h"
 #include "position.h"
 #include "transpositional.h"
@@ -36,7 +36,7 @@
 
 struct Search final : MoveSorter {
   Search() = delete;
-  Search(Game *g, const std::size_t data_index) : game(g), board(g->board), data_index_(data_index), data_(Pool[data_index].get()), verbosity(data_index == 0) {
+  Search(Board *board, const std::size_t data_index) : b(board), data_index_(data_index), data_(Pool[data_index].get()), verbosity(data_index == 0) {
     if (data_index != 0)
       stop_search.store(false);
   }
@@ -127,8 +127,7 @@ private:
   static constexpr std::array<int, 4> razor_margin {0, 125, 125, 400};
 
   std::array<int, COL_NB> draw_score_{};
-  Game *game;
-  Board &board;
+  Board *b;
   Position *pos{};
   std::size_t data_index_;
   Data* data_;
@@ -143,7 +142,7 @@ int Search::search(const int depth, int alpha, const int beta) {
       return search_node_score(pos->transp_score);
   }
 
-  if (board.plies >= MAXDEPTH - 1)
+  if (b->plies >= MAXDEPTH - 1)
     return search_node_score(pos->eval_score);
 
   if constexpr (!PV)
@@ -190,7 +189,7 @@ int Search::search(const int depth, int alpha, const int beta) {
     {
       ++move_count;
 
-      if (verbosity && board.plies == 1 && board.search_depth >= 20 && (Pool.time.should_post_curr_move() || is_analysing()))
+      if (verbosity && b->plies == 1 && b->search_depth >= 20 && (Pool.time.should_post_curr_move() || is_analysing()))
         uci::post_curr_move(move_data->move, move_count);
 
       if (PV && move_count == 1)
@@ -228,7 +227,7 @@ int Search::search(const int depth, int alpha, const int beta) {
 
           if (score >= beta)
           {
-            if (board.plies == 0)
+            if (b->plies == 0)
               update_pv<BETA>(best_move, best_score, depth);
 
             break;
@@ -247,7 +246,7 @@ int Search::search(const int depth, int alpha, const int beta) {
     throw 1;
 
   if (move_count == 0)
-    return search_node_score(pos->in_check ? -MAXSCORE + board.plies : draw_score());
+    return search_node_score(pos->in_check ? -MAXSCORE + b->plies : draw_score());
 
   if (pos->reversible_half_move_count >= 100)
     return search_node_score(draw_score());
@@ -264,7 +263,7 @@ int Search::search(const int depth, int alpha, const int beta) {
 
 template<NodeType NT, bool PV>
 int Search::search_next_depth(const int depth, const int alpha, const int beta) {
-  return (pos->is_draw() || game->is_repetition()) && !is_null_move(pos->last_move)
+  return (pos->is_draw() || b->is_repetition()) && !is_null_move(pos->last_move)
        ? search_node_score(-draw_score())
        : depth <= 0 ? -search_quiesce<PV>(alpha, beta, 0) : -search<NT, PV>(depth, alpha, beta);
 }
@@ -286,7 +285,7 @@ std::optional<int> Search::next_depth_not_pv(const int depth, const int move_cou
 
   const auto m = move_data->move;
 
-  if (pos->in_check && board.see_last_move(m) >= 0)
+  if (pos->in_check && b->see_last_move(m) >= 0)
     return std::make_optional(depth);
 
   constexpr auto move_count_limit = PV ? 5 : 3;
@@ -326,7 +325,7 @@ int Search::search_quiesce(int alpha, const int beta, const int qs_ply) {
          ? store_search_node_score(pos->eval_score, 0, BETA, MOVE_NONE)
          : search_node_score(pos->eval_score);
 
-  if (board.plies >= MAXDEPTH - 1 || qs_ply > 6)
+  if (b->plies >= MAXDEPTH - 1 || qs_ply > 6)
     return search_node_score(pos->eval_score);
 
   auto best_move  = MOVE_NONE;
@@ -398,7 +397,7 @@ int Search::search_quiesce(int alpha, const int beta, const int qs_ply) {
 template<NodeType NT>
 void Search::update_pv(const Move move, const int score, const int depth) {
   auto &pv          = data_->pv;
-  auto *const entry = &pv[board.plies][board.plies];
+  auto *const entry = &pv[b->plies][b->plies];
 
   entry->score     = score;
   entry->depth     = depth;
@@ -407,20 +406,20 @@ void Search::update_pv(const Move move, const int score, const int depth) {
   entry->node_type = NT;
   entry->eval      = pos->eval_score;
 
-  const auto next_ply = board.plies + 1;
+  const auto next_ply = b->plies + 1;
 
   auto &pv_len  = data_->pv_length;
 
-  pv_len[board.plies] = pv_len[next_ply];
+  pv_len[b->plies] = pv_len[next_ply];
 
-  for (auto i = next_ply; i < pv_len[board.plies]; ++i)
-    pv[board.plies][i] = pv[next_ply][i];
+  for (auto i = next_ply; i < pv_len[b->plies]; ++i)
+    pv[b->plies][i] = pv[next_ply][i];
 
-  if (board.plies == 0)
+  if (b->plies == 0)
   {
     pos->pv_length = pv_len[0];
 
     if (verbosity)
-      uci::post_pv(board.search_depth, board.max_ply, score, pv[board.plies], pv_len[board.plies], board.plies, NT);
+      uci::post_pv(b->search_depth, b->max_ply, score, pv[b->plies], pv_len[b->plies], b->plies, NT);
   }
 }
