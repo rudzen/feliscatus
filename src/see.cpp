@@ -40,7 +40,7 @@ constexpr Piece next_to_capture(const Move move) {
 
 int Board::see_move(const Move move) {
   int score;
-  make_move(move);
+  perform_move(move);
 
   const auto us   = move_side(move);
   const auto them = ~us;
@@ -52,7 +52,7 @@ int Board::see_move(const Move move) {
   } else
     score = SEE_INVALID_SCORE;
 
-  unmake_move(move);
+  unperform_move(move);
   return score;
 }
 
@@ -78,17 +78,17 @@ int Board::see_rec(const int mat_change, const Piece next_capture, const Square 
          ? init_move<PROMOTION | CAPTURE>(make_piece(current_pt, side_to_move), next_capture, from.value(), to, make_piece(Queen, side_to_move))
          : init_move<CAPTURE>(make_piece(current_pt, side_to_move), next_capture, from.value(), to, NoPiece);
 
-    make_move(move);
+    perform_move(move);
 
     if (!is_attacked(king_square[side_to_move], ~side_to_move))
       break;
 
-    unmake_move(move);
+    unperform_move(move);
   } while (true);
 
   const auto score = -see_rec(material_change(move), next_to_capture(move), move_to(move), ~move_side(move));
 
-  unmake_move(move);
+  unperform_move(move);
 
   return score < 0 ? mat_change + score : mat_change;
 }

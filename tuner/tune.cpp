@@ -30,7 +30,7 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 
 #include "tune.h"
-#include "../src/game.h"
+#include "../src/board.h"
 #include "../src/eval.h"
 #include "../src/parameters.h"
 #include "../src/util.h"
@@ -376,8 +376,8 @@ void PGNPlayer::read_san_move() {
 
   all_nodes_count_++;
 
-  if (game_->pos - game_->position_list.data() >= 14 && all_nodes_count_ % 7 == 0)
-    current_game_nodes_.emplace_back(game_->get_fen());
+  if (board_->half_move_count() >= 14 && all_nodes_count_ % 7 == 0)
+    current_game_nodes_.emplace_back(board_->get_fen());
 }
 
 void PGNPlayer::read_game_termination() {
@@ -403,7 +403,7 @@ void PGNPlayer::print_progress(const bool force) const {
   fmt::print("game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_, all_nodes_count_, all_selected_nodes_.size());
 }
 
-Tune::Tune(std::unique_ptr<Game> game, const ParserSettings *settings) : game_(std::move(game)), score_static_(false) {
+Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : board_(std::move(board)), score_static_(false) {
   PGNPlayer pgn;
   pgn.read(settings->file_name);
 
@@ -524,7 +524,7 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
 
   for (const auto &node : nodes)
   {
-    game_->set_fen(node.fen_);
+    board_->set_fen(node.fen_);
     x += std::pow(node.result_ - util::sigmoid(get_score(WHITE), K), 2);
   }
 
@@ -549,21 +549,21 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
 void Tune::make_quiet(std::vector<Node> &nodes) {
   for (auto &node : nodes)
   {
-    game_->set_fen(node.fen_.c_str());
+    board_->set_fen(node.fen_.c_str());
     pv_length[0] = 0;
     get_quiesce_score(-32768, 32768, true, 0);
     play_pv();
-    node.fen_ = game_->get_fen();
+    node.fen_ = board_->get_fen();
   }
 }
 
 int Tune::get_score(const Color side) {
-  const auto score = score_static_ ? Eval::tune(game_.get(), 0, -100000, 100000) : get_quiesce_score(-32768, 32768, false, 0);
-  return game_->pos->side_to_move == side ? score : -score;
+  const auto score = score_static_ ? Eval::tune(board_.get(), 0, -100000, 100000) : get_quiesce_score(-32768, 32768, false, 0);
+  return board_->pos->side_to_move == side ? score : -score;
 }
 
 int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) {
-  auto score = Eval::tune(game_.get(), 0, -100000, 100000);
+  auto score = Eval::tune(board_.get(), 0, -100000, 100000);
 
   if (score >= beta)
     return score;
@@ -573,9 +573,9 @@ int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, cons
   if (best_score > alpha)
     alpha = best_score;
 
-  game_->pos->generate_captures_and_promotions(this);
+  board_->pos->generate_captures_and_promotions(this);
 
-  while (auto *const move_data = game_->pos->next_move())
+  while (auto *const move_data = board_->pos->next_move())
   {
     if (!is_promotion(move_data->move) && move_data->score < 0)
       break;
@@ -584,7 +584,7 @@ int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, cons
     {
       score = -get_quiesce_score(-beta, -alpha, store_pv, ply + 1);
 
-      game_->unmake_move();
+      board_->unmake_move();
 
       if (score > best_score)
       {
@@ -607,7 +607,7 @@ int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, cons
 }
 
 bool Tune::make_move(const Move m, int ply) {
-  if (!game_->make_move(m, true, true))
+  if (!board_->make_move(m, true, true))
     return false;
 
   ++ply;
@@ -616,12 +616,12 @@ bool Tune::make_move(const Move m, int ply) {
 }
 
 void Tune::unmake_move() const {
-  game_->unmake_move();
+  board_->unmake_move();
 }
 
 void Tune::play_pv() {
   for (auto i = 0; i < pv_length[0]; ++i)
-    game_->make_move(pv[0][i].move, false, true);
+    board_->make_move(pv[0][i].move, false, true);
 }
 
 void Tune::update_pv(const Move move, const int score, const int ply) {
@@ -656,7 +656,7 @@ void Tune::sort_move(MoveData &move_data) {
 
     if (value_piece <= value_captured)
       move_data.score = 300000 + value_captured * 20 - value_piece;
-    else if (game_->board.see_move(m) >= 0)
+    else if (board_->see_move(m) >= 0)
       move_data.score = 160000 + value_captured * 20 - value_piece;
     else
       move_data.score = -100000 + value_captured * 20 - value_piece;

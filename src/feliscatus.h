@@ -28,6 +28,7 @@
 
 struct PawnHashTable;
 struct Search;
+struct Board;
 
 struct Felis final {
   Felis() = default;
@@ -45,7 +46,7 @@ struct Felis final {
   int run(int argc, char* argv[]);
 
 private:
-  std::unique_ptr<Game> game;
+  std::unique_ptr<Board> board;
   std::unique_ptr<Search> search;
   std::vector<Worker> workers{};
 };

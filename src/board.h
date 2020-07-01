@@ -26,17 +26,53 @@
 
 #include "types.h"
 #include "magic.h"
+#include "position.h"
 
 enum Move : uint32_t;
 
 struct Board {
+
+  using PositionList = std::array<Position, MAXDEPTH * 3>;
+
+  Board();
+  explicit Board(std::string_view fen);
+
+  static constexpr std::string_view kStartPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
   void clear();
+
+  bool make_move(Move m, bool check_legal, bool calculate_in_check);
+
+  void unmake_move();
+
+  bool make_null_move();
+
+  [[nodiscard]]
+  uint64_t calculate_key() const;
+
+  [[nodiscard]]
+  bool is_repetition() const;
+
+  [[nodiscard]]
+  int64_t half_move_count() const;
+
+  int new_game(std::string_view fen);
+
+  int set_fen(std::string_view fen);
+
+  [[nodiscard]] std::string get_fen() const;
+
+  [[nodiscard]] bool setup_castling(std::string_view s);
+
+  [[nodiscard]] std::string move_to_string(Move m) const;
+
+  void print_moves() const;
 
   void add_piece(Piece pc, Square sq);
 
-  void make_move(Move m);
+  void perform_move(Move m);
 
-  void unmake_move(Move m);
+  void unperform_move(Move m);
 
   [[nodiscard]]
   Piece get_piece(Square sq) const;
@@ -98,6 +134,10 @@ struct Board {
   int plies{};
   int max_ply{};
   int search_depth{};
+  std::array<int, sq_nb> castle_rights_mask{};
+  Position *pos;
+  bool chess960;
+  bool xfen;
 
 private:
 
@@ -129,13 +169,15 @@ private:
 
   void init_see_move();
 
+  void update_position(Position *p) const;
+
   std::array<Piece, sq_nb> board{};
   std::array<Bitboard, COL_NB> occupied_by_side{};
   std::array<Bitboard, 2> current_piece_bitboard{};
   std::array<PieceType, 2> current_piece{};
   Bitboard occupied{};
   std::array<Square, COL_NB> king_square{};
-
+  PositionList position_list{};
 };
 
 inline void Board::add_piece(const Piece pc, const Square sq) {
