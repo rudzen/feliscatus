@@ -54,7 +54,7 @@ bool CaseInsensitiveLess::operator()(const std::string_view s1, const std::strin
 }
 
 void init(OptionsMap &o) {
-  o[get_uci_name<UciOptions::THREADS>()] << Option(1, 1, 64, on_threads);
+  o[get_uci_name<UciOptions::THREADS>()] << Option(1, 1, 512, on_threads);
   o[get_uci_name<UciOptions::HASH>()] << Option(64, 1, MaxHashMB, on_hash_size);
   o[get_uci_name<UciOptions::CLEAR_HASH>()] << Option(on_clear_hash);
   o[get_uci_name<UciOptions::CLEAR_HASH_NEW_GAME>()] << Option(false);

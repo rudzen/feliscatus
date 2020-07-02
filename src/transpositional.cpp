@@ -18,54 +18,80 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <cstring>
+#include <thread>
+#include <cstdint>
 #include <cstdlib>
+#include <vector>
 #include <fmt/format.h>
 #include "transpositional.h"
+#include "uci.h"
 
 namespace {
-
-constexpr int NUMBER_SLOTS = 4;
 
 constexpr uint32_t key32(const Key key) {
   return key >> 32;
 }
 
-}
+}// namespace
 
 HashTable::~HashTable() {
-  delete table;
+  std::free(mem);
 }
 
 void HashTable::init(const uint64_t new_size_mb) {
-  if (new_size_mb == size_mb)
-  {
-    clear();
+  if (size_mb == new_size_mb)
     return;
+
+  // Original code from SF
+
+  bucket_count = new_size_mb * 1024 * 1024 / sizeof(Bucket);
+
+  std::free(mem);
+  size = bucket_count * sizeof(Bucket) + CacheLineSize - 1;
+  // TODO : replace with std::aligned_alloc() at some point;
+  mem  = std::malloc(size);
+
+  if (!mem)
+  {
+    fmt::print(stderr, "Failed to allocate {}MB for transposition table.\n", new_size_mb);
+    exit(EXIT_FAILURE);
   }
 
+  table = reinterpret_cast<Bucket *>((uintptr_t(mem) + CacheLineSize - 1) & ~(CacheLineSize - 1));
   size_mb = new_size_mb;
-  size    = 1024 * 1024 * new_size_mb / sizeof(HashEntry);
-  mask    = size - 1;
-  size += NUMBER_SLOTS - 1;
-  delete[] table;
-  table = new HashEntry[size];
   clear();
 }
 
 void HashTable::clear() {
-  std::memset(table, 0, size * sizeof(HashEntry));
-  occupied = 0;
-  age      = 0;
+
+  // Original code from SF
+
+  std::vector<std::jthread> threads;
+  const auto thread_count = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::THREADS>()]);
+
+  for (std::size_t idx = 0; idx < thread_count; idx++)
+  {
+    threads.emplace_back(std::jthread([this, idx, thread_count]() {
+      // Thread binding gives faster search on systems with a first-touch policy
+      if (thread_count > 8)
+        WinProcGroup::bind_this_thread(idx);
+
+      // Each thread will zero its part of the hash table
+      const auto stride = bucket_count / thread_count, start = stride * idx, len = idx != thread_count - 1
+                                                                                        ? stride
+                                                                                        : bucket_count - start;
+
+      // treat as void* to shut up compiler warning -Wclass-memaccess as this is "totally" safe
+      std::memset(reinterpret_cast<void*>(&table[start]), 0, len * sizeof(Bucket));
+    }));
+  }
 }
 
 HashEntry *HashTable::find(const Key key) const {
-  auto *transp   = table + (key & mask);
+  auto *bucket   = find_bucket(key);
   const auto k32 = key32(key);
-  for (auto i = 0; i < NUMBER_SLOTS; i++, transp++)
-    if (transp->key == k32 && transp->flags)
-      return transp;
-  return nullptr;
+  const auto found = std::find_if(bucket->entry.begin(), bucket->entry.end(), [&k32](const HashEntry &e) { return e.key == k32 && e.flags; });
+  return found != bucket->entry.end() ? found : nullptr;
 }
 
 HashEntry *HashTable::insert(const Key key, const int depth, const int score, const NodeType type, const Move move, const int eval) {
@@ -88,29 +114,38 @@ HashEntry *HashTable::insert(const Key key, const int depth, const int score, co
 }
 
 HashEntry *HashTable::get_entry_to_replace(const Key key, [[maybe_unused]] const int depth) const {
-  auto *transp   = table + (key & mask);
+  auto *bucket   = find_bucket(key);
   const auto k32 = key32(key);
 
-  if (transp->flags == 0 || transp->key == k32)
-    return transp;
+  auto *entry = &bucket->entry.front();
 
-  constexpr auto replacement_score = [](const HashEntry *e) {
-    return (e->age << 9) + e->depth;
-  };
+  if (entry->flags == Void || entry->key == k32)
+    return entry;
 
-  auto *replace      = transp++;
-  auto replace_score = replacement_score(replace);
+  constexpr auto replacement_score = [&](const HashEntry *e) { return (e->age << 9) + e->depth; };
+  auto match                       = [&k32](HashEntry *e) { return e->flags == Void || e->key == k32; };
+  auto *replace                    = entry;
+  auto replace_score               = replacement_score(replace);
 
-  for (auto i = 1; i < NUMBER_SLOTS; i++, transp++)
-  {
-    if (transp->flags == Void || transp->key == k32)
-      return transp;
+  // Returns true if match is found, otherwise it updates the potential replacer entry
+  const auto replacer              = [&](HashEntry &e) {
+    if (match(&e))
+      return true;
 
-    if (const auto score = replacement_score(transp); score < replace_score)
+    if (const auto score = replacement_score(&e); score < replace_score)
     {
       replace_score = score;
-      replace       = transp;
+      replace       = &e;
     }
-  }
-  return replace;
+
+    return false;
+  };
+
+  // Attempt to find a suitable replacement,
+  // take care to skip the first entry as it has been checked at the start of the function
+  auto found = std::find_if(std::next(bucket->entry.begin()), bucket->entry.end(), replacer);
+
+  return found != bucket->entry.end()
+                ? found
+                : replace;
 }

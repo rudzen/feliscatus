@@ -23,17 +23,10 @@
 #include <cstdint>
 
 #include "types.h"
+#include "miscellaneous.h"
 
 #pragma pack(1)
-struct HashEntry {
-  uint32_t key;
-  uint16_t age;// 7 bits left
-  uint8_t depth;
-  NodeType flags;// 5 bits left
-  int16_t score;
-  Move move;
-  int16_t eval;
-
+struct alignas(16) HashEntry {
   [[nodiscard]]
   bool is_exact() const noexcept { return flags & EXACT; }
 
@@ -42,13 +35,38 @@ struct HashEntry {
 
   [[nodiscard]]
   bool is_alpha() const noexcept { return flags & ALPHA; }
+
+  uint32_t key;
+  uint16_t age;// 7 bits left
+  uint8_t depth;
+  NodeType flags;// 5 bits left
+  int16_t score;
+  Move move;
+  int16_t eval;
+
+private:
+  friend class HashTable;
 };
 #pragma pack()
 
 struct HashTable final {
+private:
+  friend struct HashEntry;
+
+  static constexpr int CacheLineSize = 64;
+  static constexpr std::size_t BucketSize = 4;
+
+  using BucketArray = std::array<HashEntry, BucketSize>;
+
+  // Just use a simple array for bucket
+  struct Bucket final {
+    BucketArray entry{};
+  };
+
+public:
 
   ~HashTable();
-  HashTable()                             = default;
+  constexpr HashTable()                   = default;
   HashTable(const HashTable &other)       = delete;
   HashTable(HashTable &&other)            = delete;
   HashTable &operator=(const HashTable &) = delete;
@@ -59,6 +77,12 @@ struct HashTable final {
   void clear();
 
   void init_search();
+
+  [[nodiscard]]
+  HashEntry *first_entry(const Key key) const { return &table[mul_hi64(key, bucket_count)].entry[0]; }
+
+  [[nodiscard]]
+  Bucket *find_bucket(const Key key) const { return &table[mul_hi64(key, bucket_count)]; }
 
   [[nodiscard]]
   HashEntry *find(Key key) const;
@@ -74,12 +98,18 @@ struct HashTable final {
   [[nodiscard]]
   int get_size_mb() const;
 
-protected:
-  HashEntry *table{};
-  uint64_t mask{};
+private:
+
+  static_assert(CacheLineSize % sizeof(Bucket) == 0, "Bucket size incorrect");
+
+  std::size_t bucket_count{};
+  Bucket* table{};
+  void* mem{};
+
   uint64_t occupied{};
   uint64_t size_mb{};
   uint64_t size{};
+
   int age{};
 };
 

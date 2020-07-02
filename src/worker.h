@@ -25,9 +25,9 @@
 #include <string_view>
 
 #include "board.h"
-#include "eval.h"
 #include "search.h"
-#include "pawnhashtable.h"
+#include "uci.h"
+#include "miscellaneous.h"
 
 struct Worker final {
 
@@ -37,6 +37,8 @@ struct Worker final {
     board_->set_fen(fen);
     search_ = std::make_unique<Search>(board_.get(), index);
     thread_ = std::jthread(&Search::run, search_.get());
+    if (Options[uci::get_uci_name<uci::UciOptions::THREADS>()] > 8)
+      WinProcGroup::bind_this_thread(index);
   }
 
   void stop() {
