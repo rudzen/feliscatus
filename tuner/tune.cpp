@@ -438,7 +438,7 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : board
 
   // 0 == mg, 1 == eg
   auto stage = 0;
-  Score original = ZeroScor;
+  Score original = ZeroScore;
 
   while (improved)
   {

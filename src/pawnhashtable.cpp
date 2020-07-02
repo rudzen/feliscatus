@@ -27,10 +27,10 @@ PawnHashEntry *PawnHashTable::find(const Position *pos) {
   return (*this)[pos->pawn_structure_key];
 }
 
-PawnHashEntry *PawnHashTable::insert(const Key key, const Score s, const std::array<Bitboard, 2> &passed_pawns) {
+PawnHashEntry *PawnHashTable::insert(const Key key, const Score s, const std::array<int, 2> &passed_pawn_files) {
   auto *pawnp    = (*this)[key];
   pawnp->zkey    = key;
   pawnp->eval    = s;
-  std::copy(passed_pawns.begin(), passed_pawns.end(), pawnp->passed_pawns.begin());
+  std::copy(passed_pawn_files.begin(), passed_pawn_files.end(), pawnp->passed_pawn_files.begin());
   return pawnp;
 }

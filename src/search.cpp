@@ -99,9 +99,13 @@ bool is_killer_move(const Move m, const Position *p) {
 }
 
 void update_history_scores(HistoryScores &history_scores, const Move move, const int depth) {
-  history_scores[move_piece(move)][move_to(move)] += (depth * depth);
 
-  if (history_scores[move_piece(move)][move_to(move)] <= 2048)
+  const auto pc = move_piece(move);
+  const auto to = move_to(move);
+
+  history_scores[pc][to] += (depth * depth);
+
+  if (history_scores[pc][to] <= 2048)
     return;
 
   for (auto &history_score : history_scores)

@@ -30,10 +30,13 @@ struct Position;
 
 #pragma pack(1)
 struct PawnHashEntry final {
-  Key zkey{};
-  Score eval{};
-  std::array<Bitboard, COL_NB> passed_pawns{};
-  int ph{};
+
+  Bitboard passed_pawn_file(const Color c) { return static_cast<Bitboard>(passed_pawn_files[c]); }
+
+  Key zkey;
+  Score eval;
+  std::array<uint8_t, COL_NB> passed_pawn_files;
+  int16_t unused;
 };
 #pragma pack()
 
@@ -42,5 +45,5 @@ struct PawnHashTable final : Table<PawnHashEntry, 512 * sizeof(PawnHashEntry)> {
   PawnHashEntry *find(const Position *pos);
 
   [[nodiscard]]
-  PawnHashEntry *insert(Key key, Score s, const std::array<Bitboard, 2> &passed_pawns);
+  PawnHashEntry *insert(Key key, Score s, const std::array<int, 2> &passed_pawn_files);
 };
