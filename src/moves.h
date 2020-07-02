@@ -22,7 +22,6 @@
 
 #include <array>
 #include <cstdint>
-#include <optional>
 
 #include "types.h"
 
@@ -45,13 +44,14 @@ struct MoveSorter {
 struct Board;
 
 struct Moves {
-  void generate_moves(std::optional<MoveSorter *> sorter = std::nullopt, Move tt_move = MOVE_NONE, int flags = 0);
+  void generate_moves(MoveSorter *sorter = nullptr, Move tt_move = MOVE_NONE, int flags = 0);
 
-  void generate_captures_and_promotions(std::optional<MoveSorter *> sorter);
+  void generate_captures_and_promotions(MoveSorter *sorter);
 
+  template<Color Us>
   void generate_moves(PieceType pt, Bitboard to_squares);
 
-  void generate_pawn_moves(bool capture, Bitboard to_squares);
+  void generate_pawn_moves(bool capture, Bitboard to_squares, Color stm);
 
   [[nodiscard]]
   MoveData *next_move();
@@ -67,43 +67,47 @@ struct Moves {
   std::array<MoveData, 256> move_list{};
 
   Board *b{};
-  Color side_to_move{};
-  int castle_rights{};
-  bool in_check{};
-  Square en_passant_square{};
 
 private:
-  void reset(std::optional<MoveSorter *> sorter, Move move, int flags);
+  void reset(MoveSorter *sorter, Move move, int flags);
 
   void generate_hash_move();
 
+  template<Color Us>
   void generate_captures_and_promotions();
 
+  template<Color Us>
   void generate_quiet_moves();
 
+  template<Color Us>
   void add_move(Piece piece, Square from, Square to, MoveType type, Piece promoted = NoPiece);
 
+  template<Color Us>
   void add_moves(Bitboard to_squares);
 
+  template<Color Us>
   void add_moves(PieceType pt, Square from, Bitboard attacks);
 
+  template<Color Us>
   void add_pawn_quiet_moves(Bitboard to_squares);
 
+  template<Color Us>
   void add_pawn_capture_moves(Bitboard to_squares);
 
+  template<Color Us>
   void add_pawn_moves(Bitboard to_squares, Direction distance, MoveType type);
 
+  template<Color Us>
   void add_castle_move(Square from, Square to);
 
-  [[nodiscard]]
-  bool gives_check(Move m) const;
+  template<Color Us>
+  MoveData *get_next_move();
 
-  [[nodiscard]]
-  bool is_legal(Move m, Piece piece, Square from, MoveType type) const;
-
+  template<Color Us>
   [[nodiscard]]
   bool can_castle_short() const;
 
+  template<Color Us>
   [[nodiscard]]
   bool can_castle_long() const;
 
@@ -111,8 +115,7 @@ private:
   int stage_{};
   int max_stage_{};
   int number_moves_{};
-  Bitboard pinned_{};
-  std::optional<MoveSorter *> move_sorter_;
+  MoveSorter *move_sorter_{};
   Move transp_move_{};
   int move_flags_{};
 };

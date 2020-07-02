@@ -18,43 +18,42 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include <cstring>
+#include <numeric>
 
-#include <array>
+#include "datapool.h"
 
-#include "types.h"
-#include "prng.h"
+Data::Data(const std::size_t data_index) : index(data_index) {}
 
-namespace zobrist {
-
-inline Key zobrist_pst[14][64];
-inline std::array<Key, 16> zobrist_castling{};
-inline Key zobrist_side, zobrist_nopawn;
-inline std::array<Key, 8> zobrist_ep_file{};
-constexpr Key zero = 0;
-
-inline void init() {
-
-  constexpr Key Seed = 1070372;
-
-  PRNG<Key> rng(Seed);
-
-  for (const auto p : PieceTypes)
-  {
-    for (const auto sq : Squares)
-    {
-      zobrist_pst[p][sq]     = rng();
-      zobrist_pst[p + 8][sq] = rng();
-    }
-  }
-
-  for (auto &i : zobrist_castling)
-    i = rng();
-
-  for (auto &i : zobrist_ep_file)
-    i = rng();
-
-  zobrist_side = rng();
-  zobrist_nopawn = rng();
+void Data::clear_data() {
+  std::memset(history_scores.data(), 0, sizeof(history_scores));
+  std::memset(counter_moves.data(), 0, sizeof(counter_moves));
+  pv_length.fill(0);
+  pv.fill({});
 }
-}// namespace zobrist
+
+void DataPool::set(const std::size_t v) {
+
+  while (!empty())
+    pop_back();
+
+  if (v > 0)
+  {
+    emplace_back(std::make_unique<MainData>(0));
+
+    while (size() < v)
+      emplace_back(std::make_unique<Data>(size()));
+
+    clear_data();
+  }
+}
+
+void DataPool::clear_data() {
+  for (auto &w: *this)
+    w->clear_data();
+}
+
+uint64_t DataPool::node_count() const {
+  const auto accumulator = [](const uint64_t r, const std::unique_ptr<Data> &d) { return r + d->node_count.load(std::memory_order_relaxed); };
+  return std::accumulate(cbegin(), cend(), 0ull, accumulator);
+}

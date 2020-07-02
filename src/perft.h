@@ -24,12 +24,12 @@
 
 #include "types.h"
 
-class Game;
+struct Board;
 
 namespace perft {
 
-  uint64_t perft(Game *g, int depth = 6, int flags = LEGALMOVES);
+  uint64_t perft(Board *b, int depth = 6, int flags = LEGALMOVES);
 
-  uint64_t divide(Game *g, int depth = 6, int flags = LEGALMOVES);
+  uint64_t divide(Board *b, int depth = 6, int flags = LEGALMOVES);
 
 }

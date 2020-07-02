@@ -28,64 +28,49 @@
 #include <fmt/format.h>
 
 #include "feliscatus.h"
+#include "board.h"
 #include "perft.h"
 #include "util.h"
 #include "types.h"
-
-namespace {
-
-constexpr std::array<std::string_view, 2> on_off{"OFF", "ON"};
-
-}
-
-Felis::Felis()
-  : num_threads(1) {
-}
+#include "datapool.h"
+#include "transpositional.h"
+#include "uci.h"
 
 int Felis::new_game() {
-  // TODO : test effect of not clearing
-  //pawnt->clear();
-  //TT.clear();
-  return game->new_game(Game::kStartPosition.data());
+  const auto num_threads = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::THREADS>()]);
+  Pool.set(num_threads);
+  if (const auto num_helpers = num_threads - 1; num_helpers == 0)
+    workers.clear();
+  else
+    workers.resize(num_helpers);
+  return board->new_game(Board::kStartPosition.data());
 }
 
-int Felis::set_fen(const std::string_view fen) { return game->new_game(fen); }
+int Felis::go() {
+  board->pos->pv_length = 0;
 
-int Felis::go(const SearchLimits &limits) {
-  game->pos->pv_length = 0;
+  start_workers();
+  search->go(Pool.limits);
+  stop_workers();
 
-  if (game->pos->pv_length == 0)
-    go_search(limits);
-
-  if (game->pos->pv_length)
+  if (board->pos->pv_length)
   {
-    protocol->post_moves(search->pv[0][0].move, game->pos->pv_length > 1 ? search->pv[0][1].move : MOVE_NONE);
-    game->make_move(search->pv[0][0].move, true, true);
+    auto &pv = Pool.main()->pv;
+    const auto [move, ponder_move] = std::make_pair(pv[0][0].move, pv[0][1].move ? pv[0][1].move : MOVE_NONE);
+    uci::post_moves(move, ponder_move);
+    board->make_move(move, true, true);
   }
   return 0;
 }
 
-void Felis::ponder_hit() { search->search_time += search->start_time.elapsed_milliseconds(); }
-
-void Felis::stop() { search->stop_search.store(true); }
-
-bool Felis::make_move(const std::string_view m) const {
-  const auto *const move = game->pos->string_to_move(m);
-  return move ? game->make_move(*move, true, true) : false;
-}
-
-void Felis::go_search(const SearchLimits &limits) {
-  start_workers();
-  search->go(limits, num_threads);
-  stop_workers();
-}
+void Felis::stop() const { search->stop_search.store(true); }
 
 void Felis::start_workers() {
   if (workers.empty())
     return;
-  const auto fen = game->get_fen();
-  for (auto &worker : workers)
-    worker.start(fen);
+  const auto fen = board->get_fen();
+  for (std::size_t idx = 1; auto &worker : workers)
+    worker.start(fen, idx++);
 }
 
 void Felis::stop_workers() {
@@ -93,49 +78,12 @@ void Felis::stop_workers() {
     worker.stop();
 }
 
-bool Felis::set_option(const std::string_view name, const std::string_view value) {
-  if (name == "Hash")
-  {
-    constexpr auto min = 8;
-    constexpr auto max = 64 * 1024;
-    const auto val     = util::to_integral<int>(value);
-    TT.init(std::clamp(val, min, max));
-    fmt::print("info string Hash:{}\n", TT.get_size_mb());
-  } else if (name == "Threads" || name == "NumThreads")
-  {
-    constexpr auto min = 1;
-    constexpr auto max = 64;
-    const auto val     = util::to_integral<int>(value);
-    num_threads = std::clamp(val, min, max);
-    workers.resize(num_threads - 1);
-    workers.shrink_to_fit();
-    fmt::print("info string Threads:{}\n", num_threads);
-  } else if (name == "UCI_Chess960")
-  {
-    game->chess960 = value == "true";
-    fmt::print("info string UCI_Chess960:{}\n", on_off[game->chess960]);
-  } else if (name == "UCI_Chess960_Arena")
-  {
-    game->chess960 = game->xfen = value == "true";
-    fmt::print("info string UCI_Chess960_Arena:{}\n", on_off[game->chess960]);
-  } else
-  {
-    fmt::print("Unknown option. {}={}\n", name, value);
-    return false;
-  }
-
-  return true;
-}
-
 int Felis::run(const int argc, char* argv[]) {
   setbuf(stdout, nullptr);
 
-  game     = std::make_unique<Game>();
-  protocol = std::make_unique<UCIProtocol>(this, game.get());
-  pawnt    = std::make_unique<PawnHashTable>();
-  search   = std::make_unique<Search>(protocol.get(), game.get(), pawnt.get());
-
-  new_game();
+  board     = std::make_unique<Board>(Board::kStartPosition);
+  Pool.set(1);
+  search   = std::make_unique<Search>(board.get(), 0);
 
   // simple jthread to start main search from
   std::jthread main_go;
@@ -152,14 +100,14 @@ int Felis::run(const int argc, char* argv[]) {
 
   // TODO : replace with CLI
   for (auto argument_index = 1; argument_index < argc; ++argument_index)
-    command += std::string(argv[argument_index]) + ' ';
+    command += fmt::format("{} ", argv[argument_index]);
 
   do
   {
     if (argc == 1 && !std::getline(std::cin, command))
       command = "quit";
-    // else
-    //   game->pos->generate_moves();
+    else
+      board->pos->generate_moves();
 
     std::istringstream input(command);
 
@@ -167,33 +115,37 @@ int Felis::run(const int argc, char* argv[]) {
     input >> std::skipws >> token;
 
     if (token == "quit" || token == "stop")
-      break;
+      stop_threads();
     else if (token == "ponder")
-      ponder_hit();
+      Pool.time.ponder_hit();
     else if (token == "uci")
     {
       fmt::print("id name Feliscatus 0.1\n");
       fmt::print("id author Gunnar Harms, FireFather, Rudy Alex Kohn\n");
-      fmt::print("option name Hash type spin default 1024 min 8 max 65536\n");
-      fmt::print("option name Ponder type check default true\n");
-      fmt::print("option name Threads type spin default 1 min 1 max 64\n");
-      fmt::print("option name UCI_Chess960 type check default false\n");
+      fmt::print("{}\n", Options);
       fmt::print("uciok\n");
     } else if (token == "isready")
       fmt::print("readyok\n");
     else if (token == "ucinewgame")
     {
+      if (Options[uci::get_uci_name<uci::UciOptions::CLEAR_HASH_NEW_GAME>()])
+        TT.clear();
       new_game();
       fmt::print("readyok\n");
     } else if (token == "setoption")
-      protocol->handle_set_option(input);
+      uci::handle_set_option(input);
     else if (token == "position")
-      protocol->handle_position(input);
+      uci::handle_position(board.get(), input);
     else if (token == "go")
     {
-      protocol->handle_go(input);
       stop_threads();
-      main_go = std::jthread(&Felis::go, this, protocol->limits);
+      uci::handle_go(input, Pool.limits);
+      main_go = std::jthread(&Felis::go, this);
+    }
+    else if (token == "perft")
+    {
+      const auto total = perft::perft(board.get(), 6);
+      fmt::print("Total nodes: {}\n", total);
     }
     else if (token == "quit" || token == "exit")
       break;

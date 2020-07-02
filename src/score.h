@@ -23,6 +23,8 @@
 #include <cstdint>
 #include <cassert>
 
+#include <fmt/format.h>
+
 ///
 /// Multi-valued type which is used to hold the mg and mg scores.
 ///
@@ -44,6 +46,17 @@ struct Score final {
 
   [[nodiscard]]
   constexpr bool operator==(const Score &b) const { return value == b.value; }
+
+  constexpr Score &operator+=(const int d2) noexcept {
+    this->value += d2;
+    return *this;
+  }
+
+  constexpr Score &operator-=(const int d2) noexcept {
+    value -= d2;
+    return *this;
+  }
+
 
   [[nodiscard]]
   constexpr int eg() const noexcept {
@@ -73,7 +86,7 @@ private:
   int value{};
 };
 
-constexpr Score ZeroScor = Score(0);
+constexpr Score ZeroScore = Score(0);
 
 // TODO : Move some operators inside Score
 
@@ -93,20 +106,12 @@ constexpr Score operator-(const Score d) noexcept {
   return -d.raw();
 }
 
-constexpr Score &operator+=(Score &d1, const int d2) noexcept {
-  return d1 = d1.raw() + d2;
-}
-
-constexpr Score &operator-=(Score &d1, const int d2) noexcept {
-  return d1 = d1.raw() - d2;
-}
-
 constexpr Score &operator+=(Score &d1, const Score d2) noexcept {
-  return d1 = d1.raw() + d2.raw();
+  return d1 = Score(d1.mg() + d2.mg(), d1.eg() + d2.eg());
 }
 
-constexpr Score &operator-=(Score &d1, const Score d2) noexcept {
-  return d1 = d1.raw() - d2.raw();
+constexpr Score &operator-=(Score &d1, Score d2) noexcept {
+  return d1 = Score(d1.mg() - d2.mg(), d1.eg() - d2.eg());
 }
 
 /// Division of a Score must be handled separately for each term
@@ -130,7 +135,7 @@ constexpr Score operator*(const Score s, const int i) {
 
 /// Multiplication of a Score by a boolean
 constexpr Score operator*(const Score s, const bool b) {
-  return b ? s : ZeroScor;
+  return b ? s : ZeroScore;
 }
 
 ///

@@ -18,18 +18,34 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <iostream>
-#include <string>
+#include <sstream>
 
 #include "uci.h"
-#include "util.h"
-#include "game.h"
+#include "board.h"
 #include "position.h"
 #include "search.h"
+#include "feliscatus.h"
+#include "datapool.h"
+#include "transpositional.h"
 
-UCIProtocol::UCIProtocol(ProtocolListener *cb, Game *g) : Protocol(cb, g) {}
+namespace {
 
-void UCIProtocol::post_moves(const Move bestmove, const Move pondermove) {
+constexpr TimeUnit time_safety_margin = 1;
+
+constexpr std::string_view fen_piece_names {"PNBRQK  pnbrqk "};
+
+constexpr uint64_t nps(const uint64_t nodes, const TimeUnit time) {
+  return nodes * 1000 / time;
+}
+
+auto node_info(const TimeUnit time) {
+  const auto nodes = Pool.node_count();
+  return std::make_pair(nodes, nps(nodes, time));
+}
+
+}
+
+void uci::post_moves(const Move bestmove, const Move pondermove) {
   fmt::memory_buffer buffer;
 
   fmt::format_to(buffer, "bestmove {}", display_uci(bestmove));
@@ -40,15 +56,17 @@ void UCIProtocol::post_moves(const Move bestmove, const Move pondermove) {
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-void UCIProtocol::post_info(const int d, const int selective_depth, const uint64_t node_count, const uint64_t nodes_per_sec, const TimeUnit time, const int hash_full) {
-  fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, hash_full, node_count, nodes_per_sec, time);
+void uci::post_info(const int d, const int selective_depth) {
+  const auto time = Pool.time.elapsed() + time_safety_margin;
+  const auto [node_count, nodes_per_second] = node_info(time);
+  fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, TT.get_load(), node_count, nodes_per_second, time);
 }
 
-void UCIProtocol::post_curr_move(const Move curr_move, const int curr_move_number) {
+void uci::post_curr_move(const Move curr_move, const int curr_move_number) {
   fmt::print("info currmove {} currmovenumber {}\n", display_uci(curr_move), curr_move_number);
 }
 
-void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_count, const uint64_t nodes_per_second, const TimeUnit time, const int hash_full, const int score, const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length, const int ply, const NodeType node_type) {
+void uci::post_pv(const int d, const int max_ply, const int score, const std::span<PVEntry> &pv_line, const NodeType node_type) {
 
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
@@ -58,15 +76,18 @@ void UCIProtocol::post_pv(const int d, const int max_ply, const uint64_t node_co
   else if (node_type == BETA)
     fmt::format_to(buffer, "lowerbound ");
 
-  fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", hash_full, node_count, nodes_per_second, time);
+  const auto time = Pool.time.elapsed() + time_safety_margin;
+  const auto [node_count, nodes_per_second] = node_info(time);
 
-  for (auto i = ply; i < pv_length; ++i)
-    fmt::format_to(buffer, "{} ", pv[i].move);
+  fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", TT.get_load(), node_count, nodes_per_second, time);
+
+  for (auto &pv : pv_line)
+    fmt::format_to(buffer, "{} ", pv.move);
 
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-int UCIProtocol::handle_go(std::istringstream &input) {
+int uci::handle_go(std::istringstream &input, SearchLimits &limits) {
 
   limits.clear();
 
@@ -95,7 +116,7 @@ int UCIProtocol::handle_go(std::istringstream &input) {
   return 0;
 }
 
-void UCIProtocol::handle_position(std::istringstream &input) const {
+void uci::handle_position(Board *b, std::istringstream &input) {
 
   std::string token;
 
@@ -103,7 +124,7 @@ void UCIProtocol::handle_position(std::istringstream &input) const {
 
   if (token == "startpos")
   {
-    game->set_fen(Game::kStartPosition);
+    b->set_fen(Board::kStartPosition);
 
     // get rid of "moves" token
     input >> token;
@@ -112,23 +133,23 @@ void UCIProtocol::handle_position(std::istringstream &input) const {
     std::string fen;
     while (input >> token && token != "moves")
       fen += token + ' ';
-    game->set_fen(fen);
+    b->set_fen(fen);
   } else
     return;
 
   // parse any moves if they exist
   while (input >> token)
   {
-    const auto *const m = game->pos->string_to_move(token);
+    const auto *const m = b->pos->string_to_move(token);
       if (!m || *m == MOVE_NONE)
           break;
-      game->make_move(*m, false, true);
+      b->make_move(*m, false, true);
   }
 }
 
-bool UCIProtocol::handle_set_option(std::istringstream &input) const {
+void uci::handle_set_option(std::istringstream &input) {
 
-  std::string token, option_name, option_value;
+  std::string token, option_name, option_value, output;
 
   // get rid of "name"
   input >> token;
@@ -141,10 +162,28 @@ bool UCIProtocol::handle_set_option(std::istringstream &input) const {
   while (input >> token)
     option_value += (option_value.empty() ? "" : " ") + token;
 
-  auto valid_option = !option_name.empty() || !option_value.empty();
+  if (Options.contains(option_name))
+  {
+    Options[option_name] = option_value;
+    output = "Option {} = {}\n";
+  }
+  else
+    output = "Uknown option {} = {}\n";
 
-  if (valid_option)
-    valid_option = callback->set_option(option_name, option_value);
+  fmt::print(info(fmt::format(output, option_name, option_value)));
+}
 
-  return valid_option;
+std::string uci::display_uci(const Move m) {
+
+  if (m == MOVE_NONE)
+    return std::string("0000");
+
+  // append piece promotion if the move is a promotion.
+  return !is_promotion(m)
+       ? fmt::format("{}{}", move_from(m), move_to(m))
+       : fmt::format("{}{}{}", move_from(m), move_to(m), fen_piece_names[type_of(move_promoted(m))]);
+}
+
+std::string uci::info(const std::string_view info_string) {
+  return fmt::format("info string {}", info_string);
 }

@@ -20,61 +20,41 @@
 
 #pragma once
 
-#include <cstdint>
-#include <string_view>
-
-#include "types.h"
-#include "board.h"
+#include "stopwatch.h"
+#include "miscellaneous.h"
+#include "search_limits.h"
 #include "position.h"
 
-enum Move : uint32_t;
+struct TimeManager final {
 
-class Game final {
-public:
-  Game();
-  explicit Game(std::string_view fen);
-
-  bool make_move(Move m, bool check_legal, bool calculate_in_check);
-
-  void unmake_move();
-
-  bool make_null_move();
-
-  uint64_t calculate_key();
+  void init(Color side_to_move, SearchLimits &limits);
 
   [[nodiscard]]
-  bool is_repetition() const;
+  bool time_up() const noexcept;
 
   [[nodiscard]]
-  int half_move_count() const;
+  bool plenty_time() const noexcept;
 
-  int new_game(std::string_view fen);
-
-  int set_fen(std::string_view fen);
+  void ponder_hit() noexcept;
 
   [[nodiscard]]
-  std::string get_fen() const;
+  TimeUnit elapsed() const noexcept;
 
   [[nodiscard]]
-  bool setup_castling(std::string_view s);
-
-  void copy(Game *other);
+  bool should_post_curr_move() const noexcept;
 
   [[nodiscard]]
-  std::string move_to_string(Move m) const;
+  bool is_analysing() const noexcept { return limits.infinite | limits.ponder; }
 
-  void print_moves() const;
+  [[nodiscard]]
+  bool is_fixed_depth() const noexcept { return limits.fixed_depth; }
 
-  std::array<Position, 512> position_list{};
-  Position *pos;
-  Board board{};
-  bool chess960;
-  bool xfen;
-
-  std::array<int, sq_nb> castle_rights_mask{};
-
-  static constexpr std::string_view kStartPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  [[nodiscard]]
+  int get_depth() const noexcept { return limits.depth; }
 
 private:
-  void update_position(Position *p) const;
+  Stopwatch start_time{};
+  double n_{};
+  SearchLimits limits{};
+  TimeUnit search_time{};
 };

@@ -26,8 +26,6 @@
 #include "hash.h"
 #include "score.h"
 
-struct Position;
-
 #pragma pack(1)
 struct PawnHashEntry final {
 
@@ -42,7 +40,7 @@ struct PawnHashEntry final {
 
 struct PawnHashTable final : Table<PawnHashEntry, 512 * sizeof(PawnHashEntry)> {
   [[nodiscard]]
-  PawnHashEntry *find(const Position *pos);
+  PawnHashEntry *find(Key key);
 
   [[nodiscard]]
   PawnHashEntry *insert(Key key, Score s, const std::array<int, 2> &passed_pawn_files);

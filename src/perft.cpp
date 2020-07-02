@@ -22,32 +22,32 @@
 
 #include "perft.h"
 #include "stopwatch.h"
-#include "game.h"
+#include "board.h"
 #include "position.h"
 
 namespace {
 
-uint64_t p(Game *g, const int depth, const int flags) {
+uint64_t p(Board *b, const int depth, const int flags) {
   if (depth == 0)
     return 1;
 
-  g->pos->generate_moves(nullptr, MOVE_NONE, flags);
+  b->pos->generate_moves(nullptr, MOVE_NONE, flags);
 
   uint64_t nodes{};
 
   if (!(flags & STAGES) && depth == 1)
-    nodes = g->pos->move_count();
+    nodes = b->pos->move_count();
   else
   {
-    while (const MoveData *move_data = g->pos->next_move())
+    while (const MoveData *move_data = b->pos->next_move())
     {
       const auto *m = &move_data->move;
 
-      if (!g->make_move(*m, flags & LEGALMOVES ? false : true, true))
+      if (!b->make_move(*m, (flags & LEGALMOVES) == 0, true))
         continue;
 
-      nodes += p(g, depth - 1, flags);
-      g->unmake_move();
+      nodes += p(b, depth - 1, flags);
+      b->unmake_move();
     }
   }
   return nodes;
@@ -57,21 +57,21 @@ uint64_t p(Game *g, const int depth, const int flags) {
 
 struct Perft final {
   Perft() = delete;
-  explicit Perft(Game *game);
-  explicit Perft(Game *game, int flags);
+  explicit Perft(Board *board);
+  explicit Perft(Board *board, int flags);
 
   uint64_t perft(int depth) const;
 
   uint64_t perft_divide(int depth) const;
 
 private:
-  Game *g{};
+  Board *b{};
   int perft_flags{};
 };
 
-Perft::Perft(Game *game, const int flags) : g(game), perft_flags(flags) {}
+Perft::Perft(Board *board, const int flags) : b(board), perft_flags(flags) {}
 
-Perft::Perft(Game *game) : g(game), perft_flags(LEGALMOVES) {}
+Perft::Perft(Board *board) : Perft(board, LEGALMOVES) {}
 
 uint64_t Perft::perft(const int depth) const {
   std::size_t nps{};
@@ -81,7 +81,7 @@ uint64_t Perft::perft(const int depth) const {
   for (auto i = 1; i <= depth; i++)
   {
     Stopwatch sw;
-    const auto nodes = p(g, i, perft_flags);
+    const auto nodes = p(b, i, perft_flags);
     total_nodes += nodes;
     const auto time = sw.elapsed_milliseconds() + 1;
     nps = nodes / time * 1000;
@@ -95,7 +95,7 @@ uint64_t Perft::perft_divide(const int depth) const {
   fmt::print("depth: {}\n", depth);
 
   uint64_t nodes{};
-  auto *pos = g->pos;
+  auto *pos = b->pos;
   TimeUnit time{};
 
   pos->generate_moves(nullptr, MOVE_NONE, perft_flags);
@@ -104,15 +104,15 @@ uint64_t Perft::perft_divide(const int depth) const {
   {
     const auto *const m = &move_data->move;
 
-    if (!g->make_move(*m, perft_flags == 0, true))
+    if (!b->make_move(*m, perft_flags == 0, true))
       continue;
 
     const auto nodes_start = nodes;
     Stopwatch sw;
-    nodes += p(g, depth - 1, perft_flags);
+    nodes += p(b, depth - 1, perft_flags);
     time += sw.elapsed_milliseconds();
-    g->unmake_move();
-    fmt::print("move {}: {} nodes\n", g->move_to_string(*m), nodes - nodes_start);
+    b->unmake_move();
+    fmt::print("move {}: {} nodes\n", b->move_to_string(*m), nodes - nodes_start);
   }
 
   const auto nps = nodes / (time + 1) * 1000;
@@ -122,10 +122,10 @@ uint64_t Perft::perft_divide(const int depth) const {
   return nodes;
 }
 
-uint64_t perft::perft(Game *g, const int depth, const int flags) {
-  return Perft(g, flags).perft(depth);
+uint64_t perft::perft(Board *b, const int depth, const int flags) {
+  return Perft(b, flags).perft(depth);
 }
 
-uint64_t perft::divide(Game *g, const int depth, const int flags) {
-  return Perft(g, flags).perft_divide(depth);
+uint64_t perft::divide(Board *b, const int depth, const int flags) {
+  return Perft(b, flags).perft_divide(depth);
 }

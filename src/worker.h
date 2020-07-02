@@ -24,17 +24,21 @@
 #include <memory>
 #include <string_view>
 
-#include "game.h"
-#include "eval.h"
+#include "board.h"
 #include "search.h"
-#include "pawnhashtable.h"
+#include "uci.h"
+#include "miscellaneous.h"
 
-struct Worker {
+struct Worker final {
 
-  void start(std::string_view fen) {
-    game_ = std::make_unique<Game>(fen);
-    search_ = std::make_unique<Search>(game_.get(), &pawn_hash_);
+  Worker() : board_(std::make_unique<Board>()) {}
+
+  void start(std::string_view fen, const std::size_t index) {
+    board_->set_fen(fen);
+    search_ = std::make_unique<Search>(board_.get(), index);
     thread_ = std::jthread(&Search::run, search_.get());
+    if (Options[uci::get_uci_name<uci::UciOptions::THREADS>()] > 8)
+      WinProcGroup::bind_this_thread(index);
   }
 
   void stop() {
@@ -48,8 +52,7 @@ struct Worker {
   }
 
 private:
-  PawnHashTable pawn_hash_{};
-  std::unique_ptr<Game> game_{};
+  std::unique_ptr<Board> board_{};
   std::unique_ptr<Search> search_{};
   std::jthread thread_{};
 };

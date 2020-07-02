@@ -23,20 +23,10 @@
 #include <cstdint>
 
 #include "types.h"
+#include "miscellaneous.h"
 
 #pragma pack(1)
-struct HashEntry {
-  uint32_t key;
-  uint16_t age;// 7 bits left
-  uint8_t depth;
-  NodeType flags;// 5 bits left
-  int16_t score;
-  uint32_t move;
-  int16_t eval;
-
-  [[nodiscard]]
-  Move m() const noexcept { return static_cast<Move>(move); }
-
+struct alignas(16) HashEntry {
   [[nodiscard]]
   bool is_exact() const noexcept { return flags & EXACT; }
 
@@ -45,10 +35,43 @@ struct HashEntry {
 
   [[nodiscard]]
   bool is_alpha() const noexcept { return flags & ALPHA; }
+
+  uint32_t key;
+  uint16_t age;// 7 bits left
+  uint8_t depth;
+  NodeType flags;// 5 bits left
+  int16_t score;
+  Move move;
+  int16_t eval;
+
+private:
+  friend class HashTable;
 };
 #pragma pack()
 
 struct HashTable final {
+private:
+  friend struct HashEntry;
+
+  static constexpr int CacheLineSize = 64;
+  static constexpr std::size_t BucketSize = 4;
+
+  using BucketArray = std::array<HashEntry, BucketSize>;
+
+  // Just use a simple array for bucket
+  struct Bucket final {
+    BucketArray entry{};
+  };
+
+public:
+
+  ~HashTable();
+  constexpr HashTable()                   = default;
+  HashTable(const HashTable &other)       = delete;
+  HashTable(HashTable &&other)            = delete;
+  HashTable &operator=(const HashTable &) = delete;
+  HashTable &operator=(HashTable &&other) = delete;
+
   void init(uint64_t new_size_mb);
 
   void clear();
@@ -56,9 +79,15 @@ struct HashTable final {
   void init_search();
 
   [[nodiscard]]
+  HashEntry *first_entry(const Key key) const { return &table[mul_hi64(key, bucket_count)].entry[0]; }
+
+  [[nodiscard]]
+  Bucket *find_bucket(const Key key) const { return &table[mul_hi64(key, bucket_count)]; }
+
+  [[nodiscard]]
   HashEntry *find(Key key) const;
 
-  HashEntry *insert(Key key, int depth, int score, NodeType type, int move, int eval);
+  HashEntry *insert(Key key, int depth, int score, NodeType type, Move move, int eval);
 
   [[nodiscard]]
   HashEntry *get_entry_to_replace(Key key, [[maybe_unused]] int depth) const;
@@ -69,12 +98,18 @@ struct HashTable final {
   [[nodiscard]]
   int get_size_mb() const;
 
-protected:
-  HashEntry *table{};
-  uint64_t mask{};
+private:
+
+  static_assert(CacheLineSize % sizeof(Bucket) == 0, "Bucket size incorrect");
+
+  std::size_t bucket_count{};
+  Bucket* table{};
+  void* mem{};
+
   uint64_t occupied{};
   uint64_t size_mb{};
   uint64_t size{};
+
   int age{};
 };
 
@@ -90,4 +125,4 @@ inline int HashTable::get_size_mb() const {
   return static_cast<int>(size_mb);
 }
 
-inline HashTable TT;
+constinit inline HashTable TT;

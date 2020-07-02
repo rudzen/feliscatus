@@ -26,17 +26,58 @@
 
 #include "types.h"
 #include "magic.h"
+#include "position.h"
 
 enum Move : uint32_t;
 
 struct Board {
+
+  using PositionList = std::array<Position, MAXDEPTH * 3>;
+
+  Board();
+  explicit Board(std::string_view fen);
+
+  static constexpr std::string_view kStartPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
   void clear();
+
+  bool make_move(Move m, bool check_legal, bool calculate_in_check);
+
+  bool make_move(Move m, bool check_legal);
+
+  void unmake_move();
+
+  bool make_null_move();
+
+  [[nodiscard]]
+  uint64_t calculate_key() const;
+
+  [[nodiscard]]
+  bool is_repetition() const;
+
+  [[nodiscard]]
+  int64_t half_move_count() const;
+
+  int new_game(std::string_view fen);
+
+  int set_fen(std::string_view fen);
+
+  [[nodiscard]]
+  std::string get_fen() const;
+
+  [[nodiscard]]
+  bool setup_castling(std::string_view s);
+
+  [[nodiscard]]
+  std::string move_to_string(Move m) const;
+
+  void print_moves() const;
 
   void add_piece(Piece pc, Square sq);
 
-  void make_move(Move m);
+  void perform_move(Move m);
 
-  void unmake_move(Move m);
+  void unperform_move(Move m);
 
   [[nodiscard]]
   Piece get_piece(Square sq) const;
@@ -53,7 +94,16 @@ struct Board {
   void print() const;
 
   [[nodiscard]]
+  Bitboard pieces(PieceType pt) const;
+
+  [[nodiscard]]
+  Bitboard pieces(PieceType pt, PieceType pt2) const;
+
+  [[nodiscard]]
   Bitboard pieces(PieceType pt, Color side) const;
+
+  [[nodiscard]]
+  Bitboard pieces(PieceType pt, PieceType pt2, Color side) const;
 
   [[nodiscard]]
   Bitboard pieces() const;
@@ -88,12 +138,56 @@ struct Board {
   [[nodiscard]]
   int see_last_move(Move move);
 
+  [[nodiscard]]
+  Key pawn_key() const;
+
+  [[nodiscard]]
+  Key key() const;
+
+  [[nodiscard]]
+  Material &material() const;
+
+  [[nodiscard]]
+  int &flags() const;
+
+  [[nodiscard]]
+  int castle_rights() const;
+
+  [[nodiscard]]
+  Square en_passant_square() const;
+
+  [[nodiscard]]
+  Color side_to_move() const;
+
+  [[nodiscard]]
+  Bitboard checkers() const;
+
+  [[nodiscard]]
+  bool in_check() const;
+
+  [[nodiscard]]
+  Bitboard pinned() const;
+
+  void pinned(Bitboard v);
+
+  [[nodiscard]]
+  bool gives_check(Move move);
+
+  [[nodiscard]]
+  bool is_legal(Move m, Piece pc, Square from, MoveType type);
+
   std::array<Bitboard, Piece_Nb> piece{};
-  std::array<Piece, sq_nb> board{};
+  int plies{};
+  int max_ply{};
+  int search_depth{};
+  std::array<int, sq_nb> castle_rights_mask{};
+  Position *pos;
+  bool chess960;
+  bool xfen;
 
 private:
 
-  void remove_piece(Piece pc, Square sq);
+  void remove_piece(Square sq);
 
   [[nodiscard]]
   bool is_occupied(Square sq) const;
@@ -121,11 +215,21 @@ private:
 
   void init_see_move();
 
+  void update_position(Position *p) const;
+
+  [[nodiscard]]
+  Bitboard attackers_to(Square sq, Bitboard occ) const;
+
+  [[nodiscard]]
+  Bitboard attackers_to(Square sq) const;
+
+  std::array<Piece, sq_nb> board{};
   std::array<Bitboard, COL_NB> occupied_by_side{};
   std::array<Bitboard, 2> current_piece_bitboard{};
   std::array<PieceType, 2> current_piece{};
   Bitboard occupied{};
   std::array<Square, COL_NB> king_square{};
+  PositionList position_list{};
 };
 
 inline void Board::add_piece(const Piece pc, const Square sq) {
@@ -138,7 +242,8 @@ inline void Board::add_piece(const Piece pc, const Square sq) {
     king_square[color_of(pc)] = sq;
 }
 
-inline void Board::remove_piece(const Piece pc, const Square sq) {
+inline void Board::remove_piece(const Square sq) {
+  const auto pc   = board[sq];
   const auto bbsq = ~bit(sq);
   piece[pc] &= bbsq;
   occupied_by_side[color_of(pc)] &= bbsq;
@@ -178,8 +283,20 @@ inline Bitboard Board::pieces() const {
   return occupied;
 }
 
+inline Bitboard Board::pieces(const PieceType pt) const {
+  return piece[make_piece(pt, WHITE)] | piece[make_piece(pt, BLACK)];
+}
+
+inline Bitboard Board::pieces(const PieceType pt, const PieceType pt2) const {
+  return pieces(pt) | pieces(pt2);
+}
+
 inline Bitboard Board::pieces(const PieceType pt, const Color side) const {
   return piece[make_piece(pt, side)];
+}
+
+inline Bitboard Board::pieces(const PieceType pt, const PieceType pt2, const Color side) const {
+  return piece[make_piece(pt, side)] | piece[make_piece(pt2, side)];
 }
 
 inline Bitboard Board::pieces(const Color c) const {
@@ -205,3 +322,49 @@ inline bool Board::is_piece_on_square(const PieceType pt, const Square sq, const
 inline bool Board::is_piece_on_file(const PieceType pt, const Square sq, const Color side) const {
   return (bb_file(sq) & piece[make_piece(pt, side)]) != 0;
 }
+
+inline Key Board::pawn_key() const {
+  return pos->pawn_structure_key;
+}
+
+inline Key Board::key() const {
+  return pos->key;
+}
+
+inline Material &Board::material() const {
+  return pos->material;
+}
+
+inline int &Board::flags() const {
+  return pos->flags;
+}
+
+inline int Board::castle_rights() const {
+  return pos->castle_rights;
+}
+
+inline Square Board::en_passant_square() const {
+  return pos->en_passant_square;
+}
+
+inline Color Board::side_to_move() const {
+  return pos->side_to_move;
+}
+
+inline Bitboard Board::checkers() const {
+  return pos->checkers;
+}
+
+inline bool Board::in_check() const {
+  return pos->in_check;
+}
+
+inline Bitboard Board::pinned() const {
+  return pos->pinned_;
+}
+
+inline void Board::pinned(const Bitboard v) {
+  pos->pinned_ = v;
+}
+
+

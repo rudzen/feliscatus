@@ -24,7 +24,7 @@
 
 #include "pgn.h"
 
-class Game;
+struct Board;
 
 namespace pgn {
 
@@ -41,6 +41,6 @@ struct PGNPlayer : PGNFileReader {
   void read_san_move() override;
 
 protected:
-  std::unique_ptr<Game> game_;
+  std::unique_ptr<Board> board_;
 };
 }// namespace pgn
