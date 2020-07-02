@@ -72,9 +72,11 @@ private:
 
   void generate_hash_move();
 
-  void generate_captures_and_promotions(Color stm);
+  template<Color Us>
+  void generate_captures_and_promotions();
 
-  void generate_quiet_moves(Color stm);
+  template<Color Us>
+  void generate_quiet_moves();
 
   void add_move(Piece piece, Square from, Square to, MoveType type, Color stm, Piece promoted = NoPiece);
 
@@ -89,6 +91,9 @@ private:
   void add_pawn_moves(Bitboard to_squares, Direction distance, Color stm, MoveType type);
 
   void add_castle_move(Square from, Square to, Color stm);
+
+  template<Color Us>
+  MoveData *get_next_move();
 
   [[nodiscard]]
   bool can_castle_short(Color stm) const;

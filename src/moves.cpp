@@ -68,8 +68,16 @@ void Moves::generate_moves(MoveSorter *sorter, const Move tt_move, const int fla
   const auto stm = b->side_to_move();
 
   generate_hash_move();
-  generate_captures_and_promotions(stm);
-  generate_quiet_moves(stm);
+  if (stm == WHITE)
+  {
+    generate_captures_and_promotions<WHITE>();
+    generate_quiet_moves<WHITE>();
+  }
+  else
+  {
+    generate_captures_and_promotions<BLACK>();
+    generate_quiet_moves<BLACK>();
+  }
 }
 
 void Moves::generate_captures_and_promotions(MoveSorter *sorter) {
@@ -101,54 +109,12 @@ void Moves::generate_pawn_moves(const bool capture, const Bitboard to_squares, c
 }
 
 MoveData *Moves::next_move() {
-  while (iteration_ == number_moves_ && stage_ < max_stage_)
-  {
-    switch (stage_)
-    {
-    case 0:
-      generate_hash_move();
-      break;
 
-    case 1:
-      generate_captures_and_promotions(b->side_to_move());
-      break;
-
-    case 2:
-      generate_quiet_moves(b->side_to_move());
-      break;
-
-    default: // error
-      return nullptr;
-    }
-  }
-
-  if (iteration_ == number_moves_)
-    return nullptr;
-
-  if (!move_sorter_)
-    return &move_list[iteration_++];
-
-  do
-  {
-    auto best_idx   = iteration_;
-    auto best_score = move_list[best_idx].score;
-    for (auto i = best_idx + 1; i < number_moves_; ++i)
-    {
-      if (move_list[i].score > best_score)
-      {
-        best_score = move_list[i].score;
-        best_idx   = i;
-      }
-    }
-
-    if (max_stage_ > 2 && stage_ == 2 && move_list[best_idx].score < 0)
-    {
-      generate_quiet_moves(b->side_to_move());
-      continue;
-    }
-    std::swap(move_list[iteration_], move_list[best_idx]);
-    return &move_list[iteration_++];
-  } while (true);
+  const auto stm = b->side_to_move();
+  if (stm == WHITE)
+    return get_next_move<WHITE>();
+  else
+    return get_next_move<BLACK>();
 }
 
 bool Moves::is_pseudo_legal(const Move m) const {
@@ -214,38 +180,102 @@ void Moves::generate_hash_move() {
   stage_++;
 }
 
-void Moves::generate_captures_and_promotions(const Color stm) {
-  const auto opponent_pieces = b->pieces(~stm);
-  const auto pawns           = b->pieces(Pawn, stm);
+template<Color Us>
+void Moves::generate_captures_and_promotions() {
+  constexpr auto Them        = ~Us;
+  const auto opponent_pieces = b->pieces(Them);
+  const auto pawns           = b->pieces(Pawn, Us);
 
-  add_moves(opponent_pieces, stm);
-  add_pawn_moves(pawn_push(stm, pawns & rank_7[stm]) & ~b->pieces(), pawn_push(stm), stm, NORMAL);
-  add_pawn_moves(pawn_west_attacks[stm](pawns) & opponent_pieces, pawn_west_attack_dist[stm], stm, CAPTURE);
-  add_pawn_moves(pawn_east_attacks[stm](pawns) & opponent_pieces, pawn_east_attack_dist[stm], stm, CAPTURE);
+  add_moves(opponent_pieces, Us);
+  add_pawn_moves(pawn_push(Us, pawns & rank_7[Us]) & ~b->pieces(), pawn_push(Us), Us, NORMAL);
+  add_pawn_moves(pawn_west_attacks[Us](pawns) & opponent_pieces, pawn_west_attack_dist[Us], Us, CAPTURE);
+  add_pawn_moves(pawn_east_attacks[Us](pawns) & opponent_pieces, pawn_east_attack_dist[Us], Us, CAPTURE);
   if (b->en_passant_square() != no_square)
   {
-    add_pawn_moves(pawn_west_attacks[stm](pawns) & b->en_passant_square(), pawn_west_attack_dist[stm], stm, EPCAPTURE);
-    add_pawn_moves(pawn_east_attacks[stm](pawns) & b->en_passant_square(), pawn_east_attack_dist[stm], stm, EPCAPTURE);
+    add_pawn_moves(pawn_west_attacks[Us](pawns) & b->en_passant_square(), pawn_west_attack_dist[Us], Us, EPCAPTURE);
+    add_pawn_moves(pawn_east_attacks[Us](pawns) & b->en_passant_square(), pawn_east_attack_dist[Us], Us, EPCAPTURE);
   }
   stage_++;
 }
 
-void Moves::generate_quiet_moves(const Color stm) {
+template void Moves::generate_captures_and_promotions<WHITE>();
+template void Moves::generate_captures_and_promotions<BLACK>();
+
+template<Color Us>
+MoveData *Moves::get_next_move() {
+  while (iteration_ == number_moves_ && stage_ < max_stage_)
+  {
+    switch (stage_)
+    {
+    case 0:
+      generate_hash_move();
+      break;
+
+    case 1:
+      generate_captures_and_promotions<Us>();
+      break;
+
+    case 2:
+      generate_quiet_moves<Us>();
+      break;
+
+    default:// error
+      return nullptr;
+    }
+  }
+
+  if (iteration_ == number_moves_)
+    return nullptr;
+
+  if (!move_sorter_)
+    return &move_list[iteration_++];
+
+  do
+  {
+    auto best_idx   = iteration_;
+    auto best_score = move_list[best_idx].score;
+    for (auto i = best_idx + 1; i < number_moves_; ++i)
+    {
+      if (move_list[i].score > best_score)
+      {
+        best_score = move_list[i].score;
+        best_idx   = i;
+      }
+    }
+
+    if (max_stage_ > 2 && stage_ == 2 && move_list[best_idx].score < 0)
+    {
+      generate_quiet_moves<Us>();
+      continue;
+    }
+    std::swap(move_list[iteration_], move_list[best_idx]);
+    return &move_list[iteration_++];
+  } while (true);
+}
+
+template MoveData *Moves::get_next_move<WHITE>();
+template MoveData *Moves::get_next_move<BLACK>();
+
+template<Color Us>
+void Moves::generate_quiet_moves() {
   if (!b->in_check())
   {
-    if (can_castle_short(stm))
-      add_castle_move(oo_king_from[stm], oo_king_to[stm], stm);
+    if (can_castle_short(Us))
+      add_castle_move(oo_king_from[Us], oo_king_to[Us], Us);
 
-    if (can_castle_long(stm))
-      add_castle_move(ooo_king_from[stm], ooo_king_to[stm], stm);
+    if (can_castle_long(Us))
+      add_castle_move(ooo_king_from[Us], ooo_king_to[Us], Us);
   }
   const auto empty_squares = ~b->pieces();
-  const auto pushed        = pawn_push(stm, b->pieces(Pawn, stm) & ~rank_7[stm]) & empty_squares;
-  add_pawn_moves(pushed, pawn_push(stm), stm, NORMAL);
-  add_pawn_moves(pawn_push(stm, pushed & rank_3[stm]) & empty_squares, pawn_push(stm) * 2, stm, DOUBLEPUSH);
-  add_moves(empty_squares, stm);
+  const auto pushed        = pawn_push(Us, b->pieces(Pawn, Us) & ~rank_7[Us]) & empty_squares;
+  add_pawn_moves(pushed, pawn_push(Us), Us, NORMAL);
+  add_pawn_moves(pawn_push(Us, pushed & rank_3[Us]) & empty_squares, pawn_push(Us) * 2, Us, DOUBLEPUSH);
+  add_moves(empty_squares, Us);
   stage_++;
 }
+
+template void Moves::generate_quiet_moves<WHITE>();
+template void Moves::generate_quiet_moves<BLACK>();
 
 void Moves::add_move(const Piece piece, const Square from, const Square to, const MoveType type, const Color stm, const Piece promoted) {
   Piece captured;
