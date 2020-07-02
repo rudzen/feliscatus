@@ -165,6 +165,17 @@ struct Board {
   [[nodiscard]]
   bool in_check() const;
 
+  [[nodiscard]]
+  Bitboard pinned() const;
+
+  void pinned(Bitboard v);
+
+  [[nodiscard]]
+  bool gives_check(Move move);
+
+  [[nodiscard]]
+  bool is_legal(Move m, Piece pc, Square from, MoveType type);
+
   std::array<Bitboard, Piece_Nb> piece{};
   int plies{};
   int max_ply{};
@@ -347,4 +358,13 @@ inline Bitboard Board::checkers() const {
 inline bool Board::in_check() const {
   return pos->in_check;
 }
+
+inline Bitboard Board::pinned() const {
+  return pos->pinned_;
+}
+
+inline void Board::pinned(const Bitboard v) {
+  pos->pinned_ = v;
+}
+
 

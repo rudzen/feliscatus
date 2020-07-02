@@ -715,3 +715,20 @@ Bitboard Board::attackers_to(const Square sq, const Bitboard occ) const {
 Bitboard Board::attackers_to(const Square sq) const {
   return attackers_to(sq, pieces());
 }
+
+bool Board::gives_check(const Move move) {
+  perform_move(move);
+  const auto attacked = is_attacked(king_sq(~pos->side_to_move), pos->side_to_move);
+  unperform_move(move);
+  return attacked;
+}
+
+bool Board::is_legal(const Move m, const Piece pc, const Square from, const MoveType type) {
+  if (!(pos->pinned_ & from) && !pos->in_check && type_of(pc) != King && !(type & EPCAPTURE))
+    return true;
+
+  perform_move(m);
+  const auto attacked = is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move);
+  unperform_move(m);
+  return !attacked;
+}

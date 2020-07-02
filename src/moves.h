@@ -48,9 +48,9 @@ struct Moves {
 
   void generate_captures_and_promotions(MoveSorter *sorter);
 
-  void generate_moves(PieceType pt, Bitboard to_squares);
+  void generate_moves(PieceType pt, Bitboard to_squares, Color stm);
 
-  void generate_pawn_moves(bool capture, Bitboard to_squares);
+  void generate_pawn_moves(bool capture, Bitboard to_squares, Color stm);
 
   [[nodiscard]]
   MoveData *next_move();
@@ -72,29 +72,23 @@ private:
 
   void generate_hash_move();
 
-  void generate_captures_and_promotions();
+  void generate_captures_and_promotions(Color stm);
 
-  void generate_quiet_moves();
+  void generate_quiet_moves(Color stm);
 
-  void add_move(Piece piece, Square from, Square to, MoveType type, Piece promoted = NoPiece);
+  void add_move(Piece piece, Square from, Square to, MoveType type, Color stm, Piece promoted = NoPiece);
 
-  void add_moves(Bitboard to_squares);
+  void add_moves(Bitboard to_squares, Color stm);
 
-  void add_moves(PieceType pt, Square from, Bitboard attacks);
+  void add_moves(PieceType pt, Square from, Bitboard attacks, Color stm);
 
-  void add_pawn_quiet_moves(Bitboard to_squares);
+  void add_pawn_quiet_moves(Bitboard to_squares, Color stm);
 
-  void add_pawn_capture_moves(Bitboard to_squares);
+  void add_pawn_capture_moves(Bitboard to_squares, Color stm);
 
-  void add_pawn_moves(Bitboard to_squares, Direction distance, MoveType type);
+  void add_pawn_moves(Bitboard to_squares, Direction distance, Color stm, MoveType type);
 
-  void add_castle_move(Square from, Square to);
-
-  [[nodiscard]]
-  bool gives_check(Move m) const;
-
-  [[nodiscard]]
-  bool is_legal(Move m, Piece piece, Square from, MoveType type) const;
+  void add_castle_move(Square from, Square to, Color stm);
 
   [[nodiscard]]
   bool can_castle_short(Color stm) const;
@@ -106,8 +100,7 @@ private:
   int stage_{};
   int max_stage_{};
   int number_moves_{};
-  Bitboard pinned_{};
-  MoveSorter *move_sorter_;
+  MoveSorter *move_sorter_{};
   Move transp_move_{};
   int move_flags_{};
 };

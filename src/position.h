@@ -64,6 +64,7 @@ struct Position : Moves {
   int castle_rights{};
   Square en_passant_square{};
   Color side_to_move{};
+  Bitboard pinned_{};
 };
 
 inline bool Position::is_draw() const {
