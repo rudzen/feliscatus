@@ -245,9 +245,9 @@ bool Search::make_move_and_evaluate(const Move m, const int alpha, const int bet
   pos = b->pos;
   ++b->plies;
   data_->pv_length[b->plies] = b->plies;
-  data_->node_count.fetch_add(1, std::memory_order_relaxed);
+  const auto current_nodes = data_->node_count.fetch_add(1, std::memory_order_relaxed);
 
-  check_sometimes();
+  check_sometimes(current_nodes);
 
   get_hash_and_evaluate(pos, b, data_index_, -beta, -alpha, b->plies);
 
@@ -261,8 +261,8 @@ void Search::unmake_move() {
   b->plies--;
 }
 
-void Search::check_sometimes() {
-  if ((data_->node_count.load(std::memory_order_relaxed) & 0x3fff) == 0)
+void Search::check_sometimes(const uint64_t nodes) {
+  if ((nodes & 0x3fff) == 0)
     check_time();
 }
 

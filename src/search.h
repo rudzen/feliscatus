@@ -70,7 +70,7 @@ private:
 
   void unmake_move();
 
-  void check_sometimes();
+  void check_sometimes(uint64_t nodes);
 
   void check_time();
 
