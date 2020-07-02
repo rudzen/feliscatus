@@ -21,7 +21,6 @@
 #include <sstream>
 
 #include "uci.h"
-#include "util.h"
 #include "board.h"
 #include "position.h"
 #include "search.h"
@@ -67,7 +66,7 @@ void uci::post_curr_move(const Move curr_move, const int curr_move_number) {
   fmt::print("info currmove {} currmovenumber {}\n", display_uci(curr_move), curr_move_number);
 }
 
-void uci::post_pv(const int d, const int max_ply, const int score, const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length, const int ply, const NodeType node_type) {
+void uci::post_pv(const int d, const int max_ply, const int score, const std::span<PVEntry> &pv_line, const NodeType node_type) {
 
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
@@ -82,8 +81,8 @@ void uci::post_pv(const int d, const int max_ply, const int score, const std::ar
 
   fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", TT.get_load(), node_count, nodes_per_second, time);
 
-  for (auto i = ply; i < pv_length; ++i)
-    fmt::format_to(buffer, "{} ", pv[i].move);
+  for (auto &pv : pv_line)
+    fmt::format_to(buffer, "{} ", pv.move);
 
   fmt::print("{}\n", fmt::to_string(buffer));
 }

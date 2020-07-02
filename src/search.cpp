@@ -18,6 +18,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <span>
 #include <cassert>
 #include <assert.h>
 #include <algorithm>
@@ -643,8 +644,11 @@ template int Search::search_quiesce<false>(int, int, int);
 
 template<NodeType NT>
 void Search::update_pv(const Move move, const int score, const int depth) const {
-  auto &pv          = data_->pv;
-  auto *const entry = &pv[b->plies][b->plies];
+  const auto ply      = b->plies;
+  const auto next_ply = ply + 1;
+  auto &pv            = data_->pv;
+  auto *const entry   = &pv[ply][ply];
+  auto &pv_len        = data_->pv_length;
 
   entry->score     = score;
   entry->depth     = depth;
@@ -653,21 +657,19 @@ void Search::update_pv(const Move move, const int score, const int depth) const 
   entry->node_type = NT;
   entry->eval      = pos->eval_score;
 
-  const auto next_ply = b->plies + 1;
+  pv_len[ply] = pv_len[next_ply];
 
-  auto &pv_len = data_->pv_length;
+  std::copy(std::next(pv[next_ply].begin(), next_ply), std::next(pv[next_ply].begin(), pv_len[ply]), std::next(pv[ply].begin(), next_ply));
 
-  pv_len[b->plies] = pv_len[next_ply];
-
-  for (auto i = next_ply; i < pv_len[b->plies]; ++i)
-    pv[b->plies][i] = pv[next_ply][i];
-
-  if (b->plies == 0)
+  if (ply == 0)
   {
     pos->pv_length = pv_len[0];
 
     if (verbosity)
-      uci::post_pv(b->search_depth, b->max_ply, score, pv[b->plies], pv_len[b->plies], b->plies, NT);
+    {
+      const std::span pv_line{pv[ply]};
+      uci::post_pv(b->search_depth, b->max_ply, score, pv_line.subspan(ply, pv_len[ply]), NT);
+    }
   }
 }
 
