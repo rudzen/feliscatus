@@ -21,6 +21,8 @@
 #pragma once
 
 #include <array>
+
+#include "score.h"
 #include "types.h"
 
 // TODO : Join eg and mg values into a single int (or simular)
@@ -43,118 +45,132 @@ inline std::array<int, PieceType_Nb> piece_in_danger
 // Pawn  Knight  Bishop  Rook  Queen  King
 };
 
-inline std::array<int, 14> bishop_mob2_eg{-60, -27, -20, -10, -8, -2, 2, 3, 4, 1, 6, 10, 16, 3};
-inline std::array<int, 14> bishop_mob2_mg{-27, -14, -6, -1, 3, 7, 5, 7, 11, 15, 10, 18, 12, 29};
-inline std::array<int, 14> bishop_mob_eg {-35, -20, -29, -20, -13, -6, -4, 0, 5, 8, -1, 5, 7, 2};
-inline std::array<int, 14> bishop_mob_mg {-23, -17, -13, -13, -6, 0, 5, 5, 10, 3, 2, 6, -14, 16};
+inline std::array<Score, 14> bishop_mob2 {
+  Score(-27, -60), Score(-14, -27), Score(-6, -20), Score(-1, -10), Score( 3, -8), Score( 7, -2), Score( 5, 2),
+  Score(  7,   3), Score( 11,   4), Score(15,   1), Score(10,   6), Score(18, 10), Score(12, 16), Score(29, 3)
+};
 
-inline int bishop_pair_eg     = 57;
-inline int bishop_pair_mg     = 29;
+inline std::array<Score, 14> bishop_mob {
+  Score(-23, -35), Score(-17, -20), Score(-13, -29), Score(-13, -20), Score(-6, -13), Score(  0, -6), Score( 5, -4),
+  Score(  5,   0), Score( 10,   5), Score(  3,   8), Score(  2,  -1), Score( 6,   5), Score(-14,  7), Score(16,  2)
+};
 
-inline int bishop_diagonal_eg = 0;
-inline int bishop_diagonal_mg = 45;
+inline Score bishop_pair         = Score(29, 57);
+inline Score bishop_diagonal     = Score(45,  0);
+inline Score king_obstructs_rook = Score(49, 9);
 
-inline int king_obstructs_rook  = -49;
 inline std::array<int, 4> king_on_half_open{12, -9, -55, -97};
 inline std::array<int, 4> king_on_open     {29, -13, -63, -221};
 inline std::array<int, 4> king_pawn_shelter{-20, 1, 6, -7};
 
-inline std::array<int, 9> knight_mob2_eg{-137, -56, -38, -17, -7, 0, 0, -5, -15};
-inline std::array<int, 9> knight_mob2_mg{-59, -41, -21, -10, 1, 8, 14, 22, 24};
-inline std::array<int, 9> knight_mob_eg {-40, 8, 14, 0, -5, -9, -10, -15, -8};
-inline std::array<int, 9> knight_mob_mg {76, 23, 5, 3, 3, -2, -6, -14, -16};
+inline std::array<Score, 9> knight_mob2 {
+  Score(-59, -137), Score(-41, -56), Score(-21, -38),
+  Score(-10,  -17), Score(  1,  -7), Score(  8,   0),
+  Score( 14,    0), Score( 22,  -5), Score( 24, -15)
+};
 
-inline std::array<int, 8> passed_pawn_eg             {0, -16, -7, 2, 12, 13, -115, 0};
-inline std::array<int, 8> passed_pawn_king_dist_them {0, -66, -24, 5, 22, 33, 39, 21};
-inline std::array<int, 8> passed_pawn_king_dist_us   {0, 23, 24, 0, -10, -11, 0, -17};
-inline std::array<int, 8> passed_pawn_mg             {0, -16, -16, -12, 23, 68, 95, 0};
-inline std::array<int, 8> passed_pawn_no_attacks     {0, 3, 3, 13, 24, 48, 85, 0};
-inline std::array<int, 8> passed_pawn_no_them        {0, 2, 6, 22, 36, 64, 129, 0};
-inline std::array<int, 8> passed_pawn_no_us          {0, 0, -1, 3, 17, 32, 121, 0};
+inline std::array<Score, 9> knight_mob {
+  Score(76, -40), Score( 23,   8), Score(  5, 14),
+  Score( 3,   0), Score(  3,  -5), Score( -2, -9),
+  Score(-6, -10), Score(-14, -15), Score(-16, -8)
+};
 
-inline std::array<int, 2> pawn_behind_eg           {4, -8};
-inline std::array<int, 2> pawn_behind_mg           {-4, -28};
-inline std::array<int, 2> pawn_doubled_eg          {-20, -15};
-inline std::array<int, 2> pawn_doubled_mg          {-15, 1};
-inline std::array<int, 2> pawn_isolated_eg         {-7, -32};
-inline std::array<int, 2> pawn_isolated_mg         {-13, -28};
+inline std::array<Score, 8> passed_pawn {
+  Score(0, 0), Score(-16, -16), Score(-16, -7), Score(-12, 2), Score(23, 12), Score(68, 13), Score(95, -115), Score(0, 0),
+};
+
+inline std::array<int, 8> passed_pawn_king_dist_them {0, -66, -24,  5,  22,  33,  39,  21};
+inline std::array<int, 8> passed_pawn_king_dist_us   {0,  23,  24,  0, -10, -11,   0, -17};
+inline std::array<int, 8> passed_pawn_no_attacks     {0,   3,   3, 13,  24,  48,  85,   0};
+inline std::array<int, 8> passed_pawn_no_them        {0,   2,   6, 22,  36,  64, 129,   0};
+inline std::array<int, 8> passed_pawn_no_us          {0,   0,  -1,  3,  17,  32, 121,   0};
+
+inline std::array<Score, 2> pawn_behind   { Score( -4,   4), Score(-28,  -8)};
+inline std::array<Score, 2> pawn_doubled  { Score(-15, -20), Score(  1, -15)};
+inline std::array<Score, 2> pawn_isolated { Score(-13,  -7), Score(-28, -32)};
 
 inline int queen_attack_king = 39;
-inline std::array<int, 28> queen_mob_eg {-3, -30, -17, -27, -36, -37, -30, -24, -27, -21, -17, -11, -1, 4, 2, 5, 2, 6, 3, 1, -15, -16, -15, -34, -34, -28, -12, -16};
-inline std::array<int, 28> queen_mob_mg {-19, -34, -15, -15, -13, -10, -10, -11, -6, -1, 2, -1, -3, 2, 3, 5, 7, 3, 9, 13, 25, 34, 33, 58, 44, 41, 14, 19};
+
+inline std::array<Score, 28> queen_mob {
+  Score(-19,  -3), Score(-34, -30), Score(-15, -17), Score(-15, -27), Score(-13, -36), Score(-10, -37), Score(-10, -30),
+  Score(-11, -24), Score( -6, -27), Score( -1, -21), Score(  2, -17), Score( -1, -11), Score( -3,  -1), Score(  2,   4),
+  Score(  3,   2), Score(  5,   5), Score(  7,   2), Score(  3,   6), Score(  9,   3), Score( 13,   1), Score( 25, -15),
+  Score( 34, -16), Score( 33, -15), Score( 58, -34), Score( 44, -34), Score( 41, -28), Score( 14, -12), Score( 19, -16)
+};
+
 inline int rook_attack_king  = 11;
-inline std::array<int, 15> rook_mob_eg {-46, -28, -24, -9, -5, -2, 5, 9, 14, 19, 21, 27, 27, 15, 3};
-inline std::array<int, 15> rook_mob_mg {-28, -20, -13, -16, -17, -10, -9, -3, -1, 2, 4, 1, 6, 20, 28};
+
+inline std::array<Score, 15> rook_mob {
+  Score(-28, -46), Score(-20, -28), Score(-13, -24), Score(-16, -9), Score(-17, -5),
+  Score(-10,  -2), Score( -9,   5), Score( -3,   9), Score( -1, 14), Score(  2, 19),
+  Score(  4,  21), Score(  1,  27), Score(  6,  27), Score( 20, 15), Score( 28,  3)
+};
+
 inline int rook_open_file    = 13;
 
-inline std::array<int, 64> bishop_pst_eg{7, 13,  12,  10,  24,  -5,  -19, -14, 2,   9,   3,   16,  -1,  -7,  -5,  -21, -8,  7,   4,   -17, 12,  -5,
-                               1, -19, -7,  3,   -6,  5,   7,   6,   -11, -3,  -18, -16, 7,   2,   -7,  -6,  -13, -22, -23, -19, -15, -5,
-                               2, -10, -14, -16, -33, -36, -34, -15, -16, -33, -26, -64, -46, -36, -27, -15, -26, -16, -63, -38};
-inline std::array<int, 64> bishop_pst_mg{-65, -58, -27, -41, -46, -70, 15, -35, -40, -26, -43, -25, -39, -10, -46, -59, -5,  -3,  2,   13, 22, 64,
-                               29,  4,   -27, -3,  7,   41,  14, 14,  -5,  -24, -3,  -12, 2,   17,  24,  -3,  2,   -8,  -19, 7,  0,  6,
-                               2,   5,   4,   9,   7,   0,   12, -13, 1,   16,  25,  16,  -5,  20,  -23, -23, -14, -14, -8,  -23};
-inline std::array<int, 64> king_pst_eg{-116, -11, 13, -34, -25, 22, 18, -136, -45, 40, 26, 16, 17, 36, 51, -75, 18,  41, 40, 35, 25, 33, 52, -5,  -8,  24,  34,  36, 31,  38, 23,  -4,
-                             -25,  5,   17, 24,  32,  25, 7,  -20,  -31, -5, 8,  15, 25, 21, 2,  -19, -22, -9, -2, 5,  12, 13, -5, -27, -44, -35, -16, 2,  -20, -8, -38, -66};
-inline std::array<int, 64> king_pst_mg{-83, 106, 122, 137, 123, 72,  44, -34, -2,  67,  37,  44, 43,  27, -13, -60, -44, 47,  7,   17, -2,  12,
-                             16,  -47, -16, 52,  21,  -12, -1, 5,   30,  -69, -23, 25, 6,   7,  -15, -15, -14, -63, -49, 16, -13, -12,
-                             -24, -37, -10, -53, -12, -14, 6,  -40, -36, -32, 13,  0,  -52, 16, 0,   -73, -34, -50, 32,  7};
-inline std::array<int, 64> knight_pst_eg{-33, -12, 0,   -25, -30, -18, -14, -54, -31, -16, -15, -14, -3,   -40, -21, -22, -37, -17, -3,  3,   -12, -13,
-                               -22, -28, -32, -11, -1,  15,  16,  5,   -10, -26, -28, -10, 3,    10,  9,   10,  -11, -27, -54, -28, -19, -5,
-                               -5,  -24, -37, -29, -60, -37, -40, -34, -37, -34, -29, -48, -159, -75, -46, -30, -46, -52, -67, -37};
-inline std::array<int, 64> knight_pst_mg{-221, -103, -59, -11, 38,  -31, -103, -255, -66, -40, 5,   23,  37,   35,  -11, -32, -22, -3,  42,  39,  75, 115,
-                               10,   -33,  -23, 6,   39,  66,  19,   61,   11,  25,  -25, -13, 15,   19,  32,  11,  26,  -6,  -39, -27, -8, 4,
-                               20,   1,    -4,  -40, -46, -54, -31,  -8,   -14, -20, -39, -13, -104, -44, -54, -53, -22, -24, -59, -2};
-inline std::array<int, 64> pawn_pst_eg{0,  0,  0,  0, 0, 0, 0, 0, 0,  24, 49, 29, 34, 54, 74, 26, 33, 39, 28, 15, 21, 13, 20, 6,  31, 25, 19, 1, 2, -2, 9, 13,
-                             18, 18, 12, 5, 4, 8, 5, 2, 13, 9,  10, 9,  12, 7,  -4, -4, 17, 9,  15, 12, 26, 11, -6, -2, 0,  0,  0,  0, 0, 0,  0, 0};
+inline std::array<Score, 64> bishop_pst {
+  Score(-65,   7), Score(-58,  13), Score(-27,  12), Score(-41,  10), Score(-46,  24), Score(-70,  -5), Score( 15, -19), Score(-35, -14),
+  Score(-40,   2), Score(-26,   9), Score(-43,   3), Score(-25,  16), Score(-39,  -1), Score(-10,  -7), Score(-46,  -5), Score(-59, -21),
+  Score( -5,  -8), Score( -3,   7), Score(  2,   4), Score( 13, -17), Score( 22,  12), Score( 64,  -5), Score( 29,   1), Score(  4, -19),
+  Score(-27,  -7), Score( -3,   3), Score(  7,  -6), Score( 41,   5), Score( 14,   7), Score( 14,   6), Score( -5, -11), Score(-24,  -3),
+  Score( -3, -18), Score(-12, -16), Score(  2,   7), Score( 17,   2), Score( 24,  -7), Score( -3,  -6), Score(  2, -13), Score( -8, -22),
+  Score(-19, -23), Score(  7, -19), Score(  0, -15), Score(  6,  -5), Score(  2,   2), Score(  5, -10), Score(  4, -14), Score(  9, -16),
+  Score(  7, -33), Score(  0, -36), Score( 12, -34), Score(-13, -15), Score(  1, -16), Score( 16, -33), Score( 25, -26), Score( 16, -64),
+  Score( -5, -46), Score( 20, -36), Score(-23, -27), Score(-23, -15), Score(-14, -26), Score(-14, -16), Score( -8, -63), Score(-23, -38)
+};
 
-inline std::array<int, 64> pawn_pst_mg
-       {  0,   0,   0,   0,   0,   0,  0,   0,
-        206, 124,  96, 113,  98,  36,  9,  13,
-         19,  25,  43,  36,  58,  77, 64,  30,
-         10,  16,   9,  25,  23,  12, -4,  -7,
-          0,   4,   9,  10,  11,   6,  0, -11,
-          0,  -1,  -3,   8,   9,   6, 18,  -4,
-         -7, -11, -14, -11, -14,  23, 29, -16,
-          0,   0,   0,   0,   0,   0,  0,   0};
+inline std::array<Score, 64> king_pst {
+  Score(-83, -116), Score(106, -11), Score(122,  13), Score(137, -34), Score(123, -25), Score( 72, 22), Score( 44,  18), Score(-34, -136),
+  Score( -2,  -45), Score( 67,  40), Score( 37,  26), Score( 44,  16), Score( 43,  17), Score( 27, 36), Score(-13,  51), Score(-60,  -75),
+  Score(-44,   18), Score( 47,  41), Score(  7,  40), Score( 17,  35), Score( -2,  25), Score( 12, 33), Score( 16,  52), Score(-47,   -5),
+  Score(-16,   -8), Score( 52,  24), Score( 21,  34), Score(-12,  36), Score( -1,  31), Score(  5, 38), Score( 30,  23), Score(-69,   -4),
+  Score(-23,  -25), Score( 25,   5), Score(  6,  17), Score(  7,  24), Score(-15,  32), Score(-15, 25), Score(-14,   7), Score(-63,  -20),
+  Score(-49,  -31), Score( 16,  -5), Score(-13,   8), Score(-12,  15), Score(-24,  25), Score(-37, 21), Score(-10,   2), Score(-53,  -19),
+  Score(-12,  -22), Score(-14,  -9), Score(  6,  -2), Score(-40,   5), Score(-36,  12), Score(-32, 13), Score( 13,  -5), Score(  0,  -27),
+  Score(-52,  -44), Score( 16, -35), Score(  0, -16), Score(-73,   2), Score(-34, -20), Score(-50, -8), Score( 32, -38), Score(  7,  -66)
+};
 
-inline std::array<int, 64> queen_pst_eg
-       {  5,  14,  10,  23,  20,   2,    9,    8,
-          5,  40,  40,  38,  49,  25,   25,   10,
-        -22,   7,  38,  37,  40,  20,    2,   12,
-        -10,  -5,  24,  45,  46,  32,   38,    5,
-        -32,  -5,  -2,  23,  17,   4,   -3,    3,
-        -50, -42, -20, -36, -18, -24,  -25,  -39,
-        -73, -47, -64, -61, -57, -97, -108,  -64,
-        -89, -85, -67, -61, -84, -96, -123, -110};
+inline std::array<Score, 64> knight_pst {
+  Score(-221,  -33), Score(-103, -12), Score(-59,   0), Score(-11, -25), Score( 38, -30), Score(-31, -18), Score(-103, -14), Score(-255, -54),
+  Score( -66,  -31), Score( -40, -16), Score(  5, -15), Score( 23, -14), Score( 37,  -3), Score( 35, -40), Score( -11, -21), Score( -32, -22),
+  Score( -22,  -37), Score(  -3, -17), Score( 42,  -3), Score( 39,   3), Score( 75, -12), Score(115, -13), Score(  10, -22), Score( -33, -28),
+  Score( -23,  -32), Score(   6, -11), Score( 39,  -1), Score( 66,  15), Score( 19,  16), Score( 61,   5), Score(  11, -10), Score(  25, -26),
+  Score( -25,  -28), Score( -13, -10), Score( 15,   3), Score( 19,  10), Score( 32,   9), Score( 11,  10), Score(  26, -11), Score(  -6, -27),
+  Score( -39,  -54), Score( -27, -28), Score( -8, -19), Score(  4,  -5), Score( 20,  -5), Score(  1, -24), Score(  -4, -37), Score( -40, -29),
+  Score( -46,  -60), Score( -54, -37), Score(-31, -40), Score( -8, -34), Score(-14, -37), Score(-20, -34), Score( -39, -29), Score( -13, -48),
+  Score(-104, -159), Score( -44, -75), Score(-54, -46), Score(-53, -30), Score(-22, -46), Score(-24, -52), Score( -59, -67), Score(  -2, -37)
+};
 
-inline std::array<int, 64> queen_pst_mg
-       {-10,   4,  10,  13,  14,  86,  64,  57,
-        -36, -60, -31, -10, -10,  43,   5,  39,
-         -9, -17, -14,  -4,  36,  63,  69,  16,
-        -34, -28, -30, -20, -16,  -6,   7,  -8,
-        -22, -17, -15, -16, -10, -13,   4, -13,
-        -21,  -4, -10, -13,  -4,   7,   6,  -9,
-        -14,  -3,   2,   4,   3,  26,  16, -12,
-          8,  -8,  -5,   4,   5, -18, -58,  -9};
+inline std::array<Score, 64> pawn_pst {
+  Score(  0,  0), Score(  0,  0), Score(  0,  0), Score(  0,  0), Score(  0,  0), Score( 0,  0), Score( 0,  0), Score(  0,  0),
+  Score(206,  0), Score(124, 24), Score( 96, 49), Score(113, 29), Score( 98, 34), Score(36, 54), Score( 9, 74), Score( 13, 26),
+  Score( 19, 33), Score( 25, 39), Score( 43, 28), Score( 36, 15), Score( 58, 21), Score(77, 13), Score(64, 20), Score( 30,  6),
+  Score( 10, 31), Score( 16, 25), Score(  9, 19), Score( 25,  1), Score( 23,  2), Score(12, -2), Score(-4,  9), Score( -7, 13),
+  Score(  0, 18), Score(  4, 18), Score(  9, 12), Score( 10,  5), Score( 11,  4), Score( 6,  8), Score( 0,  5), Score(-11,  2),
+  Score(  0, 13), Score( -1,  9), Score( -3, 10), Score(  8,  9), Score(  9, 12), Score( 6,  7), Score(18, -4), Score( -4, -4),
+  Score( -7, 17), Score(-11,  9), Score(-14, 15), Score(-11, 12), Score(-14, 26), Score(23, 11), Score(29, -6), Score(-16, -2),
+  Score(  0,  0), Score(  0,  0), Score(  0,  0), Score(  0,  0), Score(  0,  0), Score( 0,  0), Score( 0,  0), Score(  0,  0)
+};
 
-inline std::array<int, 64> rook_pst_eg
-       { 46,  47,  33,  28,  36,  42,  37, 29,
-         44,  41,  28,  23,  20,  22,  20, 16,
-         49,  27,  28,  10,  12,  21,  13, 32,
-         40,  35,  23,  14,  13,  21,  20, 18,
-         28,  34,  23,  11,  10,  17,  11, 19,
-         16,  14,   1,  -6, -11,  -1,  -1,  3,
-        -12,  -8, -12, -24, -23, -19, -21, -6,
-        -13, -15, -12, -20, -26, -16, -11, -19};
+inline std::array<Score, 64> queen_pst {
+  Score(-10,   5), Score(  4,  14), Score( 10,  10), Score( 13,  23), Score( 14,  20), Score( 86,   2), Score( 64,    9), Score( 57,    8),
+  Score(-36,   5), Score(-60,  40), Score(-31,  40), Score(-10,  38), Score(-10,  49), Score( 43,  25), Score( 5,    25), Score( 39,   10),
+  Score( -9, -22), Score(-17,   7), Score(-14,  38), Score( -4,  37), Score( 36,  40), Score( 63,  20), Score( 69,    2), Score( 16,   12),
+  Score(-34, -10), Score(-28,  -5), Score(-30,  24), Score(-20,  45), Score(-16,  46), Score( -6,  32), Score(  7,   38), Score( -8,    5),
+  Score(-22, -32), Score(-17,  -5), Score(-15,  -2), Score(-16,  23), Score(-10,  17), Score(-13,   4), Score(  4,   -3), Score(-13,    3),
+  Score(-21, -50), Score( -4, -42), Score(-10, -20), Score(-13, -36), Score( -4, -18), Score(  7, -24), Score(  6,  -25), Score( -9,  -39),
+  Score(-14, -73), Score( -3, -47), Score(  2, -64), Score(  4, -61), Score(  3, -57), Score( 26, -97), Score( 16, -108), Score(-12,  -64),
+  Score(  8, -89), Score( -8, -85), Score( -5, -67), Score(  4, -61), Score(  5, -84), Score(-18, -96), Score(-58, -123), Score( -9, -110)
+};
 
-inline std::array<int, 64> rook_pst_mg
-       {  1,   3,  25,  31,  24,  24, 35,  54,
-          3,  -8,  28,  40,  39,  56, 45,  39,
-        -18,   8,  14,  31,  59,  67, 51,  11,
-        -41, -23,   4,  20,  16,  17, 24, -11,
-        -46, -43, -26, -16, -22, -23, -7, -45,
-        -48, -35, -33, -31, -10, -21, -6, -25,
-        -45, -33, -18,  -4,  -3, -10, -7, -68,
-        -16,  -9,   0,   3,   7,   4,  8, -18};
-
+inline std::array<Score, 64> rook_pst {
+  Score(  1,  46), Score(  3,  47), Score( 25,  33), Score( 31,  28), Score( 24,  36), Score( 24,  42), Score(35,  37), Score( 54,  29),
+  Score(  3,  44), Score( -8,  41), Score( 28,  28), Score( 40,  23), Score( 39,  20), Score( 56,  22), Score(45,  20), Score( 39,  16),
+  Score(-18,  49), Score(  8,  27), Score( 14,  28), Score( 31,  10), Score( 59,  12), Score( 67,  21), Score(51,  13), Score( 11,  32),
+  Score(-41,  40), Score(-23,  35), Score(  4,  23), Score( 20,  14), Score( 16,  13), Score( 17,  21), Score(24,  20), Score(-11,  18),
+  Score(-46,  28), Score(-43,  34), Score(-26,  23), Score(-16,  11), Score(-22,  10), Score(-23,  17), Score(-7,  11), Score(-45,  19),
+  Score(-48,  16), Score(-35,  14), Score(-33,   1), Score(-31,  -6), Score(-10, -11), Score(-21,  -1), Score(-6,  -1), Score(-25,   3),
+  Score(-45, -12), Score(-33,  -8), Score(-18, -12), Score( -4, -24), Score( -3, -23), Score(-10, -19), Score(-7, -21), Score(-68,  -6),
+  Score(-16, -13), Score( -9, -15), Score(  0, -12), Score(  3, -20), Score(  7, -26), Score(  4, -16), Score( 8, -11), Score(-18, -19)
+};
 // clang-format on
