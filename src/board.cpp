@@ -384,6 +384,10 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
   return true;
 }
 
+bool Board::make_move(const Move m, const bool check_legal) {
+  return make_move(m, check_legal, is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move));
+}
+
 void Board::unmake_move() {
   if (pos->last_move)
     unperform_move(pos->last_move);
@@ -467,7 +471,7 @@ int Board::set_fen(std::string_view fen) {
   clear();
 
   constexpr std::string_view piece_index{"PNBRQK"};
-  constexpr char Splitter = ' ';
+  constexpr auto splitter = ' ';
 
   Square sq = a8;
 
@@ -481,7 +485,7 @@ int Board::set_fen(std::string_view fen) {
     fen.remove_prefix(space);
 
     // adjust space to next
-    space = fen.find_first_of(Splitter);
+    space = fen.find_first_of(splitter);
 
     // slice current view
     return fen.substr(0, space);
@@ -528,7 +532,6 @@ int Board::set_fen(std::string_view fen) {
 
   update_position(pos);
 
-  pos->in_check = is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move);
   return 0;
 }
 
@@ -640,28 +643,14 @@ bool Board::setup_castling(const std::string_view s) {
   return true;
 }
 
-// void Board::copy(Game *other) {
-//  board    = other->board;
-//  chess960 = other->chess960;
-//  xfen     = other->xfen;
-
-//  pos += other->pos - other->position_list.data();
-
-//  for (std::size_t i = 0; auto &pl : position_list)
-//  {
-//    pl   = other->position_list[i++];
-//    pl.b = &board;
-//  }
-// }
-
 std::string Board::move_to_string(const Move m) const {
 
   if (is_castle_move(m) && chess960)
   {
     if (xfen && move_to(m) == ooo_king_to[move_side(m)])
-      return "O-O-O";
+      return std::string("O-O-O");
     if (xfen)
-      return "O-O";
+      return std::string("O-O");
     // shredder fen
     return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(rook_castles_from[move_to(m)]));
   }
@@ -685,10 +674,11 @@ void Board::print_moves() const {
 
 void Board::update_position(Position *p) const {
 
+  p->checkers   = attackers_to(king_sq(pos->side_to_move)) & pieces(~pos->side_to_move);
+  p->in_check   = is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move);
   auto key      = zobrist::zero;
   auto pawn_key = zobrist::zobrist_nopawn;
-
-  auto b = pieces();
+  auto b        = pieces();
 
   while (b)
   {
@@ -711,4 +701,17 @@ void Board::update_position(Position *p) const {
 
   p->key                = key;
   p->pawn_structure_key = pawn_key;
+}
+
+Bitboard Board::attackers_to(const Square sq, const Bitboard occ) const {
+  return (pawn_attacks_bb(BLACK, sq) & pieces(Pawn, WHITE))
+       | (pawn_attacks_bb(WHITE, sq) & pieces(Pawn, BLACK))
+       | (piece_attacks_bb<Knight>(sq) & pieces(Knight))
+       | (piece_attacks_bb<Bishop>(sq, occ) & pieces(Bishop, Queen))
+       | (piece_attacks_bb<Rook>(sq, occ) & pieces(Rook, Queen))
+       | (piece_attacks_bb<King>(sq) & pieces(King));
+}
+
+Bitboard Board::attackers_to(const Square sq) const {
+  return attackers_to(sq, pieces());
 }

@@ -21,10 +21,9 @@
 #include <fmt/format.h>
 
 #include "pawnhashtable.h"
-#include "position.h"
 
-PawnHashEntry *PawnHashTable::find(const Position *pos) {
-  return (*this)[pos->pawn_structure_key];
+PawnHashEntry *PawnHashTable::find(const Key key) {
+  return (*this)[key];
 }
 
 PawnHashEntry *PawnHashTable::insert(const Key key, const Score s, const std::array<int, 2> &passed_pawn_files) {

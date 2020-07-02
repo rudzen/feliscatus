@@ -78,7 +78,7 @@ bool is_hash_score_valid(const Position *pos, const int depth, const int alpha, 
 }
 
 void get_hash_and_evaluate(Position *pos, Board *b, const std::size_t pool_index, const int alpha, const int beta, const int plies) {
-  if ((pos->transposition = TT.find(pos->key)) == nullptr)
+  if ((pos->transposition = TT.find(b->key())) == nullptr)
   {
     pos->eval_score  = Eval::evaluate(b, pool_index, alpha, beta);
     pos->transp_type = Void;
@@ -91,7 +91,7 @@ void get_hash_and_evaluate(Position *pos, Board *b, const std::size_t pool_index
   pos->transp_depth = pos->transposition->depth;
   pos->transp_type  = static_cast<NodeType>(pos->transposition->flags & 7);
   pos->transp_move  = pos->transposition->move;
-  pos->flags        = 0;
+  b->flags()        = 0;
 }
 
 bool is_killer_move(const Move m, const Position *p) {
@@ -131,8 +131,8 @@ int Search::go(SearchLimits &limits) {
   data_ = Pool[data_index_].get();
   init_search(limits);
 
-  draw_score_[pos->side_to_move]  = 0;//-25;
-  draw_score_[~pos->side_to_move] = 0;// 25;
+  draw_score_[b->side_to_move()]  = 0;//-25;
+  draw_score_[~b->side_to_move()] = 0;// 25;
 
   auto alpha = -MAXSCORE;
   auto beta  = MAXSCORE;
@@ -225,7 +225,7 @@ bool Search::search_fail_low(const int depth, const int alpha, const Move exclud
 }
 
 bool Search::should_try_null_move(const int beta) const {
-  return !pos->in_check && pos->null_moves_in_row < 1 && !pos->material.is_kx(pos->side_to_move) && pos->eval_score >= beta;
+  return !b->in_check() && pos->null_moves_in_row < 1 && !b->material().is_kx(b->side_to_move()) && pos->eval_score >= beta;
 }
 
 int Search::next_depth_pv(const Move singular_move, const int depth, const MoveData *move_data) const {
@@ -234,13 +234,13 @@ int Search::next_depth_pv(const Move singular_move, const int depth, const MoveD
   if (m == singular_move)
     return depth;
 
-  if ((pos->in_check || b->is_passed_pawn_move(m)) && b->see_last_move(m) >= 0)
+  if ((b->in_check() || b->is_passed_pawn_move(m)) && b->see_last_move(m) >= 0)
     return depth;
   return depth - 1;
 }
 
 bool Search::make_move_and_evaluate(const Move m, const int alpha, const int beta) {
-  if (!b->make_move(m, true, true))
+  if (!b->make_move(m, true))
     return false;
 
   pos = b->pos;
@@ -284,7 +284,7 @@ void Search::init_search(SearchLimits &limits) {
 
   if (verbosity)
   {
-    Pool.time.init(pos->side_to_move, limits);
+    Pool.time.init(b->side_to_move(), limits);
     TT.init_search();
     stop_search.store(false);
   }
@@ -335,7 +335,7 @@ int Search::store_search_node_score(const int score, const int depth, const Node
   return score;
 }
 
-int Search::draw_score() const { return draw_score_[pos->side_to_move]; }
+int Search::draw_score() const { return draw_score_[b->side_to_move()]; }
 
 void Search::store_hash(const int depth, int score, const NodeType node_type, const Move move) const {
   score = codec_t_table_score(score, b->plies);
@@ -347,7 +347,7 @@ void Search::store_hash(const int depth, int score, const NodeType node_type, co
   else if (node_type == EXACT)
     pos->eval_score = score;
 
-  pos->transposition = TT.insert(pos->key, depth, score, node_type, move, pos->eval_score);
+  pos->transposition = TT.insert(b->key(), depth, score, node_type, move, pos->eval_score);
 }
 
 bool Search::move_is_easy() const {
@@ -474,7 +474,7 @@ int Search::search(const int depth, int alpha, const int beta) {
     throw 1;
 
   if (move_count == 0)
-    return pos->in_check ? -MAXSCORE + b->plies : draw_score();
+    return b->in_check() ? -MAXSCORE + b->plies : draw_score();
 
   if (pos->reversible_half_move_count >= 100)
     return draw_score();
@@ -529,7 +529,7 @@ std::optional<int> Search::next_depth_not_pv(const int depth, const int move_cou
 
   const auto m = move_data->move;
 
-  if (pos->in_check && b->see_last_move(m) >= 0)
+  if (b->in_check() && b->see_last_move(m) >= 0)
     return std::make_optional(depth);
 
   constexpr auto move_count_limit = PV ? 5 : 3;
@@ -652,7 +652,7 @@ void Search::update_pv(const Move move, const int score, const int depth) const 
 
   entry->score     = score;
   entry->depth     = depth;
-  entry->key       = pos->key;
+  entry->key       = b->key();
   entry->move      = move;
   entry->node_type = NT;
   entry->eval      = pos->eval_score;

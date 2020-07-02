@@ -59,6 +59,11 @@ struct Position : Moves {
   int flags{};
   HashEntry *transposition{};
   KillerMoves killer_moves{};
+  Bitboard checkers{};
+  bool in_check{};
+  int castle_rights{};
+  Square en_passant_square{};
+  Color side_to_move{};
 };
 
 inline bool Position::is_draw() const {

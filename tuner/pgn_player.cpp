@@ -146,7 +146,7 @@ void pgn::PGNPlayer::read_san_move() {
     fmt::print("pawn_move_: {}\n", pawn_move_);
     fmt::print("castle_move_: {}\n", castle_move_);
     fmt::print("side_to_move: {}\n", side_to_move);
-    fmt::print("pos->in_check: {}\n", board_->pos->in_check);
+    fmt::print("pos->in_check: {}\n", board_->in_check());
     fmt::print("game_count_: {}\n", game_count_);
     board_->print();
     exit(0);

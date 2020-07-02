@@ -42,6 +42,7 @@ typedef bool (*fun3_t)(HANDLE, CONST GROUP_AFFINITY *, PGROUP_AFFINITY);
 #endif
 
 #include <vector>
+#include <optional>
 #include "miscellaneous.h"
 
 namespace WinProcGroup {
@@ -56,7 +57,7 @@ void bind_this_thread(std::size_t) {}
 /// API and returns the best group id for the thread with index idx. Original
 /// code from Texel by Peter �sterlund.
 
-int best_group(const std::size_t idx) {
+std::optional<int> best_group(const std::size_t idx) {
 
   auto threads        = 0;
   auto nodes          = 0;
@@ -68,11 +69,11 @@ int best_group(const std::size_t idx) {
   auto *const k32 = GetModuleHandle("Kernel32.dll");
   const auto fun1   = reinterpret_cast<fun1_t>(reinterpret_cast<void (*)()>(GetProcAddress(k32, "GetLogicalProcessorInformationEx")));
   if (!fun1)
-    return -1;
+    return std::nullopt;
 
   // First call to get returnLength. We expect it to fail due to null buffer
   if (fun1(RelationAll, nullptr, &return_length))
-    return -1;
+    return std::nullopt;
 
   // Once we know returnLength, allocate the buffer
   SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *buffer;
@@ -81,8 +82,8 @@ int best_group(const std::size_t idx) {
   // Second call, now we expect to succeed
   if (!fun1(RelationAll, buffer, &return_length))
   {
-    free(buffer);
-    return -1;
+    std::free(buffer);
+    return std::nullopt;
   }
 
   while (byte_offset < return_length)
@@ -101,7 +102,7 @@ int best_group(const std::size_t idx) {
     ptr = reinterpret_cast<SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *>(reinterpret_cast<char *>(ptr) + ptr->Size);
   }
 
-  free(buffer);
+  std::free(buffer);
 
   std::vector<int> groups;
 
@@ -119,7 +120,7 @@ int best_group(const std::size_t idx) {
 
   // If we still have more threads than the total number of logical processors
   // then return -1 and let the OS to decide what to do.
-  return idx < groups.size() ? groups[idx] : -1;
+  return idx < groups.size() ? std::make_optional(groups[idx]) : std::nullopt;
 }
 
 
@@ -130,7 +131,8 @@ void bind_this_thread(const std::size_t idx) {
   // Use only local variables to be thread-safe
   const auto group = best_group(idx);
 
-  if (group == -1)
+  [[unlikely]]
+  if (!group)
     return;
 
   // Early exit if the needed API are not available at runtime
@@ -142,7 +144,7 @@ void bind_this_thread(const std::size_t idx) {
     return;
 
   GROUP_AFFINITY affinity;
-  if (fun2(group, &affinity))
+  if (fun2(group.value(), &affinity))
     fun3(GetCurrentThread(), &affinity, nullptr);
 }
 

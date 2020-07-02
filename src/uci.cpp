@@ -176,7 +176,7 @@ void uci::handle_set_option(std::istringstream &input) {
 std::string uci::display_uci(const Move m) {
 
   if (m == MOVE_NONE)
-    return "0000";
+    return std::string("0000");
 
   // append piece promotion if the move is a promotion.
   return !is_promotion(m)

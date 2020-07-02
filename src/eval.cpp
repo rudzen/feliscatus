@@ -61,7 +61,7 @@ struct Evaluate {
   Evaluate(Evaluate &&other)            = delete;
   Evaluate &operator=(const Evaluate &) = delete;
   Evaluate &operator=(Evaluate &&other) = delete;
-  Evaluate(Board *board, const std::size_t pool_index) : b(board), pos(b->pos), pool_index_(pool_index) {}
+  Evaluate(Board *board, const std::size_t pool_index) : b(board), pool_index_(pool_index) {}
 
   template<Color Us>
   int evaluate(int alpha, int beta);
@@ -94,7 +94,6 @@ private:
   void init_evaluate();
 
   Board *b{};
-  Position *pos{};
   std::size_t pool_index_;
   PawnHashEntry *pawnp{};
 
@@ -123,8 +122,8 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 
   const auto mat_eval = get_actual_eval(posistion_value);
 
-  if (const auto lazy_eval = pos->side_to_move == WHITE ? mat_eval : -mat_eval; lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
-    return pos->material.evaluate(pos->flags, lazy_eval, pos->side_to_move, b);
+  if (const auto lazy_eval = b->side_to_move() == WHITE ? mat_eval : -mat_eval; lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
+    return b->material().evaluate(b->flags(), lazy_eval, b->side_to_move(), b);
 
 #endif
 
@@ -145,14 +144,13 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
   // finally add the remaining poseval scores
   result += poseval[WHITE] - poseval[BLACK];
 
-  if (pos->side_to_move == WHITE)
-    posistion_value[WHITE] += tempo;
+  posistion_value[b->side_to_move()] += tempo;
 
-  const auto [stage_mg, stage_eg] = get_stages(pos->material);
+  const auto [stage_mg, stage_eg] = get_stages(b->material());
   const auto pos_eval_mg          = static_cast<int>(result.mg() * stage_mg);
   const auto pos_eval_eg          = static_cast<int>(result.eg() * stage_eg);
   const auto pos_eval             = pos_eval_mg + pos_eval_eg + get_actual_eval(posistion_value);
-  const auto eval                 = pos->material.evaluate(pos->flags, pos->side_to_move == BLACK ? -pos_eval : pos_eval, pos->side_to_move, b);
+  const auto eval                 = b->material().evaluate(b->flags(), b->side_to_move() == WHITE ? pos_eval : -pos_eval, b->side_to_move(), b);
 
   return eval;
 }
@@ -184,16 +182,17 @@ Score Evaluate<Tuning>::eval_pawns_both_sides() {
 
   auto result = ZeroScore;
 
-  if (pos->material.pawn_count() == 0)
+  if (b->material().pawn_count() == 0)
   {
     pawnp = nullptr;
     return result;
   }
 
-  auto pawnt = &Pool[pool_index_]->pawn_hash;
-  pawnp = pawnt->find(pos);
+  auto *pawnt         = &Pool[pool_index_]->pawn_hash;
+  const auto pawn_key = b->pawn_key();
+  pawnp               = pawnt->find(pawn_key);
 
-  if (pawnp->zkey == 0 || pawnp->zkey != pos->pawn_structure_key)
+  if (pawnp->zkey == 0 || pawnp->zkey != pawn_key)
   {
     passed_pawn_files.fill(0);
 
@@ -202,7 +201,7 @@ Score Evaluate<Tuning>::eval_pawns_both_sides() {
     result   = w_result - b_result;
 
     if constexpr (!Tuning)
-      pawnp = pawnt->insert(pos->pawn_structure_key, result, passed_pawn_files);
+      pawnp = pawnt->insert(pawn_key, result, passed_pawn_files);
   } else
     result = pawnp->eval;
 
@@ -213,10 +212,10 @@ template<bool Tuning>
 template<Color Us>
 void Evaluate<Tuning>::eval_material() {
 
-  posistion_value[Us] = pos->material.material_value[Us];
+  posistion_value[Us] = b->material().material_value[Us];
   auto add            = false;
 
-  if (const auto bishop_count = pos->material.count(Us, Bishop); bishop_count == 2)
+  if (const auto bishop_count = b->material().count(Us, Bishop); bishop_count == 2)
   {
     auto bishops = b->pieces(Bishop, Us);
     add          = is_opposite_colors(pop_lsb(&bishops), pop_lsb(&bishops));
@@ -306,7 +305,7 @@ Score Evaluate<Tuning>::eval_pieces() {
         const auto king_file = file_of(b->king_sq(Us));
         if ((king_file < FILE_E) == (file_of(sq) < king_file))
         {
-          const auto modifier = 1 + (Us & !pos->castle_rights);
+          const auto modifier = 1 + (Us & !b->castle_rights());
           result -= king_obstructs_rook * modifier;
         }
       }
@@ -421,7 +420,7 @@ void Evaluate<Tuning>::init_evaluate() {
   constexpr auto Them      = ~Us;
   constexpr auto NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
   constexpr auto NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
-  pos->flags               = 0;
+  b->flags()               = 0;
   posistion_value[Us]      = 0;
   attack_count[Us]         = 0;
   attack_counter[Us]       = 0;
@@ -441,12 +440,16 @@ void Evaluate<Tuning>::init_evaluate() {
 
 namespace Eval {
 
-int evaluate(Board *b, std::size_t pool_index, const int alpha, const int beta) {
-  return b->pos->side_to_move == WHITE ? Evaluate<false>(b, pool_index).evaluate<WHITE>(alpha, beta) : Evaluate<false>(b, pool_index).evaluate<BLACK>(alpha, beta);
+int evaluate(Board *b, const std::size_t pool_index, const int alpha, const int beta) {
+  return b->side_to_move() == WHITE
+                            ? Evaluate<false>(b, pool_index).evaluate<WHITE>(alpha, beta)
+                            : Evaluate<false>(b, pool_index).evaluate<BLACK>(alpha, beta);
 }
 
-int tune(Board *b, std::size_t pool_index, const int alpha, const int beta) {
-  return b->pos->side_to_move == WHITE ? Evaluate<true>(b, pool_index).evaluate<WHITE>(alpha, beta) : Evaluate<true>(b, pool_index).evaluate<BLACK>(alpha, beta);
+int tune(Board *b, const std::size_t pool_index, const int alpha, const int beta) {
+  return b->side_to_move() == WHITE
+                            ? Evaluate<true>(b, pool_index).evaluate<WHITE>(alpha, beta)
+                            : Evaluate<true>(b, pool_index).evaluate<BLACK>(alpha, beta);
 }
 
 }// namespace Eval

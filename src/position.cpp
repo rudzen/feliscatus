@@ -38,7 +38,6 @@ std::optional<int> is_string_castle_move(const Board *b, const std::string_view 
 }// namespace
 
 void Position::clear() {
-  in_check                   = false;
   castle_rights              = 0;
   reversible_half_move_count = 0;
   pawn_structure_key = key   = 0;
@@ -46,6 +45,8 @@ void Position::clear() {
   null_moves_in_row          = 0;
   transposition              = nullptr;
   last_move                  = MOVE_NONE;
+  checkers                   = ZeroBB;
+  in_check                   = false;
   material.clear();
   killer_moves.fill(MOVE_NONE);
 }

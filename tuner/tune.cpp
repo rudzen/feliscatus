@@ -559,7 +559,7 @@ void Tune::make_quiet(std::vector<Node> &nodes) {
 
 int Tune::get_score(const Color side) {
   const auto score = score_static_ ? Eval::tune(board_.get(), 0, -100000, 100000) : get_quiesce_score(-32768, 32768, false, 0);
-  return board_->pos->side_to_move == side ? score : -score;
+  return board_->side_to_move() == side ? score : -score;
 }
 
 int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) {

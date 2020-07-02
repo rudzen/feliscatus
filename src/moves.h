@@ -66,10 +66,6 @@ struct Moves {
   std::array<MoveData, 256> move_list{};
 
   Board *b{};
-  Color side_to_move{};
-  int castle_rights{};
-  bool in_check{};
-  Square en_passant_square{};
 
 private:
   void reset(MoveSorter *sorter, Move move, int flags);
@@ -101,10 +97,10 @@ private:
   bool is_legal(Move m, Piece piece, Square from, MoveType type) const;
 
   [[nodiscard]]
-  bool can_castle_short() const;
+  bool can_castle_short(Color stm) const;
 
   [[nodiscard]]
-  bool can_castle_long() const;
+  bool can_castle_long(Color stm) const;
 
   int iteration_{};
   int stage_{};
