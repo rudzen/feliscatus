@@ -256,10 +256,7 @@ void Board::unperform_move(const Move m) {
 
   if (!is_castle_move(m))
   {
-    if (is_promotion(m))
-      remove_piece(to);
-    else
-      remove_piece(to);
+    remove_piece(to);
 
     if (is_ep_capture(m))
     {
@@ -376,6 +373,9 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
   pos->pawn_structure_key         = prev->pawn_structure_key;
   if (calculate_in_check)
     pos->in_check = is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move);
+  if (pos->in_check)
+    pos->checkers = attackers_to(king_sq(pos->side_to_move));
+
   update_key(pos, m);
   pos->material.make_move(m);
 
@@ -385,7 +385,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
 }
 
 bool Board::make_move(const Move m, const bool check_legal) {
-  return make_move(m, check_legal, is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move));
+  return make_move(m, check_legal, gives_check(m));
 }
 
 void Board::unmake_move() {
@@ -601,8 +601,6 @@ bool Board::setup_castling(const std::string_view s) {
 
   if (s.front() == '-')
     return true;
-
-  // position startpos moves e2e4 e7e5 g1f3 g8f6 f3e5 d7d6 e5f3 f6e4 d2d4 d6d5 f1d3 f8e7 c2c4 e7b4
 
   for (const auto c : s)
   {

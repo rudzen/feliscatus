@@ -240,7 +240,7 @@ int Search::next_depth_pv(const Move singular_move, const int depth, const MoveD
 }
 
 bool Search::make_move_and_evaluate(const Move m, const int alpha, const int beta) {
-  if (!b->make_move(m, true))
+  if (!b->make_move(m, true, true))
     return false;
 
   pos = b->pos;
