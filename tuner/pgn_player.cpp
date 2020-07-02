@@ -83,7 +83,7 @@ void pgn::PGNPlayer::read_san_move() {
   if (pawn_move_)
   {
     piece = make_piece(Pawn, side_to_move);
-    board_->pos->generate_pawn_moves(capture_, bit(to_square_));
+    board_->pos->generate_pawn_moves(capture_, bit(to_square_), side_to_move);
   } else if (castle_move_)
   {
     piece = make_piece(King, side_to_move);
@@ -97,7 +97,7 @@ void pgn::PGNPlayer::read_san_move() {
       exit(0);
     }
     piece = make_piece(pt, side_to_move);
-    board_->pos->generate_moves(pt, bit(to_square_));
+    board_->pos->generate_moves(pt, bit(to_square_), side_to_move);
   } else
   {
     fmt::print("else\n");
