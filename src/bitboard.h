@@ -147,6 +147,14 @@ inline Bitboard between_bb[SQ_NB][SQ_NB];
 inline Bitboard passed_pawn_front_span[COL_NB][SQ_NB];
 inline Bitboard pawn_front_span[COL_NB][SQ_NB];
 inline Bitboard pawn_captures[COL_NB][SQ_NB];
+inline std::array<Square, 2> oo_king_from{};
+inline std::array<Square, 2> ooo_king_from{};
+
+/// indexed by the position of the king
+inline std::array<Square, SQ_NB> rook_castles_to{};
+
+/// indexed by the position of the king
+inline std::array<Square, SQ_NB> rook_castles_from{};
 
 consteval std::array<std::array<int, SQ_NB>, SQ_NB> make_distance()
 {

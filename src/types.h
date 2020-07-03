@@ -70,17 +70,9 @@ constexpr std::array<uint32_t, 2> oo_allowed_mask{1, 4};
 
 constexpr std::array<uint32_t, 2> ooo_allowed_mask{2, 8};
 
-inline std::array<Square, 2> oo_king_from{};
 constexpr std::array<Square, 2> oo_king_to{G1, G8};
 
-inline std::array<Square, 2> ooo_king_from{};
 constexpr std::array<Square, 2> ooo_king_to{C1, C8};
-
-/// indexed by the position of the king
-inline std::array<Square, SQ_NB> rook_castles_to{};
-
-/// indexed by the position of the king
-inline std::array<Square, SQ_NB> rook_castles_from{};
 
 constexpr std::string_view square_to_string(const Square s) {
   return SquareString[s];

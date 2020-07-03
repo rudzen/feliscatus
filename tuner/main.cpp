@@ -28,7 +28,6 @@
 
 #include "tune.h"
 #include "../src/board.h"
-#include "../src/square.h"
 #include "../src/bitboard.h"
 #include "../src/magic.h"
 #include "../src/transpositional.h"
@@ -58,7 +57,6 @@ int main(const int argc, char **argv) {
 
   TT.init(256);
 
-  squares::init();
   bitboard::init();
   attacks::init();
   Board::init();
