@@ -31,7 +31,6 @@
 #include "../src/square.h"
 #include "../src/bitboard.h"
 #include "../src/magic.h"
-#include "../src/zobrist.h"
 #include "../src/transpositional.h"
 #include "../src/datapool.h"
 #include "file_resolver.h"
@@ -62,7 +61,7 @@ int main(const int argc, char **argv) {
   squares::init();
   bitboard::init();
   attacks::init();
-  zobrist::init();
+  Board::init();
 
   const Stopwatch sw;
   eval::Tune(std::make_unique<Board>(), cli_parser_settings.get());

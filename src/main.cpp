@@ -22,7 +22,6 @@
 #include "square.h"
 #include "bitboard.h"
 #include "magic.h"
-#include "zobrist.h"
 #include "util.h"
 #include "pawnhashtable.h"
 #include "transpositional.h"
@@ -38,7 +37,7 @@ int main(const int argc, char *argv[]) {
   squares::init();
   bitboard::init();
   attacks::init();
-  zobrist::init();
+  Board::init();
   uci::init(Options);
 
   TT.init(1);

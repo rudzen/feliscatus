@@ -143,6 +143,8 @@ enum PieceType {
   PIECETYPE_NB = 8
 };
 
+constexpr std::array<PieceType, 6> PieceTypes{PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
+
 enum Piece {
   W_PAWN = 0, W_KNIGHT = 1, W_BISHOP =  2, W_ROOK =  3, W_QUEEN =  4, W_KING =  5,
   B_PAWN = 8, B_KNIGHT = 9, B_BISHOP = 10, B_ROOK = 11, B_QUEEN = 12, B_KING = 13,
@@ -150,7 +152,7 @@ enum Piece {
   PIECE_NB = 16
 };
 
-constexpr std::array<PieceType, 6> PieceTypes{PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
+constexpr std::array<Piece, PieceTypes.size() * 2> Pieces{ W_PAWN, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING, B_PAWN, B_KNIGHT, B_BISHOP, B_ROOK, B_QUEEN, B_KING };
 
 constexpr std::array<PieceType, 4> PromotionPieceTypes{QUEEN, ROOK, BISHOP, KNIGHT};
 
