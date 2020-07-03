@@ -141,6 +141,15 @@ struct Board {
   int see_last_move(Move m);
 
   [[nodiscard]]
+  bool is_draw() const;
+
+  [[nodiscard]]
+  bool can_castle() const;
+
+  [[nodiscard]]
+  bool can_castle(CastlingRight cr) const;
+
+  [[nodiscard]]
   Key pawn_key() const;
 
   [[nodiscard]]
@@ -316,6 +325,18 @@ inline bool Board::is_piece_on_square(const PieceType pt, const Square s, const 
 
 inline bool Board::is_piece_on_file(const PieceType pt, const Square s, const Color c) const {
   return (bb_file(s) & piece[make_piece(pt, c)]) != 0;
+}
+
+inline bool Board::is_draw() const {
+  return flags() & Material::recognize_draw();
+}
+
+inline bool Board::can_castle() const {
+  return pos->castle_rights != 0;
+}
+
+inline bool Board::can_castle(const CastlingRight cr) const {
+  return pos->castle_rights & cr;
 }
 
 inline Key Board::pawn_key() const {

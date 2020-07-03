@@ -599,24 +599,24 @@ std::string Board::get_fen() const {
 
   format_to(s, " {} ", pos->side_to_move ? 'w' : 'b');
 
-  if (pos->can_castle())
+  if (can_castle())
   {
-    if (pos->can_castle(WHITE_OO))
+    if (can_castle(WHITE_OO))
       format_to(s, "K");
 
-    if (pos->can_castle(WHITE_OOO))
+    if (can_castle(WHITE_OOO))
       format_to(s, "Q");
 
-    if (pos->can_castle(BLACK_OO))
+    if (can_castle(BLACK_OO))
       format_to(s, "k");
 
-    if (pos->can_castle(BLACK_OOO))
+    if (can_castle(BLACK_OOO))
       format_to(s, "q");
   } else
     format_to(s, "-");
 
-  if (pos->en_passant_square != NO_SQ)
-    format_to(s, " {} ", square_to_string(pos->en_passant_square));
+  if (const auto en_pessant_sq = en_passant_square(); en_pessant_sq != NO_SQ)
+    format_to(s, " {} ", square_to_string(en_pessant_sq));
   else
     format_to(s, " - ");
 
