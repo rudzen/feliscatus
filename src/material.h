@@ -57,22 +57,22 @@ struct Material {
   int pawn_count();
 
   [[nodiscard]]
-  int evaluate(int &flags, int eval, Color side_to_move, const Board *b);
+  int evaluate(int &flags, int eval, Color c, const Board *b);
 
   [[nodiscard]]
   static constexpr int recognize_draw();
 
-  std::array<int, 2> material_value{};
+  std::array<int, COL_NB> material_value{};
 
-  static constexpr int max_value_without_pawns = 2 * (2 * piece_values[Knight] + 2 * piece_values[Bishop] + 2 * piece_values[Rook] + piece_values[Queen]);
-  static constexpr int max_value               = max_value_without_pawns + 2 * 8 * piece_values[Pawn];
+  static constexpr int max_value_without_pawns = 2 * (2 * piece_values[KNIGHT] + 2 * piece_values[BISHOP] + 2 * piece_values[ROOK] + piece_values[QUEEN]);
+  static constexpr int max_value               = max_value_without_pawns + 2 * 8 * piece_values[PAWN];
 
 private:
 
   using Keys = std::array<uint32_t, COL_NB>;
 
   [[nodiscard]]
-  int pawn_count(Color side);
+  int pawn_count(Color c);
 
   [[nodiscard]]
   bool is_kx();
@@ -99,38 +99,38 @@ private:
   int KBBKX(int eval, uint32_t key2);
 
   [[nodiscard]]
-  int KBNKX(int eval, uint32_t key2, int pc1, int pc2, Color side1);
+  int KBNKX(int eval, uint32_t key2, int pc1, int pc2, Color c1);
 
   [[nodiscard]]
-  int KBNK(int eval, Color side1) const;
+  int KBNK(int eval, Color c1) const;
 
   [[nodiscard]]
-  int KBKX(int eval, uint32_t key1, uint32_t key2, int pc1, int pc2, Color side1, Color side2, Color side_to_move);
+  int KBKX(int eval, uint32_t key1, uint32_t key2, int pc1, int pc2, Color c1, Color c2, Color c);
 
   [[nodiscard]]
-  int KNKX(int eval, uint32_t key2, int pc1, int pc2, Color side1, Color side2, Color side_to_move);
+  int KNKX(int eval, uint32_t key2, int pc1, int pc2, Color c1, Color c2, Color c);
 
   [[nodiscard]]
   int KNNKX(int eval, uint32_t key2, int pc1);
 
   [[nodiscard]]
-  int KKx(int eval, uint32_t key1, uint32_t key2, int pc1, int pc2, Color side1);
+  int KKx(int eval, uint32_t key1, uint32_t key2, int pc1, int pc2, Color c1);
 
   [[nodiscard]]
-  int KBxKX(int eval, uint32_t key1, uint32_t key2, Color side1);
+  int KBxKX(int eval, uint32_t key1, uint32_t key2, Color c1);
 
   [[nodiscard]]
-  int KBxKx(int eval, uint32_t key1, uint32_t key2, Color side1);
+  int KBxKx(int eval, uint32_t key1, uint32_t key2, Color c1);
 
   // fen 8/6k1/8/8/3K4/5B1P/8/8 w - - 0 1
   [[nodiscard]]
-  int KBpK(int eval, Color side1);
+  int KBpK(int eval, Color c1);
 
   [[nodiscard]]
-  int KxKx(int eval, [[maybe_unused]] uint32_t key1, [[maybe_unused]] uint32_t key2, int pc1, int pc2, Color side1);
+  int KxKx(int eval, [[maybe_unused]] uint32_t key1, [[maybe_unused]] uint32_t key2, int pc1, int pc2, Color c1);
 
   [[nodiscard]]
-  int KpK(int eval, Color side1);
+  int KpK(int eval, Color c1);
 
   [[nodiscard]]
   int draw_score();
@@ -167,8 +167,8 @@ inline int Material::balance() {
   return material_value[WHITE] - material_value[BLACK];
 }
 
-inline int Material::pawn_count(const Color side) {
-  return static_cast<int>(key[side] & 15);
+inline int Material::pawn_count(const Color c) {
+  return static_cast<int>(key[c] & 15);
 }
 
 constexpr int Material::recognize_draw() {

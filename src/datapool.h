@@ -30,8 +30,8 @@
 #include "timemanager.h"
 #include "search_limits.h"
 
-using HistoryScores = std::array<std::array<int, sq_nb>, 16>;
-using CounterMoves = std::array<std::array<Move, sq_nb>, 16>;
+using HistoryScores = std::array<std::array<int, SQ_NB>, 16>;
+using CounterMoves = std::array<std::array<Move, SQ_NB>, 16>;
 
 struct Data {
 

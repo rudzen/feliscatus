@@ -67,13 +67,13 @@ private:
 
 class Tune final : public MoveSorter {
 public:
-  explicit Tune(std::unique_ptr<Board> game, const ParserSettings *settings);
+  explicit Tune(std::unique_ptr<Board> board, const ParserSettings *settings);
 
   double e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, double K);
 
   void make_quiet(std::vector<Node> &nodes);
 
-  int get_score(Color side);
+  int get_score(Color c);
 
   int get_quiesce_score(int alpha, int beta, bool store_pv, int ply);
 
@@ -83,9 +83,9 @@ public:
 
   void play_pv();
 
-  void update_pv(Move move, int score, int ply);
+  void update_pv(Move m, int score, int ply);
 
-  void sort_move(MoveData &move_data) override;
+  void sort_move(MoveData &md) override;
 
 private:
   std::unique_ptr<Board> board_;

@@ -187,14 +187,14 @@ void Search::run() {
   go(limits);
 }
 
-bool Search::search_fail_low(const int depth, const int alpha, const Move exclude_move) {
+bool Search::search_fail_low(const int depth, const int alpha, const Move exclude) {
   pos->generate_moves(this, pos->transp_move, STAGES);
 
   auto move_count = 0;
 
   while (auto *const move_data = pos->next_move())
   {
-    if (move_data->move == exclude_move)
+    if (move_data->move == exclude)
       continue;
 
     auto best_score = -MAXSCORE;// dummy
@@ -228,8 +228,8 @@ bool Search::should_try_null_move(const int beta) const {
   return !b->in_check() && pos->null_moves_in_row < 1 && !b->material().is_kx(b->side_to_move()) && pos->eval_score >= beta;
 }
 
-int Search::next_depth_pv(const Move singular_move, const int depth, const MoveData *move_data) const {
-  const auto m = move_data->move;
+int Search::next_depth_pv(const Move singular_move, const int depth, const MoveData *md) const {
+  const auto m = md->move;
 
   if (m == singular_move)
     return depth;
@@ -293,13 +293,13 @@ void Search::init_search(SearchLimits &limits) {
   pos->killer_moves.fill(MOVE_NONE);
 }
 
-void Search::sort_move(MoveData &move_data) {
-  const auto m = move_data.move;
+void Search::sort_move(MoveData &md) {
+  const auto m = md.move;
 
   if (pos->transp_move == m)
-    move_data.score = 890010;
+      md.score = 890010;
   else if (is_queen_promotion(m))
-    move_data.score = 890000;
+      md.score = 890000;
   else if (is_capture(m)) // also en-pessant
   {
     const auto value_captured = piece_value(move_captured(m));
@@ -309,45 +309,45 @@ void Search::sort_move(MoveData &move_data) {
       value_piece = 1800;
 
     if (value_piece <= value_captured)
-      move_data.score = 300000 + value_captured * 20 - value_piece;
+        md.score = 300000 + value_captured * 20 - value_piece;
     else if (b->see_move(m) >= 0)
-      move_data.score = 160000 + value_captured * 20 - value_piece;
+        md.score = 160000 + value_captured * 20 - value_piece;
     else
-      move_data.score = -100000 + value_captured * 20 - value_piece;
+        md.score = -100000 + value_captured * 20 - value_piece;
   } else if (is_promotion(m))
-    move_data.score = PROMOTIONMOVESCORE + piece_value(move_promoted(m));
+      md.score = PROMOTIONMOVESCORE + piece_value(move_promoted(m));
   else if (m == pos->killer_moves[0])
-    move_data.score = KILLERMOVESCORE + 20;
+      md.score = KILLERMOVESCORE + 20;
   else if (m == pos->killer_moves[1])
-    move_data.score = KILLERMOVESCORE + 19;
+      md.score = KILLERMOVESCORE + 19;
   else if (m == pos->killer_moves[2])
-    move_data.score = KILLERMOVESCORE + 18;
+      md.score = KILLERMOVESCORE + 18;
   else if (m == pos->killer_moves[3])
-    move_data.score = KILLERMOVESCORE + 17;
+      md.score = KILLERMOVESCORE + 17;
   else if (pos->last_move && data_->counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] == m)
-    move_data.score = 60000;
+      md.score = 60000;
   else
-    move_data.score = data_->history_scores[move_piece(m)][move_to(m)];
+      md.score = data_->history_scores[move_piece(m)][move_to(m)];
 }
 
-int Search::store_search_node_score(const int score, const int depth, const NodeType node_type, const Move move) const {
-  store_hash(depth, score, node_type, move);
+int Search::store_search_node_score(const int score, const int depth, const NodeType nt, const Move m) const {
+  store_hash(depth, score, nt, m);
   return score;
 }
 
 int Search::draw_score() const { return draw_score_[b->side_to_move()]; }
 
-void Search::store_hash(const int depth, int score, const NodeType node_type, const Move move) const {
+void Search::store_hash(const int depth, int score, const NodeType nt, const Move m) const {
   score = codec_t_table_score(score, b->plies);
 
-  if (node_type == BETA)
+  if (nt == BETA)
     pos->eval_score = std::max<int>(pos->eval_score, score);
-  else if (node_type == ALPHA)
+  else if (nt == ALPHA)
     pos->eval_score = std::min<int>(pos->eval_score, score);
-  else if (node_type == EXACT)
+  else if (nt == EXACT)
     pos->eval_score = score;
 
-  pos->transposition = TT.insert(b->key(), depth, score, node_type, move, pos->eval_score);
+  pos->transposition = TT.insert(b->key(), depth, score, nt, m, pos->eval_score);
 }
 
 bool Search::move_is_easy() const {
@@ -643,7 +643,7 @@ template int Search::search_quiesce< true>(int, int, int);
 template int Search::search_quiesce<false>(int, int, int);
 
 template<NodeType NT>
-void Search::update_pv(const Move move, const int score, const int depth) const {
+void Search::update_pv(const Move m, const int score, const int depth) const {
   const auto ply      = b->plies;
   const auto next_ply = ply + 1;
   auto &pv            = data_->pv;
@@ -653,7 +653,7 @@ void Search::update_pv(const Move move, const int score, const int depth) const 
   entry->score     = score;
   entry->depth     = depth;
   entry->key       = b->key();
-  entry->move      = move;
+  entry->move      = m;
   entry->node_type = NT;
   entry->eval      = pos->eval_score;
 

@@ -45,13 +45,13 @@ auto node_info(const TimeUnit time) {
 
 }
 
-void uci::post_moves(const Move bestmove, const Move pondermove) {
+void uci::post_moves(const Move m, const Move ponder_move) {
   fmt::memory_buffer buffer;
 
-  fmt::format_to(buffer, "bestmove {}", display_uci(bestmove));
+  fmt::format_to(buffer, "bestmove {}", display_uci(m));
 
-  if (pondermove)
-    fmt::format_to(buffer, " ponder {}", display_uci(pondermove));
+  if (ponder_move)
+    fmt::format_to(buffer, " ponder {}", display_uci(ponder_move));
 
   fmt::print("{}\n", fmt::to_string(buffer));
 }
@@ -62,18 +62,18 @@ void uci::post_info(const int d, const int selective_depth) {
   fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, TT.get_load(), node_count, nodes_per_second, time);
 }
 
-void uci::post_curr_move(const Move curr_move, const int curr_move_number) {
-  fmt::print("info currmove {} currmovenumber {}\n", display_uci(curr_move), curr_move_number);
+void uci::post_curr_move(const Move m, const int m_number) {
+  fmt::print("info currmove {} currmovenumber {}\n", display_uci(m), m_number);
 }
 
-void uci::post_pv(const int d, const int max_ply, const int score, const std::span<PVEntry> &pv_line, const NodeType node_type) {
+void uci::post_pv(const int d, const int max_ply, const int score, const std::span<PVEntry> &pv_line, const NodeType nt) {
 
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
 
-  if (node_type == ALPHA)
+  if (nt == ALPHA)
     fmt::format_to(buffer, "upperbound ");
-  else if (node_type == BETA)
+  else if (nt == BETA)
     fmt::format_to(buffer, "lowerbound ");
 
   const auto time = Pool.time.elapsed() + time_safety_margin;

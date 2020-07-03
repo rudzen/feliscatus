@@ -32,30 +32,30 @@ using Key      = uint64_t;
 constexpr int MAXDEPTH = 128;
 
 enum Square {
-  a1, b1, c1, d1, e1, f1, g1, h1,
-  a2, b2, c2, d2, e2, f2, g2, h2,
-  a3, b3, c3, d3, e3, f3, g3, h3,
-  a4, b4, c4, d4, e4, f4, g4, h4,
-  a5, b5, c5, d5, e5, f5, g5, h5,
-  a6, b6, c6, d6, e6, f6, g6, h6,
-  a7, b7, c7, d7, e7, f7, g7, h7,
-  a8, b8, c8, d8, e8, f8, g8, h8,
-  no_square,
-  sq_nb = 64
+  A1, B1, C1, D1, E1, F1, G1, H1,
+  A2, B2, C2, D2, E2, F2, G2, H2,
+  A3, B3, C3, D3, E3, F3, G3, H3,
+  A4, B4, C4, D4, E4, F4, G4, H4,
+  A5, B5, C5, D5, E5, F5, G5, H5,
+  A6, B6, C6, D6, E6, F6, G6, H6,
+  A7, B7, C7, D7, E7, F7, G7, H7,
+  A8, B8, C8, D8, E8, F8, G8, H8,
+  NO_SQ,
+  SQ_NB = 64
 };
 
-constexpr std::array<Square, sq_nb> Squares
-  { a1, b1, c1, d1, e1, f1, g1, h1,
-    a2, b2, c2, d2, e2, f2, g2, h2,
-    a3, b3, c3, d3, e3, f3, g3, h3,
-    a4, b4, c4, d4, e4, f4, g4, h4,
-    a5, b5, c5, d5, e5, f5, g5, h5,
-    a6, b6, c6, d6, e6, f6, g6, h6,
-    a7, b7, c7, d7, e7, f7, g7, h7,
-    a8, b8, c8, d8, e8, f8, g8, h8
+constexpr std::array<Square, SQ_NB> Squares
+  {A1, B1, C1, D1, E1, F1, G1, H1,
+   A2, B2, C2, D2, E2, F2, G2, H2,
+   A3, B3, C3, D3, E3, F3, G3, H3,
+   A4, B4, C4, D4, E4, F4, G4, H4,
+   A5, B5, C5, D5, E5, F5, G5, H5,
+   A6, B6, C6, D6, E6, F6, G6, H6,
+   A7, B7, C7, D7, E7, F7, G7, H7,
+   A8, B8, C8, D8, E8, F8, G8, H8
   };
 
-constexpr std::array<std::string_view, sq_nb> SquareString {
+constexpr std::array<std::string_view, SQ_NB> SquareString {
     "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
     "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
     "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
@@ -71,19 +71,19 @@ constexpr std::array<uint32_t, 2> oo_allowed_mask{1, 4};
 constexpr std::array<uint32_t, 2> ooo_allowed_mask{2, 8};
 
 inline std::array<Square, 2> oo_king_from{};
-constexpr std::array<Square, 2> oo_king_to{g1, g8};
+constexpr std::array<Square, 2> oo_king_to{G1, G8};
 
 inline std::array<Square, 2> ooo_king_from{};
-constexpr std::array<Square, 2> ooo_king_to{c1, c8};
+constexpr std::array<Square, 2> ooo_king_to{C1, C8};
 
 /// indexed by the position of the king
-inline std::array<Square, sq_nb> rook_castles_to{};
+inline std::array<Square, SQ_NB> rook_castles_to{};
 
 /// indexed by the position of the king
-inline std::array<Square, sq_nb> rook_castles_from{};
+inline std::array<Square, SQ_NB> rook_castles_from{};
 
-constexpr std::string_view square_to_string(const Square sq) {
-  return SquareString[sq];
+constexpr std::string_view square_to_string(const Square s) {
+  return SquareString[s];
 }
 
 enum Color : uint8_t {
@@ -137,29 +137,29 @@ enum Direction : int {
 constexpr Direction pawn_push(const Color c) { return c == WHITE ? NORTH : SOUTH; }
 
 enum PieceType {
-  Pawn = 0, Knight = 1, Bishop = 2, Rook = 3, Queen = 4, King = 5,
-  NoPieceType = 6,
-  AllPieceTypes = 6,
-  PieceType_Nb = 8
+  PAWN = 0, KNIGHT = 1, BISHOP = 2, ROOK = 3, QUEEN = 4, KING = 5,
+  NO_PT = 6,
+  ALL_PIECE_TYPES = 6,
+  PIECETYPE_NB = 8
 };
 
 enum Piece {
-  WhitePawn = 0, WhiteKnight = 1, WhiteBishop =  2, WhiteRook =  3, WhiteQueen =  4, WhiteKing =  5,
-  BlackPawn = 8, BlackKnight = 9, BlackBishop = 10, BlackRook = 11, BlackQueen = 12, BlackKing = 13,
-  NoPiece   = 6,
-  Piece_Nb  = 16
+  W_PAWN = 0, W_KNIGHT = 1, W_BISHOP =  2, W_ROOK =  3, W_QUEEN =  4, W_KING =  5,
+  B_PAWN = 8, B_KNIGHT = 9, B_BISHOP = 10, B_ROOK = 11, B_QUEEN = 12, B_KING = 13,
+  NO_PIECE = 6,
+  PIECE_NB = 16
 };
 
-constexpr std::array<PieceType, 6> PieceTypes{ Pawn, Knight, Bishop, Rook, Queen, King };
+constexpr std::array<PieceType, 6> PieceTypes{PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
 
-constexpr std::array<PieceType, 4> PromotionPieceTypes{ Queen, Rook, Bishop, Knight };
+constexpr std::array<PieceType, 4> PromotionPieceTypes{QUEEN, ROOK, BISHOP, KNIGHT};
 
 constexpr std::array<int, 6> piece_values{100, 400, 400, 600, 1200, 0};
 
 constexpr std::array<std::string_view, 6> piece_notation {" ", "n", "b", "r", "q", "k"};
 
-constexpr std::string_view piece_to_string(const PieceType piece) {
-  return piece_notation[PieceTypes[piece]];
+constexpr std::string_view piece_to_string(const PieceType pt) {
+  return piece_notation[pt];
 }
 
 constexpr PieceType type_of(const Piece pc) {
@@ -243,7 +243,7 @@ ENABLE_INCR_OPERATORS_ON(PieceType)
 #undef ENABLE_BASE_OPERATORS_ON
 
 constexpr MoveType operator|(const MoveType mt, const int v) noexcept {
-  return static_cast<MoveType>(static_cast<int>(mt) + static_cast<int>(v));
+  return static_cast<MoveType>(static_cast<int>(mt) + v);
 }
 
 constexpr Square operator+(const Square s, const Direction d) noexcept {
@@ -257,13 +257,13 @@ constexpr Square operator-(const Square s, const Direction d) noexcept {
 constexpr Square &operator+=(Square &s, const Direction d) noexcept { return s = s + d; }
 constexpr Square &operator-=(Square &s, const Direction d) noexcept { return s = s - d; }
 
-constexpr Rank rank_of(const Square sq) { return static_cast<Rank>(sq >> 3); }
+constexpr Rank rank_of(const Square s) { return static_cast<Rank>(s >> 3); }
 
-constexpr File file_of(const Square sq) { return static_cast<File>(sq & 7); }
+constexpr File file_of(const Square s) { return static_cast<File>(s & 7); }
 
-constexpr bool is_dark(const Square sq) { return ((9 * sq) & 8) == 0; }
+constexpr bool is_dark(const Square s) { return ((9 * s) & 8) == 0; }
 
-constexpr bool same_color(const Square sq1, const Square sq2) { return is_dark(sq1) == is_dark(sq2); }
+constexpr bool same_color(const Square s1, const Square s2) { return is_dark(s1) == is_dark(s2); }
 
 constexpr Square make_square(const File f, const Rank r) { return static_cast<Square>((r << 3) + f); }
 
@@ -295,15 +295,15 @@ constexpr bool is_castle_move(const Move m) { return move_type(m) & CASTLE; }
 
 constexpr bool is_promotion(const Move m) { return move_type(m) & PROMOTION; }
 
-constexpr bool is_queen_promotion(const Move m) { return is_promotion(m) && type_of(move_promoted(m)) == Queen; }
+constexpr bool is_queen_promotion(const Move m) { return is_promotion(m) && type_of(move_promoted(m)) == QUEEN; }
 
 constexpr bool is_null_move(const Move m) { return m == 0; }
 
-template<MoveType Type>
-constexpr Move init_move(const Piece piece, const Piece captured, const Square from, const Square to, const Piece promoted) {
-  return static_cast<Move>((piece << 26) | (captured << 22) | (promoted << 18) | (Type << 12) | (from << 6) | static_cast<int>(to));
+template<MoveType Mt>
+constexpr Move init_move(const Piece pc, const Piece cap, const Square from, const Square to, const Piece promoted) {
+  return static_cast<Move>((pc << 26) | (cap << 22) | (promoted << 18) | (Mt << 12) | (from << 6) | static_cast<int>(to));
 }
 
-constexpr Move init_move(const Piece piece, const Piece captured, const Square from, const Square to, const MoveType type, const Piece promoted) {
-  return static_cast<Move>((piece << 26) | (captured << 22) | (promoted << 18) | (type << 12) | (from << 6) | static_cast<int>(to));
+constexpr Move init_move(const Piece pc, const Piece captured, const Square from, const Square to, const MoveType mt, const Piece promoted) {
+  return static_cast<Move>((pc << 26) | (captured << 22) | (promoted << 18) | (mt << 12) | (from << 6) | static_cast<int>(to));
 }

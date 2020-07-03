@@ -27,7 +27,7 @@
 
 namespace {
 
-constexpr std::array<PieceType, 5> MoveGenPieceTypes{Queen, Rook, Bishop, Knight, King};
+constexpr std::array<PieceType, 5> MoveGenPieceTypes{QUEEN, ROOK, BISHOP, KNIGHT, KING};
 
 template<Color Us>
 [[nodiscard]] bool is_castle_allowed(const Square to, const Board *b) {
@@ -105,10 +105,10 @@ void Moves::generate_moves(const PieceType pt, const Bitboard to_squares) {
 template void Moves::generate_moves<WHITE>(PieceType, Bitboard);
 template void Moves::generate_moves<BLACK>(PieceType, Bitboard);
 
-void Moves::generate_pawn_moves(const bool capture, const Bitboard to_squares, const Color stm) {
+void Moves::generate_pawn_moves(const bool capture, const Bitboard to_squares, const Color c) {
   reset(nullptr, MOVE_NONE, 0);
 
-  if (stm == WHITE)
+  if (c == WHITE)
   {
     if (capture)
       add_pawn_capture_moves<WHITE>(to_squares);
@@ -151,7 +151,7 @@ bool Moves::is_pseudo_legal(const Move m) const {
   else if (b->pieces() & to)
     return false;
 
-  if (const auto pt = type_of(move_piece(m)); util::in_between<Bishop, Queen>(pt))
+  if (const auto pt = type_of(move_piece(m)); util::in_between<BISHOP, QUEEN>(pt))
     if (between_bb[from][to] & b->pieces())
       return false;
 
@@ -200,13 +200,13 @@ void Moves::generate_captures_and_promotions() {
   constexpr auto Rank_7       = rank_7[Us];
   constexpr auto Up           = pawn_push(Us);
   const auto opponent_pieces  = b->pieces(Them);
-  const auto pawns            = b->pieces(Pawn, Us);
+  const auto pawns            = b->pieces(PAWN, Us);
 
   add_moves<Us>(opponent_pieces);
   add_pawn_moves<Us>(pawn_push(Us, pawns & Rank_7) & ~b->pieces(), Up, NORMAL);
   add_pawn_moves<Us>(WestAttacks(pawns) & opponent_pieces, WestDistance, CAPTURE);
   add_pawn_moves<Us>(EastAttacks(pawns) & opponent_pieces, EastDistance, CAPTURE);
-  if (const auto en_passant_square = b->en_passant_square(); en_passant_square != no_square)
+  if (const auto en_passant_square = b->en_passant_square(); en_passant_square != NO_SQ)
   {
     add_pawn_moves<Us>(WestAttacks(pawns) & en_passant_square, WestDistance, EPCAPTURE);
     add_pawn_moves<Us>(EastAttacks(pawns) & en_passant_square, EastDistance, EPCAPTURE);
@@ -278,7 +278,7 @@ void Moves::generate_quiet_moves() {
   constexpr auto Rank3     = rank_3[Us];
   constexpr auto Up        = pawn_push(Us);
   const auto empty_squares = ~b->pieces();
-  const auto pushed        = shift_bb<Up>(b->pieces(Pawn, Us) & NotRank7) & empty_squares;
+  const auto pushed        = shift_bb<Up>(b->pieces(PAWN, Us) & NotRank7) & empty_squares;
 
   if (!b->in_check())
   {
@@ -299,26 +299,26 @@ template void Moves::generate_quiet_moves<WHITE>();
 template void Moves::generate_quiet_moves<BLACK>();
 
 template<Color Us>
-void Moves::add_move(const Piece piece, const Square from, const Square to, const MoveType type, const Piece promoted) {
+void Moves::add_move(const Piece pc, const Square from, const Square to, const MoveType mt, const Piece promoted) {
   constexpr auto Them = ~Us;
 
   const auto get_captured = [&]()
   {
-    if (type & CAPTURE)
+    if (mt & CAPTURE)
       return b->get_piece(to);
-    else if (type & EPCAPTURE)
-      return make_piece(Pawn, Them);
+    else if (mt & EPCAPTURE)
+      return make_piece(PAWN, Them);
     else
-      return NoPiece;
+      return NO_PIECE;
   };
 
   const auto captured = get_captured();
-  const auto move     = init_move(piece, captured, from, to, type, promoted);
+  const auto move     = init_move(pc, captured, from, to, mt, promoted);
 
   if (transp_move_ == move)
     return;
 
-  if (move_flags_ & LEGALMOVES && !b->is_legal(move, piece, from, type))
+  if (move_flags_ & LEGALMOVES && !b->is_legal(move, pc, from, mt))
     return;
 
   auto &move_data = move_list[number_moves_++];
@@ -358,7 +358,7 @@ void Moves::add_moves(const PieceType pt, const Square from, const Bitboard atta
   for (auto bb = attacks; bb;)
   {
     const auto to = pop_lsb(&bb);
-    add_move<Us>(pc, from, to, b->get_piece(to) == NoPiece ? NORMAL : CAPTURE);
+    add_move<Us>(pc, from, to, b->get_piece(to) == NO_PIECE ? NORMAL : CAPTURE);
   }
 }
 
@@ -369,7 +369,7 @@ template<Color Us>
 void Moves::add_pawn_quiet_moves(const Bitboard to_squares) {
   constexpr auto Rank_3    = relative_rank(Us, RANK_3);
   const auto empty_squares = ~b->pieces();
-  const auto pushed        = pawn_push(Us, b->pieces(Pawn, Us)) & empty_squares;
+  const auto pushed        = pawn_push(Us, b->pieces(PAWN, Us)) & empty_squares;
 
   add_pawn_moves<Us>(pushed & to_squares, pawn_push(Us), NORMAL);
   add_pawn_moves<Us>(pawn_push(Us, pushed & Rank_3) & empty_squares & to_squares, pawn_push(Us) * 2, DOUBLEPUSH);
@@ -386,11 +386,11 @@ void Moves::add_pawn_capture_moves(const Bitboard to_squares) {
   constexpr auto WestDistance = pawn_west_attack_dist[Us];
   constexpr auto EastDistance = pawn_east_attack_dist[Us];
   const auto opponent_pieces  = b->pieces(Them);
-  const auto pawns            = b->pieces(Pawn, Us);
+  const auto pawns            = b->pieces(PAWN, Us);
 
   add_pawn_moves<Us>(WestAttacks(pawns) & opponent_pieces & to_squares, WestDistance, CAPTURE);
   add_pawn_moves<Us>(EastAttacks(pawns) & opponent_pieces & to_squares, EastDistance, CAPTURE);
-  if (b->en_passant_square() != no_square)
+  if (b->en_passant_square() != NO_SQ)
   {
     add_pawn_moves<Us>(WestAttacks(pawns) & to_squares & b->en_passant_square(), WestDistance, EPCAPTURE);
     add_pawn_moves<Us>(EastAttacks(pawns) & to_squares & b->en_passant_square(), EastDistance, EPCAPTURE);
@@ -401,28 +401,28 @@ template void Moves::add_pawn_capture_moves<WHITE>(Bitboard);
 template void Moves::add_pawn_capture_moves<BLACK>(Bitboard);
 
 template<Color Us>
-void Moves::add_pawn_moves(const Bitboard to_squares, const Direction distance, const MoveType type) {
-  const auto pawn = make_piece(Pawn, Us);
+void Moves::add_pawn_moves(const Bitboard to_squares, const Direction d, const MoveType mt) {
+  const auto pawn = make_piece(PAWN, Us);
 
   for (auto bb = to_squares; bb; reset_lsb(bb))
   {
     const auto to   = lsb(bb);
-    const auto from = to - distance;
+    const auto from = to - d;
 
     if (const auto rr = relative_rank(Us, to); rr == RANK_8)
     {
-      const auto promo_type = type | PROMOTION;
+      const auto promo_type = mt | PROMOTION;
 
       if (move_flags_ & QUEENPROMOTION)
       {
-        add_move<Us>(pawn, from, to, promo_type, make_piece(Queen, Us));
+        add_move<Us>(pawn, from, to, promo_type, make_piece(QUEEN, Us));
         return;
       }
 
       for (const auto promoted : PromotionPieceTypes)
         add_move<Us>(pawn, from, to, promo_type, make_piece(promoted, Us));
     } else
-      add_move<Us>(pawn, from, to, type);
+      add_move<Us>(pawn, from, to, mt);
   }
 }
 
@@ -431,7 +431,7 @@ template void Moves::add_pawn_moves<BLACK>(Bitboard, Direction, MoveType);
 
 template<Color Us>
 void Moves::add_castle_move(const Square from, const Square to) {
-  add_move<Us>(make_piece(King, Us), from, to, CASTLE);
+  add_move<Us>(make_piece(KING, Us), from, to, CASTLE);
 }
 
 template void Moves::add_castle_move<WHITE>(Square, Square);

@@ -32,17 +32,17 @@ constexpr auto detect_piece = [](const int from) {
   switch (from)
   {
   case 'N':
-    return Knight;
+    return KNIGHT;
   case 'B':
-    return Bishop;
+    return BISHOP;
   case 'R':
-    return Rook;
+    return ROOK;
   case 'Q':
-    return Queen;
+    return QUEEN;
   case 'K':
-    return King;
+    return KING;
   default:
-    return NoPieceType;
+    return NO_PT;
   };
 };
 
@@ -78,20 +78,20 @@ void pgn::PGNPlayer::read_tag_pair() {
 void pgn::PGNPlayer::read_san_move() {
   PGNFileReader::read_san_move();
 
-  Piece piece{NoPiece};
+  Piece piece{NO_PIECE};
 
   if (pawn_move_)
   {
-    piece = make_piece(Pawn, side_to_move);
+    piece = make_piece(PAWN, side_to_move);
     board_->pos->generate_pawn_moves(capture_, bit(to_square_), side_to_move);
   } else if (castle_move_)
   {
-    piece = make_piece(King, side_to_move);
+    piece = make_piece(KING, side_to_move);
     board_->pos->generate_moves();
   } else if (piece_move_)
   {
     const auto pt = detect_piece(from_piece_);
-    if (pt == NoPieceType)
+    if (pt == NO_PT)
     {
       fmt::print("default [{}]\n", std::string(token_str));
       exit(0);
@@ -104,12 +104,12 @@ void pgn::PGNPlayer::read_san_move() {
     exit(0);
   }
 
-  Piece promoted{NoPiece};
+  Piece promoted{NO_PIECE};
 
   if (promoted_to != -1)
   {
     const auto pt = detect_piece(promoted_to);
-    if (pt == NoPieceType)
+    if (pt == NO_PT)
     {
       fmt::print("promoted_to error [{}]\n", std::string(token_str));
       exit(0);
@@ -125,7 +125,7 @@ void pgn::PGNPlayer::read_san_move() {
   {
     const auto m = board_->pos->move_list[i].move;
 
-    if (move_piece(m) != piece || move_to(m) != to_square_ || (promoted != NoPiece && move_promoted(m) != promoted) || (capture_ && !is_capture(m))
+    if (move_piece(m) != piece || move_to(m) != to_square_ || (promoted != NO_PIECE && move_promoted(m) != promoted) || (capture_ && !is_capture(m))
         || (from_file_ != -1 && file_of(move_from(m)) != from_file_) || (from_rank_ != -1 && rank_of(move_from(m)) != from_rank_))
       continue;
 

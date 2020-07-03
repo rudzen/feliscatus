@@ -53,14 +53,14 @@ constexpr double sigmoid(const double x, const double k) {
 }
 
 template<typename T>
-constexpr bool in_between(const T value, const T min, const T max) {
+constexpr bool in_between(const T v, const T min, const T max) {
   static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "invalid type.");
-  return static_cast<unsigned int>(value) - static_cast<unsigned int>(min) <= static_cast<unsigned int>(max) - static_cast<unsigned int>(min);
+  return static_cast<unsigned int>(v) - static_cast<unsigned int>(min) <= static_cast<unsigned int>(max) - static_cast<unsigned int>(min);
 }
 
 template<int Min, int Max>
-constexpr bool in_between(const int value) {
-  return static_cast<unsigned int>(value) - static_cast<unsigned int>(Min) <= static_cast<unsigned int>(Max) - static_cast<unsigned int>(Min);
+constexpr bool in_between(const int v) {
+  return static_cast<unsigned int>(v) - static_cast<unsigned int>(Min) <= static_cast<unsigned int>(Max) - static_cast<unsigned int>(Min);
 }
 
 template<typename Integral>

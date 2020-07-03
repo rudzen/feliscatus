@@ -53,7 +53,7 @@ private:
   template<bool PV>
   Move get_singular_move(int depth);
 
-  bool search_fail_low(int depth, int alpha, Move exclude_move);
+  bool search_fail_low(int depth, int alpha, Move exclude);
 
   [[nodiscard]]
   bool should_try_null_move(int beta) const;
@@ -61,7 +61,7 @@ private:
   template<NodeType NT, bool PV>
   std::optional<int> next_depth_not_pv(int depth, int move_count, const MoveData *move_data, int alpha, int &best_score) const;
 
-  int next_depth_pv(Move singular_move, int depth, const MoveData *move_data) const;
+  int next_depth_pv(Move singular_move, int depth, const MoveData *md) const;
 
   template<bool PV>
   int search_quiesce(int alpha, int beta, int qs_ply);
@@ -78,19 +78,19 @@ private:
   int is_analysing() const;
 
   template<NodeType NT>
-  void update_pv(Move move, int score, int depth) const;
+  void update_pv(Move m, int score, int depth) const;
 
   void init_search(SearchLimits &limits);
 
-  void sort_move(MoveData &move_data) override;
+  void sort_move(MoveData &md) override;
 
   [[nodiscard]]
-  int store_search_node_score(int score, int depth, NodeType node_type, Move move) const;
+  int store_search_node_score(int score, int depth, NodeType nt, Move m) const;
 
   [[nodiscard]]
   int draw_score() const;
 
-  void store_hash(int depth, int score, NodeType node_type, Move move) const;
+  void store_hash(int depth, int score, NodeType nt, Move m) const;
 
   [[nodiscard]]
   bool move_is_easy() const;

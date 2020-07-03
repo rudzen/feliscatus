@@ -87,7 +87,7 @@ public:
   [[nodiscard]]
   HashEntry *find(Key key) const;
 
-  HashEntry *insert(Key key, int depth, int score, NodeType type, Move move, int eval);
+  HashEntry *insert(Key key, int depth, int score, NodeType nt, Move m, int eval);
 
   [[nodiscard]]
   HashEntry *get_entry_to_replace(Key key, [[maybe_unused]] int depth) const;
