@@ -19,12 +19,10 @@
 */
 
 #include <string>
-#include <string_view>
 
 #include <fmt/format.h>
 
 #include "bitboard.h"
-#include "types.h"
 
 namespace {
 
@@ -36,7 +34,7 @@ constexpr void init_between_bitboards(const Square from) {
 
   while (bb)
   {
-    if (from >= sq_nb || to >= sq_nb)
+    if (from >= SQ_NB || to >= SQ_NB)
       continue;
 
     between_bb[from][to] = between;
@@ -47,7 +45,7 @@ constexpr void init_between_bitboards(const Square from) {
 }
 }// namespace
 
-std::string bitboard::print_bitboard(Bitboard b, std::string_view title) {
+std::string bitboard::print_bitboard(Bitboard bb, std::string_view title) {
 
   fmt::memory_buffer buffer;
 
@@ -61,7 +59,7 @@ std::string bitboard::print_bitboard(Bitboard b, std::string_view title) {
   for (const auto r : ReverseRanks)
   {
     for (const auto f : Files)
-      fmt::format_to(buffer, "| {} ", b & make_square(f, r) ? "X" : " ");
+      fmt::format_to(buffer, "| {} ", bb & make_square(f, r) ? "X" : " ");
 
     fmt::format_to(buffer, "| {}\n{}\n", std::to_string(1 + r), line);
   }
@@ -71,33 +69,33 @@ std::string bitboard::print_bitboard(Bitboard b, std::string_view title) {
 }
 
 void bitboard::init() {
-  std::array<std::array<Bitboard, sq_nb>, COL_NB> pawn_east_attack_span{};
-  std::array<std::array<Bitboard, sq_nb>, COL_NB> pawn_west_attack_span{};
+  std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_east_attack_span{};
+  std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_west_attack_span{};
 
-  for (const auto sq : Squares)
+  for (const auto s : Squares)
   {
-    const auto bbsq = square_bb[sq];
+    const auto bb = square_bb[s];
 
-    pawn_front_span[WHITE][sq]        = north_fill(shift_bb<NORTH     >(bbsq));
-    pawn_front_span[BLACK][sq]        = south_fill(shift_bb<SOUTH     >(bbsq));
-    pawn_east_attack_span[WHITE][sq]  = north_fill(shift_bb<NORTH_WEST>(bbsq));
-    pawn_east_attack_span[BLACK][sq]  = south_fill(shift_bb<SOUTH_EAST>(bbsq));
-    pawn_west_attack_span[WHITE][sq]  = north_fill(shift_bb<NORTH_WEST>(bbsq));
-    pawn_west_attack_span[BLACK][sq]  = south_fill(shift_bb<WEST      >(bbsq));
-    passed_pawn_front_span[WHITE][sq] = pawn_east_attack_span[WHITE][sq] | pawn_front_span[WHITE][sq] | pawn_west_attack_span[WHITE][sq];
-    passed_pawn_front_span[BLACK][sq] = pawn_east_attack_span[BLACK][sq] | pawn_front_span[BLACK][sq] | pawn_west_attack_span[BLACK][sq];
+    pawn_front_span[WHITE][s]        = north_fill(shift_bb<NORTH     >(bb));
+    pawn_front_span[BLACK][s]        = south_fill(shift_bb<SOUTH     >(bb));
+    pawn_east_attack_span[WHITE][s]  = north_fill(shift_bb<NORTH_WEST>(bb));
+    pawn_east_attack_span[BLACK][s]  = south_fill(shift_bb<SOUTH_EAST>(bb));
+    pawn_west_attack_span[WHITE][s]  = north_fill(shift_bb<NORTH_WEST>(bb));
+    pawn_west_attack_span[BLACK][s]  = south_fill(shift_bb<WEST      >(bb));
+    passed_pawn_front_span[WHITE][s] = pawn_east_attack_span[WHITE][s] | pawn_front_span[WHITE][s] | pawn_west_attack_span[WHITE][s];
+    passed_pawn_front_span[BLACK][s] = pawn_east_attack_span[BLACK][s] | pawn_front_span[BLACK][s] | pawn_west_attack_span[BLACK][s];
 
-    std::fill(std::begin(between_bb[sq]), std::end(between_bb[sq]), 0);
-    init_between_bitboards<NORTH     >(sq);
-    init_between_bitboards<NORTH_EAST>(sq);
-    init_between_bitboards<EAST      >(sq);
-    init_between_bitboards<SOUTH_EAST>(sq);
-    init_between_bitboards<SOUTH     >(sq);
-    init_between_bitboards<SOUTH_WEST>(sq);
-    init_between_bitboards<WEST      >(sq);
-    init_between_bitboards<NORTH_WEST>(sq);
+    std::fill(std::begin(between_bb[s]), std::end(between_bb[s]), 0);
+    init_between_bitboards<NORTH     >(s);
+    init_between_bitboards<NORTH_EAST>(s);
+    init_between_bitboards<EAST      >(s);
+    init_between_bitboards<SOUTH_EAST>(s);
+    init_between_bitboards<SOUTH     >(s);
+    init_between_bitboards<SOUTH_WEST>(s);
+    init_between_bitboards<WEST      >(s);
+    init_between_bitboards<NORTH_WEST>(s);
 
-    pawn_captures[WHITE][sq] = shift_bb<NORTH_EAST>(bbsq) | shift_bb<NORTH_WEST>(bbsq);
-    pawn_captures[BLACK][sq] = shift_bb<SOUTH_EAST>(bbsq) | shift_bb<SOUTH_WEST>(bbsq);
+    pawn_captures[WHITE][s] = shift_bb<NORTH_EAST>(bb) | shift_bb<NORTH_WEST>(bb);
+    pawn_captures[BLACK][s] = shift_bb<SOUTH_EAST>(bb) | shift_bb<SOUTH_WEST>(bb);
   }
 }

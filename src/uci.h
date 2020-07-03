@@ -139,13 +139,13 @@ private:
 
 void init(OptionsMap &);
 
-void post_moves(Move bestmove, Move pondermove);
+void post_moves(Move m, Move ponder_move);
 
 void post_info(int d, int selective_depth);
 
-void post_curr_move(Move curr_move, int curr_move_number);
+void post_curr_move(Move m, int m_number);
 
-void post_pv(int d, int max_ply, int score, const std::span<PVEntry> &pv_line, NodeType node_type);
+void post_pv(int d, int max_ply, int score, const std::span<PVEntry> &pv_line, NodeType nt);
 
 int handle_go(std::istringstream &input, SearchLimits &limits);
 
@@ -204,8 +204,8 @@ template<>
 struct fmt::formatter<Move> : formatter<std::string_view> {
   // parse is inherited from formatter<string_view>.
   template<typename FormatContext>
-  auto format(const Move c, FormatContext &ctx) {
-    return formatter<std::string_view>::format(uci::display_uci(c), ctx);
+  auto format(const Move m, FormatContext &ctx) {
+    return formatter<std::string_view>::format(uci::display_uci(m), ctx);
   }
 };
 
@@ -216,8 +216,8 @@ template<>
 struct fmt::formatter<Square> : formatter<std::string_view> {
   // parse is inherited from formatter<string_view>.
   template<typename FormatContext>
-  auto format(const Square sq, FormatContext &ctx) {
-    return formatter<std::string_view>::format(SquareString[sq], ctx);
+  auto format(const Square s, FormatContext &ctx) {
+    return formatter<std::string_view>::format(SquareString[s], ctx);
   }
 };
 

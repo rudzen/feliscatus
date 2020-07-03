@@ -27,7 +27,7 @@
 
 struct TimeManager final {
 
-  void init(Color side_to_move, SearchLimits &limits);
+  void init(Color c, SearchLimits &limits);
 
   [[nodiscard]]
   bool time_up() const noexcept;

@@ -29,7 +29,7 @@ namespace {
 constexpr int SEE_INVALID_SCORE = -5000;
 
 constexpr int material_change(const Move move) {
-  return (is_capture(move) ? piece_value(move_captured(move)) : 0) + (is_promotion(move) ? (piece_value(move_promoted(move)) - piece_value(Pawn)) : 0);
+  return (is_capture(move) ? piece_value(move_captured(move)) : 0) + (is_promotion(move) ? (piece_value(move_promoted(move)) - piece_value(PAWN)) : 0);
 }
 
 constexpr Piece next_to_capture(const Move move) {
@@ -38,49 +38,49 @@ constexpr Piece next_to_capture(const Move move) {
 
 }
 
-int Board::see_move(const Move move) {
+int Board::see_move(const Move m) {
   int score;
-  perform_move(move);
+  perform_move(m);
 
-  const auto us   = move_side(move);
+  const auto us   = move_side(m);
   const auto them = ~us;
 
   if (!is_attacked(king_square[us], them))
   {
     init_see_move();
-    score = see_rec(material_change(move), next_to_capture(move), move_to(move), them);
+    score = see_rec(material_change(m), next_to_capture(m), move_to(m), them);
   } else
     score = SEE_INVALID_SCORE;
 
-  unperform_move(move);
+  unperform_move(m);
   return score;
 }
 
-int Board::see_last_move(const Move move) {
+int Board::see_last_move(const Move m) {
   init_see_move();
-  return see_rec(material_change(move), next_to_capture(move), move_to(move), ~move_side(move));
+  return see_rec(material_change(m), next_to_capture(m), move_to(m), ~move_side(m));
 }
 
-int Board::see_rec(const int mat_change, const Piece next_capture, const Square to, const Color side_to_move) {
-  const auto rr = relative_rank(side_to_move, to);
+int Board::see_rec(const int mat_change, const Piece next_capture, const Square to, const Color c) {
+  const auto rr = relative_rank(c, to);
 
   Move move;
 
   do
   {
-    const auto from = lookup_best_attacker(to, side_to_move);
+    const auto from = lookup_best_attacker(to, c);
     if (!from)
       return mat_change;
 
-    const auto current_pt = current_piece[side_to_move];
+    const auto current_pt = current_piece[c];
 
-    move = current_pt == Pawn && rr == RANK_8
-         ? init_move<PROMOTION | CAPTURE>(make_piece(current_pt, side_to_move), next_capture, from.value(), to, make_piece(Queen, side_to_move))
-         : init_move<CAPTURE>(make_piece(current_pt, side_to_move), next_capture, from.value(), to, NoPiece);
+    move = current_pt == PAWN && rr == RANK_8
+         ? init_move<PROMOTION | CAPTURE>(make_piece(current_pt, c), next_capture, from.value(), to, make_piece(QUEEN, c))
+         : init_move<CAPTURE>(make_piece(current_pt, c), next_capture, from.value(), to, NO_PIECE);
 
     perform_move(move);
 
-    if (!is_attacked(king_square[side_to_move], ~side_to_move))
+    if (!is_attacked(king_square[c], ~c))
       break;
 
     unperform_move(move);
@@ -93,7 +93,7 @@ int Board::see_rec(const int mat_change, const Piece next_capture, const Square 
   return score < 0 ? mat_change + score : mat_change;
 }
 
-std::optional<Square> Board::lookup_best_attacker(const Square to, const Color side) {
+std::optional<Square> Board::lookup_best_attacker(const Square to, const Color c) {
   // "Best" == "Lowest piece value"
 
   Bitboard b;
@@ -101,50 +101,50 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
   const auto get_from_sq = [&](const Bitboard bb)
   {
     const auto from = lsb(bb);
-    current_piece_bitboard[side] &= ~bit(from);
+    current_piece_bitboard[c] &= ~bit(from);
     return std::make_optional(from);
   };
 
-  switch (current_piece[side])
+  switch (current_piece[c])
   {
-  case Pawn:
-    b = current_piece_bitboard[side] & pawn_attacks_bb(~side, to);
+  case PAWN:
+    b = current_piece_bitboard[c] & pawn_attacks_bb(~c, to);
     if (b)
       return get_from_sq(b);
-    ++current_piece[side];
-    current_piece_bitboard[side] = pieces(Knight, side);
+    ++current_piece[c];
+    current_piece_bitboard[c] = pieces(KNIGHT, c);
     [[fallthrough]];
-  case Knight:
-    b = current_piece_bitboard[side] & piece_attacks_bb<Knight>(to);
+  case KNIGHT:
+    b = current_piece_bitboard[c] & piece_attacks_bb<KNIGHT>(to);
     if (b)
       return get_from_sq(b);
-    ++current_piece[side];
-    current_piece_bitboard[side] = pieces(Bishop, side);
+    ++current_piece[c];
+    current_piece_bitboard[c] = pieces(BISHOP, c);
     [[fallthrough]];
 
-  case Bishop:
-    b = current_piece_bitboard[side] & piece_attacks_bb<Bishop>(to, occupied);
+  case BISHOP:
+    b = current_piece_bitboard[c] & piece_attacks_bb<BISHOP>(to, occupied);
     if (b)
       return get_from_sq(b);
-    ++current_piece[side];
-    current_piece_bitboard[side] = pieces(Rook, side);
+    ++current_piece[c];
+    current_piece_bitboard[c] = pieces(ROOK, c);
     [[fallthrough]];
-  case Rook:
-    b = current_piece_bitboard[side] & piece_attacks_bb<Rook>(to, occupied);
+  case ROOK:
+    b = current_piece_bitboard[c] & piece_attacks_bb<ROOK>(to, occupied);
     if (b)
       return get_from_sq(b);
-    ++current_piece[side];
-    current_piece_bitboard[side] = pieces(Queen, side);
+    ++current_piece[c];
+    current_piece_bitboard[c] = pieces(QUEEN, c);
     [[fallthrough]];
-  case Queen:
-    b = current_piece_bitboard[side] & piece_attacks_bb<Queen>(to, occupied);
+  case QUEEN:
+    b = current_piece_bitboard[c] & piece_attacks_bb<QUEEN>(to, occupied);
     if (b)
       return get_from_sq(b);
-    ++current_piece[side];
-    current_piece_bitboard[side] = pieces(King, side);
+    ++current_piece[c];
+    current_piece_bitboard[c] = pieces(KING, c);
     [[fallthrough]];
-  case King:
-    b = current_piece_bitboard[side] & piece_attacks_bb<King>(to);
+  case KING:
+    b = current_piece_bitboard[c] & piece_attacks_bb<KING>(to);
     if (b)
       return get_from_sq(b);
     break;
@@ -157,7 +157,7 @@ std::optional<Square> Board::lookup_best_attacker(const Square to, const Color s
 }
 
 void Board::init_see_move() {
-  current_piece.fill(Pawn);
-  current_piece_bitboard[WHITE] = pieces(Pawn, WHITE);
-  current_piece_bitboard[BLACK] = pieces(Pawn, BLACK);
+  current_piece.fill(PAWN);
+  current_piece_bitboard[WHITE] = pieces(PAWN, WHITE);
+  current_piece_bitboard[BLACK] = pieces(PAWN, BLACK);
 }

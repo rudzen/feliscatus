@@ -557,9 +557,9 @@ void Tune::make_quiet(std::vector<Node> &nodes) {
   }
 }
 
-int Tune::get_score(const Color side) {
+int Tune::get_score(const Color c) {
   const auto score = score_static_ ? Eval::tune(board_.get(), 0, -100000, 100000) : get_quiesce_score(-32768, 32768, false, 0);
-  return board_->side_to_move() == side ? score : -score;
+  return board_->side_to_move() == c ? score : -score;
 }
 
 int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) {
@@ -624,13 +624,13 @@ void Tune::play_pv() {
     board_->make_move(pv[0][i].move, false, true);
 }
 
-void Tune::update_pv(const Move move, const int score, const int ply) {
+void Tune::update_pv(const Move m, const int score, const int ply) {
   assert(ply < MAXDEPTH);
   assert(pv_length[ply] < MAXDEPTH);
   auto *entry = &pv[ply][ply];
 
   entry->score = score;
-  entry->move  = move;
+  entry->move  = m;
   // entry->eval = game_->pos->eval_score;
 
   const auto next_ply = ply + 1;
@@ -641,11 +641,11 @@ void Tune::update_pv(const Move move, const int score, const int ply) {
     pv[ply][i] = pv[next_ply][i];
 }
 
-void Tune::sort_move(MoveData &move_data) {
-  const auto m = move_data.move;
+void Tune::sort_move(MoveData &md) {
+  const auto m = md.move;
 
   if (is_queen_promotion(m))
-    move_data.score = 890000;
+      md.score = 890000;
   else if (is_capture(m))
   {
     const auto value_captured = piece_value(move_captured(m));
@@ -655,11 +655,11 @@ void Tune::sort_move(MoveData &move_data) {
       value_piece = 1800;
 
     if (value_piece <= value_captured)
-      move_data.score = 300000 + value_captured * 20 - value_piece;
+        md.score = 300000 + value_captured * 20 - value_piece;
     else if (board_->see_move(m) >= 0)
-      move_data.score = 160000 + value_captured * 20 - value_piece;
+        md.score = 160000 + value_captured * 20 - value_piece;
     else
-      move_data.score = -100000 + value_captured * 20 - value_piece;
+        md.score = -100000 + value_captured * 20 - value_piece;
   } else
     exit(0);
 }

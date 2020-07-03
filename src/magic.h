@@ -291,16 +291,16 @@ inline void init() {
 template<PieceType Pt>
 inline Bitboard piece_attacks_bb(const Square sq, const Bitboard occupied = 0)
 {
-  static_assert(util::in_between<Pawn, King>(Pt));
-  if constexpr (Pt == Knight)
+  static_assert(util::in_between<PAWN, KING>(Pt));
+  if constexpr (Pt == KNIGHT)
     return knight_attacks[sq];
-  else if constexpr (Pt == Bishop)
+  else if constexpr (Pt == BISHOP)
     return attacks::bishopAttacks(sq, occupied);
-  else if constexpr (Pt == Rook)
+  else if constexpr (Pt == ROOK)
     return attacks::rookAttacks(sq, occupied);
-  else if constexpr (Pt == Queen)
+  else if constexpr (Pt == QUEEN)
     return attacks::bishopAttacks(sq, occupied) | attacks::rookAttacks(sq, occupied);
-  else if constexpr (Pt == King)
+  else if constexpr (Pt == KING)
     return king_attacks[sq];
 
   assert(false);
@@ -310,20 +310,20 @@ inline Bitboard piece_attacks_bb(const Square sq, const Bitboard occupied = 0)
 inline Bitboard piece_attacks_bb(const PieceType pt, const Square sq, const Bitboard occupied = 0) {
   switch (pt)
   {
-  case Knight:
-    return piece_attacks_bb<Knight>(sq);
+  case KNIGHT:
+    return piece_attacks_bb<KNIGHT>(sq);
 
-  case Bishop:
-    return piece_attacks_bb<Bishop>(sq, occupied);
+  case BISHOP:
+    return piece_attacks_bb<BISHOP>(sq, occupied);
 
-  case Rook:
-    return piece_attacks_bb<Rook>(sq, occupied);
+  case ROOK:
+    return piece_attacks_bb<ROOK>(sq, occupied);
 
-  case Queen:
-    return piece_attacks_bb<Queen>(sq, occupied);
+  case QUEEN:
+    return piece_attacks_bb<QUEEN>(sq, occupied);
 
-  case King:
-    return piece_attacks_bb<King>(sq);
+  case KING:
+    return piece_attacks_bb<KING>(sq);
 
   default:
     break;// error
@@ -336,13 +336,13 @@ inline Bitboard pawn_attacks_bb(const Color c, const Square s) {
 }
 
 inline Bitboard xray_rook_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
-  const auto attacks = piece_attacks_bb<Rook>(sq, occ);
+  const auto attacks = piece_attacks_bb<ROOK>(sq, occ);
   blockers &= attacks;
-  return attacks ^ piece_attacks_bb<Rook>(sq, occ ^ blockers);
+  return attacks ^ piece_attacks_bb<ROOK>(sq, occ ^ blockers);
 }
 
 inline Bitboard xray_bishop_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
-  const auto attacks = piece_attacks_bb<Bishop>(sq, occ);
+  const auto attacks = piece_attacks_bb<BISHOP>(sq, occ);
   blockers &= attacks;
-  return attacks ^ piece_attacks_bb<Bishop>(sq, occ ^ blockers);
+  return attacks ^ piece_attacks_bb<BISHOP>(sq, occ ^ blockers);
 }

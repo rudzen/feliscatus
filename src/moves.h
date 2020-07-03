@@ -51,7 +51,7 @@ struct Moves {
   template<Color Us>
   void generate_moves(PieceType pt, Bitboard to_squares);
 
-  void generate_pawn_moves(bool capture, Bitboard to_squares, Color stm);
+  void generate_pawn_moves(bool capture, Bitboard to_squares, Color c);
 
   [[nodiscard]]
   MoveData *next_move();
@@ -80,7 +80,7 @@ private:
   void generate_quiet_moves();
 
   template<Color Us>
-  void add_move(Piece piece, Square from, Square to, MoveType type, Piece promoted = NoPiece);
+  void add_move(Piece pc, Square from, Square to, MoveType mt, Piece promoted = NO_PIECE);
 
   template<Color Us>
   void add_moves(Bitboard to_squares);
@@ -95,7 +95,7 @@ private:
   void add_pawn_capture_moves(Bitboard to_squares);
 
   template<Color Us>
-  void add_pawn_moves(Bitboard to_squares, Direction distance, MoveType type);
+  void add_pawn_moves(Bitboard to_squares, Direction d, MoveType mt);
 
   template<Color Us>
   void add_castle_move(Square from, Square to);

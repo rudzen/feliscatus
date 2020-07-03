@@ -33,13 +33,13 @@ inline int lazy_margin = 500;
 
 inline int tempo = 10;
 
-inline std::array<int, PieceType_Nb> attacks_on_king
+inline std::array<int, PIECETYPE_NB> attacks_on_king
 {
       0,      3,      5,   11,    39,    0
 // Pawn  Knight  Bishop  Rook  Queen  King
 };
 
-inline std::array<int, PieceType_Nb> piece_in_danger
+inline std::array<int, PIECETYPE_NB> piece_in_danger
 {
       0,     41,     56,   34,    38,    0
 // Pawn  Knight  Bishop  Rook  Queen  King

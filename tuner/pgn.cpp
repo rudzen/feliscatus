@@ -312,8 +312,8 @@ void PGNFileReader::read_san_move() {
   from_piece_  = -1;
   from_file_   = -1;
   from_rank_   = -1;
-  from_square_ = no_square;
-  to_square_   = no_square;
+  from_square_ = NO_SQ;
+  to_square_   = NO_SQ;
   promoted_to  = -1;
   pawn_move_   = false;
   castle_move_ = false;

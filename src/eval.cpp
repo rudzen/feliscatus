@@ -38,7 +38,7 @@
 namespace {
 
 constexpr auto get_actual_eval   = [](const std::array<int, COL_NB> &e) { return e[WHITE] - e[BLACK]; };
-constexpr Bitboard CenterBB      = make_bitboard(d4, e4, d5, e5);
+constexpr Bitboard CenterBB      = make_bitboard(D4, E4, D5, E5);
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
 
@@ -102,7 +102,7 @@ private:
   std::array<int, COL_NB> passed_pawn_files{};
   std::array<int, COL_NB> attack_counter{};
   std::array<int, COL_NB> attack_count{};
-  Bitboard piece_attacks[COL_NB][PieceType_Nb]{};
+  Bitboard piece_attacks[COL_NB][PIECETYPE_NB]{};
   std::array<Bitboard, COL_NB> king_area{};
   std::array<Bitboard, COL_NB> half_open_files{};
   Bitboard open_files{};
@@ -129,10 +129,10 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 
   // Pass 1.
   auto result = eval_pawns_both_sides();
-  result     += eval_pieces<Knight, WHITE>() - eval_pieces<Knight, BLACK>();
-  result     += eval_pieces<Bishop, WHITE>() - eval_pieces<Bishop, BLACK>();
-  result     += eval_pieces<  Rook, WHITE>() - eval_pieces<  Rook, BLACK>();
-  result     += eval_pieces< Queen, WHITE>() - eval_pieces< Queen, BLACK>();
+  result     += eval_pieces<KNIGHT, WHITE>() - eval_pieces<KNIGHT, BLACK>();
+  result     += eval_pieces<BISHOP, WHITE>() - eval_pieces<BISHOP, BLACK>();
+  result     += eval_pieces<  ROOK, WHITE>() - eval_pieces<  ROOK, BLACK>();
+  result     += eval_pieces< QUEEN, WHITE>() - eval_pieces< QUEEN, BLACK>();
   result     += eval_king<          WHITE>() - eval_king<          BLACK>();
 
   // Pass 2.
@@ -159,9 +159,9 @@ template<bool Tuning>
 template<PieceType Pt, Color Us>
 void Evaluate<Tuning>::set_attacks(const Bitboard attacks) {
   constexpr auto Them = ~Us;
-  piece_attacks[Us][AllPieceTypes] |= attacks;
+  piece_attacks[Us][ALL_PIECE_TYPES] |= attacks;
   piece_attacks[Us][Pt] |= attacks;
-  if constexpr (Pt != King)
+  if constexpr (Pt != KING)
   {
     if (const auto attacks_king = attacks & king_area[Them]; attacks_king)
     {
@@ -215,13 +215,13 @@ void Evaluate<Tuning>::eval_material() {
   posistion_value[Us] = b->material().material_value[Us];
   auto add            = false;
 
-  if (const auto bishop_count = b->material().count(Us, Bishop); bishop_count == 2)
+  if (const auto bishop_count = b->material().count(Us, BISHOP); bishop_count == 2)
   {
-    auto bishops = b->pieces(Bishop, Us);
+    auto bishops = b->pieces(BISHOP, Us);
     add          = is_opposite_colors(pop_lsb(&bishops), pop_lsb(&bishops));
   } else if (bishop_count > 2)// edge case with more than two bishops
   {
-    auto bishops = b->pieces(Bishop, Us);
+    auto bishops = b->pieces(BISHOP, Us);
     std::array<bool, COL_NB> cols{};
     while (bishops)
     {
@@ -239,7 +239,7 @@ void Evaluate<Tuning>::eval_material() {
 template<bool Tuning>
 template<PieceType Pt, Color Us>
 Score Evaluate<Tuning>::eval_pieces() {
-  static_assert(Pt != Pawn && Pt != King && Pt != NoPieceType);
+  static_assert(Pt != PAWN && Pt != KING && Pt != NO_PT);
 
   constexpr auto Them   = ~Us;
   const auto all_pieces = b->pieces();
@@ -250,71 +250,71 @@ Score Evaluate<Tuning>::eval_pieces() {
 
   while (pieces)
   {
-    const auto sq     = pop_lsb(&pieces);
-    const auto flipsq = relative_square(Them, sq);
+    const auto s      = pop_lsb(&pieces);
+    const auto flip_s = relative_square(Them, s);
 
-    if constexpr (Pt == Knight)
-      attacks = piece_attacks_bb<Pt>(sq);
-    else if constexpr (Pt == Bishop)
-      attacks = piece_attacks_bb<Pt>(sq, all_pieces ^ b->pieces(Queen));
-    else if constexpr (Pt == Rook)
-      attacks = piece_attacks_bb<Pt>(sq, all_pieces ^ b->pieces(Queen) ^ b->pieces(Rook, Us));
-    else if constexpr (Pt == Queen)
-      attacks = piece_attacks_bb<Pt>(sq, all_pieces);
+    if constexpr (Pt == KNIGHT)
+      attacks = piece_attacks_bb<Pt>(s);
+    else if constexpr (Pt == BISHOP)
+      attacks = piece_attacks_bb<Pt>(s, all_pieces ^ b->pieces(QUEEN));
+    else if constexpr (Pt == ROOK)
+      attacks = piece_attacks_bb<Pt>(s, all_pieces ^ b->pieces(QUEEN) ^ b->pieces(ROOK, Us));
+    else if constexpr (Pt == QUEEN)
+      attacks = piece_attacks_bb<Pt>(s, all_pieces);
 
     set_attacks<Pt, Us>(attacks);
 
     const auto free_squares          = attacks & ~b->pieces(Us);
     const auto mob                   = std::popcount(free_squares);
-    const auto not_defended_by_pawns = std::popcount(free_squares & ~attacked_by<Them>(Pawn));
+    const auto not_defended_by_pawns = std::popcount(free_squares & ~attacked_by<Them>(PAWN));
 
-    if constexpr (Pt == Knight)
+    if constexpr (Pt == KNIGHT)
     {
-      result += knight_pst[flipsq];
+      result += knight_pst[flip_s];
       result += knight_mob[mob];
       result += knight_mob2[not_defended_by_pawns];
 
-      if (attacked_by<Them>(Pawn) & sq)
+      if (attacked_by<Them>(PAWN) & s)
         score_pos -= piece_in_danger[Pt];
 
-    } else if constexpr (Pt == Bishop)
+    } else if constexpr (Pt == BISHOP)
     {
-      result += bishop_pst[flipsq];
+      result += bishop_pst[flip_s];
       result += bishop_mob[mob];
       result += bishop_mob2[not_defended_by_pawns];
 
-      if (more_than_one(piece_attacks_bb<Bishop>(sq, b->pieces(Pawn)) & CenterBB))
+      if (more_than_one(piece_attacks_bb<BISHOP>(s, b->pieces(PAWN)) & CenterBB))
         result += bishop_diagonal;
 
-      if (attacked_by<Them>(Pawn) & sq)
+      if (attacked_by<Them>(PAWN) & s)
         score_pos -= piece_in_danger[Pt];
 
-    } else if constexpr (Pt == Rook)
+    } else if constexpr (Pt == ROOK)
     {
-      result += rook_pst[flipsq];
+      result += rook_pst[flip_s];
       result += rook_mob[mob];
 
-      if (open_files & sq)
+      if (open_files & s)
         score_pos += rook_open_file;
 
-      if (attacked_by<Them>(Pawn, Knight, Bishop) & sq)
+      if (attacked_by<Them>(PAWN, KNIGHT, BISHOP) & s)
         score_pos -= piece_in_danger[Pt];
 
       if (mob <= 3)
       {
         const auto king_file = file_of(b->king_sq(Us));
-        if ((king_file < FILE_E) == (file_of(sq) < king_file))
+        if ((king_file < FILE_E) == (file_of(s) < king_file))
         {
           const auto modifier = 1 + (Us & !b->castle_rights());
           result -= king_obstructs_rook * modifier;
         }
       }
-    } else if constexpr (Pt == Queen)
+    } else if constexpr (Pt == QUEEN)
     {
-      result += queen_pst[flipsq];
+      result += queen_pst[flip_s];
       result += queen_mob[mob];
 
-      if (attacked_by<Them>(Pawn, Knight, Bishop, Rook) & sq)
+      if (attacked_by<Them>(PAWN, KNIGHT, BISHOP, ROOK) & s)
         score_pos -= piece_in_danger[Pt];
     }
   }
@@ -329,27 +329,27 @@ template<Color Us>
 Score Evaluate<Tuning>::eval_pawns() {
   constexpr auto Them = ~Us;
   auto result         = ZeroScore;
-  auto pawns          = b->pieces(Pawn, Us);
+  auto pawns          = b->pieces(PAWN, Us);
 
   while (pawns)
   {
-    const auto sq     = pop_lsb(&pawns);
-    const auto file   = file_of(sq);
-    const auto flipsq = relative_square(Them, sq);
+    const auto s      = pop_lsb(&pawns);
+    const auto f      = file_of(s);
+    const auto flip_s = relative_square(Them, s);
 
-    result += pawn_pst[flipsq];
+    result += pawn_pst[flip_s];
 
-    if (b->is_pawn_passed(sq, Us))
-      passed_pawn_files[Us] |= 1 << file;
+    if (b->is_pawn_passed(s, Us))
+      passed_pawn_files[Us] |= 1 << f;
 
-    const auto open_file = !b->is_piece_on_file(Pawn, sq, Them);
+    const auto open_file = !b->is_piece_on_file(PAWN, s, Them);
 
-    if (b->is_pawn_isolated(sq, Us))
+    if (b->is_pawn_isolated(s, Us))
       result += pawn_isolated[open_file];
-    else if (b->is_pawn_behind(sq, Us))
+    else if (b->is_pawn_behind(s, Us))
       result += pawn_behind[open_file];
 
-    if (pawns & file)
+    if (pawns & f)
       result += pawn_doubled[open_file];
   }
   return result;
@@ -361,14 +361,14 @@ Score Evaluate<Tuning>::eval_king() {
   constexpr auto Up        = Us == WHITE ? NORTH : SOUTH;
   constexpr auto NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
   constexpr auto NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
-  const auto sq            = b->king_sq(Us);
-  const auto bbsq          = bit(sq);
-  const auto flipsq        = relative_square(~Us, sq);
-  auto result              = king_pst[flipsq];
+  const auto ksq           = b->king_sq(Us);
+  const auto bb            = bit(ksq);
+  const auto flip_ksq      = relative_square(~Us, ksq);
+  auto result              = king_pst[flip_ksq];
 
-  result += king_pawn_shelter[std::popcount((shift_bb<Up>(bbsq) | shift_bb<NorthEast>(bbsq) | shift_bb<NorthWest>(bbsq)) & b->pieces(Pawn, Us))];
+  result += king_pawn_shelter[std::popcount((shift_bb<Up>(bb) | shift_bb<NorthEast>(bb) | shift_bb<NorthWest>(bb)) & b->pieces(PAWN, Us))];
 
-  const auto east_west = bbsq | shift_bb<WEST>(bbsq) | shift_bb<EAST>(bbsq);
+  const auto east_west = bb | shift_bb<WEST>(bb) | shift_bb<EAST>(bb);
 
   result += king_on_open[std::popcount(open_files & east_west)];
   result += king_on_half_open[std::popcount(half_open_files[Us] & east_west)];
@@ -385,21 +385,21 @@ Score Evaluate<Tuning>::eval_passed_pawns() const {
   if (pawnp == nullptr)
     return result;
 
-  const auto our_pawns = b->pieces(Pawn, Us);
+  const auto our_pawns = b->pieces(PAWN, Us);
 
   for (auto files = pawnp->passed_pawn_file(Us); files; reset_lsb(files))
   {
     for (auto bb = bb_file(lsb(files)) & our_pawns; bb; reset_lsb(bb))
     {
-      const auto sq         = lsb(bb);
-      const auto front_span = pawn_front_span[Us][sq];
-      const auto r          = relative_rank(Us, sq);
+      const auto s          = lsb(bb);
+      const auto front_span = pawn_front_span[Us][s];
+      const auto r          = relative_rank(Us, s);
       result += passed_pawn[r];
       result += passed_pawn_no_us[r] * !(front_span & b->pieces(Us));
       result += passed_pawn_no_them[r] * !(front_span & b->pieces(Them));
-      result += passed_pawn_no_attacks[r] * !(front_span & attacked_by<Them>(AllPieceTypes));
-      result += passed_pawn_king_dist_them[distance(sq, b->king_sq(Them))];
-      result += passed_pawn_king_dist_us[distance(sq, b->king_sq(Us))];
+      result += passed_pawn_no_attacks[r] * !(front_span & attacked_by<Them>(ALL_PIECE_TYPES));
+      result += passed_pawn_king_dist_them[distance(s, b->king_sq(Them))];
+      result += passed_pawn_king_dist_us[distance(s, b->king_sq(Us))];
     }
   }
 
@@ -426,15 +426,15 @@ void Evaluate<Tuning>::init_evaluate() {
   attack_counter[Us]       = 0;
   const auto ksq           = b->king_sq(Us);
   const auto attacks       = king_attacks[ksq];
-  const auto our_pawns     = b->pieces(Pawn, Us);
-  const auto their_pawns   = b->pieces(Pawn, Them);
+  const auto our_pawns     = b->pieces(PAWN, Us);
+  const auto their_pawns   = b->pieces(PAWN, Them);
   open_files               = ~(pawn_fill[Us](pawn_fill[Them](our_pawns)) | pawn_fill[Us](pawn_fill[Them](their_pawns)));
   half_open_files[Us]      = ~north_fill(south_fill(our_pawns)) & ~open_files;
 
   poseval.fill(ZeroScore);
 
-  set_attacks<Pawn, Us>(shift_bb<NorthEast>(our_pawns) | shift_bb<NorthWest>(our_pawns));
-  set_attacks<King, Us>(attacks);
+  set_attacks<PAWN, Us>(shift_bb<NorthEast>(our_pawns) | shift_bb<NorthWest>(our_pawns));
+  set_attacks<KING, Us>(attacks);
   king_area[Us] = attacks | ksq;
 }
 

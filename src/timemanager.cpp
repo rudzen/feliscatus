@@ -30,7 +30,7 @@ constexpr TimeUnit curr_move_post_limit = 5000;
 
 }
 
-void TimeManager::init(const Color side_to_move, SearchLimits &search_limits) {
+void TimeManager::init(const Color c, SearchLimits &search_limits) {
 
   limits = search_limits;
 
@@ -41,8 +41,8 @@ void TimeManager::init(const Color side_to_move, SearchLimits &search_limits) {
   else
   {
     const auto moves_left = util::in_between<1, 30>(limits.movestogo) ? limits.movestogo : 30;
-    const auto time_left = limits.time[side_to_move];
-    const auto time_inc  = limits.inc[side_to_move];
+    const auto time_left = limits.time[c];
+    const auto time_inc  = limits.inc[c];
 
     if (time_inc == 0 && time_left < 1000)
     {

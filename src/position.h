@@ -42,7 +42,7 @@ struct Position : Moves {
   bool can_castle() const;
 
   [[nodiscard]]
-  bool can_castle(CastlingRight r) const;
+  bool can_castle(CastlingRight cr) const;
 
   int reversible_half_move_count{};
   Key pawn_structure_key{};
@@ -75,6 +75,6 @@ inline bool Position::can_castle() const {
   return castle_rights != 0;
 }
 
-inline bool Position::can_castle(const CastlingRight r) const {
-  return castle_rights & r;
+inline bool Position::can_castle(const CastlingRight cr) const {
+  return castle_rights & cr;
 }
