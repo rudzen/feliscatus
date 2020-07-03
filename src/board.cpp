@@ -25,13 +25,25 @@
 
 #include "board.h"
 #include "magic.h"
-#include "zobrist.h"
 #include "util.h"
 #include "transpositional.h"
 #include "miscellaneous.h"
+#include "prng.h"
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
+
+
+namespace zobrist {
+
+constexpr Key seed = 1070372;
+constexpr Key zero = 0;
+Key zobrist_pst[Piece_Nb][sq_nb]{};
+std::array<Key, CASTLING_RIGHT_NB> zobrist_castling{};
+std::array<Key, FILE_NB> zobrist_ep_file{};
+Key zobrist_side, zobrist_nopawn{};
+
+}
 
 namespace {
 
@@ -203,6 +215,24 @@ Board::Board()
 Board::Board(const std::string_view fen)
   : Board() {
   set_fen(fen);
+}
+
+void Board::init() {
+
+  PRNG<Key> rng(zobrist::seed);
+
+  zobrist::zobrist_side   = rng();
+  zobrist::zobrist_nopawn = rng();
+
+  for (const auto pc : Pieces)
+    for (const auto sq : Squares)
+      zobrist::zobrist_pst[pc][sq] = rng();
+
+  for (auto &i : zobrist::zobrist_castling)
+    i = rng();
+
+  for (auto &i : zobrist::zobrist_ep_file)
+    i = rng();
 }
 
 void Board::clear() {
