@@ -22,7 +22,6 @@
 
 #include <cstdint>
 #include <array>
-#include <optional>
 
 #include "types.h"
 #include "magic.h"

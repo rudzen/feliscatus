@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include <string_view>
-
 #include "moves.h"
 #include "material.h"
 
@@ -31,9 +29,6 @@ using KillerMoves = std::array<Move, 4>;
 
 struct Position : Moves {
   void clear();
-
-  [[nodiscard]]
-  const Move *string_to_move(std::string_view m);
 
   int reversible_half_move_count{};
   Key pawn_structure_key{};
