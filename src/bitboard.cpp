@@ -101,8 +101,8 @@ void bitboard::init() {
 
   for (const auto side : Colors)
   {
-    const auto rank_1                            = relative_rank(side, RANK_1);
-    rook_castles_to[make_square(FILE_G, rank_1)] = make_square(FILE_F, rank_1);
-    rook_castles_to[make_square(FILE_C, rank_1)] = make_square(FILE_D, rank_1);
+    const auto rank1                            = relative_rank(side, RANK_1);
+    rook_castles_to[make_square(FILE_G, rank1)] = make_square(FILE_F, rank1);
+    rook_castles_to[make_square(FILE_C, rank1)] = make_square(FILE_D, rank1);
   }
 }

@@ -27,6 +27,7 @@
 #include "feliscatus.h"
 #include "datapool.h"
 #include "transpositional.h"
+#include "miscellaneous.h"
 
 namespace {
 
@@ -133,7 +134,7 @@ void uci::handle_position(Board *b, std::istringstream &input) {
 
   if (token == "startpos")
   {
-    b->set_fen(Board::kStartPosition);
+    b->set_fen(start_position);
 
     // get rid of "moves" token
     input >> token;

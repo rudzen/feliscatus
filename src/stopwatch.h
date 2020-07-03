@@ -56,5 +56,6 @@ struct Stopwatch final {
 private:
   std::chrono::time_point<std::chrono::system_clock> start_time_;
   std::chrono::time_point<std::chrono::system_clock> end_time_;
+  std::chrono::time_point<std::chrono::system_clock> last_curr_info_;
   bool running_;
 };

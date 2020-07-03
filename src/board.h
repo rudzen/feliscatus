@@ -36,8 +36,6 @@ struct Board {
   Board();
   explicit Board(std::string_view fen);
 
-  static constexpr std::string_view kStartPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
   static void init();
 
   void clear();

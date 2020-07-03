@@ -41,8 +41,6 @@ struct Search final : MoveSorter {
 
   void run();
 
-  std::atomic_bool stop_search;
-
 private:
   template<NodeType NT, bool PV>
   int search(int depth, int alpha, int beta);
@@ -95,6 +93,7 @@ private:
   [[nodiscard]]
   bool move_is_easy() const;
 
+  std::atomic_bool stop_search;
   std::array<int, COL_NB> draw_score_{};
   Board *b;
   Position *pos{};

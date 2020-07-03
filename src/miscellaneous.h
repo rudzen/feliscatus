@@ -21,8 +21,11 @@
 #pragma once
 
 #include <chrono>
+#include <string_view>
 
 using TimeUnit = std::chrono::milliseconds::rep;
+
+constexpr std::string_view start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 #if defined(NO_PREFETCH)
 

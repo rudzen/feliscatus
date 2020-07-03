@@ -41,7 +41,7 @@ struct TimeManager final {
   TimeUnit elapsed() const noexcept;
 
   [[nodiscard]]
-  bool should_post_curr_move() const noexcept;
+  bool should_post_curr_move() noexcept;
 
   [[nodiscard]]
   bool is_analysing() const noexcept { return limits.infinite | limits.ponder; }
@@ -57,4 +57,5 @@ private:
   double n_{};
   SearchLimits limits{};
   TimeUnit search_time{};
+  TimeUnit last_curr_post{};
 };

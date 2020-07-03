@@ -35,6 +35,7 @@
 #include "datapool.h"
 #include "transpositional.h"
 #include "uci.h"
+#include "miscellaneous.h"
 
 int Felis::new_game() {
   const auto num_threads = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::THREADS>()]);
@@ -43,7 +44,7 @@ int Felis::new_game() {
     workers.clear();
   else
     workers.resize(num_helpers);
-  return board->new_game(Board::kStartPosition.data());
+  return board->new_game(start_position);
 }
 
 int Felis::go() {
@@ -63,7 +64,7 @@ int Felis::go() {
   return 0;
 }
 
-void Felis::stop() const { search->stop_search.store(true); }
+void Felis::stop() const { search->stop(); }
 
 void Felis::start_workers() {
   if (workers.empty())
@@ -81,7 +82,7 @@ void Felis::stop_workers() {
 int Felis::run(const int argc, char* argv[]) {
   setbuf(stdout, nullptr);
 
-  board     = std::make_unique<Board>(Board::kStartPosition);
+  board     = std::make_unique<Board>(start_position);
   Pool.set(1);
   search   = std::make_unique<Search>(board.get(), 0);
 

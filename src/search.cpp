@@ -489,25 +489,11 @@ int Search::search(const int depth, int alpha, const int beta) {
   return store_search_node_score(best_score, depth, node_type(best_score, beta, best_move), best_move);
 }
 
-template int Search::search<EXACT,  true>(int, int, int);
-template int Search::search<EXACT, false>(int, int, int);
-template int Search::search< BETA,  true>(int, int, int);
-template int Search::search< BETA, false>(int, int, int);
-template int Search::search<ALPHA,  true>(int, int, int);
-template int Search::search<ALPHA, false>(int, int, int);
-
 template<NodeType NT, bool PV>
 int Search::search_next_depth(const int depth, const int alpha, const int beta) {
   return (b->is_draw() || b->is_repetition()) && !is_null_move(pos->last_move) ? -draw_score()
                                                                                  : depth <= 0 ? -search_quiesce<PV>(alpha, beta, 0) : -search<NT, PV>(depth, alpha, beta);
 }
-
-template int Search::search_next_depth<EXACT,  true>(int, int, int);
-template int Search::search_next_depth<EXACT, false>(int, int, int);
-template int Search::search_next_depth< BETA,  true>(int, int, int);
-template int Search::search_next_depth< BETA, false>(int, int, int);
-template int Search::search_next_depth<ALPHA,  true>(int, int, int);
-template int Search::search_next_depth<ALPHA, false>(int, int, int);
 
 template<bool PV>
 Move Search::get_singular_move(const int depth) {
@@ -520,9 +506,6 @@ Move Search::get_singular_move(const int depth) {
              : MOVE_NONE;
   }
 }
-
-template Move Search::get_singular_move< true>(int);
-template Move Search::get_singular_move<false>(int);
 
 template<NodeType NT, bool PV>
 std::optional<int> Search::next_depth_not_pv(const int depth, const int move_count, const MoveData *move_data, const int alpha, int &best_score) const {
@@ -555,13 +538,6 @@ std::optional<int> Search::next_depth_not_pv(const int depth, const int move_cou
   }
   return std::make_optional(depth - 1);
 }
-
-template std::optional<int> Search::next_depth_not_pv<EXACT,  true>(int, int, const MoveData *, int, int &) const;
-template std::optional<int> Search::next_depth_not_pv<EXACT, false>(int, int, const MoveData *, int, int &) const;
-template std::optional<int> Search::next_depth_not_pv< BETA,  true>(int, int, const MoveData *, int, int &) const;
-template std::optional<int> Search::next_depth_not_pv< BETA, false>(int, int, const MoveData *, int, int &) const;
-template std::optional<int> Search::next_depth_not_pv<ALPHA,  true>(int, int, const MoveData *, int, int &) const;
-template std::optional<int> Search::next_depth_not_pv<ALPHA, false>(int, int, const MoveData *, int, int &) const;
 
 template<bool PV>
 int Search::search_quiesce(int alpha, const int beta, const int qs_ply) {
@@ -639,9 +615,6 @@ int Search::search_quiesce(int alpha, const int beta, const int qs_ply) {
   return !pos->transposition || pos->transp_depth <= 0 ? store_search_node_score(best_score, 0, node_type(best_score, beta, best_move), best_move) : best_score;
 }
 
-template int Search::search_quiesce< true>(int, int, int);
-template int Search::search_quiesce<false>(int, int, int);
-
 template<NodeType NT>
 void Search::update_pv(const Move m, const int score, const int depth) const {
   const auto ply      = b->plies;
@@ -672,7 +645,3 @@ void Search::update_pv(const Move m, const int score, const int depth) const {
     }
   }
 }
-
-template void Search::update_pv<EXACT>(Move, int, int) const;
-template void Search::update_pv< BETA>(Move, int, int) const;
-template void Search::update_pv<ALPHA>(Move, int, int) const;

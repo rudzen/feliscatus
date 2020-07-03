@@ -490,7 +490,7 @@ int Board::new_game(const std::string_view fen) {
   auto result = set_fen(fen);
 
   if (result != 0)
-    result = set_fen(kStartPosition.data());
+    result = set_fen(start_position);
 
   return result;
 }
