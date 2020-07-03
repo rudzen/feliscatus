@@ -19,145 +19,140 @@
 */
 
 #include "board.h"
-#include "material.h"
 #include "bitboard.h"
 #include "magic.h"
 #include "types.h"
 
 namespace {
 
+using CurrentPieceType = std::array<PieceType, COL_NB>;
+using CurrentPieces = std::array<Bitboard, COL_NB>;
+
+struct SeeData final {
+  CurrentPieceType current_pt{};
+  CurrentPieces current_pc{};
+};
+
 constexpr int SEE_INVALID_SCORE = -5000;
 
-constexpr int material_change(const Move move) {
-  return (is_capture(move) ? piece_value(move_captured(move)) : 0) + (is_promotion(move) ? (piece_value(move_promoted(move)) - piece_value(PAWN)) : 0);
+constexpr auto material_change(const Move m) {
+  return (is_capture(m) ? piece_value(move_captured(m)) : 0) + (is_promotion(m) ? (piece_value(move_promoted(m)) - piece_value(PAWN)) : 0);
 }
 
-constexpr Piece next_to_capture(const Move move) {
-  return is_promotion(move) ? move_promoted(move) : move_piece(move);
+constexpr auto next_to_capture(const Move m) {
+  return is_promotion(m) ? move_promoted(m) : move_piece(m);
 }
 
+auto get_from_sq (const Bitboard bb, SeeData &data, const Color c) {
+  const auto from = lsb(bb);
+  data.current_pc[c] &= ~bit(from);
+  return std::make_optional(from);
 }
 
-int Board::see_move(const Move m) {
-  int score;
-  perform_move(m);
-
-  const auto us   = move_side(m);
-  const auto them = ~us;
-
-  if (!is_attacked(king_square[us], them))
-  {
-    init_see_move();
-    score = see_rec(material_change(m), next_to_capture(m), move_to(m), them);
-  } else
-    score = SEE_INVALID_SCORE;
-
-  unperform_move(m);
-  return score;
-}
-
-int Board::see_last_move(const Move m) {
-  init_see_move();
-  return see_rec(material_change(m), next_to_capture(m), move_to(m), ~move_side(m));
-}
-
-int Board::see_rec(const int mat_change, const Piece next_capture, const Square to, const Color c) {
-  const auto rr = relative_rank(c, to);
-
-  Move move;
-
-  do
-  {
-    const auto from = lookup_best_attacker(to, c);
-    if (!from)
-      return mat_change;
-
-    const auto current_pt = current_piece[c];
-
-    move = current_pt == PAWN && rr == RANK_8
-         ? init_move<PROMOTION | CAPTURE>(make_piece(current_pt, c), next_capture, from.value(), to, make_piece(QUEEN, c))
-         : init_move<CAPTURE>(make_piece(current_pt, c), next_capture, from.value(), to, NO_PIECE);
-
-    perform_move(move);
-
-    if (!is_attacked(king_square[c], ~c))
-      break;
-
-    unperform_move(move);
-  } while (true);
-
-  const auto score = -see_rec(material_change(move), next_to_capture(move), move_to(move), ~move_side(move));
-
-  unperform_move(move);
-
-  return score < 0 ? mat_change + score : mat_change;
-}
-
-std::optional<Square> Board::lookup_best_attacker(const Square to, const Color c) {
+std::optional<Square> lookup_best_attacker(SeeData &data, const Square to, const Color c, const Board *b) {
   // "Best" == "Lowest piece value"
 
-  Bitboard b;
+  const auto occupied = b->pieces();
+  Bitboard bb;
 
-  const auto get_from_sq = [&](const Bitboard bb)
-  {
-    const auto from = lsb(bb);
-    current_piece_bitboard[c] &= ~bit(from);
-    return std::make_optional(from);
-  };
-
-  switch (current_piece[c])
+  switch (data.current_pt[c])
   {
   case PAWN:
-    b = current_piece_bitboard[c] & pawn_attacks_bb(~c, to);
-    if (b)
-      return get_from_sq(b);
-    ++current_piece[c];
-    current_piece_bitboard[c] = pieces(KNIGHT, c);
+    bb = data.current_pc[c] & pawn_attacks_bb(~c, to);
+    if (bb)
+      return get_from_sq(bb, data, c);
+    ++data.current_pt[c];
+    data.current_pc[c] = b->pieces(KNIGHT, c);
     [[fallthrough]];
   case KNIGHT:
-    b = current_piece_bitboard[c] & piece_attacks_bb<KNIGHT>(to);
-    if (b)
-      return get_from_sq(b);
-    ++current_piece[c];
-    current_piece_bitboard[c] = pieces(BISHOP, c);
+    bb = data.current_pc[c] & piece_attacks_bb<KNIGHT>(to);
+    if (bb)
+      return get_from_sq(bb, data, c);
+    ++data.current_pt[c];
+    data.current_pc[c] = b->pieces(BISHOP, c);
     [[fallthrough]];
 
   case BISHOP:
-    b = current_piece_bitboard[c] & piece_attacks_bb<BISHOP>(to, occupied);
-    if (b)
-      return get_from_sq(b);
-    ++current_piece[c];
-    current_piece_bitboard[c] = pieces(ROOK, c);
+    bb = data.current_pc[c] & piece_attacks_bb<BISHOP>(to, occupied);
+    if (bb)
+      return get_from_sq(bb, data, c);
+    ++data.current_pt[c];
+    data.current_pc[c] = b->pieces(ROOK, c);
     [[fallthrough]];
   case ROOK:
-    b = current_piece_bitboard[c] & piece_attacks_bb<ROOK>(to, occupied);
-    if (b)
-      return get_from_sq(b);
-    ++current_piece[c];
-    current_piece_bitboard[c] = pieces(QUEEN, c);
+    bb = data.current_pc[c] & piece_attacks_bb<ROOK>(to, occupied);
+    if (bb)
+      return get_from_sq(bb, data, c);
+    ++data.current_pt[c];
+    data.current_pc[c] = b->pieces(QUEEN, c);
     [[fallthrough]];
   case QUEEN:
-    b = current_piece_bitboard[c] & piece_attacks_bb<QUEEN>(to, occupied);
-    if (b)
-      return get_from_sq(b);
-    ++current_piece[c];
-    current_piece_bitboard[c] = pieces(KING, c);
+    bb = data.current_pc[c] & piece_attacks_bb<QUEEN>(to, occupied);
+    if (bb)
+      return get_from_sq(bb, data, c);
+    ++data.current_pt[c];
+    data.current_pc[c] = b->pieces(KING, c);
     [[fallthrough]];
   case KING:
-    b = current_piece_bitboard[c] & piece_attacks_bb<KING>(to);
-    if (b)
-      return get_from_sq(b);
+    bb = data.current_pc[c] & piece_attacks_bb<KING>(to);
+    if (bb)
+      return get_from_sq(bb, data, c);
     break;
   default:
     break;
   }
 
   return std::nullopt;
+}
 
 }
 
-void Board::init_see_move() {
-  current_piece.fill(PAWN);
-  current_piece_bitboard[WHITE] = pieces(PAWN, WHITE);
-  current_piece_bitboard[BLACK] = pieces(PAWN, BLACK);
+int Board::see_move(const Move m) {
+  perform_move(m);
+
+  const auto us    = move_side(m);
+  const auto them  = ~us;
+  const auto score = !is_attacked(king_square[us], them)
+                   ? see_rec(material_change(m), next_to_capture(m), move_to(m), them)
+                   : SEE_INVALID_SCORE;
+
+  unperform_move(m);
+  return score;
+}
+
+int Board::see_last_move(const Move m) {
+  return see_rec(material_change(m), next_to_capture(m), move_to(m), ~move_side(m));
+}
+
+int Board::see_rec(const int mat_change, const Piece next_capture, const Square to, const Color c) {
+
+  SeeData data{{PAWN, PAWN}, {pieces(PAWN, WHITE), pieces(PAWN, BLACK)}};
+  const auto rr = relative_rank(c, to);
+  Move m;
+
+  do
+  {
+    const auto from = lookup_best_attacker(data, to, c, this);
+    if (!from)
+      return mat_change;
+
+    const auto current_pt = data.current_pt[c];
+
+    m = current_pt == PAWN && rr == RANK_8
+      ? init_move<PROMOTION | CAPTURE>(make_piece(current_pt, c), next_capture, from.value(), to, make_piece(QUEEN, c))
+      : init_move<CAPTURE>(make_piece(current_pt, c), next_capture, from.value(), to, NO_PIECE);
+
+    perform_move(m);
+
+    if (!is_attacked(king_square[c], ~c))
+      break;
+
+    unperform_move(m);
+  } while (true);
+
+  const auto score = -see_rec(material_change(m), next_to_capture(m), move_to(m), ~move_side(m));
+
+  unperform_move(m);
+
+  return score < 0 ? mat_change + score : mat_change;
 }

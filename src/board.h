@@ -210,11 +210,6 @@ private:
   [[nodiscard]]
   int see_rec(int mat_change, Piece next_capture, Square to, Color c);
 
-  [[nodiscard]]
-  std::optional<Square> lookup_best_attacker(Square to, Color c);
-
-  void init_see_move();
-
   void update_position(Position *p) const;
 
   [[nodiscard]]
@@ -225,8 +220,6 @@ private:
 
   std::array<Piece, SQ_NB> board{};
   std::array<Bitboard, COL_NB> occupied_by_side{};
-  std::array<Bitboard, 2> current_piece_bitboard{};
-  std::array<PieceType, 2> current_piece{};
   Bitboard occupied{};
   std::array<Square, COL_NB> king_square{};
   PositionList position_list{};
@@ -366,5 +359,3 @@ inline Bitboard Board::pinned() const {
 inline void Board::pinned(const Bitboard v) {
   pos->pinned_ = v;
 }
-
-
