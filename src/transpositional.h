@@ -28,23 +28,38 @@
 #pragma pack(1)
 struct alignas(16) HashEntry {
   [[nodiscard]]
-  bool is_exact() const noexcept { return flags & EXACT; }
+  bool is_exact() const noexcept { return f & EXACT; }
 
   [[nodiscard]]
-  bool is_beta() const noexcept { return flags & BETA; }
+  bool is_beta() const noexcept { return f & BETA; }
 
   [[nodiscard]]
-  bool is_alpha() const noexcept { return flags & ALPHA; }
+  bool is_alpha() const noexcept { return f & ALPHA; }
 
-  uint32_t key;
-  uint16_t age;// 7 bits left
-  uint8_t depth;
-  NodeType flags;// 5 bits left
-  int16_t score;
-  Move move;
-  int16_t eval;
+  [[nodiscard]]
+  uint8_t depth() const noexcept { return d; }
+
+  [[nodiscard]]
+  NodeType flags() const noexcept { return static_cast<NodeType>(f & 7); }
+
+  [[nodiscard]]
+  int16_t score() const noexcept { return s; }
+
+  [[nodiscard]]
+  int16_t eval() const noexcept { return e; }
+
+  [[nodiscard]]
+  Move move() const noexcept { return m; }
 
 private:
+  uint32_t k;// key
+  uint16_t a;// age, 7 bits left
+  uint8_t d; // depth
+  NodeType f;// flags, 5 bits left
+  int16_t s; // score
+  Move m;    // move
+  int16_t e; // eval
+
   friend class HashTable;
 };
 #pragma pack()

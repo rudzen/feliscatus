@@ -48,13 +48,13 @@ constexpr std::array<int, 4> futility_margin{150, 150, 150, 400};
 constexpr std::array<int, 4> razor_margin{0, 125, 125, 400};
 
 [[nodiscard]]
-constexpr NodeType node_type(const int score, const int beta, const Move move) {
-  return move ? (score >= beta ? BETA : EXACT) : ALPHA;
+constexpr NodeType node_type(const int score, const int beta, const Move m) {
+  return m ? (score >= beta ? BETA : EXACT) : ALPHA;
 }
 
 [[nodiscard]]
-constexpr int null_move_reduction(const int depth) {
-  return 4 + depth / 4;
+constexpr int null_move_reduction(const int d) {
+  return 4 + d / 4;
 }
 
 void store_pv(const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length) {
@@ -72,7 +72,7 @@ constexpr int codec_t_table_score(const int score, const int ply) {
 }
 
 bool is_hash_score_valid(const Position *pos, const int depth, const int alpha, const int beta) {
-  return pos->transposition && pos->transposition->depth >= depth
+  return pos->transposition && pos->transposition->depth() >= depth
       && (pos->transposition->is_exact() || (pos->transposition->is_beta() && pos->transp_score >= beta) || (pos->transposition->is_alpha() && pos->transp_score <= alpha));
 }
 
@@ -85,11 +85,11 @@ void get_hash_and_evaluate(Position *pos, Board *b, const std::size_t pool_index
     return;
   }
 
-  pos->transp_score = codec_t_table_score(pos->transposition->score, -plies);
-  pos->eval_score   = codec_t_table_score(pos->transposition->eval, -plies);
-  pos->transp_depth = pos->transposition->depth;
-  pos->transp_type  = static_cast<NodeType>(pos->transposition->flags & 7);
-  pos->transp_move  = pos->transposition->move;
+  pos->transp_score = codec_t_table_score(pos->transposition->score(), -plies);
+  pos->eval_score   = codec_t_table_score(pos->transposition->eval(), -plies);
+  pos->transp_depth = pos->transposition->depth();
+  pos->transp_type  = pos->transposition->flags();
+  pos->transp_move  = pos->transposition->move();
   b->flags()        = 0;
 }
 
@@ -98,12 +98,12 @@ bool is_killer_move(const Move m, const Position *p) {
   return std::find(km.cbegin(), km.cend(), m) != km.cend();
 }
 
-void update_history_scores(HistoryScores &history_scores, const Move move, const int depth) {
+void update_history_scores(HistoryScores &history_scores, const Move m, const int d) {
 
-  const auto pc = move_piece(move);
-  const auto to = move_to(move);
+  const auto pc = move_piece(m);
+  const auto to = move_to(m);
 
-  history_scores[pc][to] += (depth * depth);
+  history_scores[pc][to] += (d * d);
 
   if (history_scores[pc][to] <= 2048)
     return;
@@ -113,15 +113,15 @@ void update_history_scores(HistoryScores &history_scores, const Move move, const
       k >>= 2;
 }
 
-void update_killer_moves(KillerMoves &km, const Move move) {
+void update_killer_moves(KillerMoves &km, const Move m) {
   // Same move can be stored twice for a ply.
-  if (is_capture(move) || is_promotion(move) || move == km.front())
+  if (is_capture(m) || is_promotion(m) || m == km.front())
     return;
 
   // Rotate the killer moves, index 3 become 2, index 2 becomes 1 and index 1 becomes 0 which is replaced with new move
   // This is the same as std::copy_backward(km.begin(), std::prev(km.end(), 1), std::next(km.begin(), 1));
   std::rotate(km.begin(), std::prev(km.end(), 1), km.end());
-  km[0] = move;
+  km[0] = m;
 }
 
 }
@@ -196,10 +196,9 @@ bool Search::search_fail_low(const int depth, const int alpha, const Move exclud
     if (move_data->move == exclude)
       continue;
 
-    auto best_score = -MAXSCORE;// dummy
-
     if (make_move_and_evaluate(move_data->move, alpha, alpha + 1))
     {
+      auto best_score = -MAXSCORE;// dummy
       const auto next_depth = next_depth_not_pv<BETA, true>(depth, ++move_count, move_data, alpha, best_score);
 
       if (!next_depth)

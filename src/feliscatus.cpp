@@ -57,9 +57,9 @@ int Felis::go() {
   if (board->pos->pv_length)
   {
     auto &pv = Pool.main()->pv;
-    const auto [move, ponder_move] = std::make_pair(pv[0][0].move, pv[0][1].move ? pv[0][1].move : MOVE_NONE);
-    uci::post_moves(move, ponder_move);
-    board->make_move(move, true, true);
+    const auto [m, p_move] = std::make_pair(pv[0][0].move, pv[0][1].move ? pv[0][1].move : MOVE_NONE);
+    uci::post_moves(m, p_move);
+    board->make_move(m, true, true);
   }
   return 0;
 }

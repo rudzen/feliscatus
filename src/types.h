@@ -275,19 +275,19 @@ constexpr Square relative_square(const Color c, const Square s) { return static_
 
 constexpr Rank relative_rank(const Color c, const Square s) { return relative_rank(c, rank_of(s)); }
 
-constexpr Piece move_piece(const Move move) { return static_cast<Piece>(move >> 26 & 15); }
+constexpr Piece move_piece(const Move m) { return static_cast<Piece>(m >> 26 & 15); }
 
-constexpr Piece move_captured(const Move move) { return static_cast<Piece>(move >> 22 & 15); }
+constexpr Piece move_captured(const Move m) { return static_cast<Piece>(m >> 22 & 15); }
 
-constexpr Piece move_promoted(const Move move) { return static_cast<Piece>(move >> 18 & 15); }
+constexpr Piece move_promoted(const Move m) { return static_cast<Piece>(m >> 18 & 15); }
 
-constexpr MoveType type_of(const Move move) { return static_cast<MoveType>(move >> 12 & 63); }
+constexpr MoveType type_of(const Move m) { return static_cast<MoveType>(m >> 12 & 63); }
 
-constexpr Square move_from(const Move move) { return static_cast<Square>(move >> 6 & 63); }
+constexpr Square move_from(const Move m) { return static_cast<Square>(m >> 6 & 63); }
 
-constexpr Square move_to(const Move move) { return static_cast<Square>(move & 63); }
+constexpr Square move_to(const Move m) { return static_cast<Square>(m & 63); }
 
-constexpr PieceType move_piece_type(const Move move) { return type_of(move_piece(move)); }
+constexpr PieceType move_piece_type(const Move m) { return type_of(move_piece(m)); }
 
 constexpr Color move_side(const Move m) { return static_cast<Color>(m >> 29 & 1); }
 
