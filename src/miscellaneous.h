@@ -26,6 +26,7 @@
 using TimeUnit = std::chrono::milliseconds::rep;
 
 constexpr std::string_view start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+constexpr std::string_view piece_index{"pnbrqk"};
 
 #if defined(NO_PREFETCH)
 

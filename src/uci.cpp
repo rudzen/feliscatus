@@ -33,8 +33,6 @@ namespace {
 
 constexpr TimeUnit time_safety_margin = 1;
 
-constexpr std::string_view fen_piece_names {"PNBRQK  pnbrqk "};
-
 constexpr uint64_t nps(const uint64_t nodes, const TimeUnit time) {
   return nodes * 1000 / time;
 }
@@ -187,7 +185,7 @@ std::string uci::display_uci(const Move m) {
   // append piece promotion if the move is a promotion.
   return !is_promotion(m)
        ? fmt::format("{}{}", move_from(m), move_to(m))
-       : fmt::format("{}{}{}", move_from(m), move_to(m), fen_piece_names[type_of(move_promoted(m))]);
+       : fmt::format("{}{}{}", move_from(m), move_to(m), piece_index[type_of(move_promoted(m))]);
 }
 
 std::string uci::info(const std::string_view info_string) {

@@ -500,7 +500,6 @@ int Board::set_fen(std::string_view fen, Data *data) {
   pos->clear();
   clear();
 
-  constexpr std::string_view piece_index{"PNBRQK"};
   constexpr auto splitter = ' ';
 
   Square sq = A8;
@@ -531,7 +530,7 @@ int Board::set_fen(std::string_view fen, Data *data) {
       sq += util::from_char<int>(token) * EAST;
     else if (token == '/')
       sq += SOUTH * 2;
-    else if (const auto pc_idx = piece_index.find_first_of(toupper(token)); pc_idx != std::string_view::npos)
+    else if (const auto pc_idx = piece_index.find_first_of(tolower(token)); pc_idx != std::string_view::npos)
     {
       add_piece(make_piece(static_cast<PieceType>(pc_idx), (islower(token) ? BLACK : WHITE)), sq);
       ++sq;
