@@ -164,10 +164,6 @@ constexpr Piece make_piece(const PieceType pt, const Color c) {
   return static_cast<Piece>(pt | (c << 3));
 }
 
-constexpr Color color_of(const Piece pc) {
-  return static_cast<Color>(pc >> 3);
-}
-
 constexpr int piece_value(const PieceType pt) {
   return piece_values[pt];
 }
@@ -205,6 +201,20 @@ enum MoveGenFlags {
   STAGES         = 1 << 1,
   QUEENPROMOTION = 1 << 2
 };
+
+
+/// color_of() determin color of a square or a piece
+
+template<typename T>
+constexpr Color color_of(const T t) {
+  static_assert(std::is_same_v<T, Piece> || std::is_same_v<T, Square>, "Wrong type.");
+  if constexpr (std::is_same_v<T, Piece>)
+    return static_cast<Color>(t >> 3);
+  else if constexpr (std::is_same_v<T, Square>)
+    return static_cast<Color>(((t ^ (t >> 3)) & 1) ^ 1);
+  else
+    return COL_NB;
+}
 
 #define ENABLE_BASE_OPERATORS_ON(T)                                \
 constexpr T operator+(const T d1, const int d2) noexcept { return static_cast<T>(static_cast<int>(d1) + d2); } \

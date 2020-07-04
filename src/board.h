@@ -86,7 +86,7 @@ struct Board {
   PieceType get_piece_type(Square s) const;
 
   [[nodiscard]]
-  Bitboard get_pinned_pieces(Color c, Square s);
+  Bitboard get_pinned_pieces(Color c, Square s) const;
 
   [[nodiscard]]
   bool is_attacked(Square s, Color c) const;
@@ -237,7 +237,7 @@ private:
   std::array<Bitboard, PIECETYPE_NB> occupied_by_type{};
   std::array<Square, COL_NB> king_square{};
   PositionList position_list{};
-  Data *data_;
+  Data *data_{};
 };
 
 inline void Board::add_piece(const Piece pc, const Square s) {

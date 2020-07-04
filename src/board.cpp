@@ -177,9 +177,8 @@ void update_key(Position *pos, const Move m) {
 
   // remove captured piece
   if (is_ep_capture(m))
-  {
     pawn_key ^= zobrist::zobrist_pst[move_captured(m)][to + pawn_push(pos->side_to_move)];
-  } else if (is_capture(m))
+  else if (is_capture(m))
   {
     if (is_pawn)
       pawn_key ^= zobrist::zobrist_pst[move_captured(m)][to];
@@ -189,9 +188,7 @@ void update_key(Position *pos, const Move m) {
 
   // castling rights
   if (prev->castle_rights != pos->castle_rights)
-  {
     key ^= zobrist::zobrist_castling[prev->castle_rights] ^ zobrist::zobrist_castling[pos->castle_rights];
-  }
 
   // rook move in castle
   if (is_castle_move(m))
@@ -224,15 +221,15 @@ void Board::init() {
   zobrist::zobrist_side   = rng();
   zobrist::zobrist_nopawn = rng();
 
-  for (const auto pc : Pieces)
-    for (const auto sq : Squares)
-      zobrist::zobrist_pst[pc][sq] = rng();
+  for (auto &z : zobrist::zobrist_pst)
+    for (auto &z_pst : z)
+      z_pst = rng();
 
-  for (auto &i : zobrist::zobrist_castling)
-    i = rng();
+  for (auto &z : zobrist::zobrist_castling)
+    z = rng();
 
-  for (auto &i : zobrist::zobrist_ep_file)
-    i = rng();
+  for (auto &z : zobrist::zobrist_ep_file)
+    z = rng();
 }
 
 void Board::clear() {
@@ -308,7 +305,7 @@ void Board::unperform_move(const Move m) {
     king_square[move_side(m)] = from;
 }
 
-Bitboard Board::get_pinned_pieces(const Color c, const Square s) {
+Bitboard Board::get_pinned_pieces(const Color c, const Square s) const {
   const auto them        = ~c;
   const auto all_pieces  = pieces();
   const auto side_pieces = pieces(c);
