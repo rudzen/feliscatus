@@ -35,9 +35,8 @@ uint64_t p(Board *b, const int depth, const int flags) {
 
   uint64_t nodes{};
 
-  if (!(flags & STAGES) && depth == 1)
-    nodes = b->pos->move_count();
-  else
+  [[likely]]
+  if (flags & STAGES || depth != 1)
   {
     while (const MoveData *move_data = b->pos->next_move())
     {
@@ -49,7 +48,9 @@ uint64_t p(Board *b, const int depth, const int flags) {
       nodes += p(b, depth - 1, flags);
       b->unmake_move();
     }
-  }
+  } else
+    nodes = b->pos->move_count();
+
   return nodes;
 }
 

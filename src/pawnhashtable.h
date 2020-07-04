@@ -34,7 +34,7 @@ struct PawnHashEntry final {
   Key zkey;
   Score eval;
   std::array<uint8_t, COL_NB> passed_pawn_files;
-  int16_t unused;
+  [[no_unique_address]] int16_t unused;
 };
 #pragma pack()
 

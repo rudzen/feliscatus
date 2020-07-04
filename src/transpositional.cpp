@@ -45,7 +45,7 @@ void HashTable::init(const uint64_t new_size_mb) {
   // Original code from SF
 
   bucket_count = new_size_mb * 1024 * 1024 / sizeof(Bucket);
-
+  fullness_element = bucket_count * BucketSize;
   std::free(mem);
   size = bucket_count * sizeof(Bucket) + CacheLineSize - 1;
   // TODO : replace with std::aligned_alloc() at some point;
@@ -66,8 +66,8 @@ void HashTable::clear() {
 
   // Original code from SF
 
-  std::vector<std::jthread> threads;
   const auto thread_count = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::THREADS>()]);
+  std::vector<std::jthread> threads(thread_count);
 
   for (std::size_t idx = 0; idx < thread_count; idx++)
   {
@@ -90,26 +90,26 @@ void HashTable::clear() {
 HashEntry *HashTable::find(const Key key) const {
   auto *bucket   = find_bucket(key);
   const auto k32 = key32(key);
-  const auto found = std::find_if(bucket->entry.begin(), bucket->entry.end(), [&k32](const HashEntry &e) { return e.key == k32 && e.flags; });
+  const auto found = std::find_if(bucket->entry.begin(), bucket->entry.end(), [&k32](const HashEntry &e) { return e.k == k32 && e.f; });
   return found != bucket->entry.end() ? found : nullptr;
 }
 
 HashEntry *HashTable::insert(const Key key, const int depth, const int score, const NodeType nt, const Move m, const int eval) {
   auto *transp = get_entry_to_replace(key, depth);
 
-  if (transp->flags == 0)
+  if (transp->f == Void)
     occupied++;
 
   const auto k32 = key32(key);
 
-  if (transp->key != k32 || m != MOVE_NONE)
-    transp->move = m;
-  transp->key   = k32;
-  transp->score = static_cast<int16_t>(score);
-  transp->depth = static_cast<uint8_t>(depth);
-  transp->flags = nt;
-  transp->age   = static_cast<uint16_t>(age);
-  transp->eval  = static_cast<int16_t>(eval);
+  if (transp->k != k32 || m != MOVE_NONE)
+    transp->m = m;
+  transp->k   = k32;
+  transp->s = static_cast<int16_t>(score);
+  transp->d = static_cast<uint8_t>(depth);
+  transp->f = nt;
+  transp->a   = static_cast<uint16_t>(age);
+  transp->e  = static_cast<int16_t>(eval);
   return transp;
 }
 
@@ -119,11 +119,11 @@ HashEntry *HashTable::get_entry_to_replace(const Key key, [[maybe_unused]] const
 
   auto *entry = &bucket->entry.front();
 
-  if (entry->flags == Void || entry->key == k32)
+  if (entry->f == Void || entry->k == k32)
     return entry;
 
-  constexpr auto replacement_score = [&](const HashEntry *e) { return (e->age << 9) + e->depth; };
-  auto match                       = [&k32](HashEntry *e) { return e->flags == Void || e->key == k32; };
+  constexpr auto replacement_score = [&](const HashEntry *e) { return (e->a << 9) + e->d; };
+  auto match                       = [&k32](HashEntry *e) { return e->f == Void || e->k == k32; };
   auto *replace                    = entry;
   auto replace_score               = replacement_score(replace);
 

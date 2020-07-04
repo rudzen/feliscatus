@@ -69,7 +69,7 @@ struct Moves {
   Board *b{};
 
 private:
-  void reset(MoveSorter *sorter, Move move, int flags);
+  void reset(MoveSorter *sorter, Move m, int flags);
 
   void generate_hash_move();
 

@@ -35,7 +35,7 @@ void TimeManager::init(const Color c, SearchLimits &search_limits) {
   limits = search_limits;
 
   start_time.start();
-
+  last_curr_post = start_time.elapsed_milliseconds();
   if (limits.fixed_movetime)
     search_time = 950 * limits.movetime / 1000;
   else
@@ -73,6 +73,9 @@ TimeUnit TimeManager::elapsed() const noexcept {
   return start_time.elapsed_milliseconds();
 }
 
-bool TimeManager::should_post_curr_move() const noexcept {
-  return search_time > curr_move_post_limit;
+bool TimeManager::should_post_curr_move() noexcept {
+  const auto ok = start_time.elapsed_milliseconds() + last_curr_post > curr_move_post_limit;
+  if (ok)
+    last_curr_post -= curr_move_post_limit;
+  return ok;
 }

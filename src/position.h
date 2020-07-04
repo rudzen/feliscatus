@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include <string_view>
-
 #include "moves.h"
 #include "material.h"
 
@@ -31,18 +29,6 @@ using KillerMoves = std::array<Move, 4>;
 
 struct Position : Moves {
   void clear();
-
-  [[nodiscard]]
-  const Move *string_to_move(std::string_view m);
-
-  [[nodiscard]]
-  bool is_draw() const;
-
-  [[nodiscard]]
-  bool can_castle() const;
-
-  [[nodiscard]]
-  bool can_castle(CastlingRight cr) const;
 
   int reversible_half_move_count{};
   Key pawn_structure_key{};
@@ -64,17 +50,5 @@ struct Position : Moves {
   int castle_rights{};
   Square en_passant_square{};
   Color side_to_move{};
-  Bitboard pinned_{};
+  Bitboard pinned{};
 };
-
-inline bool Position::is_draw() const {
-  return flags & Material::recognize_draw();
-}
-
-inline bool Position::can_castle() const {
-  return castle_rights != 0;
-}
-
-inline bool Position::can_castle(const CastlingRight cr) const {
-  return castle_rights & cr;
-}

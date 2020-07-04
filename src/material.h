@@ -56,8 +56,9 @@ struct Material {
   [[nodiscard]]
   int pawn_count();
 
+  template<Color Us>
   [[nodiscard]]
-  int evaluate(int &flags, int eval, Color c, const Board *b);
+  int evaluate(int &flags, int eval, const Board *b);
 
   [[nodiscard]]
   static constexpr int recognize_draw();
@@ -114,7 +115,7 @@ private:
   int KNNKX(int eval, uint32_t key2, int pc1);
 
   [[nodiscard]]
-  int KKx(int eval, uint32_t key1, uint32_t key2, int pc1, int pc2, Color c1);
+  int KKx(int eval, int pc1, int pc2, Color c1);
 
   [[nodiscard]]
   int KBxKX(int eval, uint32_t key1, uint32_t key2, Color c1);
@@ -127,7 +128,7 @@ private:
   int KBpK(int eval, Color c1);
 
   [[nodiscard]]
-  int KxKx(int eval, [[maybe_unused]] uint32_t key1, [[maybe_unused]] uint32_t key2, int pc1, int pc2, Color c1);
+  int KxKx(int eval, int pc1, int pc2, Color c1);
 
   [[nodiscard]]
   int KpK(int eval, Color c1);

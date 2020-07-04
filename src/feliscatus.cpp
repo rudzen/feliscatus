@@ -35,6 +35,7 @@
 #include "datapool.h"
 #include "transpositional.h"
 #include "uci.h"
+#include "miscellaneous.h"
 
 int Felis::new_game() {
   const auto num_threads = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::THREADS>()]);
@@ -43,7 +44,7 @@ int Felis::new_game() {
     workers.clear();
   else
     workers.resize(num_helpers);
-  return board->new_game(Board::kStartPosition.data());
+  return board->new_game(Pool.main());
 }
 
 int Felis::go() {
@@ -56,14 +57,14 @@ int Felis::go() {
   if (board->pos->pv_length)
   {
     auto &pv = Pool.main()->pv;
-    const auto [move, ponder_move] = std::make_pair(pv[0][0].move, pv[0][1].move ? pv[0][1].move : MOVE_NONE);
-    uci::post_moves(move, ponder_move);
-    board->make_move(move, true, true);
+    const auto [m, p_move] = std::make_pair(pv[0][0].move, pv[0][1].move ? pv[0][1].move : MOVE_NONE);
+    uci::post_moves(m, p_move);
+    board->make_move(m, true, true);
   }
   return 0;
 }
 
-void Felis::stop() const { search->stop_search.store(true); }
+void Felis::stop() const { search->stop(); }
 
 void Felis::start_workers() {
   if (workers.empty())
@@ -81,9 +82,9 @@ void Felis::stop_workers() {
 int Felis::run(const int argc, char* argv[]) {
   setbuf(stdout, nullptr);
 
-  board     = std::make_unique<Board>(Board::kStartPosition);
   Pool.set(1);
-  search   = std::make_unique<Search>(board.get(), 0);
+  board     = std::make_unique<Board>(start_position, Pool.main());
+  search   = std::make_unique<Search>(board.get());
 
   // simple jthread to start main search from
   std::jthread main_go;

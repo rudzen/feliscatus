@@ -98,4 +98,11 @@ void bitboard::init() {
     pawn_captures[WHITE][s] = shift_bb<NORTH_EAST>(bb) | shift_bb<NORTH_WEST>(bb);
     pawn_captures[BLACK][s] = shift_bb<SOUTH_EAST>(bb) | shift_bb<SOUTH_WEST>(bb);
   }
+
+  for (const auto side : Colors)
+  {
+    const auto rank1                            = relative_rank(side, RANK_1);
+    rook_castles_to[make_square(FILE_G, rank1)] = make_square(FILE_F, rank1);
+    rook_castles_to[make_square(FILE_C, rank1)] = make_square(FILE_D, rank1);
+  }
 }

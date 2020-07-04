@@ -70,17 +70,9 @@ constexpr std::array<uint32_t, 2> oo_allowed_mask{1, 4};
 
 constexpr std::array<uint32_t, 2> ooo_allowed_mask{2, 8};
 
-inline std::array<Square, 2> oo_king_from{};
 constexpr std::array<Square, 2> oo_king_to{G1, G8};
 
-inline std::array<Square, 2> ooo_king_from{};
 constexpr std::array<Square, 2> ooo_king_to{C1, C8};
-
-/// indexed by the position of the king
-inline std::array<Square, SQ_NB> rook_castles_to{};
-
-/// indexed by the position of the king
-inline std::array<Square, SQ_NB> rook_castles_from{};
 
 constexpr std::string_view square_to_string(const Square s) {
   return SquareString[s];
@@ -172,10 +164,6 @@ constexpr Piece make_piece(const PieceType pt, const Color c) {
   return static_cast<Piece>(pt | (c << 3));
 }
 
-constexpr Color color_of(const Piece pc) {
-  return static_cast<Color>(pc >> 3);
-}
-
 constexpr int piece_value(const PieceType pt) {
   return piece_values[pt];
 }
@@ -213,6 +201,20 @@ enum MoveGenFlags {
   STAGES         = 1 << 1,
   QUEENPROMOTION = 1 << 2
 };
+
+
+/// color_of() determin color of a square or a piece
+
+template<typename T>
+constexpr Color color_of(const T t) {
+  static_assert(std::is_same_v<T, Piece> || std::is_same_v<T, Square>, "Wrong type.");
+  if constexpr (std::is_same_v<T, Piece>)
+    return static_cast<Color>(t >> 3);
+  else if constexpr (std::is_same_v<T, Square>)
+    return static_cast<Color>(((t ^ (t >> 3)) & 1) ^ 1);
+  else
+    return COL_NB;
+}
 
 #define ENABLE_BASE_OPERATORS_ON(T)                                \
 constexpr T operator+(const T d1, const int d2) noexcept { return static_cast<T>(static_cast<int>(d1) + d2); } \
@@ -273,29 +275,29 @@ constexpr Square relative_square(const Color c, const Square s) { return static_
 
 constexpr Rank relative_rank(const Color c, const Square s) { return relative_rank(c, rank_of(s)); }
 
-constexpr Piece move_piece(const Move move) { return static_cast<Piece>(move >> 26 & 15); }
+constexpr Piece move_piece(const Move m) { return static_cast<Piece>(m >> 26 & 15); }
 
-constexpr Piece move_captured(const Move move) { return static_cast<Piece>(move >> 22 & 15); }
+constexpr Piece move_captured(const Move m) { return static_cast<Piece>(m >> 22 & 15); }
 
-constexpr Piece move_promoted(const Move move) { return static_cast<Piece>(move >> 18 & 15); }
+constexpr Piece move_promoted(const Move m) { return static_cast<Piece>(m >> 18 & 15); }
 
-constexpr MoveType move_type(const Move move) { return static_cast<MoveType>(move >> 12 & 63); }
+constexpr MoveType type_of(const Move m) { return static_cast<MoveType>(m >> 12 & 63); }
 
-constexpr Square move_from(const Move move) { return static_cast<Square>(move >> 6 & 63); }
+constexpr Square move_from(const Move m) { return static_cast<Square>(m >> 6 & 63); }
 
-constexpr Square move_to(const Move move) { return static_cast<Square>(move & 63); }
+constexpr Square move_to(const Move m) { return static_cast<Square>(m & 63); }
 
-constexpr PieceType move_piece_type(const Move move) { return type_of(move_piece(move)); }
+constexpr PieceType move_piece_type(const Move m) { return type_of(move_piece(m)); }
 
 constexpr Color move_side(const Move m) { return static_cast<Color>(m >> 29 & 1); }
 
-constexpr bool is_capture(const Move m) { return move_type(m) & (CAPTURE | EPCAPTURE); }
+constexpr bool is_capture(const Move m) { return type_of(m) & (CAPTURE | EPCAPTURE); }
 
-constexpr bool is_ep_capture(const Move m) { return move_type(m) & EPCAPTURE; }
+constexpr bool is_ep_capture(const Move m) { return type_of(m) & EPCAPTURE; }
 
-constexpr bool is_castle_move(const Move m) { return move_type(m) & CASTLE; }
+constexpr bool is_castle_move(const Move m) { return type_of(m) & CASTLE; }
 
-constexpr bool is_promotion(const Move m) { return move_type(m) & PROMOTION; }
+constexpr bool is_promotion(const Move m) { return type_of(m) & PROMOTION; }
 
 constexpr bool is_queen_promotion(const Move m) { return is_promotion(m) && type_of(move_promoted(m)) == QUEEN; }
 

@@ -122,8 +122,8 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 
   const auto mat_eval = get_actual_eval(posistion_value);
 
-  if (const auto lazy_eval = b->side_to_move() == WHITE ? mat_eval : -mat_eval; lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
-    return b->material().evaluate(b->flags(), lazy_eval, b->side_to_move(), b);
+  if (const auto lazy_eval = Us == WHITE ? mat_eval : -mat_eval; lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
+    return b->material().evaluate<Us>(b->flags(), lazy_eval, b);
 
 #endif
 
@@ -144,13 +144,13 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
   // finally add the remaining poseval scores
   result += poseval[WHITE] - poseval[BLACK];
 
-  posistion_value[b->side_to_move()] += tempo;
+  posistion_value[Us] += tempo;
 
   const auto [stage_mg, stage_eg] = get_stages(b->material());
   const auto pos_eval_mg          = static_cast<int>(result.mg() * stage_mg);
   const auto pos_eval_eg          = static_cast<int>(result.eg() * stage_eg);
   const auto pos_eval             = pos_eval_mg + pos_eval_eg + get_actual_eval(posistion_value);
-  const auto eval                 = b->material().evaluate(b->flags(), b->side_to_move() == WHITE ? pos_eval : -pos_eval, b->side_to_move(), b);
+  const auto eval                 = b->material().evaluate<Us>(b->flags(), Us == WHITE ? pos_eval : -pos_eval, b);
 
   return eval;
 }

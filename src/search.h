@@ -24,14 +24,14 @@
 #include <optional>
 
 #include "datapool.h"
+#include "board.h"
 
-struct Board;
 struct Position;
 
 struct Search final : MoveSorter {
   Search() = delete;
-  Search(Board *board, const std::size_t data_index) : b(board), data_index_(data_index), data_(Pool[data_index].get()), verbosity(data_index == 0) {
-    if (data_index != 0)
+  Search(Board *board) : b(board), data_(board->data()), verbosity(data_->index() == 0) {
+    if (!verbosity)
       stop_search.store(false);
   }
 
@@ -40,8 +40,6 @@ struct Search final : MoveSorter {
   void stop();
 
   void run();
-
-  std::atomic_bool stop_search;
 
 private:
   template<NodeType NT, bool PV>
@@ -95,10 +93,10 @@ private:
   [[nodiscard]]
   bool move_is_easy() const;
 
+  std::atomic_bool stop_search;
   std::array<int, COL_NB> draw_score_{};
   Board *b;
   Position *pos{};
-  std::size_t data_index_;
-  Data* data_;
+  Data *data_;
   bool verbosity{};
 };

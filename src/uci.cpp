@@ -27,12 +27,11 @@
 #include "feliscatus.h"
 #include "datapool.h"
 #include "transpositional.h"
+#include "miscellaneous.h"
 
 namespace {
 
 constexpr TimeUnit time_safety_margin = 1;
-
-constexpr std::string_view fen_piece_names {"PNBRQK  pnbrqk "};
 
 constexpr uint64_t nps(const uint64_t nodes, const TimeUnit time) {
   return nodes * 1000 / time;
@@ -43,6 +42,15 @@ auto node_info(const TimeUnit time) {
   return std::make_pair(nodes, nps(nodes, time));
 }
 
+Move string_to_move(Position *p, const std::string_view m) {
+  p->generate_moves();
+
+  while (const MoveData *move_data = p->next_move())
+    if (m == uci::display_uci(move_data->move))
+      return move_data->move;
+  return MOVE_NONE;
+}
+
 }
 
 void uci::post_moves(const Move m, const Move ponder_move) {
@@ -50,6 +58,7 @@ void uci::post_moves(const Move m, const Move ponder_move) {
 
   fmt::format_to(buffer, "bestmove {}", display_uci(m));
 
+  [[likely]]
   if (ponder_move)
     fmt::format_to(buffer, " ponder {}", display_uci(ponder_move));
 
@@ -122,29 +131,26 @@ void uci::handle_position(Board *b, std::istringstream &input) {
 
   input >> token;
 
+  [[likely]]
   if (token == "startpos")
   {
-    b->set_fen(Board::kStartPosition);
+    b->new_game(Pool.main());
 
     // get rid of "moves" token
     input >> token;
   } else if (token == "fen")
   {
-    std::string fen;
+    fmt::memory_buffer fen;
     while (input >> token && token != "moves")
-      fen += token + ' ';
-    b->set_fen(fen);
+      fmt::format_to(fen, "{} ", token);
+    b->set_fen(fmt::to_string(fen), Pool.main());
   } else
     return;
 
   // parse any moves if they exist
   while (input >> token)
-  {
-    const auto *const m = b->pos->string_to_move(token);
-      if (!m || *m == MOVE_NONE)
-          break;
-      b->make_move(*m, false, true);
-  }
+    if (const auto m = string_to_move(b->pos, token); m)
+      b->make_move(m, false, true);
 }
 
 void uci::handle_set_option(std::istringstream &input) {
@@ -181,7 +187,7 @@ std::string uci::display_uci(const Move m) {
   // append piece promotion if the move is a promotion.
   return !is_promotion(m)
        ? fmt::format("{}{}", move_from(m), move_to(m))
-       : fmt::format("{}{}{}", move_from(m), move_to(m), fen_piece_names[type_of(move_promoted(m))]);
+       : fmt::format("{}{}{}", move_from(m), move_to(m), piece_index[type_of(move_promoted(m))]);
 }
 
 std::string uci::info(const std::string_view info_string) {

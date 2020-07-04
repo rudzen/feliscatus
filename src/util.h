@@ -34,10 +34,11 @@
 namespace util {
 
 template<typename T>
-constexpr int abs(const T v)
-{
-  static_assert(std::is_integral_v<T> && std::is_signed_v<T>);
-  return v < 0 ? -v : v;
+constexpr T abs(const T v) {
+  static_assert(std::is_integral_v<T>);
+  constexpr auto mask_shift = (sizeof(int) * CHAR_BIT - 1);
+  const auto mask = static_cast<int>(v) >> mask_shift;
+  return (v ^ mask) - mask;
 }
 
 constexpr void sleep(const std::integral auto ms) {

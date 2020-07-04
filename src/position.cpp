@@ -18,24 +18,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <optional>
 #include "position.h"
-#include "util.h"
-#include "board.h"
-
-namespace {
-
-std::optional<int> is_string_castle_move(const Board *b, const std::string_view m) {
-  if (m == "O-O" || m == "OO" || m == "0-0" || m == "00" || (m == "e1g1" && b->get_piece_type(E1) == KING) || (m == "e8g8" && b->get_piece_type(E8) == KING))
-    return std::make_optional(0);
-
-  if (m == "O-O-O" || m == "OOO" || m == "0-0-0" || m == "000" || (m == "e1c1" && b->get_piece_type(E1) == KING) || (m == "e8c8" && b->get_piece_type(E8) == KING))
-    return std::make_optional(1);
-
-  return std::nullopt;
-}
-
-}// namespace
+#include "bitboard.h"
 
 void Position::clear() {
   castle_rights              = 0;
@@ -49,58 +33,4 @@ void Position::clear() {
   in_check                   = false;
   material.clear();
   killer_moves.fill(MOVE_NONE);
-}
-
-const Move *Position::string_to_move(const std::string_view m) {
-  // 0 = short, 1 = long
-  auto castle_type = is_string_castle_move(b, m);
-
-  if (!castle_type && (!util::in_between<'a', 'h'>(m[0]) || !util::in_between<'1', '8'>(m[1]) || !util::in_between<'a', 'h'>(m[2]) || !util::in_between<'1', '8'>(m[3])))
-    return nullptr;
-
-  auto from = NO_SQ;
-  auto to   = NO_SQ;
-
-  if (!castle_type)
-  {
-    from = make_square(static_cast<File>(m[0] - 'a'), static_cast<Rank>(m[1] - '1'));
-    to   = make_square(static_cast<File>(m[2] - 'a'), static_cast<Rank>(m[3] - '1'));
-
-    // chess 960 - shredder fen
-    if ((b->get_piece(from) == W_KING && b->get_piece(to) == W_ROOK) || (b->get_piece(from) == B_KING && b->get_piece(to) == B_ROOK))
-      castle_type = to > from ? std::make_optional(0) : std::make_optional(1);// ga na
-  }
-
-  if (castle_type)
-  {
-    if (castle_type.value() == 0)
-    {
-      from = oo_king_from[side_to_move];
-      to   = oo_king_to[side_to_move];
-    } else if (castle_type.value() == 1)
-    {
-      from = ooo_king_from[side_to_move];
-      to   = ooo_king_to[side_to_move];
-    }
-  }
-
-  generate_moves();
-
-  while (const MoveData *move_data = next_move())
-  {
-    const auto *const move = &move_data->move;
-
-    if (move_from(*move) == from && move_to(*move) == to)
-    {
-      if (is_castle_move(*move) && !castle_type)
-        continue;
-
-      if (is_promotion(*move))
-        if (tolower(m.back()) != piece_notation[type_of(move_promoted(*move))].front())
-          continue;
-
-      return move;
-    }
-  }
-  return nullptr;
 }

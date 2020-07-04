@@ -147,6 +147,14 @@ inline Bitboard between_bb[SQ_NB][SQ_NB];
 inline Bitboard passed_pawn_front_span[COL_NB][SQ_NB];
 inline Bitboard pawn_front_span[COL_NB][SQ_NB];
 inline Bitboard pawn_captures[COL_NB][SQ_NB];
+inline std::array<Square, 2> oo_king_from{};
+inline std::array<Square, 2> ooo_king_from{};
+
+/// indexed by the position of the king
+inline std::array<Square, SQ_NB> rook_castles_to{};
+
+/// indexed by the position of the king
+inline std::array<Square, SQ_NB> rook_castles_from{};
 
 consteval std::array<std::array<int, SQ_NB>, SQ_NB> make_distance()
 {
@@ -323,8 +331,4 @@ constexpr bool more_than_one(const Bitboard bb) {
 
 constexpr bool is_opposite_colors(const Square s1, const Square s2) {
   return ((static_cast<int>(s1) + static_cast<int>(rank_of(s1)) + s2 + rank_of(s2)) & 1) != 0;
-}
-
-constexpr int color_of(const Square s) {
-  return static_cast<int>((DarkSquares >> s) & 1);
 }
