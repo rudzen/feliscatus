@@ -45,7 +45,7 @@ void HashTable::init(const uint64_t new_size_mb) {
   // Original code from SF
 
   bucket_count = new_size_mb * 1024 * 1024 / sizeof(Bucket);
-
+  fullness_element = bucket_count * BucketSize;
   std::free(mem);
   size = bucket_count * sizeof(Bucket) + CacheLineSize - 1;
   // TODO : replace with std::aligned_alloc() at some point;
@@ -66,8 +66,8 @@ void HashTable::clear() {
 
   // Original code from SF
 
-  std::vector<std::jthread> threads;
   const auto thread_count = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::THREADS>()]);
+  std::vector<std::jthread> threads(thread_count);
 
   for (std::size_t idx = 0; idx < thread_count; idx++)
   {

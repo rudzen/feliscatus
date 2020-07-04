@@ -117,10 +117,11 @@ private:
 
   static_assert(CacheLineSize % sizeof(Bucket) == 0, "Bucket size incorrect");
 
-  std::size_t bucket_count{};
   Bucket* table{};
   void* mem{};
 
+  std::size_t bucket_count{};
+  std::size_t fullness_element{};
   uint64_t occupied{};
   uint64_t size_mb{};
   uint64_t size{};
@@ -133,7 +134,7 @@ inline void HashTable::init_search() {
 }
 
 inline int HashTable::get_load() const {
-  return static_cast<int>(static_cast<double>(occupied) / size * 1000);
+  return static_cast<int>(static_cast<double>(occupied) / fullness_element * 1000);
 }
 
 inline int HashTable::get_size_mb() const {
