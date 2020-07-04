@@ -236,12 +236,11 @@ void Board::init() {
 }
 
 void Board::clear() {
-  piece.fill(0);
-  occupied_by_side.fill(0);
+  occupied_by_side.fill(ZeroBB);
+  occupied_by_type.fill(ZeroBB);
   board.fill(NO_PIECE);
   king_square.fill(NO_SQ);
-  occupied = 0;
-  max_ply  = plies = search_depth = 0;
+  max_ply = plies = search_depth = 0;
 }
 
 void Board::perform_move(const Move m) {
@@ -310,33 +309,36 @@ void Board::unperform_move(const Move m) {
 }
 
 Bitboard Board::get_pinned_pieces(const Color c, const Square s) {
-  const auto them    = ~c;
-  auto pinners       = xray_bishop_attacks(occupied, occupied_by_side[c], s) & (piece[make_piece(BISHOP, them)] | piece[make_piece(QUEEN, them)]);
-  auto pinned_pieces = ZeroBB;
+  const auto them        = ~c;
+  const auto all_pieces  = pieces();
+  const auto side_pieces = pieces(c);
+  auto pinners           = xray_bishop_attacks(all_pieces, side_pieces, s) & pieces(BISHOP, QUEEN, them);
+  auto pinned_pieces     = ZeroBB;
 
   while (pinners)
-    pinned_pieces |= between_bb[pop_lsb(&pinners)][s] & occupied_by_side[c];
+    pinned_pieces |= between_bb[pop_lsb(&pinners)][s] & side_pieces;
 
-  pinners = xray_rook_attacks(occupied, occupied_by_side[c], s) & (piece[make_piece(ROOK, them)] | piece[make_piece(QUEEN, them)]);
+  pinners = xray_rook_attacks(all_pieces, side_pieces, s) & pieces(ROOK, QUEEN, them);
 
   while (pinners)
-    pinned_pieces |= between_bb[pop_lsb(&pinners)][s] & occupied_by_side[c];
+    pinned_pieces |= between_bb[pop_lsb(&pinners)][s] & side_pieces;
 
   return pinned_pieces;
 }
 
 bool Board::is_attacked_by_slider(const Square s, const Color c) const {
-  const auto r_attacks = piece_attacks_bb<ROOK>(s, occupied);
+  const auto all_pieces = pieces();
+  const auto r_attacks  = piece_attacks_bb<ROOK>(s, all_pieces);
 
   if (pieces(ROOK, c) & r_attacks)
     return true;
 
-  const auto b_attacks = piece_attacks_bb<BISHOP>(s, occupied);
+  const auto b_attacks = piece_attacks_bb<BISHOP>(s, all_pieces);
 
   if (pieces(BISHOP, c) & b_attacks)
     return true;
 
-  return (pieces(QUEEN, c) & (b_attacks | r_attacks)) != 0;
+  return pieces(QUEEN, c) & (b_attacks | r_attacks);
 }
 
 void Board::print() const {

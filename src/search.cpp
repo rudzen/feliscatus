@@ -221,7 +221,7 @@ bool Search::search_fail_low(const int depth, const int alpha, const Move exclud
     }
   }
 
-  return move_count != 0;
+  return move_count;
 }
 
 bool Search::should_try_null_move(const int beta) const {

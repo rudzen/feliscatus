@@ -128,8 +128,9 @@ bool Moves::is_pseudo_legal(const Move m) const {
   // TODO : castleling & en passant moves
 
   const auto from = move_from(m);
+  const auto pc   = move_piece(m);
 
-  if ((b->piece[move_piece(m)] & from) == 0)
+  if ((b->pieces(pc) & from) == 0)
     return false;
 
   const auto to = move_to(m);
@@ -140,7 +141,7 @@ bool Moves::is_pseudo_legal(const Move m) const {
   {
     if ((b->pieces(~move_stm) & to) == 0)
       return false;
-    if ((b->piece[move_captured(m)] & to) == 0)
+    if ((b->pieces(move_captured(m)) & to) == 0)
       return false;
   }
   // } else if (is_castle_move(m))
@@ -148,7 +149,7 @@ bool Moves::is_pseudo_legal(const Move m) const {
   else if (b->pieces() & to)
     return false;
 
-  if (const auto pt = type_of(move_piece(m)); util::in_between<BISHOP, QUEEN>(pt))
+  if (const auto pt = type_of(move_piece(m)); util::in_between<QUEEN, BISHOP>(pt))
     if (between_bb[from][to] & b->pieces())
       return false;
 
