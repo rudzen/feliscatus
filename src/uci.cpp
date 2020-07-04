@@ -58,6 +58,7 @@ void uci::post_moves(const Move m, const Move ponder_move) {
 
   fmt::format_to(buffer, "bestmove {}", display_uci(m));
 
+  [[likely]]
   if (ponder_move)
     fmt::format_to(buffer, " ponder {}", display_uci(ponder_move));
 
@@ -130,6 +131,7 @@ void uci::handle_position(Board *b, std::istringstream &input) {
 
   input >> token;
 
+  [[likely]]
   if (token == "startpos")
   {
     b->new_game(Pool.main());

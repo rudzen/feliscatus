@@ -79,7 +79,7 @@ Option::operator int() const {
   return (type_ == "spin" ? util::to_integral<int>(current_value_) : current_value_ == bool_string[true]);
 }
 
-Option::operator std::string() const {
+Option::operator std::string_view() const {
   assert(type_ == "string");
   return current_value_;
 }

@@ -104,7 +104,7 @@ public:
   operator int() const;
 
   [[nodiscard]]
-  operator std::string() const;
+  operator std::string_view() const;
 
   [[nodiscard]]
   bool operator==(const char *) const;

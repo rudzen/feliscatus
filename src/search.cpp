@@ -162,6 +162,7 @@ int Search::go(SearchLimits &limits) {
 
       store_pv(data_->pv.front(), data_->pv_length.front());
 
+      [[unlikely]]
       if (move_is_easy())
         break;
 
@@ -193,6 +194,7 @@ bool Search::search_fail_low(const int depth, const int alpha, const Move exclud
 
   while (auto *const move_data = pos->next_move())
   {
+    [[unlikely]]
     if (move_data->move == exclude)
       continue;
 
@@ -238,13 +240,16 @@ int Search::next_depth_pv(const Move singular_move, const int depth, const MoveD
 }
 
 bool Search::make_move_and_evaluate(const Move m, const int alpha, const int beta) {
+
+  const auto current_nodes = data_->node_count.fetch_add(1, std::memory_order_relaxed);
+
+  [[unlikely]]
   if (!b->make_move(m, true, true))
     return false;
 
   pos = b->pos;
   ++b->plies;
   data_->pv_length[b->plies] = b->plies;
-  const auto current_nodes = data_->node_count.fetch_add(1, std::memory_order_relaxed);
 
   check_sometimes(current_nodes);
 
@@ -261,7 +266,7 @@ void Search::unmake_move() {
 }
 
 void Search::check_sometimes(const uint64_t nodes) {
-  if ((nodes & 0x3fff) == 0)
+  if (nodes >= 16383)
     check_time();
 }
 
