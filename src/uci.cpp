@@ -134,7 +134,7 @@ void uci::handle_position(Board *b, std::istringstream &input) {
 
   if (token == "startpos")
   {
-    b->set_fen(start_position);
+    b->new_game(Pool.main());
 
     // get rid of "moves" token
     input >> token;
@@ -143,7 +143,7 @@ void uci::handle_position(Board *b, std::istringstream &input) {
     fmt::memory_buffer fen;
     while (input >> token && token != "moves")
       fmt::format_to(fen, "{} ", token);
-    b->set_fen(fmt::to_string(fen));
+    b->set_fen(fmt::to_string(fen), Pool.main());
   } else
     return;
 

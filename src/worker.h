@@ -34,8 +34,8 @@ struct Worker final {
   Worker() : board_(std::make_unique<Board>()) {}
 
   void start(std::string_view fen, const std::size_t index) {
-    board_->set_fen(fen);
-    search_ = std::make_unique<Search>(board_.get(), index);
+    board_->set_fen(fen, Pool[index].get());
+    search_ = std::make_unique<Search>(board_.get());
     thread_ = std::jthread(&Search::run, search_.get());
     if (Options[uci::get_uci_name<uci::UciOptions::THREADS>()] > 8)
       WinProcGroup::bind_this_thread(index);

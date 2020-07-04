@@ -27,6 +27,7 @@
 #include "magic.h"
 #include "position.h"
 
+struct Data;
 enum Move : uint32_t;
 
 struct Board {
@@ -34,7 +35,7 @@ struct Board {
   using PositionList = std::array<Position, MAXDEPTH * 3>;
 
   Board();
-  explicit Board(std::string_view fen);
+  explicit Board(std::string_view fen, Data *data);
 
   static void init();
 
@@ -57,9 +58,9 @@ struct Board {
   [[nodiscard]]
   int64_t half_move_count() const;
 
-  int new_game(std::string_view fen);
+  int new_game(Data *data);
 
-  int set_fen(std::string_view fen);
+  int set_fen(std::string_view fen, Data* data);
 
   [[nodiscard]]
   std::string get_fen() const;
@@ -182,6 +183,9 @@ struct Board {
   void pinned(Bitboard v) const;
 
   [[nodiscard]]
+  Data *data() const;
+
+  [[nodiscard]]
   bool gives_check(Move m);
 
   [[nodiscard]]
@@ -233,6 +237,7 @@ private:
   std::array<Bitboard, PIECETYPE_NB> occupied_by_type{};
   std::array<Square, COL_NB> king_square{};
   PositionList position_list{};
+  Data *data_;
 };
 
 inline void Board::add_piece(const Piece pc, const Square s) {
@@ -378,9 +383,13 @@ inline bool Board::in_check() const {
 }
 
 inline Bitboard Board::pinned() const {
-  return pos->pinned_;
+  return pos->pinned;
 }
 
 inline void Board::pinned(const Bitboard v) const {
-  pos->pinned_ = v;
+  pos->pinned = v;
+}
+
+inline Data *Board::data() const {
+  return data_;
 }

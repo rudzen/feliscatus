@@ -30,7 +30,6 @@
 #include "eval.h"
 #include "transpositional.h"
 #include "pv_entry.h"
-#include "board.h"
 #include "position.h"
 #include "uci.h"
 
@@ -128,7 +127,7 @@ void update_killer_moves(KillerMoves &km, const Move move) {
 }
 
 int Search::go(SearchLimits &limits) {
-  data_ = Pool[data_index_].get();
+  data_ = b->data();
   init_search(limits);
 
   draw_score_[b->side_to_move()]  = 0;//-25;
@@ -147,7 +146,7 @@ int Search::go(SearchLimits &limits) {
       {
         data_->pv_length[0] = 0;
 
-        get_hash_and_evaluate(pos, b, data_index_, alpha, beta, b->plies);
+        get_hash_and_evaluate(pos, b, data_->index(), alpha, beta, b->plies);
 
         const auto score = search<EXACT, true>(b->search_depth, alpha, beta);
 
@@ -250,7 +249,7 @@ bool Search::make_move_and_evaluate(const Move m, const int alpha, const int bet
 
   check_sometimes(current_nodes);
 
-  get_hash_and_evaluate(pos, b, data_index_, -beta, -alpha, b->plies);
+  get_hash_and_evaluate(pos, b, data_->index(), -beta, -alpha, b->plies);
 
   b->max_ply = std::max<int>(b->max_ply, b->plies);
   return true;

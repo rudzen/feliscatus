@@ -212,9 +212,9 @@ Board::Board()
     p.b = this;
 }
 
-Board::Board(const std::string_view fen)
+Board::Board(const std::string_view fen, Data *data)
   : Board() {
-  set_fen(fen);
+  set_fen(fen, data);
 }
 
 void Board::init() {
@@ -488,16 +488,11 @@ int64_t Board::half_move_count() const {
   return pos - position_list.data();
 }
 
-int Board::new_game(const std::string_view fen) {
-  auto result = set_fen(fen);
-
-  if (result != 0)
-    result = set_fen(start_position);
-
-  return result;
+int Board::new_game(Data *data) {
+  return set_fen(start_position, data);
 }
 
-int Board::set_fen(std::string_view fen) {
+int Board::set_fen(std::string_view fen, Data *data) {
   pos = position_list.data();
   pos->clear();
   clear();
@@ -563,6 +558,8 @@ int Board::set_fen(std::string_view fen) {
   pos->reversible_half_move_count = 0;
 
   update_position(pos);
+
+  data_ = data;
 
   return 0;
 }
@@ -754,7 +751,7 @@ bool Board::gives_check(const Move m) {
 }
 
 bool Board::is_legal(const Move m, const Piece pc, const Square from, const MoveType mt) {
-  if (!(pos->pinned_ & from) && !pos->in_check && type_of(pc) != KING && !(mt & EPCAPTURE))
+  if (!(pos->pinned & from) && !pos->in_check && type_of(pc) != KING && !(mt & EPCAPTURE))
     return true;
 
   perform_move(m);
