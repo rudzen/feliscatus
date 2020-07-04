@@ -158,6 +158,7 @@ void update_key(Position *pos, const Move m) {
   const auto is_pawn = type_of(piece) == PAWN;
   const auto from    = move_from(m);
   const auto to      = move_to(m);
+  const auto mt      = type_of(m);
 
   // from and to for moving piece
   if (is_pawn)
@@ -165,7 +166,7 @@ void update_key(Position *pos, const Move m) {
   else
     key ^= zobrist::zobrist_pst[piece][from];
 
-  if (move_type(m) & PROMOTION)
+  if (mt & PROMOTION)
     key ^= zobrist::zobrist_pst[move_promoted(m)][to];
   else
   {
@@ -176,9 +177,9 @@ void update_key(Position *pos, const Move m) {
   }
 
   // remove captured piece
-  if (is_ep_capture(m))
+  if (mt & EPCAPTURE)
     pawn_key ^= zobrist::zobrist_pst[move_captured(m)][to + pawn_push(pos->side_to_move)];
-  else if (is_capture(m))
+  else if (mt & CAPTURE)
   {
     if (is_pawn)
       pawn_key ^= zobrist::zobrist_pst[move_captured(m)][to];
@@ -191,7 +192,7 @@ void update_key(Position *pos, const Move m) {
     key ^= zobrist::zobrist_castling[prev->castle_rights] ^ zobrist::zobrist_castling[pos->castle_rights];
 
   // rook move in castle
-  if (is_castle_move(m))
+  if (mt & CASTLE)
   {
     const auto rook = make_piece(ROOK, move_side(m));
     key ^= zobrist::zobrist_pst[rook][rook_castles_from[to]] ^ zobrist::zobrist_pst[rook][rook_castles_to[to]];
@@ -244,29 +245,31 @@ void Board::perform_move(const Move m) {
 
   const auto from = move_from(m);
   const auto to   = move_to(m);
-  const auto pc   = move_piece(m);
+  const auto mt   = type_of(m);
+  auto pc         = move_piece(m);
 
-  if (!is_castle_move(m))
-  {
-    remove_piece(from);
-
-    if (is_ep_capture(m))
-    {
-      const auto direction = pawn_push(color_of(pc));
-      remove_piece(to - direction);
-    } else if (is_capture(m))
-      remove_piece(to);
-
-    if (is_promotion(m))
-      add_piece(move_promoted(m), to);
-    else
-      add_piece(pc, to);
-  } else
+  [[unlikely]]
+  if (mt & CASTLE)
   {
     const auto rook = make_piece(ROOK, move_side(m));
     remove_piece(rook_castles_from[to]);
     remove_piece(from);
     add_piece(rook, rook_castles_to[to]);
+    add_piece(pc, to);
+  } else
+  {
+    remove_piece(from);
+
+    if (mt & EPCAPTURE)
+    {
+      const auto direction = pawn_push(color_of(pc));
+      remove_piece(to - direction);
+    } else if (mt & CAPTURE)
+      remove_piece(to);
+
+    if (mt & PROMOTION)
+      pc = move_promoted(m);
+
     add_piece(pc, to);
   }
 
@@ -279,26 +282,27 @@ void Board::unperform_move(const Move m) {
   const auto from = move_from(m);
   const auto to   = move_to(m);
   const auto pc   = move_piece(m);
+  const auto mt   = type_of(m);
 
-  if (!is_castle_move(m))
-  {
-    remove_piece(to);
-
-    if (is_ep_capture(m))
-    {
-      const auto direction = pawn_push(color_of(pc));
-      add_piece(move_captured(m), to - direction);
-    } else if (is_capture(m))
-      add_piece(move_captured(m), to);
-
-    add_piece(pc, from);
-  } else
+  if (mt & CASTLE)
   {
     const auto rook = make_piece(ROOK, move_side(m));
     remove_piece(to);
     remove_piece(rook_castles_to[to]);
     add_piece(pc, from);
     add_piece(rook, rook_castles_from[to]);
+  } else
+  {
+    remove_piece(to);
+
+    if (mt & EPCAPTURE)
+    {
+      const auto direction = pawn_push(color_of(pc));
+      add_piece(move_captured(m), to - direction);
+    } else if (mt & CAPTURE)
+      add_piece(move_captured(m), to);
+
+    add_piece(pc, from);
   }
 
   if (type_of(pc) == KING)
@@ -382,7 +386,9 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
 
   perform_move(m);
 
-  if (check_legal && !(move_type(m) & CASTLE))
+  const auto mt = type_of(m);
+
+  if (check_legal && !(mt & CASTLE))
   {
     if (is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move))
     {
@@ -396,8 +402,8 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
   pos->last_move                  = m;
   pos->castle_rights              = prev->castle_rights & castle_rights_mask[move_from(m)] & castle_rights_mask[move_to(m)];
   pos->null_moves_in_row          = 0;
-  pos->reversible_half_move_count = is_capture(m) || type_of(move_piece(m)) == PAWN ? 0 : prev->reversible_half_move_count + 1;
-  pos->en_passant_square          = move_type(m) & DOUBLEPUSH ? move_to(m) + pawn_push(pos->side_to_move) : NO_SQ;
+  pos->reversible_half_move_count = mt & (CAPTURE | EPCAPTURE) || type_of(move_piece(m)) == PAWN ? 0 : prev->reversible_half_move_count + 1;
+  pos->en_passant_square          = type_of(m) & DOUBLEPUSH ? move_to(m) + pawn_push(pos->side_to_move) : NO_SQ;
   pos->key                        = prev->key;
   pos->pawn_structure_key         = prev->pawn_structure_key;
   if (calculate_in_check)
@@ -520,6 +526,7 @@ int Board::set_fen(std::string_view fen, Data *data) {
 
   for (const auto token : current)
   {
+    [[unlikely]]
     if (std::isdigit(token))
       sq += util::from_char<int>(token) * EAST;
     else if (token == '/')
@@ -669,7 +676,10 @@ bool Board::setup_castling(const std::string_view s) {
 
 std::string Board::move_to_string(const Move m) const {
 
-  if (is_castle_move(m) && chess960)
+  const auto mt = type_of(m);
+
+  [[unlikely]]
+  if (mt & CASTLE && chess960)
   {
     if (xfen && move_to(m) == ooo_king_to[move_side(m)])
       return std::string("O-O-O");
@@ -680,7 +690,7 @@ std::string Board::move_to_string(const Move m) const {
   }
   auto s = fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)));
 
-  if (is_promotion(m))
+  if (mt & PROMOTION)
     s += piece_to_string(type_of(move_promoted(m)));
   return s;
 }

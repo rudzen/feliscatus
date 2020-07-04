@@ -156,15 +156,18 @@ bool Moves::is_pseudo_legal(const Move m) const {
   return true;
 }
 
-void Moves::reset(MoveSorter *sorter, const Move move, const int flags) {
+void Moves::reset(MoveSorter *sorter, const Move m, const int flags) {
   move_sorter_ = sorter;
-  transp_move_ = move;
+  transp_move_ = m;
   move_flags_  = flags;
   iteration_   = number_moves_ = stage_ = 0;
 
-  if (move)
+  [[likely]]
+  if (m)
   {
-    if (is_castle_move(move) || is_ep_capture(move))
+    const auto mt = type_of(m);
+    [[unlikely]]
+    if (mt & (CASTLE | EPCAPTURE))
     {
       // needed because is_pseudo_legal() is not complete yet.
       transp_move_ = MOVE_NONE;
@@ -204,6 +207,7 @@ void Moves::generate_captures_and_promotions() {
   add_pawn_moves<Us>(pawn_push(Us, pawns & Rank_7) & ~b->pieces(), Up, NORMAL);
   add_pawn_moves<Us>(WestAttacks(pawns) & opponent_pieces, WestDistance, CAPTURE);
   add_pawn_moves<Us>(EastAttacks(pawns) & opponent_pieces, EastDistance, CAPTURE);
+  [[unlikely]]
   if (const auto en_passant_square = b->en_passant_square(); en_passant_square != NO_SQ)
   {
     add_pawn_moves<Us>(WestAttacks(pawns) & en_passant_square, WestDistance, EPCAPTURE);
@@ -307,12 +311,14 @@ void Moves::add_move(const Piece pc, const Square from, const Square to, const M
   if (transp_move_ == move)
     return;
 
+  [[unlikely]]
   if (move_flags_ & LEGALMOVES && !b->is_legal(move, pc, from, mt))
     return;
 
   auto &move_data = move_list[number_moves_++];
   move_data       = move;
 
+  [[likely]]
   if (move_sorter_)
     move_sorter_->sort_move(move_data);
   else
@@ -367,6 +373,7 @@ void Moves::add_pawn_capture_moves(const Bitboard to_squares) {
 
   add_pawn_moves<Us>(WestAttacks(pawns) & opponent_pieces & to_squares, WestDistance, CAPTURE);
   add_pawn_moves<Us>(EastAttacks(pawns) & opponent_pieces & to_squares, EastDistance, CAPTURE);
+  [[unlikely]]
   if (b->en_passant_square() != NO_SQ)
   {
     add_pawn_moves<Us>(WestAttacks(pawns) & to_squares & b->en_passant_square(), WestDistance, EPCAPTURE);
@@ -383,8 +390,10 @@ void Moves::add_pawn_moves(const Bitboard to_squares, const Direction d, const M
     const auto to   = lsb(bb);
     const auto from = to - d;
 
+    [[unlikely]]
     if (const auto rr = relative_rank(Us, to); rr == RANK_8)
     {
+
       const auto promo_type = mt | PROMOTION;
 
       if (move_flags_ & QUEENPROMOTION)

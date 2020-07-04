@@ -281,7 +281,7 @@ constexpr Piece move_captured(const Move move) { return static_cast<Piece>(move 
 
 constexpr Piece move_promoted(const Move move) { return static_cast<Piece>(move >> 18 & 15); }
 
-constexpr MoveType move_type(const Move move) { return static_cast<MoveType>(move >> 12 & 63); }
+constexpr MoveType type_of(const Move move) { return static_cast<MoveType>(move >> 12 & 63); }
 
 constexpr Square move_from(const Move move) { return static_cast<Square>(move >> 6 & 63); }
 
@@ -291,13 +291,13 @@ constexpr PieceType move_piece_type(const Move move) { return type_of(move_piece
 
 constexpr Color move_side(const Move m) { return static_cast<Color>(m >> 29 & 1); }
 
-constexpr bool is_capture(const Move m) { return move_type(m) & (CAPTURE | EPCAPTURE); }
+constexpr bool is_capture(const Move m) { return type_of(m) & (CAPTURE | EPCAPTURE); }
 
-constexpr bool is_ep_capture(const Move m) { return move_type(m) & EPCAPTURE; }
+constexpr bool is_ep_capture(const Move m) { return type_of(m) & EPCAPTURE; }
 
-constexpr bool is_castle_move(const Move m) { return move_type(m) & CASTLE; }
+constexpr bool is_castle_move(const Move m) { return type_of(m) & CASTLE; }
 
-constexpr bool is_promotion(const Move m) { return move_type(m) & PROMOTION; }
+constexpr bool is_promotion(const Move m) { return type_of(m) & PROMOTION; }
 
 constexpr bool is_queen_promotion(const Move m) { return is_promotion(m) && type_of(move_promoted(m)) == QUEEN; }
 
