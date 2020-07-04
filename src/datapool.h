@@ -47,8 +47,10 @@ struct Data {
 
   std::atomic_uint64_t node_count;
 
+  std::size_t index() const;
+
 private:
-  std::size_t index;
+  std::size_t idx;
 
 };
 
