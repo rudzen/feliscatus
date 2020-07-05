@@ -66,14 +66,6 @@ constexpr std::array<std::string_view, SQ_NB> SquareString {
     "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8"
 };
 
-constexpr std::array<uint32_t, 2> oo_allowed_mask{1, 4};
-
-constexpr std::array<uint32_t, 2> ooo_allowed_mask{2, 8};
-
-constexpr std::array<Square, 2> oo_king_to{G1, G8};
-
-constexpr std::array<Square, 2> ooo_king_to{C1, C8};
-
 constexpr std::string_view square_to_string(const Square s) {
   return SquareString[s];
 }
@@ -88,10 +80,10 @@ constexpr Color operator~(const Color c) noexcept { return static_cast<Color>(c 
 constexpr std::array<Color, COL_NB> Colors {WHITE, BLACK};
 
 enum NodeType : uint8_t {
-  Void  = 0,// TODO : rename
-  EXACT = 1,
-  BETA  = 2,
-  ALPHA = 4
+  NO_NT  = 0,// TODO : rename
+  EXACT  = 1,
+  BETA   = 2,
+  ALPHA  = 4
 };
 
 enum File : int { FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE_NB };
@@ -194,6 +186,14 @@ enum CastlingRight {
   ANY_CASTLING      = WHITE_OO | WHITE_OOO | BLACK_OO | BLACK_OOO,
   CASTLING_RIGHT_NB = 16
 };
+
+constexpr std::array<uint32_t, 2> oo_allowed_mask{WHITE_OO, BLACK_OO};
+
+constexpr std::array<uint32_t, 2> ooo_allowed_mask{WHITE_OOO, BLACK_OOO};
+
+constexpr std::array<Square, 2> oo_king_to{G1, G8};
+
+constexpr std::array<Square, 2> ooo_king_to{C1, C8};
 
 enum MoveGenFlags {
   NONE           = 0,

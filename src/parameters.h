@@ -25,8 +25,6 @@
 #include "score.h"
 #include "types.h"
 
-// TODO : Join eg and mg values into a single int (or simular)
-
 // clang-format off
 
 inline int lazy_margin = 500;

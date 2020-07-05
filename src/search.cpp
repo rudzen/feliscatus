@@ -80,7 +80,7 @@ void get_hash_and_evaluate(Position *pos, Board *b, const std::size_t pool_index
   if ((pos->transposition = TT.find(b->key())) == nullptr)
   {
     pos->eval_score  = Eval::evaluate(b, pool_index, alpha, beta);
-    pos->transp_type = Void;
+    pos->transp_type = NO_NT;
     pos->transp_move = MOVE_NONE;
     return;
   }

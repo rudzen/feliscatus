@@ -97,7 +97,7 @@ HashEntry *HashTable::find(const Key key) const {
 HashEntry *HashTable::insert(const Key key, const int depth, const int score, const NodeType nt, const Move m, const int eval) {
   auto *transp = get_entry_to_replace(key, depth);
 
-  if (transp->f == Void)
+  if (transp->f == NO_NT)
     occupied++;
 
   const auto k32 = key32(key);
@@ -119,11 +119,11 @@ HashEntry *HashTable::get_entry_to_replace(const Key key, [[maybe_unused]] const
 
   auto *entry = &bucket->entry.front();
 
-  if (entry->f == Void || entry->k == k32)
+  if (entry->f == NO_NT || entry->k == k32)
     return entry;
 
   constexpr auto replacement_score = [&](const HashEntry *e) { return (e->a << 9) + e->d; };
-  auto match                       = [&k32](HashEntry *e) { return e->f == Void || e->k == k32; };
+  auto match                       = [&k32](HashEntry *e) { return e->f == NO_NT || e->k == k32; };
   auto *replace                    = entry;
   auto replace_score               = replacement_score(replace);
 
