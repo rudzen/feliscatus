@@ -33,7 +33,6 @@
 #include "position.h"
 #include "pawnhashtable.h"
 #include "score.h"
-#include "datapool.h"
 
 namespace {
 

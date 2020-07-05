@@ -26,13 +26,13 @@
 namespace Pawn {
 
 PawnHashEntry *find(Board *b) {
-  return b->data()->pawn_hash[b->pos->pawn_structure_key];
+  return b->my_thread()->pawn_hash[b->pawn_key()];
 }
 
 PawnHashEntry *insert(Board *b, const Score s, const std::array<Bitboard, 2> &passed_pawns) {
   static_assert(sizeof(PawnHashEntry) == 32);
-  const auto key = b->pos->pawn_structure_key;
-  auto *pawnp    = b->data()->pawn_hash[key];
+  const auto key = b->pawn_key();
+  auto *pawnp    = b->my_thread()->pawn_hash[key];
   pawnp->zkey    = key;
   pawnp->eval    = s;
   std::copy(passed_pawns.begin(), passed_pawns.end(), pawnp->passed_pawns.begin());

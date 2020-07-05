@@ -26,7 +26,7 @@
 #include "types.h"
 #include "magic.h"
 #include "position.h"
-#include "datapool.h"
+#include "tpool.h"
 
 enum Move : uint32_t;
 
@@ -35,7 +35,7 @@ struct Board {
   using PositionList = std::array<Position, MAXDEPTH * 3>;
 
   Board();
-  explicit Board(std::string_view fen, Data *data);
+  explicit Board(std::string_view fen, thread *t);
 
   static void init();
 
@@ -58,9 +58,9 @@ struct Board {
   [[nodiscard]]
   int64_t half_move_count() const;
 
-  int new_game(Data *data);
+  int new_game(thread *t);
 
-  int set_fen(std::string_view fen, Data* data);
+  int set_fen(std::string_view fen, thread* t);
 
   [[nodiscard]]
   std::string get_fen() const;
@@ -183,7 +183,7 @@ struct Board {
   void pinned(Bitboard v) const;
 
   [[nodiscard]]
-  Data *data() const;
+  thread *my_thread() const;
 
   [[nodiscard]]
   bool gives_check(Move m);
@@ -191,11 +191,11 @@ struct Board {
   [[nodiscard]]
   bool is_legal(Move m, Piece pc, Square from, MoveType mt);
 
+  Position *pos;
   int plies{};
   int max_ply{};
   int search_depth{};
   std::array<int, SQ_NB> castle_rights_mask{};
-  Position *pos;
   bool chess960;
   bool xfen;
 
@@ -237,7 +237,7 @@ private:
   std::array<Bitboard, PIECETYPE_NB> occupied_by_type{};
   std::array<Square, COL_NB> king_square{};
   PositionList position_list{};
-  Data *data_{};
+  thread *my_t{};
 };
 
 inline void Board::add_piece(const Piece pc, const Square s) {
@@ -390,6 +390,6 @@ inline void Board::pinned(const Bitboard v) const {
   pos->pinned = v;
 }
 
-inline Data *Board::data() const {
-  return data_;
+inline thread *Board::my_thread() const {
+  return my_t;
 }

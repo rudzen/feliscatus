@@ -22,8 +22,8 @@
 #include <fmt/format.h>
 #include "uci.h"
 #include "transpositional.h"
-#include "datapool.h"
 #include "util.h"
+#include "tpool.h"
 
 using std::string;
 
@@ -46,7 +46,7 @@ void on_hash_size(const Option &o) {
 }
 
 void on_threads(const Option &o) {
-  Pool.set(o);
+  pool.set(o);
 }
 
 bool CaseInsensitiveLess::operator()(const std::string_view s1, const std::string_view s2) const noexcept {
@@ -55,7 +55,7 @@ bool CaseInsensitiveLess::operator()(const std::string_view s1, const std::strin
 
 void init(OptionsMap &o) {
   o[get_uci_name<UciOptions::THREADS>()] << Option(1, 1, 512, on_threads);
-  o[get_uci_name<UciOptions::HASH>()] << Option(64, 1, MaxHashMB, on_hash_size);
+  o[get_uci_name<UciOptions::HASH>()] << Option(256, 1, MaxHashMB, on_hash_size);
   o[get_uci_name<UciOptions::CLEAR_HASH>()] << Option(on_clear_hash);
   o[get_uci_name<UciOptions::CLEAR_HASH_NEW_GAME>()] << Option(false);
   o[get_uci_name<UciOptions::PONDER>()] << Option(false);

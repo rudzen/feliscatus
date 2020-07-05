@@ -22,6 +22,7 @@
 #include <cassert>
 #include <assert.h>
 #include <algorithm>
+#include <optional>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -31,7 +32,9 @@
 #include "transpositional.h"
 #include "pv_entry.h"
 #include "position.h"
+#include "tpool.h"
 #include "uci.h"
+#include "board.h"
 
 namespace {
 
@@ -59,21 +62,18 @@ constexpr int null_move_reduction(const int d) {
 
 void store_pv(const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length) {
   assert(pv_length > 0);
-  std::for_each(pv.begin(), std::next(pv.begin(), pv_length), [&](const PVEntry &entry) {
-    TT.insert(entry.key, entry.depth, entry.score, entry.node_type, entry.move, entry.eval);
-  });
+  std::for_each(
+    pv.begin(), std::next(pv.begin(), pv_length), [&](const PVEntry &entry) { TT.insert(entry.key, entry.depth, entry.score, entry.node_type, entry.move, entry.eval); });
 }
 
 [[nodiscard]]
 constexpr int codec_t_table_score(const int score, const int ply) {
-  return util::abs(score) < MAXSCORE - MAXDEPTH
-       ? score
-       : score < 0 ? score - ply : score + ply;
+  return util::abs(score) < MAXSCORE - MAXDEPTH ? score : score < 0 ? score - ply : score + ply;
 }
 
 bool is_hash_score_valid(const Position *pos, const int depth, const int alpha, const int beta) {
   return pos->transposition && pos->transposition->depth() >= depth
-      && (pos->transposition->is_exact() || (pos->transposition->is_beta() && pos->transp_score >= beta) || (pos->transposition->is_alpha() && pos->transp_score <= alpha));
+         && (pos->transposition->is_exact() || (pos->transposition->is_beta() && pos->transp_score >= beta) || (pos->transposition->is_alpha() && pos->transp_score <= alpha));
 }
 
 void get_hash_and_evaluate(Position *pos, Board *b, const std::size_t pool_index, const int alpha, const int beta, const int plies) {
@@ -93,6 +93,7 @@ void get_hash_and_evaluate(Position *pos, Board *b, const std::size_t pool_index
   b->flags()        = 0;
 }
 
+[[nodiscard]]
 bool is_killer_move(const Move m, const Position *p) {
   const auto &km = p->killer_moves;
   return std::find(km.cbegin(), km.cend(), m) != km.cend();
@@ -124,19 +125,82 @@ void update_killer_moves(KillerMoves &km, const Move m) {
   km[0] = m;
 }
 
-}
+}// namespace
 
-int Search::go(SearchLimits &limits) {
-  data_ = b->data();
-  init_search(limits);
+struct Search final : MoveSorter {
+  Search(Board *t_board) : b(t_board), t(t_board->my_thread()), verbosity(t->index() == 0) { }
+  ~Search()                         = default;
+  Search()                          = delete;
+  Search(const Search &other)       = delete;
+  Search(Search &&other)            = delete;
+  Search &operator=(const Search &) = delete;
+  Search &operator=(Search &&other) = delete;
 
-  draw_score_[b->side_to_move()]  = 0;//-25;
-  draw_score_[~b->side_to_move()] = 0;// 25;
+  int go();
+
+private:
+  template<NodeType NT, bool PV>
+  int search(int depth, int alpha, int beta);
+
+  template<NodeType NT, bool PV>
+  int search_next_depth(int depth, int alpha, int beta);
+
+  template<bool PV>
+  Move get_singular_move(int depth);
+
+  auto search_fail_low(int depth, int alpha, Move exclude);
+
+  [[nodiscard]]
+  bool should_try_null_move(int beta) const;
+
+  template<NodeType NT, bool PV>
+  [[nodiscard]]
+  std::optional<int> next_depth_not_pv(int depth, int move_count, const MoveData *move_data, int alpha, int &best_score) const;
+
+  int next_depth_pv(Move singular_move, int depth, const MoveData *md) const;
+
+  template<bool PV>
+  int search_quiesce(int alpha, int beta, int qs_ply);
+
+  bool make_move_and_evaluate(Move m, int alpha, int beta);
+
+  void unmake_move();
+
+  void check_sometimes(uint64_t nodes) const;
+
+  void check_time() const;
+
+  [[nodiscard]]
+  bool is_analysing() const;
+
+  template<NodeType NT>
+  void update_pv(Move m, int score, int depth) const;
+
+  void init_search();
+
+  void sort_move(MoveData &md) override;
+
+  [[nodiscard]] int store_search_node_score(int score, int depth, NodeType nt, Move m) const;
+
+  [[nodiscard]] int draw_score() const;
+
+  void store_hash(int depth, int score, NodeType nt, Move m) const;
+
+  [[nodiscard]] bool move_is_easy() const;
+
+  Board *b;
+  Position *pos{};
+  thread *t;
+  bool verbosity{};
+};
+
+int Search::go() {
+  init_search();
 
   auto alpha = -MAXSCORE;
   auto beta  = MAXSCORE;
 
-  while (!stop_search && b->search_depth < MAXDEPTH)
+  while (!pool.stop && b->search_depth < MAXDEPTH)
   {
     try
     {
@@ -144,9 +208,9 @@ int Search::go(SearchLimits &limits) {
 
       do
       {
-        data_->pv_length[0] = 0;
+        t->pv_length[0] = 0;
 
-        get_hash_and_evaluate(pos, b, data_->index(), alpha, beta, b->plies);
+        get_hash_and_evaluate(pos, b, t->index(), alpha, beta, b->plies);
 
         const auto score = search<EXACT, true>(b->search_depth, alpha, beta);
 
@@ -157,50 +221,45 @@ int Search::go(SearchLimits &limits) {
 
         alpha = std::max<int>(-MAXSCORE, score - 100);
         beta  = std::min<int>(MAXSCORE, score + 100);
-      }
-      while (true);
+      } while (true);
 
-      store_pv(data_->pv.front(), data_->pv_length.front());
+      store_pv(t->pv.front(), t->pv_length.front());
 
       [[unlikely]]
       if (move_is_easy())
         break;
 
-      alpha = std::max<int>(-MAXSCORE, data_->pv[0][0].score - 20);
-      beta  = std::min<int>(MAXSCORE, data_->pv[0][0].score + 20);
+      alpha = std::max<int>(-MAXSCORE, t->pv[0][0].score - 20);
+      beta  = std::min<int>(MAXSCORE, t->pv[0][0].score + 20);
     } catch (const int)
     {
       while (b->plies)
         unmake_move();
 
-      if (const auto pv_len = data_->pv_length.front(); pv_len)
-        store_pv(data_->pv.front(), pv_len);
+      if (const auto pv_len = t->pv_length.front(); pv_len)
+        store_pv(t->pv.front(), pv_len);
     }
   }
   return 0;
 }
 
-void Search::stop() { stop_search.store(true); }
-
-void Search::run() {
-  SearchLimits limits{};
-  go(limits);
-}
-
-bool Search::search_fail_low(const int depth, const int alpha, const Move exclude) {
+auto Search::search_fail_low(const int depth, const int alpha, const Move exclude) {
   pos->generate_moves(this, pos->transp_move, STAGES);
 
   auto move_count = 0;
 
   while (auto *const move_data = pos->next_move())
   {
+    if (pool.stop)
+      return false;
+
     [[unlikely]]
     if (move_data->move == exclude)
       continue;
 
     if (make_move_and_evaluate(move_data->move, alpha, alpha + 1))
     {
-      auto best_score = -MAXSCORE;// dummy
+      auto best_score       = -MAXSCORE;// dummy
       const auto next_depth = next_depth_not_pv<BETA, true>(depth, ++move_count, move_data, alpha, best_score);
 
       if (!next_depth)
@@ -221,7 +280,7 @@ bool Search::search_fail_low(const int depth, const int alpha, const Move exclud
     }
   }
 
-  return move_count;
+  return move_count > 0;
 }
 
 bool Search::should_try_null_move(const int beta) const {
@@ -241,7 +300,7 @@ int Search::next_depth_pv(const Move singular_move, const int depth, const MoveD
 
 bool Search::make_move_and_evaluate(const Move m, const int alpha, const int beta) {
 
-  const auto current_nodes = data_->node_count.fetch_add(1, std::memory_order_relaxed);
+  const auto current_nodes = t->node_count.fetch_add(1, std::memory_order_relaxed);
 
   [[unlikely]]
   if (!b->make_move(m, true, true))
@@ -249,11 +308,11 @@ bool Search::make_move_and_evaluate(const Move m, const int alpha, const int bet
 
   pos = b->pos;
   ++b->plies;
-  data_->pv_length[b->plies] = b->plies;
+  t->pv_length[b->plies] = b->plies;
 
   check_sometimes(current_nodes);
 
-  get_hash_and_evaluate(pos, b, data_->index(), -beta, -alpha, b->plies);
+  get_hash_and_evaluate(pos, b, t->index(), -beta, -alpha, b->plies);
 
   b->max_ply = std::max<int>(b->max_ply, b->plies);
   return true;
@@ -265,34 +324,31 @@ void Search::unmake_move() {
   b->plies--;
 }
 
-void Search::check_sometimes(const uint64_t nodes) {
+void Search::check_sometimes(const uint64_t nodes) const {
   if (nodes >= 16383)
     check_time();
 }
 
-void Search::check_time() {
-  const auto stop = verbosity && (!is_analysing() && !Pool.time.is_fixed_depth()) && b->search_depth > 1 && Pool.time.time_up();
+void Search::check_time() const {
+  if (!verbosity)
+    return;
+
+  const auto stop = !is_analysing() && !pool.main()->time.is_fixed_depth() && b->search_depth > 1 && pool.main()->time.time_up();
 
   if (stop)
   {
-    stop_search.store(true);
+    pool.stop = true;
     throw 1;
   }
 }
 
-int Search::is_analysing() const { return verbosity ? Pool.time.is_analysing() : true; }
+bool Search::is_analysing() const {
+  return verbosity ? pool.main()->time.is_analysing() : true;
+}
 
-void Search::init_search(SearchLimits &limits) {
+void Search::init_search() {
   pos = b->pos;// Updated in make_move and unmake_move from here on.
-
-  if (verbosity)
-  {
-    Pool.time.init(b->side_to_move(), limits);
-    TT.init_search();
-    stop_search.store(false);
-  }
-  data_->node_count  = 0;
-  pos->pv_length     = 0;
+  pos->pv_length    = 0;
   pos->killer_moves.fill(MOVE_NONE);
 }
 
@@ -300,10 +356,10 @@ void Search::sort_move(MoveData &md) {
   const auto m = md.move;
 
   if (pos->transp_move == m)
-      md.score = 890010;
+    md.score = 890010;
   else if (is_queen_promotion(m))
-      md.score = 890000;
-  else if (is_capture(m)) // also en-pessant
+    md.score = 890000;
+  else if (is_capture(m))// also en-pessant
   {
     const auto value_captured = piece_value(move_captured(m));
     auto value_piece          = piece_value(move_piece(m));
@@ -312,25 +368,25 @@ void Search::sort_move(MoveData &md) {
       value_piece = 1800;
 
     if (value_piece <= value_captured)
-        md.score = 300000 + value_captured * 20 - value_piece;
+      md.score = 300000 + value_captured * 20 - value_piece;
     else if (b->see_move(m) >= 0)
-        md.score = 160000 + value_captured * 20 - value_piece;
+      md.score = 160000 + value_captured * 20 - value_piece;
     else
-        md.score = -100000 + value_captured * 20 - value_piece;
+      md.score = -100000 + value_captured * 20 - value_piece;
   } else if (is_promotion(m))
-      md.score = PROMOTIONMOVESCORE + piece_value(move_promoted(m));
+    md.score = PROMOTIONMOVESCORE + piece_value(move_promoted(m));
   else if (m == pos->killer_moves[0])
-      md.score = KILLERMOVESCORE + 20;
+    md.score = KILLERMOVESCORE + 20;
   else if (m == pos->killer_moves[1])
-      md.score = KILLERMOVESCORE + 19;
+    md.score = KILLERMOVESCORE + 19;
   else if (m == pos->killer_moves[2])
-      md.score = KILLERMOVESCORE + 18;
+    md.score = KILLERMOVESCORE + 18;
   else if (m == pos->killer_moves[3])
-      md.score = KILLERMOVESCORE + 17;
-  else if (pos->last_move && data_->counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] == m)
-      md.score = 60000;
+    md.score = KILLERMOVESCORE + 17;
+  else if (pos->last_move && t->counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] == m)
+    md.score = 60000;
   else
-      md.score = data_->history_scores[move_piece(m)][move_to(m)];
+    md.score = t->history_scores[move_piece(m)][move_to(m)];
 }
 
 int Search::store_search_node_score(const int score, const int depth, const NodeType nt, const Move m) const {
@@ -338,7 +394,9 @@ int Search::store_search_node_score(const int score, const int depth, const Node
   return score;
 }
 
-int Search::draw_score() const { return draw_score_[b->side_to_move()]; }
+int Search::draw_score() const {
+  return t->draw_score[b->side_to_move()];
+}
 
 void Search::store_hash(const int depth, int score, const NodeType nt, const Move m) const {
   score = codec_t_table_score(score, b->plies);
@@ -357,12 +415,10 @@ bool Search::move_is_easy() const {
   if (!verbosity)
     return false;
 
-  if ((pos->move_count() == 1 && b->search_depth > 9)
-      || (Pool.time.is_fixed_depth() && Pool.time.get_depth() == b->search_depth)
-      || (data_->pv[0][0].score == MAXSCORE - 1))
+  if ((pos->move_count() == 1 && b->search_depth > 9) || (pool.main()->time.is_fixed_depth() && pool.main()->time.get_depth() == b->search_depth) || (t->pv[0][0].score == MAXSCORE - 1))
     return true;
 
-  return !is_analysing() && !Pool.time.is_fixed_depth() && Pool.time.plenty_time();
+  return !is_analysing() && !pool.main()->time.is_fixed_depth() && pool.main()->time.plenty_time();
 }
 
 template<NodeType NT, bool PV>
@@ -378,6 +434,7 @@ int Search::search(const int depth, int alpha, const int beta) {
 
   if constexpr (!PV)
   {
+    // null move reduction
     if (should_try_null_move(beta))
     {
       if (depth <= 5)
@@ -395,6 +452,7 @@ int Search::search(const int depth, int alpha, const int beta) {
         return score;
     }
 
+    // Razoring
     if (depth <= 3 && pos->eval_score + razor_margin[depth] < beta)
     {
       const auto score = search_quiesce<false>(beta - 1, beta, 0);
@@ -422,10 +480,10 @@ int Search::search(const int depth, int alpha, const int beta) {
 
       if (verbosity)
       {
-        if (b->plies == 1 && b->search_depth >= 20 && (Pool.time.should_post_curr_move() || is_analysing()))
+        if (b->plies == 1 && b->search_depth >= 20 && (pool.main()->time.should_post_curr_move() || is_analysing()))
           uci::post_curr_move(move_data->move, move_count);
 
-        if (Pool.time.should_post_info())
+        if (pool.main()->time.should_post_info())
           uci::post_info(depth, b->search_depth);
       }
 
@@ -479,7 +537,7 @@ int Search::search(const int depth, int alpha, const int beta) {
     }
   }
 
-  if (stop_search.load(std::memory_order_relaxed))
+  if (pool.stop)
     throw 1;
 
   if (move_count == 0)
@@ -490,10 +548,10 @@ int Search::search(const int depth, int alpha, const int beta) {
 
   if (best_move && !is_capture(best_move) && !is_promotion(best_move))
   {
-    update_history_scores(data_->history_scores, best_move, depth);
+    update_history_scores(t->history_scores, best_move, depth);
     update_killer_moves(pos->killer_moves, best_move);
 
-    data_->counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] = best_move;
+    t->counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] = best_move;
   }
   return store_search_node_score(best_score, depth, node_type(best_score, beta, best_move), best_move);
 }
@@ -501,7 +559,7 @@ int Search::search(const int depth, int alpha, const int beta) {
 template<NodeType NT, bool PV>
 int Search::search_next_depth(const int depth, const int alpha, const int beta) {
   return (b->is_draw() || b->is_repetition()) && !is_null_move(pos->last_move) ? -draw_score()
-                                                                                 : depth <= 0 ? -search_quiesce<PV>(alpha, beta, 0) : -search<NT, PV>(depth, alpha, beta);
+                                                                               : depth <= 0 ? -search_quiesce<PV>(alpha, beta, 0) : -search<NT, PV>(depth, alpha, beta);
 }
 
 template<bool PV>
@@ -533,6 +591,7 @@ std::optional<int> Search::next_depth_not_pv(const int depth, const int move_cou
     if constexpr (NT == BETA)
       next_depth -= 2;
 
+    // futility
     if (next_depth <= 3)
     {
       const auto score = -pos->eval_score + futility_margin[std::clamp(next_depth, 0, 3)];
@@ -628,9 +687,9 @@ template<NodeType NT>
 void Search::update_pv(const Move m, const int score, const int depth) const {
   const auto ply      = b->plies;
   const auto next_ply = ply + 1;
-  auto &pv            = data_->pv;
+  auto &pv            = t->pv;
   auto *const entry   = &pv[ply][ply];
-  auto &pv_len        = data_->pv_length;
+  auto &pv_len        = t->pv_length;
 
   entry->score     = score;
   entry->depth     = depth;
@@ -652,5 +711,35 @@ void Search::update_pv(const Move m, const int score, const int depth) const {
       const std::span pv_line{pv[ply]};
       uci::post_pv(b->search_depth, b->max_ply, score, pv_line.subspan(ply, pv_len[ply]), NT);
     }
+  }
+}
+
+// basic search start
+
+void thread::search() {
+  Search(root_board.get()).go();
+}
+
+void main_thread::search() {
+
+  // initialize
+  time.init(root_board->side_to_move(), pool.limits);
+  TT.init_search();
+
+  pool.start_searching(); // start workers
+  thread::search();       // search self
+
+  while (!pool.stop && (ponder || pool.limits.infinite))
+  { }
+
+  pool.stop = true;
+
+  // Wait until all threads have finished
+  pool.wait_for_search_finished();
+
+  if (root_board->pos->pv_length)
+  {
+    const auto [m, p_move] = std::make_pair(pv[0][0].move, pv[0][1].move ? pv[0][1].move : MOVE_NONE);
+    uci::post_moves(m, p_move);
   }
 }

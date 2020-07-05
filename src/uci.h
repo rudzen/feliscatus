@@ -66,6 +66,7 @@ constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB
 };
 
 template<UciOptions Option>
+[[nodiscard]]
 constexpr std::string_view get_uci_name() {
   return UciStrings[static_cast<uci_t>(Option)];
 }
@@ -152,15 +153,13 @@ void post_curr_move(Move m, int m_number);
 
 void post_pv(int d, int max_ply, int score, const std::span<PVEntry> &pv_line, NodeType nt);
 
-int handle_go(std::istringstream &input, SearchLimits &limits);
-
-void handle_position(Board *b, std::istringstream &input);
-
-void handle_set_option(std::istringstream &input);
-
+[[nodiscard]]
 std::string display_uci(Move m);
 
+[[nodiscard]]
 std::string info(std::string_view info_string);
+
+void run(int argc, char *argv[]);
 
 }// namespace uci
 
@@ -200,7 +199,6 @@ struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view> {
     return formatter<std::string_view>::format(fmt::to_string(buffer), ctx);
   }
 };
-
 
 ///
 /// Move formatter

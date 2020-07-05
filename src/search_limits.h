@@ -21,6 +21,7 @@
 #pragma once
 
 #include <array>
+#include <vector>
 
 #include "miscellaneous.h"
 #include "types.h"
@@ -35,6 +36,7 @@ struct SearchLimits {
   bool infinite{};
   bool fixed_movetime{};
   bool fixed_depth{};
+  std::vector<Move> search_moves{};
 
   void clear() {
     time.fill(0);

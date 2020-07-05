@@ -49,17 +49,22 @@ struct PRNG final {
   constexpr explicit PRNG(const T seed) : s(seed) {
     assert(seed);
   }
+  ~PRNG()                       = default;
+  PRNG(const PRNG &other)       = delete;
+  PRNG(PRNG &&other)            = delete;
+  PRNG &operator=(const PRNG &) = delete;
+  PRNG &operator=(PRNG &&other) = delete;
 
   [[nodiscard]]
   constexpr T operator()() noexcept { return T(rand64()); }
 
-  template<typename T2>
+  template<typename T2> requires PRNGCompatible<T>
   [[nodiscard]]
   constexpr T rand() noexcept { return T2(rand64()); }
 
   /// Special generator used to fast init magic numbers.
   /// Output values only have 1/8th of their bits set on average.
-  template<typename T2>
+  template<typename T2> requires PRNGCompatible<T>
   [[nodiscard]]
   constexpr T sparse_rand() { return T2(rand64() & rand64() & rand64()); }
 

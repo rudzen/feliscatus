@@ -22,6 +22,8 @@
 #include <string>
 
 #include <fmt/format.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 
 #include "board.h"
 #include "magic.h"
@@ -29,9 +31,6 @@
 #include "transpositional.h"
 #include "miscellaneous.h"
 #include "prng.h"
-
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/rotating_file_sink.h>
 
 namespace zobrist {
 
@@ -209,9 +208,9 @@ Board::Board()
     p.b = this;
 }
 
-Board::Board(const std::string_view fen, Data *data)
+Board::Board(const std::string_view fen, thread *t)
   : Board() {
-  set_fen(fen, data);
+  set_fen(fen, t);
 }
 
 void Board::init() {
@@ -413,7 +412,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
   update_key(pos, m);
   pos->material.make_move(m);
 
-  prefetch(TT.find(pos->key));
+  prefetch(TT.find_bucket(pos->key));
 
   return true;
 }
@@ -490,11 +489,11 @@ int64_t Board::half_move_count() const {
   return pos - position_list.data();
 }
 
-int Board::new_game(Data *data) {
-  return set_fen(start_position, data);
+int Board::new_game(thread *t) {
+  return set_fen(start_position, t);
 }
 
-int Board::set_fen(std::string_view fen, Data *data) {
+int Board::set_fen(std::string_view fen, thread *t) {
   pos = position_list.data();
   pos->clear();
   clear();
@@ -538,7 +537,7 @@ int Board::set_fen(std::string_view fen, Data *data) {
 
   // Side to move
   space++;
-  current           = update_current();
+  current         = update_current();
   pos->side_to_move = current.front() == 'w' ? WHITE : BLACK;
 
   // Castleling
@@ -561,7 +560,7 @@ int Board::set_fen(std::string_view fen, Data *data) {
 
   update_position(pos);
 
-  data_ = data;
+  my_t = t;
 
   return 0;
 }
@@ -598,7 +597,7 @@ std::string Board::get_fen() const {
       format_to(s, "/");
   }
 
-  format_to(s, " {} ", pos->side_to_move ? 'w' : 'b');
+  format_to(s, " {} ", pos->side_to_move == WHITE ? 'w' : 'b');
 
   if (can_castle())
   {
@@ -706,8 +705,8 @@ void Board::print_moves() const {
 
 void Board::update_position(Position *p) const {
 
-  p->checkers   = attackers_to(king_sq(pos->side_to_move)) & pieces(~pos->side_to_move);
-  p->in_check   = is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move);
+  p->checkers   = attackers_to(king_sq(p->side_to_move)) & pieces(~p->side_to_move);
+  p->in_check   = is_attacked(king_sq(p->side_to_move), ~p->side_to_move);
   auto key      = zobrist::zero;
   auto pawn_key = zobrist::zobrist_nopawn;
   auto b        = pieces();

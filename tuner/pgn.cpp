@@ -271,8 +271,7 @@ void PGNFileReader::read_element_sequence() {
       read_recursive_variation();
     else
       break;
-  }
-  while (true);
+  } while (true);
 }
 
 void PGNFileReader::read_element() {
@@ -302,8 +301,7 @@ void PGNFileReader::read_move_number_indication() {
       break;
 
     periods++;
-  }
-  while (true);
+  } while (true);
 
   side_to_move = periods >= 3 ? BLACK : WHITE;
 }
@@ -544,8 +542,7 @@ void PGNFileReader::read_token(Token &token) {
 
     if (strict_ || (token != Invalid && token != LT && token != GT))
       break;
-  }
-  while (true);
+  } while (true);
 }
 
 void PGNFileReader::read_next_token(Token &token) {
@@ -670,8 +667,7 @@ bool PGNFileReader::read_symbol() {
 
     if (!std::isalnum(ch_) && ch_ != '_' && ch_ != '+' && ch_ != '/' && ch_ != '#' && ch_ != '=' && ch_ != ':' && ch_ != '-')
       break;
-  }
-  while (true);
+  } while (true);
 
   while (ch_ == '!' || ch_ == '?')
   {
@@ -748,8 +744,7 @@ bool PGNFileReader::read_string() {
       token_ = String;
       break;
     }
-  }
-  while (true);
+  } while (true);
   token_str[len] = '\0';
   return true;
 }
@@ -777,8 +772,7 @@ int PGNFileReader::get_char(unsigned char &c, bool get, const bool skip_ws, cons
       get = false;
     } else
       break;
-  }
-  while (true);
+  } while (true);
 
   return 1;
 }
@@ -802,8 +796,7 @@ void PGNFileReader::read_comment1() {
       *p = c;
       ++p;
     }
-  }
-  while (true);
+  } while (true);
 
   *p = '\0';
 }
@@ -827,12 +820,10 @@ void PGNFileReader::read_comment2(unsigned char &c) {
 
         if (c != 0x0a && c != 0x0d)
           break;
-      }
-      while (true);
+      } while (true);
       break;
     }
-  }
-  while (true);
+  } while (true);
 }
 
 }
