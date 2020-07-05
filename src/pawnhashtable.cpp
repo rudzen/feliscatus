@@ -21,15 +21,22 @@
 #include <fmt/format.h>
 
 #include "pawnhashtable.h"
+#include "board.h"
 
-PawnHashEntry *PawnHashTable::find(const Key key) {
-  return (*this)[key];
+namespace Pawn {
+
+PawnHashEntry *find(Board *b) {
+  return b->data()->pawn_hash[b->pos->pawn_structure_key];
 }
 
-PawnHashEntry *PawnHashTable::insert(const Key key, const Score s, const std::array<int, 2> &passed_pawn_files) {
-  auto *pawnp    = (*this)[key];
+PawnHashEntry *insert(Board *b, const Score s, const std::array<Bitboard, 2> &passed_pawns) {
+  static_assert(sizeof(PawnHashEntry) == 32);
+  const auto key = b->pos->pawn_structure_key;
+  auto *pawnp    = b->data()->pawn_hash[key];
   pawnp->zkey    = key;
   pawnp->eval    = s;
-  std::copy(passed_pawn_files.begin(), passed_pawn_files.end(), pawnp->passed_pawn_files.begin());
+  std::copy(passed_pawns.begin(), passed_pawns.end(), pawnp->passed_pawns.begin());
   return pawnp;
+}
+
 }

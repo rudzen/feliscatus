@@ -99,7 +99,7 @@ private:
 
   std::array<Score, COL_NB> poseval{};
   std::array<int, COL_NB> posistion_value{};
-  std::array<int, COL_NB> passed_pawn_files{};
+  std::array<Bitboard, COL_NB> passed_pawns{};
   std::array<int, COL_NB> attack_counter{};
   std::array<int, COL_NB> attack_count{};
   Bitboard piece_attacks[COL_NB][PIECETYPE_NB]{};
@@ -188,20 +188,19 @@ Score Evaluate<Tuning>::eval_pawns_both_sides() {
     return result;
   }
 
-  auto *pawnt         = &Pool[pool_index_]->pawn_hash;
-  const auto pawn_key = b->pawn_key();
-  pawnp               = pawnt->find(pawn_key);
+  const auto pawn_key = b->pos->pawn_structure_key;
+  pawnp               = Pawn::find(b);
 
   if (pawnp->zkey == 0 || pawnp->zkey != pawn_key)
   {
-    passed_pawn_files.fill(0);
+    passed_pawns.fill(0);
 
     const auto w_result = eval_pawns<WHITE>();
     const auto b_result = eval_pawns<BLACK>();
     result   = w_result - b_result;
 
     if constexpr (!Tuning)
-      pawnp = pawnt->insert(pawn_key, result, passed_pawn_files);
+      pawnp = Pawn::insert(b, result, passed_pawns);
   } else
     result = pawnp->eval;
 
@@ -340,7 +339,7 @@ Score Evaluate<Tuning>::eval_pawns() {
     result += pawn_pst[flip_s];
 
     if (b->is_pawn_passed(s, Us))
-      passed_pawn_files[Us] |= 1 << f;
+      passed_pawns[Us] |= s;
 
     const auto open_file = !b->is_piece_on_file(PAWN, s, Them);
 
@@ -385,22 +384,19 @@ Score Evaluate<Tuning>::eval_passed_pawns() const {
   if (pawnp == nullptr)
     return result;
 
-  const auto our_pawns = b->pieces(PAWN, Us);
+  auto pp = pawnp->passed_pawns[Us];
 
-  for (auto files = pawnp->passed_pawn_file(Us); files; reset_lsb(files))
+  while (pp)
   {
-    for (auto bb = bb_file(lsb(files)) & our_pawns; bb; reset_lsb(bb))
-    {
-      const auto s          = lsb(bb);
-      const auto front_span = pawn_front_span[Us][s];
-      const auto r          = relative_rank(Us, s);
-      result += passed_pawn[r];
-      result += passed_pawn_no_us[r] * !(front_span & b->pieces(Us));
-      result += passed_pawn_no_them[r] * !(front_span & b->pieces(Them));
-      result += passed_pawn_no_attacks[r] * !(front_span & attacked_by<Them>(ALL_PIECE_TYPES));
-      result += passed_pawn_king_dist_them[distance(s, b->king_sq(Them))];
-      result += passed_pawn_king_dist_us[distance(s, b->king_sq(Us))];
-    }
+    const auto s          = pop_lsb(&pp);
+    const auto front_span = pawn_front_span[Us][s];
+    const auto r          = relative_rank(Us, s);
+    result += passed_pawn[r];
+    result += passed_pawn_no_us[r] * !(front_span & b->pieces(Us));
+    result += passed_pawn_no_them[r] * !(front_span & b->pieces(Them));
+    result += passed_pawn_no_attacks[r] * !(front_span & attacked_by<Them>(ALL_PIECE_TYPES));
+    result += passed_pawn_king_dist_them[distance(s, b->king_sq(Them))];
+    result += passed_pawn_king_dist_us[distance(s, b->king_sq(Us))];
   }
 
   return result;

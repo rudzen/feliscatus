@@ -26,22 +26,26 @@
 #include "hash.h"
 #include "score.h"
 
+struct Board;
+
 #pragma pack(1)
 struct PawnHashEntry final {
-
-  Bitboard passed_pawn_file(const Color c) { return static_cast<Bitboard>(passed_pawn_files[c]); }
-
   Key zkey;
   Score eval;
-  std::array<uint8_t, COL_NB> passed_pawn_files;
-  [[no_unique_address]] int16_t unused;
+  std::array<Bitboard, COL_NB> passed_pawns;
+  [[no_unique_address]] int unused;
 };
 #pragma pack()
 
-struct PawnHashTable final : Table<PawnHashEntry, 512 * sizeof(PawnHashEntry)> {
+using PawnHashTable = Table<PawnHashEntry, 131072>;
+
+namespace Pawn {
   [[nodiscard]]
-  PawnHashEntry *find(Key key);
+  PawnHashEntry *find(Board *s);
 
   [[nodiscard]]
-  PawnHashEntry *insert(Key key, Score s, const std::array<int, 2> &passed_pawn_files);
-};
+  PawnHashEntry *insert(Board *b, Score s, const std::array<Bitboard, 2> &passed_pawns);
+}
+
+// struct PawnHashTable final : Table<PawnHashEntry, 8192> {
+// };

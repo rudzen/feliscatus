@@ -39,7 +39,7 @@ struct Data {
 
   void clear_data();
 
-  PawnHashTable pawn_hash{};
+  PawnHashTable pawn_hash;
   HistoryScores history_scores{};
   CounterMoves counter_moves{};
   std::array<std::array<PVEntry, MAXDEPTH>, MAXDEPTH> pv{};

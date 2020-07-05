@@ -18,20 +18,14 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "feliscatus.h"
 #include "bitboard.h"
 #include "magic.h"
-#include "util.h"
-#include "pawnhashtable.h"
-#include "transpositional.h"
+#include "board.h"
+#include "feliscatus.h"
 #include "uci.h"
-
-constexpr std::size_t TT_ENTRY_SIZE   = 16;
-constexpr std::size_t PAWN_ENTRY_SIZE = 16;
+#include "transpositional.h"
 
 int main(const int argc, char *argv[]) {
-  util::check_size<HashEntry, TT_ENTRY_SIZE>();
-  util::check_size<PawnHashEntry, PAWN_ENTRY_SIZE>();
 
   bitboard::init();
   attacks::init();

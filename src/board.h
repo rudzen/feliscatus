@@ -26,8 +26,8 @@
 #include "types.h"
 #include "magic.h"
 #include "position.h"
+#include "datapool.h"
 
-struct Data;
 enum Move : uint32_t;
 
 struct Board {

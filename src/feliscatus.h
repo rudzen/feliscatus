@@ -26,7 +26,6 @@
 #include "search_limits.h"
 #include "worker.h"
 
-struct PawnHashTable;
 struct Search;
 struct Board;
 

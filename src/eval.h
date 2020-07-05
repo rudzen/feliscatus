@@ -21,7 +21,6 @@
 #pragma once
 
 struct Board;
-struct PawnHashTable;
 
 namespace Eval {
 
