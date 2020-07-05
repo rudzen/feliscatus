@@ -30,7 +30,7 @@ using std::string;
 namespace {
 
 constexpr std::array<std::string_view, 2> bool_string{"false", "true"};
-constexpr int MaxHashMB = 131072;
+constexpr int MaxHashMB            = 131072;
 constinit std::size_t insert_order = 0;
 
 }// namespace
@@ -60,6 +60,7 @@ void init(OptionsMap &o) {
   o[get_uci_name<UciOptions::CLEAR_HASH_NEW_GAME>()] << Option(false);
   o[get_uci_name<UciOptions::PONDER>()] << Option(false);
   o[get_uci_name<UciOptions::UCI_Chess960>()] << Option(false);
+  o[get_uci_name<UciOptions::SHOW_CPU>()] << Option(false);
 }
 
 /// Option class constructors and conversion operators
@@ -104,7 +105,7 @@ Option &Option::operator=(const string &v) noexcept {
 
   assert(!type_.empty());
 
-  if ((type_ != "button" && v.empty()) || (type_ == "check" && std::find(bool_string.begin(), bool_string.end(), v) != bool_string.end()) || (type_ == "spin" && (util::to_integral<int>(v) < min_ || util::to_integral<int>(v) > max_)))
+  if ((type_ != "button" && v.empty()) || (type_ == "check" && v != "true" && v != "false") || (type_ == "spin" && (!util::in_between(util::to_integral<int>(v), min_, max_))))
     return *this;
 
   if (type_ != "button")

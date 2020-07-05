@@ -420,8 +420,14 @@ int Search::search(const int depth, int alpha, const int beta) {
     {
       ++move_count;
 
-      if (verbosity && b->plies == 1 && b->search_depth >= 20 && (Pool.time.should_post_curr_move() || is_analysing()))
-        uci::post_curr_move(move_data->move, move_count);
+      if (verbosity)
+      {
+        if (b->plies == 1 && b->search_depth >= 20 && (Pool.time.should_post_curr_move() || is_analysing()))
+          uci::post_curr_move(move_data->move, move_count);
+
+        if (Pool.time.should_post_info())
+          uci::post_info(depth, b->search_depth);
+      }
 
       if (PV && move_count == 1)
         score = search_next_depth<EXACT, true>(next_depth_pv(singular_move, depth, move_data), -beta, -alpha);

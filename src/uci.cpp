@@ -68,7 +68,10 @@ void uci::post_moves(const Move m, const Move ponder_move) {
 void uci::post_info(const int d, const int selective_depth) {
   const auto time = Pool.time.elapsed() + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
-  fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, TT.get_load(), node_count, nodes_per_second, time);
+  if (!Options[get_uci_name<UciOptions::SHOW_CPU>()])
+    fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, TT.get_load(), node_count, nodes_per_second, time);
+  else
+    fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {} cpuload {}\n", d, selective_depth, TT.get_load(), node_count, nodes_per_second, time, CpuLoad.usage());
 }
 
 void uci::post_curr_move(const Move m, const int m_number) {

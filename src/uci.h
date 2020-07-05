@@ -32,11 +32,14 @@
 #include "types.h"
 #include "pv_entry.h"
 #include "search_limits.h"
+#include "cpu.h"
 
 struct Felis;
 struct Board;
 
 namespace uci {
+
+inline Cpu CpuLoad;
 
 enum class UciOptions {
   THREADS,
@@ -45,7 +48,8 @@ enum class UciOptions {
   CLEAR_HASH_NEW_GAME,
   PONDER,
   UCI_Chess960,
-  UCI_OPT_NB = 6
+  SHOW_CPU,
+  UCI_OPT_NB = 7
 };
 
 using uci_t = std::underlying_type_t<UciOptions>;
@@ -57,7 +61,8 @@ constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB
   "ClearHash",
   "ClearHashNewGame",
   "Ponder",
-  "UCI_Chess960"
+  "UCI_Chess960",
+  "ShowCPU"
 };
 
 template<UciOptions Option>

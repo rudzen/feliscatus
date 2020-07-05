@@ -22,6 +22,7 @@
 
 #include <concepts>
 #include <cmath>
+#include <string_view>
 
 #if defined(WIN32) || defined(_MSC_VER)
 #define WIN32_LEAN_AND_MEAN
@@ -106,6 +107,46 @@ constexpr T to_integral(std::string_view str) {
 template<typename ToCheck, std::size_t ExpectedSize, std::size_t RealSize = sizeof(ToCheck)>
 void check_size() {
   static_assert(ExpectedSize == RealSize, "Size is off!");
+}
+
+/**
+ * Round to the nearest integer (based on idea from OpenCV)
+ * @param value The value to round
+ * @return Nearest integer
+ */
+template<typename T, typename T2>
+constexpr T round(T2 value) {
+  static_assert(std::is_integral<T>::value || std::is_trivial<T>::value, "round only returns integral.");
+  static_assert(std::is_floating_point<T2>::value, "round is only possible for floating points.");
+#if ((defined _MSC_VER && defined _M_X64) || (defined __GNUC__ && defined __x86_64__ && defined __SSE2__ && !defined __APPLE__) || CV_SSE2) && !defined(__CUDACC__)
+  const __m128d t = _mm_set_sd(value);
+  return static_cast<T>(_mm_cvtsd_si32(t));
+#elif defined _MSC_VER && defined _M_IX86
+  int t;
+  __asm
+  {
+      fld value;
+      fistp t;
+  }
+  return static_cast<T>(t);
+#elif ((defined _MSC_VER && defined _M_ARM) || defined CV_ICC || defined __GNUC__) && defined HAVE_TEGRA_OPTIMIZATION
+  TEGRA_ROUND_DBL(value);
+#elif defined CV_ICC || defined __GNUC__
+#if defined ARM_ROUND_DBL
+  ARM_ROUND_DBL(value);
+#else
+  return static_cast<T>(lrint(value));
+#endif
+#else
+  /* it's ok if round does not comply with IEEE754 standard;
+  the tests should allow +/-1 difference when the tested functions use round */
+#ifdef CV_VERSION
+  return static_cast<T>(cv::floor(d + 0.5));
+#else
+  return static_cast<T>(floor(d + 0.5));
+#endif
+
+#endif
 }
 
 }

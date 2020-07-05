@@ -43,6 +43,8 @@ struct TimeManager final {
   [[nodiscard]]
   bool should_post_curr_move() noexcept;
 
+  bool should_post_info() noexcept;
+
   [[nodiscard]]
   bool is_analysing() const noexcept { return limits.infinite | limits.ponder; }
 
@@ -57,5 +59,6 @@ private:
   double n_{};
   SearchLimits limits{};
   TimeUnit search_time{};
-  TimeUnit last_curr_post{};
+  std::chrono::milliseconds last_curr_post{};
+  std::chrono::milliseconds last_post_info{};
 };
