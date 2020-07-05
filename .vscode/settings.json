@@ -103,7 +103,8 @@
         "source_location": "cpp",
         "regex": "cpp",
         "*.msg": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "coroutine": "cpp"
     },
     "git.ignoreLimitWarning": true
 }
