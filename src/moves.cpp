@@ -102,6 +102,9 @@ void Moves::generate_moves(const PieceType pt, const Bitboard to_squares) {
   }
 }
 
+template void Moves::generate_moves<WHITE>(PieceType, Bitboard);
+template void Moves::generate_moves<BLACK>(PieceType, Bitboard);
+
 void Moves::generate_pawn_moves(const bool capture, const Bitboard to_squares, const Color c) {
   reset(nullptr, MOVE_NONE, 0);
 

@@ -524,7 +524,7 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
 
   for (const auto &node : nodes)
   {
-    board_->set_fen(node.fen_);
+    board_->set_fen(node.fen_, Pool.main());
     x += std::pow(node.result_ - util::sigmoid(get_score(WHITE), K), 2);
   }
 
@@ -549,7 +549,7 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
 void Tune::make_quiet(std::vector<Node> &nodes) {
   for (auto &node : nodes)
   {
-    board_->set_fen(node.fen_.c_str());
+    board_->set_fen(node.fen_, Pool.main());
     pv_length[0] = 0;
     get_quiesce_score(-32768, 32768, true, 0);
     play_pv();
