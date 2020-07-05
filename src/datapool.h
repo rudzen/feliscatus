@@ -61,6 +61,13 @@ struct MainData : Data {
 
 struct DataPool : std::vector<std::unique_ptr<Data>> {
 
+  DataPool()                      = default;
+  ~DataPool()                     = default;
+  DataPool(const DataPool &other) = delete;
+  DataPool(DataPool &&other)      = delete;
+  DataPool &operator=(const DataPool &) = delete;
+  DataPool &operator=(DataPool &&other) = delete;
+
   void set(std::size_t v);
 
   [[nodiscard]]
@@ -77,4 +84,4 @@ struct DataPool : std::vector<std::unique_ptr<Data>> {
 };
 
 // global data object
-inline DataPool Pool{};
+inline DataPool Pool;

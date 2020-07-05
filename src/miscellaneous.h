@@ -41,15 +41,17 @@ inline void prefetch(void* addr) {
 
 inline uint64_t mul_hi64(const uint64_t a, const uint64_t b) {
 #if defined(__GNUC__)
-    __extension__ typedef unsigned __int128 uint128;
-    return (static_cast<uint128>(a) * static_cast<uint128>(b)) >> 64;
+  __extension__ typedef unsigned __int128 uint128;
+  return (static_cast<uint128>(a) * static_cast<uint128>(b)) >> 64;
 #else
-    uint64_t aL = static_cast<uint32_t>(a), aH = a >> 32;
-    uint64_t bL = static_cast<uint32_t>(b), bH = b >> 32;
-    uint64_t c1 = (aL * bL) >> 32;
-    uint64_t c2 = aH * bL + c1;
-    uint64_t c3 = aL * bH + static_cast<uint32_t>(c2);
-    return aH * bH + (c2 >> 32) + (c3 >> 32);
+  const uint64_t aL = static_cast<uint32_t>(a);
+  const uint64_t aH = a >> 32;
+  const uint64_t bL = static_cast<uint32_t>(b);
+  const uint64_t bH = b >> 32;
+  const uint64_t c1 = (aL * bL) >> 32;
+  const uint64_t c2 = aH * bL + c1;
+  const uint64_t c3 = aL * bH + static_cast<uint32_t>(c2);
+  return aH * bH + (c2 >> 32) + (c3 >> 32);
 #endif
 }
 

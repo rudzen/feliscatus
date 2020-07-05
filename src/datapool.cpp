@@ -26,8 +26,8 @@
 Data::Data(const std::size_t data_index) : idx(data_index) {}
 
 void Data::clear_data() {
-  std::memset(history_scores.data(), 0, sizeof(history_scores));
-  std::memset(counter_moves.data(), 0, sizeof(counter_moves));
+  std::memset(history_scores.data(), 0, sizeof history_scores);
+  std::memset(counter_moves.data(), 0, sizeof counter_moves);
   pv_length.fill(0);
   pv.fill({});
 }

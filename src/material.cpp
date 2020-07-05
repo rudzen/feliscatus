@@ -98,9 +98,8 @@ int Material::pawn_value() {
 template<Color Us>
 int Material::evaluate(int &flags, const int eval, const Board *b) {
   constexpr auto Them = ~Us;
-  material_flags      = 0;
-  this->board         = b;
-  drawish             = 0;
+  this->board              = b;
+  drawish = material_flags = 0;
 
   uint32_t strong_key;
   uint32_t weak_key;

@@ -137,7 +137,7 @@ consteval std::array<Bitboard, SQ_NB> make_king_attacks()
 constexpr std::array<Bitboard, SQ_NB> king_attacks = make_king_attacks();
 
 template<typename T1 = Square>
-constexpr int distance(const Square x, const Square y);
+constexpr int distance(Square x, Square y);
 template<>
 constexpr int distance<File>(const Square x, const Square y) { return util::abs(file_of(x) - file_of(y)); }
 template<>
@@ -161,7 +161,7 @@ consteval std::array<std::array<int, SQ_NB>, SQ_NB> make_distance()
   std::array<std::array<int, SQ_NB>, SQ_NB> result{};
   for (const auto sq1 : Squares)
     for (const auto sq2 : Squares)
-      result[sq1][sq2] = std::max(distance<Rank>(sq1, sq2), distance<File>(sq1, sq2));
+      result[sq1][sq2] = std::max<int>(distance<Rank>(sq1, sq2), distance<File>(sq1, sq2));
 
   return result;
 }
@@ -305,6 +305,7 @@ constexpr Bitboard south_fill(const Bitboard bb) {
   fill |= (fill >> 32);
   return fill;
 }
+
 constexpr Bitboard (*pawn_east_attacks[COL_NB])(Bitboard) = {shift_bb<NORTH_WEST>, shift_bb<SOUTH_WEST>};
 constexpr Bitboard (*pawn_west_attacks[COL_NB])(Bitboard) = {shift_bb<NORTH_EAST>, shift_bb<SOUTH_EAST>};
 constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard) = {north_fill, south_fill};
@@ -330,5 +331,5 @@ constexpr bool more_than_one(const Bitboard bb) {
 }
 
 constexpr bool is_opposite_colors(const Square s1, const Square s2) {
-  return ((static_cast<int>(s1) + static_cast<int>(rank_of(s1)) + s2 + rank_of(s2)) & 1) != 0;
+  return (static_cast<int>(s1) + static_cast<int>(rank_of(s1)) + s2 + rank_of(s2)) & 1;
 }
