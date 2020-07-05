@@ -40,7 +40,7 @@ enable_doxygen()
 include(cmake/StaticAnalyzers.cmake)
 
 option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
-option(ENABLE_TESTING "Enable Test Builds" OFF)
+option(ENABLE_TESTING "Enable Test Builds" ON)
 option(ENABLE_FUZZING "Enable Fuzzing Builds" OFF)
 
 # Very basic PCH example
@@ -53,28 +53,28 @@ if (ENABLE_PCH)
     target_precompile_headers(project_options INTERFACE <vector> <string> <map> <utility>)
 endif()
 
+# Set up some extra Conan dependencies based on our needs before loading Conan
+set(CONAN_EXTRA_REQUIRES "")
+set(CONAN_EXTRA_OPTIONS "")
+
 # include conan stuff
 include(cmake/Conan.cmake)
 run_conan()
 
-# if(ENABLE_TESTING)
-#   enable_testing()
-#   message(
-#     "Building Tests. Be sure to check out test/constexpr_tests for constexpr testing"
-#   )
-#   add_subdirectory(tests)
-# endif()
-
-if(ENABLE_FUZZING)
-  message(
-    "Building Fuzz Tests, using fuzzing sanitizer https://www.llvm.org/docs/LibFuzzer.html"
-  )
-  add_subdirectory(fuzz_test)
-endif()
-
 # include engine options
 include(cmake/Engine.cmake)
 enable_engine_options()
+
+if(ENABLE_TESTING)
+  enable_testing()
+  message("Building Tests.")
+  add_subdirectory(test)
+endif()
+
+if(ENABLE_FUZZING)
+  message("Building Fuzz Tests, using fuzzing sanitizer https://www.llvm.org/docs/LibFuzzer.html")
+  add_subdirectory(fuzz_test)
+endif()
 
 # cli lib wrapper
 add_subdirectory(cli)

@@ -25,6 +25,8 @@
 #include "../src/util.h"
 #include "../src/board.h"
 #include "../src/position.h"
+#include "../src/datapool.h"
+#include "../src/moves.h"
 
 namespace {
 
@@ -64,7 +66,7 @@ pgn::PGNPlayer::PGNPlayer([[maybe_unused]] bool check_legal)
 }
 
 void pgn::PGNPlayer::read_pgn_game() {
-  board_->new_game(Board::kStartPosition);
+  board_->new_game(Pool.main());
   pgn::PGNFileReader::read_pgn_game();
 }
 
@@ -72,7 +74,10 @@ void pgn::PGNPlayer::read_tag_pair() {
   PGNFileReader::read_tag_pair();
 
   if (strieq(tag_name_, "FEN"))
-    board_->set_fen(std::string(tag_value_).substr(1, strlen(tag_value_) - 2).c_str());
+  {
+    const auto fen = std::string(tag_value_).substr(1, strlen(tag_value_) - 2);
+    board_->set_fen(fen, Pool.main());
+  }
 }
 
 void pgn::PGNPlayer::read_san_move() {
@@ -97,7 +102,10 @@ void pgn::PGNPlayer::read_san_move() {
       exit(0);
     }
     piece = make_piece(pt, side_to_move);
-    board_->pos->generate_moves(pt, bit(to_square_), side_to_move);
+    if (side_to_move == WHITE)
+      board_->pos->generate_moves<WHITE>(pt, bit(to_square_));
+    else
+      board_->pos->generate_moves<BLACK>(pt, bit(to_square_));
   } else
   {
     fmt::print("else\n");
