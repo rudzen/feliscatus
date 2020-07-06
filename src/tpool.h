@@ -41,6 +41,8 @@
 using HistoryScores = std::array<std::array<int, SQ_NB>, 16>;
 using CounterMoves  = std::array<std::array<Move, SQ_NB>, 16>;
 
+enum class Searcher { Master, Slave };
+
 struct thread {
 
   explicit thread(std::size_t index);
