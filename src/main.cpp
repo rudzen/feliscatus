@@ -21,7 +21,6 @@
 #include "bitboard.h"
 #include "magic.h"
 #include "board.h"
-#include "feliscatus.h"
 #include "uci.h"
 #include "transpositional.h"
 
@@ -33,6 +32,5 @@ int main(const int argc, char *argv[]) {
   uci::init(Options);
 
   TT.init(1);
-  Felis engine;
-  engine.run(argc, argv);
+  uci::run(argc, argv);
 }

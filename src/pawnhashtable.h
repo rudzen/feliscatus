@@ -41,7 +41,7 @@ using PawnHashTable = Table<PawnHashEntry, 131072>;
 
 namespace Pawn {
   [[nodiscard]]
-  PawnHashEntry *find(Board *s);
+  PawnHashEntry *find(Board *b);
 
   [[nodiscard]]
   PawnHashEntry *insert(Board *b, Score s, const std::array<Bitboard, 2> &passed_pawns);

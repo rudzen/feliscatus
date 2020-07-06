@@ -31,14 +31,16 @@ uint64_t p(Board *b, const int depth, const int flags) {
   if (depth == 0)
     return 1;
 
-  b->pos->generate_moves(nullptr, MOVE_NONE, flags);
+  auto *pos = b->pos;
+
+  pos->generate_moves(nullptr, MOVE_NONE, flags);
 
   uint64_t nodes{};
 
   [[likely]]
   if (flags & STAGES || depth != 1)
   {
-    while (const MoveData *move_data = b->pos->next_move())
+    while (const MoveData *move_data = pos->next_move())
     {
       const auto *m = &move_data->move;
 
@@ -49,7 +51,7 @@ uint64_t p(Board *b, const int depth, const int flags) {
       b->unmake_move();
     }
   } else
-    nodes = b->pos->move_count();
+    nodes = pos->move_count();
 
   return nodes;
 }

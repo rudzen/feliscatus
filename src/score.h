@@ -99,7 +99,7 @@ constexpr Score operator-(const Score d1, const int d2) noexcept {
 }
 
 constexpr Score operator-(const Score d1, const Score d2) noexcept {
-  return Score(d1.mg() - d2.mg(), d1.eg() - d2.eg());
+  return {d1.mg() - d2.mg(), d1.eg() - d2.eg()};
 }
 
 constexpr Score operator-(const Score d) noexcept {
@@ -107,16 +107,16 @@ constexpr Score operator-(const Score d) noexcept {
 }
 
 constexpr Score &operator+=(Score &d1, const Score d2) noexcept {
-  return d1 = Score(d1.mg() + d2.mg(), d1.eg() + d2.eg());
+  return d1 = {d1.mg() + d2.mg(), d1.eg() + d2.eg()};
 }
 
-constexpr Score &operator-=(Score &d1, Score d2) noexcept {
-  return d1 = Score(d1.mg() - d2.mg(), d1.eg() - d2.eg());
+constexpr Score &operator-=(Score &d1, const Score d2) noexcept {
+  return d1 = {d1.mg() - d2.mg(), d1.eg() - d2.eg()};
 }
 
 /// Division of a Score must be handled separately for each term
 constexpr Score operator/(const Score s, const int i) {
-  return Score(s.mg() / i, s.eg() / i);
+  return {s.mg() / i, s.eg() / i};
 }
 
 Score operator*(Score, Score) = delete;

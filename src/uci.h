@@ -44,12 +44,13 @@ inline Cpu CpuLoad;
 enum class UciOptions {
   THREADS,
   HASH,
+  HASH_X_THREADS,
   CLEAR_HASH,
   CLEAR_HASH_NEW_GAME,
   PONDER,
   UCI_Chess960,
   SHOW_CPU,
-  UCI_OPT_NB = 7
+  UCI_OPT_NB = 8
 };
 
 using uci_t = std::underlying_type_t<UciOptions>;
@@ -58,14 +59,16 @@ constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB
 {
   "Threads",
   "Hash",
-  "ClearHash",
-  "ClearHashNewGame",
+  "Hash * Threads",
+  "Clear Hash",
+  "Clear hash on new game",
   "Ponder",
   "UCI_Chess960",
-  "ShowCPU"
+  "Show CPU usage"
 };
 
 template<UciOptions Option>
+[[nodiscard]]
 constexpr std::string_view get_uci_name() {
   return UciStrings[static_cast<uci_t>(Option)];
 }
@@ -152,15 +155,13 @@ void post_curr_move(Move m, int m_number);
 
 void post_pv(int d, int max_ply, int score, const std::span<PVEntry> &pv_line, NodeType nt);
 
-int handle_go(std::istringstream &input, SearchLimits &limits);
-
-void handle_position(Board *b, std::istringstream &input);
-
-void handle_set_option(std::istringstream &input);
-
+[[nodiscard]]
 std::string display_uci(Move m);
 
+[[nodiscard]]
 std::string info(std::string_view info_string);
+
+void run(int argc, char *argv[]);
 
 }// namespace uci
 
@@ -200,7 +201,6 @@ struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view> {
     return formatter<std::string_view>::format(fmt::to_string(buffer), ctx);
   }
 };
-
 
 ///
 /// Move formatter

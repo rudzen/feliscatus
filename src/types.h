@@ -80,7 +80,7 @@ constexpr Color operator~(const Color c) noexcept { return static_cast<Color>(c 
 constexpr std::array<Color, COL_NB> Colors {WHITE, BLACK};
 
 enum NodeType : uint8_t {
-  NO_NT  = 0,// TODO : rename
+  NO_NT  = 0,
   EXACT  = 1,
   BETA   = 2,
   ALPHA  = 4
