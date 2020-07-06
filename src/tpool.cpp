@@ -99,7 +99,12 @@ void thread_pool::set(const std::size_t v) {
 
     clear_data();
 
-    TT.init(static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::HASH>()]));
+    auto tt_size = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::HASH>()]);
+
+    if (Options[uci::get_uci_name<uci::UciOptions::HASH_X_THREADS>()])
+      tt_size *= size();
+
+    TT.init(tt_size);
 
     parallel = size() > parallel_threshold;
   }

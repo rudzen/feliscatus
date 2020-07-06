@@ -44,12 +44,13 @@ inline Cpu CpuLoad;
 enum class UciOptions {
   THREADS,
   HASH,
+  HASH_X_THREADS,
   CLEAR_HASH,
   CLEAR_HASH_NEW_GAME,
   PONDER,
   UCI_Chess960,
   SHOW_CPU,
-  UCI_OPT_NB = 7
+  UCI_OPT_NB = 8
 };
 
 using uci_t = std::underlying_type_t<UciOptions>;
@@ -58,11 +59,12 @@ constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB
 {
   "Threads",
   "Hash",
-  "ClearHash",
-  "ClearHashNewGame",
+  "Hash * Threads",
+  "Clear Hash",
+  "Clear hash on new game",
   "Ponder",
   "UCI_Chess960",
-  "ShowCPU"
+  "Show CPU usage"
 };
 
 template<UciOptions Option>
