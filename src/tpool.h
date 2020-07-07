@@ -115,6 +115,7 @@ struct thread_pool : std::vector<std::unique_ptr<thread>> {
   SearchLimits limits{};
   std::atomic_bool stop;
 
+#if !defined(linux)
 private:
   [[nodiscard]]
   uint64_t node_count_par() const;
@@ -124,6 +125,7 @@ private:
 
   bool parallel{};
   const std::array<std::function<uint64_t()>, 2> node_counters;
+#endif
 };
 
 // global data object

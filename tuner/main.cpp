@@ -27,12 +27,12 @@
 #include <fmt/format.h>
 
 #include "tune.h"
+#include "file_resolver.h"
 #include "../src/board.h"
 #include "../src/bitboard.h"
 #include "../src/magic.h"
 #include "../src/transpositional.h"
-#include "../src/datapool.h"
-#include "file_resolver.h"
+#include "../src/tpool.h"
 #include "../cli/cli_parser.h"
 
 namespace {

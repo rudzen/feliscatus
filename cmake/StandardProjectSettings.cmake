@@ -23,23 +23,27 @@ if(ENABLE_IPO)
     endif()
 endif()
 
-# Include pthread
-#if (WIN32)
-#    set (CMAKE_EXE_LINKER_FLAGS "-s -pthread")
-#else()
-#    set(CMAKE_EXE_LINKER_FLAGS "-s -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -static")
-#endif()
-
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
-#add_definitions("-DNDEBUG")
-add_definitions("-mavx2")
+option(ENFORCE_NATIVE_ARC "Force march=native for compiler" ON)
+if (ENFORCE_NATIVE_ARC)
+    add_definitions("-march=native")
+else()
+    add_definitions("-mavx2")
+endif()
+
 add_definitions("-funroll-loops")
-add_definitions("-fno-rtti")
+if (WIN32)
+    add_definitions("-fno-rtti")
+endif()
 
-#add_definitions("-fpermissive")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
+option(ENABLE_FPERMISSIVE "Set -fpermissive" OFF)
+if (ENABLE_FPERMISSIVE)
+    add_definitions("-fpermissive")
+endif()
 
-#DBLAZE_USE_CPP_THREADS
-#add_definitions("-DBLAZE_USE_CPP_THREADS")
+option(ENABLE_STRIPPING "Enables binary stripping (reduce file size) (aka -s)" ON)
+if (ENABLE_STRIPPING)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
+endif()

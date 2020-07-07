@@ -82,7 +82,11 @@ void thread::wait_for_search_finished() {
   cv.wait(lk, [&] { return !searching; });
 }
 
+#if defined(linux)
+thread_pool::thread_pool() /*: node_counters({[&] { return node_count_seq(); }, [&] { return node_count_par(); }})*/ {}
+#else
 thread_pool::thread_pool() : node_counters({[&] { return node_count_seq(); }, [&] { return node_count_par(); }}) {}
+#endif
 
 void thread_pool::set(const std::size_t v) {
   while (!empty())
@@ -106,7 +110,9 @@ void thread_pool::set(const std::size_t v) {
 
     TT.init(tt_size);
 
+#if !defined(linux)
     parallel = size() > parallel_threshold;
+#endif
   }
 }
 
@@ -124,7 +130,11 @@ void thread_pool::start_thinking(std::string_view fen) {
     t->root_board->set_fen(fen, t.get());
   };
 
+#if defined(linux)
+  std::for_each(begin(), end(), setup);
+#else
   std::for_each(std::execution::par_unseq, begin(), end(), setup);
+#endif
 
   front_thread->start_searching();
 }
@@ -145,9 +155,15 @@ void thread_pool::clear_data() {
 }
 
 uint64_t thread_pool::node_count() const {
+#if defined(linux)
+  const auto accumulator = [](const uint64_t r, const std::unique_ptr<thread> &d) { return r + d->node_count.load(std::memory_order_relaxed); };
+  return std::accumulate(cbegin(), cend(), 0ull, accumulator);
+#else
   return node_counters[parallel]();
+#endif
 }
 
+#if !defined(linux)
 uint64_t thread_pool::node_count_seq() const {
   const auto accumulator = [](const uint64_t r, const std::unique_ptr<thread> &d) { return r + d->node_count.load(std::memory_order_relaxed); };
   return std::accumulate(cbegin(), cend(), 0ull, accumulator);
@@ -157,3 +173,4 @@ uint64_t thread_pool::node_count_par() const {
   const auto accumulator = [](const std::unique_ptr<thread> &d) { return d->node_count.load(std::memory_order_relaxed); };
   return std::transform_reduce(std::execution::par_unseq, cbegin(), cend(), 0ull, std::plus<>(), accumulator);
 }
+#endif

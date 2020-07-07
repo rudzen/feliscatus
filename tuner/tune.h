@@ -27,13 +27,13 @@
 #include <memory>
 #include <map>
 
-#include "../src/bitboard.h"
 #include "pgn_player.h"
-#include "../src/search.h"
 #include "../cli/cli_parser.h"
+#include "../src/bitboard.h"
+#include "../src/moves.h"
+#include "../src/pv_entry.h"
 
 struct Board;
-struct PVEntry;
 struct FileResolver;
 
 namespace eval {
@@ -88,11 +88,7 @@ public:
   void sort_move(MoveData &md) override;
 
 private:
-  std::unique_ptr<Board> board_;
-  PawnHashTable pawn_table_{};
-
-  PVEntry pv[MAXDEPTH][MAXDEPTH]{};
-  std::array<int, MAXDEPTH> pv_length{};
+  std::unique_ptr<Board> b;
   bool score_static_;
 };
 

@@ -41,6 +41,6 @@ struct PGNPlayer : PGNFileReader {
   void read_san_move() override;
 
 protected:
-  std::unique_ptr<Board> board_;
+  std::unique_ptr<Board> b;
 };
 }// namespace pgn

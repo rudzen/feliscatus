@@ -7,7 +7,7 @@
 #include "../src/perft.h"
 #include "../src/board.h"
 #include "../src/miscellaneous.h"
-#include "../src/datapool.h"
+#include "../src/tpool.h"
 
 TEST_CASE("Perft basic at depth 6", "[perft_basic]")
 {
@@ -16,9 +16,9 @@ TEST_CASE("Perft basic at depth 6", "[perft_basic]")
   attacks::init();
   Board::init();
 
-  Pool.set(1);
+  pool.set(1);
 
-  auto b = Board(start_position, Pool.main());
+  auto b = Board(start_position, pool.main());
 
   auto result = perft::perft(&b, 6);
 

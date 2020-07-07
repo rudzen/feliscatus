@@ -30,6 +30,8 @@
 #undef WIN32_LEAN_AND_MEAN
 #else
 #include <thread>
+#include <climits>
+#include <emmintrin.h>
 #endif
 
 namespace util {
