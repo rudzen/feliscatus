@@ -99,12 +99,25 @@ bool is_killer_move(const Move m, const Position *p) {
   return std::find(km.cbegin(), km.cend(), m) != km.cend();
 }
 
-void update_history(thread *t, const Move best_move, const Move last_move, const int d) {
+void update_quiet_history(thread *t, Position *pos, const Move best_move, const int d) {
 
-  auto pc = move_piece(last_move);
-  auto to = move_to(last_move);
+  auto pc = move_piece(pos->last_move);
+  auto to = move_to(pos->last_move);
+
+  // update counter moves
 
   t->counter_moves[pc][to] = best_move;
+
+  // update killer moves
+  if (pos->killer_moves.front() != best_move)
+  {
+    // Rotate the killer moves, index 3 become 2, index 2 becomes 1 and index 1 becomes 0 which is replaced with new move
+    // This is the same as std::copy_backward(km.begin(), std::prev(km.end(), 1), std::next(km.begin(), 1));
+    std::rotate(pos->killer_moves.begin(), std::prev(pos->killer_moves.end(), 1), pos->killer_moves.end());
+    pos->killer_moves[0] = best_move;
+  }
+
+  // update history scores
 
   pc = move_piece(best_move);
   to = move_to(best_move);
@@ -118,17 +131,6 @@ void update_history(thread *t, const Move best_move, const Move last_move, const
     for (auto &k : history_score)
       k >>= 2;
 
-}
-
-void update_killer_moves(KillerMoves &km, const Move m) {
-  // Same move can be stored twice for a ply.
-  if (is_capture(m) || is_promotion(m) || m == km.front())
-    return;
-
-  // Rotate the killer moves, index 3 become 2, index 2 becomes 1 and index 1 becomes 0 which is replaced with new move
-  // This is the same as std::copy_backward(km.begin(), std::prev(km.end(), 1), std::next(km.begin(), 1));
-  std::rotate(km.begin(), std::prev(km.end(), 1), km.end());
-  km[0] = m;
 }
 
 }// namespace
@@ -380,10 +382,7 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta) {
   if (best_move)
   {
     if (!is_capture(best_move) && !is_promotion(best_move))
-    {
-      update_history(t, best_move, pos->last_move, depth);
-      update_killer_moves(pos->killer_moves, best_move);
-    }
+      update_quiet_history(t, pos, best_move, depth);
   }
 
   return store_search_node_score(best_score, depth, node_type(best_score, beta, best_move), best_move);
