@@ -26,6 +26,8 @@
 #include <cstdio>
 #include <string_view>
 
+#include "util.h"
+
 using Bitboard = uint64_t;
 using Key      = uint64_t;
 
@@ -311,3 +313,19 @@ constexpr Move init_move(const Piece pc, const Piece cap, const Square from, con
 constexpr Move init_move(const Piece pc, const Piece captured, const Square from, const Square to, const MoveType mt, const Piece promoted) {
   return static_cast<Move>((pc << 26) | (captured << 22) | (promoted << 18) | (mt << 12) | (from << 6) | static_cast<int>(to));
 }
+
+/// Checks if Piece, PieceType, Square or Move is ok
+
+template<typename T>
+constexpr bool is_ok(const T t) {
+  static_assert(std::is_same_v<T, Piece> || std::is_same_v<T, Square> || std::is_same_v<T, PieceType> || std::is_same_v<T, Move>, "Wrong type.");
+  if constexpr (std::is_same_v<T, Piece>)
+    return is_ok(type_of(t));
+  else if constexpr (std::is_same_v<T, Square>)
+    return util::in_between<A1, H8>(t);
+  else if constexpr (std::is_same_v<T, PieceType>)
+    return util::in_between<PAWN, KING>(type_of(t));
+  else if constexpr (std::is_same_v<T, Move>)
+    return t != MOVE_NONE && move_from(t) != move_to(t);
+}
+

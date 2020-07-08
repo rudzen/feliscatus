@@ -130,6 +130,8 @@ MoveData *Moves::next_move() {
 bool Moves::is_pseudo_legal(const Move m) const {
   // TODO : castleling & en passant moves
 
+  assert(is_ok(m));
+
   const auto from = move_from(m);
   const auto pc   = move_piece(m);
 
