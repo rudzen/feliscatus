@@ -99,19 +99,25 @@ bool is_killer_move(const Move m, const Position *p) {
   return std::find(km.cbegin(), km.cend(), m) != km.cend();
 }
 
-void update_history_scores(HistoryScores &history_scores, const Move m, const int d) {
+void update_history(thread *t, const Move best_move, const Move last_move, const int d) {
 
-  const auto pc = move_piece(m);
-  const auto to = move_to(m);
+  auto pc = move_piece(last_move);
+  auto to = move_to(last_move);
 
-  history_scores[pc][to] += (d * d);
+  t->counter_moves[pc][to] = best_move;
 
-  if (history_scores[pc][to] <= 2048)
+  pc = move_piece(best_move);
+  to = move_to(best_move);
+
+  t->history_scores[pc][to] += (d * d);
+
+  if (t->history_scores[pc][to] <= 2048)
     return;
 
-  for (auto &history_score : history_scores)
+  for (auto &history_score : t->history_scores)
     for (auto &k : history_score)
       k >>= 2;
+
 }
 
 void update_killer_moves(KillerMoves &km, const Move m) {
@@ -371,13 +377,15 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta) {
   if (pos->reversible_half_move_count >= 100)
     return draw_score();
 
-  if (best_move && !is_capture(best_move) && !is_promotion(best_move))
+  if (best_move)
   {
-    update_history_scores(t->history_scores, best_move, depth);
-    update_killer_moves(pos->killer_moves, best_move);
-
-    t->counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] = best_move;
+    if (!is_capture(best_move) && !is_promotion(best_move))
+    {
+      update_history(t, best_move, pos->last_move, depth);
+      update_killer_moves(pos->killer_moves, best_move);
+    }
   }
+
   return store_search_node_score(best_score, depth, node_type(best_score, beta, best_move), best_move);
 }
 
