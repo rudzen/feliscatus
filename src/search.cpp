@@ -780,7 +780,7 @@ void main_thread::search() {
 
   if (root_board->pos->pv_length)
   {
-    const auto [m, p_move] = std::make_pair(pv[0][0].move, pv[0][1].move ? pv[0][1].move : MOVE_NONE);
+    const auto [m, p_move] = std::make_pair(pv[0][0].move, root_board->pos->pv_length > 1 ? pv[0][1].move : MOVE_NONE);
     uci::post_moves(m, p_move);
   }
 }
