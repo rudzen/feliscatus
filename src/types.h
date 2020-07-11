@@ -200,8 +200,7 @@ constexpr std::array<Square, 2> ooo_king_to{C1, C8};
 enum MoveGenFlags {
   NONE           = 0,
   LEGALMOVES     = 1,
-  STAGES         = 1 << 1,
-  QUEENPROMOTION = 1 << 2
+  STAGES         = 1 << 1
 };
 
 

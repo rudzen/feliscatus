@@ -29,36 +29,6 @@ namespace {
 
 constexpr std::array<PieceType, 5> MoveGenPieceTypes{QUEEN, ROOK, BISHOP, KNIGHT, KING};
 
-template<Color Us>
-[[nodiscard]] bool is_castle_allowed(const Square to, const Board *b) {
-
-  constexpr auto Them = ~Us;
-
-  // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
-  // The following comments were taken from that source.
-
-  // Check that the smallest back rank interval containing the king, the castling rook, and their
-  // destination squares, contains no pieces other than the king and castling rook.
-
-  const auto rook_to          = rook_castles_to[to];
-  const auto rook_from        = rook_castles_from[to];
-  const auto king_square      = b->king_sq(Us);
-  const auto bb_castle_pieces = bit(rook_from, king_square);
-
-  if (const auto bb_castle_span = bb_castle_pieces | between_bb[king_square][rook_from] | between_bb[rook_from][rook_to] | bit(rook_to, to);
-      (bb_castle_span & b->pieces()) != bb_castle_pieces)
-    return false;
-
-  // Check that no square between the king's initial and final squares (including the initial and final
-  // squares) may be under attack by an enemy piece. (Initial square was already checked a this point.)
-
-  for (auto bb = between_bb[king_square][to] | to; bb; reset_lsb(bb))
-    if (b->is_attacked(lsb(bb), Them))
-      return false;
-
-  return true;
-}
-
 }// namespace
 
 void Moves::generate_moves(MoveSorter *sorter, const Move tt_move, const int flags) {
@@ -83,7 +53,7 @@ void Moves::generate_moves(MoveSorter *sorter, const Move tt_move, const int fla
 }
 
 void Moves::generate_captures_and_promotions(MoveSorter *sorter) {
-  reset(sorter, MOVE_NONE, QUEENPROMOTION | STAGES);
+  reset(sorter, MOVE_NONE, STAGES);
   max_stage_ = 2;
   stage_     = 1;
 }
@@ -398,15 +368,7 @@ void Moves::add_pawn_moves(const Bitboard to_squares, const Direction d, const M
     [[unlikely]]
     if (const auto rr = relative_rank(Us, to); rr == RANK_8)
     {
-
       const auto promo_type = mt | PROMOTION;
-
-      if (move_flags_ & QUEENPROMOTION)
-      {
-        add_move<Us>(pawn, from, to, promo_type, make_piece(QUEEN, Us));
-        return;
-      }
-
       for (const auto promoted : PromotionPieceTypes)
         add_move<Us>(pawn, from, to, promo_type, make_piece(promoted, Us));
     } else
@@ -421,10 +383,10 @@ void Moves::add_castle_move(const Square from, const Square to) {
 
 template<Color Us>
 bool Moves::can_castle_short() const {
-  return b->castle_rights() & oo_allowed_mask[Us] && is_castle_allowed<Us>(oo_king_to[Us], b);
+  return b->castle_rights() & oo_allowed_mask[Us] && b->is_castleling_impeeded(oo_king_to[Us], Us);
 }
 
 template<Color Us>
 bool Moves::can_castle_long() const {
-  return b->castle_rights() & ooo_allowed_mask[Us] && is_castle_allowed<Us>(ooo_king_to[Us], b);
+  return b->castle_rights() & ooo_allowed_mask[Us] && b->is_castleling_impeeded(ooo_king_to[Us], Us);
 }

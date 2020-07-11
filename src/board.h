@@ -154,6 +154,9 @@ struct Board {
   bool can_castle(CastlingRight cr) const;
 
   [[nodiscard]]
+  bool is_castleling_impeeded(Square s, Color us) const;
+
+  [[nodiscard]]
   Key pawn_key() const;
 
   [[nodiscard]]

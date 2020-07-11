@@ -751,6 +751,35 @@ Bitboard Board::attackers_to(const Square s) const {
   return attackers_to(s, pieces());
 }
 
+bool Board::is_castleling_impeeded(const Square s, const Color us) const {
+
+  // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
+  // The following comments were taken from that source.
+
+  // Check that the smallest back rank interval containing the king, the castling rook, and their
+  // destination squares, contains no pieces other than the king and castling rook.
+
+  const auto rook_to          = rook_castles_to[s];
+  const auto rook_from        = rook_castles_from[s];
+  const auto ksq              = king_sq(us);
+  const auto bb_castle_pieces = bit(rook_from, ksq);
+
+  if (const auto bb_castle_span = bb_castle_pieces | between_bb[ksq][rook_from] | between_bb[rook_from][rook_to] | bit(rook_to, s);
+      (bb_castle_span & pieces()) != bb_castle_pieces)
+    return false;
+
+  // Check that no square between the king's initial and final squares (including the initial and final
+  // squares) may be under attack by an enemy piece. (Initial square was already checked a this point.)
+
+  const auto them = ~us;
+
+  for (auto bb = between_bb[ksq][s] | s; bb; reset_lsb(bb))
+    if (is_attacked(lsb(bb), them))
+      return false;
+
+  return true;
+}
+
 bool Board::gives_check(const Move m) {
   perform_move(m);
   const auto attacked = is_attacked(king_sq(~pos->side_to_move), pos->side_to_move);
