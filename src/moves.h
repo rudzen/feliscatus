@@ -82,6 +82,9 @@ private:
   template<Color Us>
   void add_move(Piece pc, Square from, Square to, MoveType mt, Piece promoted = NO_PIECE);
 
+  template<Color Us, PieceType Pt>
+  void add_piece_moves(Bitboard to_squares);
+
   template<Color Us>
   void add_moves(Bitboard to_squares);
 

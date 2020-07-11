@@ -274,10 +274,9 @@ void Moves::add_move(const Piece pc, const Square from, const Square to, const M
   {
     if (mt & CAPTURE)
       return b->get_piece(to);
-    else if (mt & EPCAPTURE)
+    if (mt & EPCAPTURE)
       return make_piece(PAWN, Them);
-    else
-      return NO_PIECE;
+    return NO_PIECE;
   };
 
   const auto captured = get_captured();
@@ -300,19 +299,25 @@ void Moves::add_move(const Piece pc, const Square from, const Square to, const M
     move_data.score = 0;
 }
 
-template<Color Us>
-void Moves::add_moves(const Bitboard to_squares) {
+template<Color Us, PieceType Pt>
+void Moves::add_piece_moves(const Bitboard to_squares) {
   const auto pieces = b->pieces();
 
-  for (const auto pt : MoveGenPieceTypes)
+  auto bb = b->pieces(Pt, Us);
+  while (bb)
   {
-    auto bb = b->pieces(pt, Us);
-    while (bb)
-    {
-      const auto from = pop_lsb(&bb);
-      add_moves<Us>(pt, from, piece_attacks_bb(pt, from, pieces) & to_squares);
-    }
+    const auto from = pop_lsb(&bb);
+    add_moves<Us>(Pt, from, piece_attacks_bb<Pt>(from, pieces) & to_squares);
   }
+}
+
+template<Color Us>
+void Moves::add_moves(const Bitboard to_squares) {
+  add_piece_moves<Us, KING  >(to_squares);
+  add_piece_moves<Us, QUEEN >(to_squares);
+  add_piece_moves<Us, ROOK  >(to_squares);
+  add_piece_moves<Us, BISHOP>(to_squares);
+  add_piece_moves<Us, KNIGHT>(to_squares);
 }
 
 template<Color Us>
