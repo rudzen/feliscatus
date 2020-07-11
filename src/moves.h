@@ -43,6 +43,13 @@ struct MoveSorter {
 
 struct Board;
 
+enum MoveStage {
+  TT_STAGE,
+  CAPTURE_STAGE,
+  QUIET_STAGE,
+  END_STAGE
+};
+
 struct Moves {
   void generate_moves(MoveSorter *sorter = nullptr, Move tt_move = MOVE_NONE, int flags = 0);
 
@@ -58,8 +65,6 @@ struct Moves {
 
   [[nodiscard]]
   int move_count() const;
-
-  void goto_move(int pos);
 
   [[nodiscard]]
   bool is_pseudo_legal(Move m) const;
@@ -125,8 +130,4 @@ private:
 
 inline int Moves::move_count() const {
   return number_moves_;
-}
-
-inline void Moves::goto_move(const int pos) {
-  iteration_ = pos;
 }

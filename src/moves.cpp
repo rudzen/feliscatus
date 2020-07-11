@@ -18,7 +18,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ranges>
+#include <span>
 
 #include "moves.h"
 #include "board.h"
@@ -33,7 +33,7 @@ constexpr std::array<PieceType, 5> MoveGenPieceTypes{QUEEN, ROOK, BISHOP, KNIGHT
 
 void Moves::generate_moves(MoveSorter *sorter, const Move tt_move, const int flags) {
   reset(sorter, tt_move, flags);
-  max_stage_ = 3;
+  max_stage_ = END_STAGE;
 
   if (move_flags_ & STAGES)
     return;
@@ -54,8 +54,8 @@ void Moves::generate_moves(MoveSorter *sorter, const Move tt_move, const int fla
 
 void Moves::generate_captures_and_promotions(MoveSorter *sorter) {
   reset(sorter, MOVE_NONE, STAGES);
-  max_stage_ = 2;
-  stage_     = 1;
+  max_stage_ = QUIET_STAGE;
+  stage_     = CAPTURE_STAGE;
 }
 
 template<Color Us>
@@ -135,7 +135,8 @@ void Moves::reset(MoveSorter *sorter, const Move m, const int flags) {
   move_sorter_ = sorter;
   transp_move_ = m;
   move_flags_  = flags;
-  iteration_   = number_moves_ = stage_ = 0;
+  iteration_   = number_moves_ = 0;
+  stage_       = TT_STAGE;
 
   [[likely]]
   if (m)
@@ -163,7 +164,7 @@ void Moves::generate_hash_move() {
     move_list[number_moves_].score  = 890010;
     move_list[number_moves_++].move = transp_move_;
   }
-  stage_++;
+  ++stage_;
 }
 
 template<Color Us>
@@ -188,7 +189,7 @@ void Moves::generate_captures_and_promotions() {
     add_pawn_moves<Us>(WestAttacks(pawns) & en_passant_square, WestDistance, EPCAPTURE);
     add_pawn_moves<Us>(EastAttacks(pawns) & en_passant_square, EastDistance, EPCAPTURE);
   }
-  stage_++;
+  ++stage_;
 }
 
 template<Color Us>
@@ -197,15 +198,15 @@ MoveData *Moves::get_next_move() {
   {
     switch (stage_)
     {
-    case 0:
+    case TT_STAGE:
       generate_hash_move();
       break;
 
-    case 1:
+    case CAPTURE_STAGE:
       generate_captures_and_promotions<Us>();
       break;
 
-    case 2:
+    case QUIET_STAGE:
       generate_quiet_moves<Us>();
       break;
 
@@ -222,24 +223,19 @@ MoveData *Moves::get_next_move() {
 
   do
   {
-    auto best_idx   = iteration_;
-    auto best_score = move_list[best_idx].score;
-    for (auto i = best_idx + 1; i < number_moves_; ++i)
-    {
-      if (move_list[i].score > best_score)
-      {
-        best_score = move_list[i].score;
-        best_idx   = i;
-      }
-    }
+    const auto first_md = &move_list[iteration_];
+    const auto end_md   = &move_list[number_moves_];
+    const auto best     = std::max_element(first_md, end_md);
 
-    if (max_stage_ > 2 && stage_ == 2 && move_list[best_idx].score < 0)
-    {
+    if (max_stage_ == END_STAGE && stage_ == QUIET_STAGE && best->score < 0)
       generate_quiet_moves<Us>();
-      continue;
+    else
+    {
+      // set the "best" move as the current iteration move
+      std::swap(*first_md, *best);
+      ++iteration_;
+      return first_md;
     }
-    std::swap(move_list[iteration_], move_list[best_idx]);
-    return &move_list[iteration_++];
   } while (true);
 }
 
@@ -263,7 +259,7 @@ void Moves::generate_quiet_moves() {
   add_pawn_moves<Us>(pushed, Up, NORMAL);
   add_pawn_moves<Us>(shift_bb<Up>(pushed & Rank3) & empty_squares, Up * 2, DOUBLEPUSH);
   add_moves<Us>(empty_squares);
-  stage_++;
+  ++stage_;
 }
 
 template<Color Us>
