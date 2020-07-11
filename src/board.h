@@ -115,6 +115,9 @@ struct Board {
   Bitboard pieces(Color c) const;
 
   [[nodiscard]]
+  int piece_count(Color c, PieceType pt) const;
+
+  [[nodiscard]]
   Bitboard king(Color c) const;
 
   [[nodiscard]]

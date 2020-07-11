@@ -363,6 +363,10 @@ void Board::print() const {
   fmt::print("{}   a b c d e f g h\n", fmt::to_string(s));
 }
 
+int Board::piece_count(const Color c, const PieceType pt) const {
+  return pos->material.count(c, pt);
+}
+
 bool Board::is_passed_pawn_move(const Move m) const {
   return move_piece_type(m) == PAWN && is_pawn_passed(move_to(m), move_side(m));
 }

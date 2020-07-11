@@ -34,8 +34,6 @@ struct Material {
 
   void add(Piece pc);
 
-  void update_key(Color c, PieceType pt, int delta);
-
   [[nodiscard]]
   int count(Color c, PieceType pt);
 
@@ -70,7 +68,14 @@ struct Material {
 
 private:
 
+  enum KeyUpdateType {
+    Add, Remove
+  };
+
   using Keys = std::array<uint32_t, COL_NB>;
+
+  template<KeyUpdateType Type>
+  void update_key(Color c, PieceType pt);
 
   [[nodiscard]]
   int pawn_count(Color c);

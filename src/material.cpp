@@ -57,23 +57,15 @@ void Material::clear() {
 void Material::remove(const Piece pc) {
   const auto c  = color_of(pc);
   const auto pt = type_of(pc);
-  update_key(c, pt, -1);
+  update_key<Remove>(c, pt);
   material_value[c] -= piece_values[pt];
 }
 
 void Material::add(const Piece pc) {
   const auto c  = color_of(pc);
   const auto pt = type_of(pc);
-  update_key(c, pt, 1);
+  update_key<Add>(c, pt);
   material_value[c] += piece_values[pt];
-}
-
-void Material::update_key(const Color c, const PieceType pt, const int delta) {
-  if (pt == KING)
-    return;
-  const auto x = count(c, pt) + delta;
-  key[c] &= ~(15 << piece_bit_shift[pt]);
-  key[c] |= x << piece_bit_shift[pt];
 }
 
 int Material::count(const Color c, const PieceType pt) {
@@ -190,6 +182,15 @@ int Material::evaluate(int &flags, const int eval, const Board *b) {
 
 template int Material::evaluate<WHITE>(int &, int, const Board *);
 template int Material::evaluate<BLACK>(int &, int, const Board *);
+
+template<Material::KeyUpdateType Type>
+void Material::update_key(const Color c, const PieceType pt) {
+  if (pt == KING)
+    return;
+  const auto x = count(c, pt) + Type == Add ? 1 : -1;
+  key[c] &= ~(15 << piece_bit_shift[pt]);
+  key[c] |= x << piece_bit_shift[pt];
+}
 
 int Material::KQBKX(const int eval, const uint32_t key2) {
   switch (key2 & ~all_pawns)

@@ -213,7 +213,7 @@ void Evaluate<Tuning>::eval_material() {
   posistion_value[Us] = b->material().material_value[Us];
   auto add            = false;
 
-  if (const auto bishop_count = b->material().count(Us, BISHOP); bishop_count == 2)
+  if (const auto bishop_count = b->piece_count(Us, BISHOP); bishop_count == 2)
   {
     auto bishops = b->pieces(BISHOP, Us);
     add          = is_opposite_colors(pop_lsb(&bishops), pop_lsb(&bishops));
