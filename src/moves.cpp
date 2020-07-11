@@ -358,21 +358,30 @@ void Moves::add_pawn_capture_moves(const Bitboard to_squares) {
 
 template<Color Us>
 void Moves::add_pawn_moves(const Bitboard to_squares, const Direction d, const MoveType mt) {
+  constexpr auto Rank8 = bit(relative_rank(Us, RANK_8));
   const auto pawn = make_piece(PAWN, Us);
 
-  for (auto bb = to_squares; bb; reset_lsb(bb))
-  {
-    const auto to   = lsb(bb);
-    const auto from = to - d;
+  // promotion moves
 
-    [[unlikely]]
-    if (const auto rr = relative_rank(Us, to); rr == RANK_8)
-    {
-      const auto promo_type = mt | PROMOTION;
-      for (const auto promoted : PromotionPieceTypes)
-        add_move<Us>(pawn, from, to, promo_type, make_piece(promoted, Us));
-    } else
-      add_move<Us>(pawn, from, to, mt);
+  auto targets = to_squares & Rank8;
+
+  while (targets)
+  {
+    const auto to   = pop_lsb(&targets);
+    const auto from = to - d;
+    const auto promo_type = mt | PROMOTION;
+    for (const auto promoted : PromotionPieceTypes)
+      add_move<Us>(pawn, from, to, promo_type, make_piece(promoted, Us));
+  }
+
+  // non-promotion moves
+
+  targets = to_squares & ~Rank8;
+
+  while (targets)
+  {
+    const auto to   = pop_lsb(&targets);
+    add_move<Us>(pawn, to - d, to, mt);
   }
 }
 
