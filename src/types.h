@@ -302,8 +302,6 @@ constexpr bool is_promotion(const Move m) { return type_of(m) & PROMOTION; }
 
 constexpr bool is_queen_promotion(const Move m) { return is_promotion(m) && type_of(move_promoted(m)) == QUEEN; }
 
-constexpr bool is_null_move(const Move m) { return m == 0; }
-
 template<MoveType Mt>
 constexpr Move init_move(const Piece pc, const Piece cap, const Square from, const Square to, const Piece promoted) {
   return static_cast<Move>((pc << 26) | (cap << 22) | (promoted << 18) | (Mt << 12) | (from << 6) | static_cast<int>(to));

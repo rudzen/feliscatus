@@ -391,7 +391,7 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta) {
 template<Searcher SearcherType>
 template<NodeType NT, bool PV>
 int Search<SearcherType>::search_next_depth(const int depth, const int alpha, const int beta) {
-  return (b->is_draw() || b->is_repetition()) && !is_null_move(pos->last_move) ? -draw_score()
+  return (b->is_draw() || b->is_repetition()) && pos->last_move ? -draw_score()
                                                                                : depth <= 0 ? -search_quiesce<PV>(alpha, beta, 0) : -search<NT, PV>(depth, alpha, beta);
 }
 

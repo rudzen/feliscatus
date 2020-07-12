@@ -143,10 +143,10 @@ void Moves::generate_captures_and_promotions() {
   const auto opponent_pieces  = b->pieces(Them);
   const auto pawns            = b->pieces(PAWN, Us);
 
-  add_moves<Us>(opponent_pieces);
   add_pawn_moves<Us>(pawn_push(Us, pawns & Rank_7) & ~b->pieces(), Up, NORMAL);
   add_pawn_moves<Us>(WestAttacks(pawns) & opponent_pieces, WestDistance, CAPTURE);
   add_pawn_moves<Us>(EastAttacks(pawns) & opponent_pieces, EastDistance, CAPTURE);
+  add_moves<Us>(opponent_pieces);
   [[unlikely]]
   if (b->en_passant_square() != NO_SQ)
   {
