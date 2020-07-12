@@ -20,14 +20,13 @@
 
 #pragma once
 
-#include "moves.h"
 #include "material.h"
 
 class HashEntry;
 
 using KillerMoves = std::array<Move, 4>;
 
-struct Position : Moves {
+struct Position final {
   void clear();
 
   int reversible_half_move_count{};

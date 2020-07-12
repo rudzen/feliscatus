@@ -22,6 +22,7 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
 
 #include "types.h"
 
@@ -35,11 +36,6 @@ struct MoveData {
   }
 };
 
-struct MoveSorter {
-  virtual ~MoveSorter() = default;
-  virtual void sort_move(MoveData &move_data) = 0;
-};
-
 struct Board;
 
 enum MoveStage {
@@ -49,10 +45,13 @@ enum MoveStage {
   END_STAGE
 };
 
-struct Moves {
-  void generate_moves(MoveSorter *sorter = nullptr, Move tt_move = MOVE_NONE, int flags = 0);
+struct Moves final {
 
-  void generate_captures_and_promotions(MoveSorter *sorter);
+  explicit Moves(Board *board);
+
+  void generate_moves(Move tt_move = MOVE_NONE, int flags = 0);
+
+  void generate_captures_and_promotions();
 
   template<Color Us>
   void generate_moves(PieceType pt, Bitboard to_squares);
@@ -65,10 +64,8 @@ struct Moves {
   [[nodiscard]]
   int move_count() const;
 
-  Board *b{};
-
 private:
-  void reset(MoveSorter *sorter, Move m, int flags);
+  void reset(Move m, int flags);
 
   void generate_hash_move();
 
@@ -103,6 +100,7 @@ private:
   void add_castle_move(Square from, Square to);
 
   template<Color Us>
+  [[nodiscard]]
   const MoveData *get_next_move();
 
   template<Color Us>
@@ -118,9 +116,9 @@ private:
   int stage_{};
   int max_stage_{};
   int number_moves_{};
-  MoveSorter *move_sorter_{};
   Move transp_move_{};
   int move_flags_{};
+  Board *b{};
 };
 
 inline int Moves::move_count() const {

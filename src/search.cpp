@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <algorithm>
 #include <optional>
+#include <functional>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -35,6 +36,7 @@
 #include "tpool.h"
 #include "uci.h"
 #include "board.h"
+#include "moves.h"
 
 namespace {
 
@@ -43,8 +45,6 @@ constexpr auto max_log_files     = 3;
 
 std::shared_ptr<spdlog::logger> search_logger = spdlog::rotating_logger_mt("search_logger", "logs/search.txt", max_log_file_size, max_log_files);
 
-constexpr int KILLERMOVESCORE    = 124900;
-constexpr int PROMOTIONMOVESCORE = 50000;
 constexpr int MAXSCORE           = 32767;
 
 constexpr std::array<int, 4> futility_margin{150, 150, 150, 400};
@@ -136,7 +136,7 @@ void update_quiet_history(thread *t, Position *pos, const Move best_move, const 
 }// namespace
 
 template<Searcher SearcherType>
-struct Search final : MoveSorter {
+struct Search final {
   Search(Board *t_board) : b(t_board), t(t_board->my_thread()) { }
   ~Search()                         = default;
   Search()                          = delete;
@@ -188,8 +188,6 @@ private:
   void update_pv(Move m, int score, int depth) const;
 
   void init_search();
-
-  void sort_move(MoveData &md) override;
 
   [[nodiscard]] int store_search_node_score(int score, int depth, NodeType nt, Move m) const;
 
@@ -297,13 +295,14 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta) {
 
   const auto singular_move = get_singular_move<PV>(depth);
 
-  pos->generate_moves(this, pos->transp_move, STAGES);
+  auto mg = Moves(b);
+  mg.generate_moves(pos->transp_move, STAGES);
 
   auto best_move  = MOVE_NONE;
   auto best_score = -MAXSCORE;
   auto move_count = 0;
 
-  while (auto *const move_data = pos->next_move())
+  while (auto *const move_data = mg.next_move())
   {
     int score;
 
@@ -412,11 +411,13 @@ Move Search<SearcherType>::get_singular_move(int depth) {
 
 template<Searcher SearcherType>
 auto Search<SearcherType>::search_fail_low(const int depth, int alpha, const Move exclude) {
-  pos->generate_moves(this, pos->transp_move, STAGES);
+
+  auto mg = Moves(b);
+  mg.generate_moves(pos->transp_move, STAGES);
 
   auto move_count = 0;
 
-  while (auto *const move_data = pos->next_move())
+  while (auto *const move_data = mg.next_move())
   {
     if (pool.stop)
       return false;
@@ -524,9 +525,10 @@ int Search<SearcherType>::search_quiesce(int alpha, int beta, int qs_ply) {
   if (best_score > alpha)
     alpha = best_score;
 
-  pos->generate_captures_and_promotions(this);
+  auto mg = Moves(b);
+  mg.generate_captures_and_promotions();
 
-  while (auto *const move_data = pos->next_move())
+  while (auto *const move_data = mg.next_move())
   {
     if (!is_promotion(move_data->move))
     {
@@ -679,44 +681,6 @@ void Search<SearcherType>::init_search() {
 }
 
 template<Searcher SearcherType>
-void Search<SearcherType>::sort_move(MoveData &md) {
-  const auto m = md.move;
-
-  if (pos->transp_move == m)
-    md.score = 890010;
-  else if (is_queen_promotion(m))
-    md.score = 890000;
-  else if (is_capture(m))// also en-pessant
-  {
-    const auto value_captured = piece_value(move_captured(m));
-    auto value_piece          = piece_value(move_piece(m));
-
-    if (value_piece == 0)
-      value_piece = 1800;
-
-    if (value_piece <= value_captured)
-      md.score = 300000 + value_captured * 20 - value_piece;
-    else if (b->see_move(m) >= 0)
-      md.score = 160000 + value_captured * 20 - value_piece;
-    else
-      md.score = -100000 + value_captured * 20 - value_piece;
-  } else if (is_promotion(m))
-    md.score = PROMOTIONMOVESCORE + piece_value(move_promoted(m));
-  else if (m == pos->killer_moves[0])
-    md.score = KILLERMOVESCORE + 20;
-  else if (m == pos->killer_moves[1])
-    md.score = KILLERMOVESCORE + 19;
-  else if (m == pos->killer_moves[2])
-    md.score = KILLERMOVESCORE + 18;
-  else if (m == pos->killer_moves[3])
-    md.score = KILLERMOVESCORE + 17;
-  else if (pos->last_move && t->counter_moves[move_piece(pos->last_move)][move_to(pos->last_move)] == m)
-    md.score = 60000;
-  else
-    md.score = t->history_scores[move_piece(m)][move_to(m)];
-}
-
-template<Searcher SearcherType>
 int Search<SearcherType>::store_search_node_score(int score, int depth, NodeType nt, Move m) const {
   store_hash(depth, score, nt, m);
   return score;
@@ -747,8 +711,11 @@ bool Search<SearcherType>::move_is_easy() const {
     return false;
   else
   {
-    if ((pos->move_count() == 1 && b->search_depth > 9) || (pool.main()->time.is_fixed_depth() && pool.main()->time.get_depth() == b->search_depth)
-        || (t->pv[0][0].score == MAXSCORE - 1))
+
+    if (b->search_depth > 9 && Moves(b).move_count() == 1)
+      return true;
+
+    if ((pool.main()->time.is_fixed_depth() && pool.main()->time.get_depth() == b->search_depth) || (t->pv[0][0].score == MAXSCORE - 1))
       return true;
 
     return !is_analysing() && !pool.main()->time.is_fixed_depth() && pool.main()->time.plenty_time();

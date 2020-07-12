@@ -19,6 +19,7 @@
 */
 
 #include <span>
+#include <utility>
 
 #include "moves.h"
 #include "board.h"
@@ -29,10 +30,52 @@ namespace {
 
 constexpr std::array<PieceType, 5> MoveGenPieceTypes{QUEEN, ROOK, BISHOP, KNIGHT, KING};
 
+constexpr int KILLERMOVESCORE    = 124900;
+constexpr int PROMOTIONMOVESCORE = 50000;
+
+void score_move(MoveData &md, Board *b) {
+  const auto m = md.move;
+
+  if (b->pos->transp_move == m)
+    md.score = 890010;
+  else if (is_queen_promotion(m))
+    md.score = 890000;
+  else if (is_capture(m))// also en-pessant
+  {
+    const auto value_captured = piece_value(move_captured(m));
+    auto value_piece          = piece_value(move_piece(m));
+
+    if (value_piece == 0)
+      value_piece = 1800;
+
+    if (value_piece <= value_captured)
+      md.score = 300000 + value_captured * 20 - value_piece;
+    else if (b->see_move(m) >= 0)
+      md.score = 160000 + value_captured * 20 - value_piece;
+    else
+      md.score = -100000 + value_captured * 20 - value_piece;
+  } else if (is_promotion(m))
+    md.score = PROMOTIONMOVESCORE + piece_value(move_promoted(m));
+  else if (m == b->pos->killer_moves[0])
+    md.score = KILLERMOVESCORE + 20;
+  else if (m == b->pos->killer_moves[1])
+    md.score = KILLERMOVESCORE + 19;
+  else if (m == b->pos->killer_moves[2])
+    md.score = KILLERMOVESCORE + 18;
+  else if (m == b->pos->killer_moves[3])
+    md.score = KILLERMOVESCORE + 17;
+  else if (b->pos->last_move && b->my_thread()->counter_moves[move_piece(b->pos->last_move)][move_to(b->pos->last_move)] == m)
+    md.score = 60000;
+  else
+    md.score = b->my_thread()->history_scores[move_piece(m)][move_to(m)];
+}
+
 }// namespace
 
-void Moves::generate_moves(MoveSorter *sorter, const Move tt_move, const int flags) {
-  reset(sorter, tt_move, flags);
+Moves::Moves(Board *board) : b(board) { }
+
+void Moves::generate_moves(const Move tt_move, const int flags) {
+  reset(tt_move, flags);
   max_stage_ = END_STAGE;
 
   if (move_flags_ & STAGES)
@@ -52,15 +95,15 @@ void Moves::generate_moves(MoveSorter *sorter, const Move tt_move, const int fla
   }
 }
 
-void Moves::generate_captures_and_promotions(MoveSorter *sorter) {
-  reset(sorter, MOVE_NONE, STAGES);
+void Moves::generate_captures_and_promotions() {
+  reset(MOVE_NONE, STAGES);
   max_stage_ = QUIET_STAGE;
   stage_     = CAPTURE_STAGE;
 }
 
 template<Color Us>
 void Moves::generate_moves(const PieceType pt, const Bitboard to_squares) {
-  reset(nullptr, MOVE_NONE, 0);
+  reset(MOVE_NONE, 0);
 
   const auto pieces = b->pieces();
   auto bb           = b->pieces(pt, Us);
@@ -76,7 +119,7 @@ template void Moves::generate_moves<WHITE>(PieceType, Bitboard);
 template void Moves::generate_moves<BLACK>(PieceType, Bitboard);
 
 void Moves::generate_pawn_moves(const bool capture, const Bitboard to_squares, const Color c) {
-  reset(nullptr, MOVE_NONE, 0);
+  reset(MOVE_NONE, 0);
 
   if (c == WHITE)
   {
@@ -97,8 +140,7 @@ const MoveData *Moves::next_move() {
   return b->side_to_move() == WHITE ? get_next_move<WHITE>() : get_next_move<BLACK>();
 }
 
-void Moves::reset(MoveSorter *sorter, const Move m, const int flags) {
-  move_sorter_ = sorter;
+void Moves::reset(const Move m, const int flags) {
   transp_move_ = m;
   move_flags_  = flags;
   iteration_   = number_moves_ = 0;
@@ -186,8 +228,8 @@ const MoveData *Moves::get_next_move() {
   if (iteration_ == number_moves_)
     return nullptr;
 
-  if (!move_sorter_)
-    return &move_list[iteration_++];
+  // if (!sort_func)
+  //   return &move_list[iteration_++];
 
   do
   {
@@ -258,11 +300,11 @@ void Moves::add_move(const Piece pc, const Square from, const Square to, const M
   auto &move_data = move_list[number_moves_++];
   move_data       = move;
 
-  [[likely]]
-  if (move_sorter_)
-    move_sorter_->sort_move(move_data);
-  else
-    move_data.score = 0;
+  // [[likely]]
+  // if (sort_func)
+      score_move(move_data, b);
+  // else
+  //   move_data.score = 0;
 }
 
 template<Color Us, PieceType Pt>
