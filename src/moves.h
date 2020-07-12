@@ -65,8 +65,6 @@ struct Moves {
   [[nodiscard]]
   int move_count() const;
 
-  std::array<MoveData, 256> move_list{};
-
   Board *b{};
 
 private:
@@ -115,6 +113,7 @@ private:
   [[nodiscard]]
   bool can_castle_long() const;
 
+  std::array<MoveData, 256> move_list{};
   int iteration_{};
   int stage_{};
   int max_stage_{};

@@ -111,6 +111,7 @@ void Moves::reset(MoveSorter *sorter, const Move m, const int flags) {
     [[unlikely]]
     if (mt & (CASTLE | EPCAPTURE))
     {
+      // TODO : Finish up Board.is_pseudo_legal()
       // needed because is_pseudo_legal() is not complete yet.
       transp_move_ = MOVE_NONE;
       move_flags_ &= ~STAGES;
