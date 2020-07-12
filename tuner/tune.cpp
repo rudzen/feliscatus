@@ -66,6 +66,8 @@ struct ParamIndexRecord final {
   double improved_{};
 };
 
+// TODO : replace with <=>
+
 inline bool operator<(const ParamIndexRecord &lhs, const ParamIndexRecord &rhs) {
   return lhs.improved_ >= rhs.improved_;
 }

@@ -91,6 +91,9 @@ struct Board {
   [[nodiscard]]
   bool is_attacked(Square s, Color c) const;
 
+  [[nodiscard]]
+  bool is_pseudo_legal(Move m) const;
+
   void print() const;
 
   [[nodiscard]]

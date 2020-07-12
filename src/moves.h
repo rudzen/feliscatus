@@ -26,15 +26,14 @@
 #include "types.h"
 
 struct MoveData {
-  Move move;
-  int score;
-  operator Move() const { return move; }
-  void operator=(const Move m) { move = m; }  // NOLINT(misc-unconventional-assign-operator)
+  Move move{};
+  int score{};
+  constexpr operator Move() const { return move; }
+  void operator=(const Move m) { move = m; }
+  constexpr auto operator<=> (const MoveData &rhs) {
+    return score <=> rhs.score;
+  }
 };
-
-inline bool operator<(const MoveData &f, const MoveData &s) {
-  return f.score < s.score;
-}
 
 struct MoveSorter {
   virtual ~MoveSorter() = default;
@@ -61,13 +60,10 @@ struct Moves {
   void generate_pawn_moves(bool capture, Bitboard to_squares, Color c);
 
   [[nodiscard]]
-  MoveData *next_move();
+  const MoveData *next_move();
 
   [[nodiscard]]
   int move_count() const;
-
-  [[nodiscard]]
-  bool is_pseudo_legal(Move m) const;
 
   std::array<MoveData, 256> move_list{};
 
@@ -109,7 +105,7 @@ private:
   void add_castle_move(Square from, Square to);
 
   template<Color Us>
-  MoveData *get_next_move();
+  const MoveData *get_next_move();
 
   template<Color Us>
   [[nodiscard]]

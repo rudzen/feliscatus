@@ -340,6 +340,41 @@ bool Board::is_attacked_by_slider(const Square s, const Color c) const {
   return pieces(QUEEN, c) & (b_attacks | r_attacks);
 }
 
+bool Board::is_pseudo_legal(const Move m) const {
+  // TODO : castleling & en passant moves
+
+  assert(is_ok(m));
+
+  const auto from = move_from(m);
+  const auto pc   = move_piece(m);
+
+  if ((pieces(pc) & from) == 0)
+    return false;
+
+  const auto to = move_to(m);
+  const auto move_stm = move_side(m);
+
+  if (move_stm != side_to_move())
+    return false;
+
+  if (is_capture(m))
+  {
+    if ((pieces(~move_stm) & to) == 0)
+      return false;
+
+    if ((pieces(move_captured(m)) & to) == 0)
+      return false;
+  }
+    // } else if (is_castle_move(m))
+    //    return !b->is_attacked(b->king_sq(side_to_move), side_to_move) && !in_check && ((from < to && can_castle_short()) || (from > to && can_castle_long()));
+  else if (pieces() & to)
+    return false;
+
+  const auto pt = type_of(move_piece(m));
+
+  return !util::in_between<QUEEN, BISHOP>(pt) || !(between_bb[from][to] & pieces());
+}
+
 void Board::print() const {
   constexpr std::string_view piece_letter = "PNBRQK. pnbrqk. ";
 

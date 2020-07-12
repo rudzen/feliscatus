@@ -93,42 +93,8 @@ void Moves::generate_pawn_moves(const bool capture, const Bitboard to_squares, c
   }
 }
 
-MoveData *Moves::next_move() {
+const MoveData *Moves::next_move() {
   return b->side_to_move() == WHITE ? get_next_move<WHITE>() : get_next_move<BLACK>();
-}
-
-bool Moves::is_pseudo_legal(const Move m) const {
-  // TODO : castleling & en passant moves
-
-  assert(is_ok(m));
-
-  const auto from = move_from(m);
-  const auto pc   = move_piece(m);
-
-  if ((b->pieces(pc) & from) == 0)
-    return false;
-
-  const auto to = move_to(m);
-
-  if (const auto move_stm = move_side(m); move_stm != b->side_to_move())
-    return false;
-  else if (is_capture(m))
-  {
-    if ((b->pieces(~move_stm) & to) == 0)
-      return false;
-    if ((b->pieces(move_captured(m)) & to) == 0)
-      return false;
-  }
-  // } else if (is_castle_move(m))
-  //    return !b->is_attacked(b->king_sq(side_to_move), side_to_move) && !in_check && ((from < to && can_castle_short()) || (from > to && can_castle_long()));
-  else if (b->pieces() & to)
-    return false;
-
-  if (const auto pt = type_of(move_piece(m)); util::in_between<QUEEN, BISHOP>(pt))
-    if (between_bb[from][to] & b->pieces())
-      return false;
-
-  return true;
 }
 
 void Moves::reset(MoveSorter *sorter, const Move m, const int flags) {
@@ -159,11 +125,8 @@ void Moves::reset(MoveSorter *sorter, const Move m, const int flags) {
 }
 
 void Moves::generate_hash_move() {
-  if (transp_move_ && is_pseudo_legal(transp_move_))
-  {
-    move_list[number_moves_].score  = 890010;
-    move_list[number_moves_++].move = transp_move_;
-  }
+  if (transp_move_ && b->is_pseudo_legal(transp_move_))
+    move_list[number_moves_++] = {.move = transp_move_, .score = 890010};
   ++stage_;
 }
 
@@ -184,31 +147,35 @@ void Moves::generate_captures_and_promotions() {
   add_pawn_moves<Us>(WestAttacks(pawns) & opponent_pieces, WestDistance, CAPTURE);
   add_pawn_moves<Us>(EastAttacks(pawns) & opponent_pieces, EastDistance, CAPTURE);
   [[unlikely]]
-  if (const auto en_passant_square = b->en_passant_square(); en_passant_square != NO_SQ)
+  if (b->en_passant_square() != NO_SQ)
   {
-    add_pawn_moves<Us>(WestAttacks(pawns) & en_passant_square, WestDistance, EPCAPTURE);
-    add_pawn_moves<Us>(EastAttacks(pawns) & en_passant_square, EastDistance, EPCAPTURE);
+    add_pawn_moves<Us>(WestAttacks(pawns) & b->en_passant_square(), WestDistance, EPCAPTURE);
+    add_pawn_moves<Us>(EastAttacks(pawns) & b->en_passant_square(), EastDistance, EPCAPTURE);
   }
   ++stage_;
 }
 
 template<Color Us>
-MoveData *Moves::get_next_move() {
+const MoveData *Moves::get_next_move() {
   while (iteration_ == number_moves_ && stage_ < max_stage_)
   {
     switch (stage_)
     {
     case TT_STAGE:
+    {
       generate_hash_move();
       break;
-
+    }
     case CAPTURE_STAGE:
+    {
       generate_captures_and_promotions<Us>();
       break;
-
+    }
     case QUIET_STAGE:
+    {
       generate_quiet_moves<Us>();
       break;
+    }
 
     default:// error
       return nullptr;
@@ -227,15 +194,17 @@ MoveData *Moves::get_next_move() {
     const auto end_md   = &move_list[number_moves_];
     const auto best     = std::max_element(first_md, end_md);
 
-    if (max_stage_ == END_STAGE && stage_ == QUIET_STAGE && best->score < 0)
-      generate_quiet_moves<Us>();
-    else
+    if (max_stage_ > QUIET_STAGE && stage_ == QUIET_STAGE && best->score < 0)
     {
-      // set the "best" move as the current iteration move
-      std::swap(*first_md, *best);
-      ++iteration_;
-      return first_md;
+      generate_quiet_moves<Us>();
+      continue;
     }
+
+    // set the "best" move as the current iteration move
+    std::swap(*first_md, *best);
+    ++iteration_;
+    return first_md;
+
   } while (true);
 }
 
@@ -368,8 +337,8 @@ void Moves::add_pawn_moves(const Bitboard to_squares, const Direction d, const M
 
   while (targets)
   {
-    const auto to   = pop_lsb(&targets);
-    const auto from = to - d;
+    const auto to         = pop_lsb(&targets);
+    const auto from       = to - d;
     const auto promo_type = mt | PROMOTION;
     for (const auto promoted : PromotionPieceTypes)
       add_move<Us>(pawn, from, to, promo_type, make_piece(promoted, Us));
@@ -381,7 +350,7 @@ void Moves::add_pawn_moves(const Bitboard to_squares, const Direction d, const M
 
   while (targets)
   {
-    const auto to   = pop_lsb(&targets);
+    const auto to = pop_lsb(&targets);
     add_move<Us>(pawn, to - d, to, mt);
   }
 }
