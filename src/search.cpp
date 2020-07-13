@@ -94,8 +94,7 @@ void get_hash_and_evaluate(Position *pos, Board *b, const std::size_t pool_index
 }
 
 [[nodiscard]]
-bool is_killer_move(const Move m, const Position *p) {
-  const auto &km = p->killer_moves;
+bool is_killer_move(const Move m, const KillerMoves &km) {
   return std::find(km.cbegin(), km.cend(), m) != km.cend();
 }
 
@@ -182,7 +181,7 @@ private:
   void check_time() const;
 
   [[nodiscard]]
-  bool is_analysing() const;
+  static bool is_analysing();
 
   template<NodeType NT>
   void update_pv(Move m, int score, int depth) const;
@@ -451,7 +450,7 @@ auto Search<SearcherType>::search_fail_low(const int depth, int alpha, const Mov
 }
 
 template<Searcher SearcherType>
-bool Search<SearcherType>::should_try_null_move(int beta) const {
+bool Search<SearcherType>::should_try_null_move(const int beta) const {
   return !b->in_check()
       && pos->null_moves_in_row < 1
       && !b->material().is_kx(b->side_to_move())
@@ -460,7 +459,7 @@ bool Search<SearcherType>::should_try_null_move(int beta) const {
 
 template<Searcher SearcherType>
 template<NodeType NT, bool PV>
-[[nodiscard]] std::optional<int> Search<SearcherType>::next_depth_not_pv(int depth, int move_count, const MoveData *move_data, int alpha, int &best_score) const {
+[[nodiscard]] std::optional<int> Search<SearcherType>::next_depth_not_pv(int depth, const int move_count, const MoveData *move_data, int alpha, int &best_score) const {
   const auto m = move_data->move;
 
   if (b->in_check() && b->see_last_move(m) >= 0)
@@ -468,15 +467,17 @@ template<NodeType NT, bool PV>
 
   constexpr auto move_count_limit = PV ? 5 : 3;
 
-  if (move_count >= move_count_limit && !is_queen_promotion(m) && !is_capture(m) && !is_killer_move(m, pos - 1))
+  if (move_count >= move_count_limit && !is_queen_promotion(m) && !is_capture(m) && !is_killer_move(m, pos->previous->killer_moves))
   {
     auto next_depth = depth - 2 - depth / 8 - (move_count - 6) / 10;
 
     if constexpr (NT == BETA)
       next_depth -= 2;
 
+    constexpr auto depth_limit = 3;
+
     // futility
-    if (next_depth <= 3)
+    if (next_depth <= depth_limit)
     {
       const auto score = -pos->eval_score + futility_margin[std::clamp(next_depth, 0, 3)];
 
@@ -492,7 +493,7 @@ template<NodeType NT, bool PV>
 }
 
 template<Searcher SearcherType>
-int Search<SearcherType>::next_depth_pv(Move singular_move, int depth, const MoveData *md) const {
+int Search<SearcherType>::next_depth_pv(const Move singular_move, const int depth, const MoveData *md) const {
   const auto m = md->move;
 
   if (m == singular_move)
@@ -505,7 +506,7 @@ int Search<SearcherType>::next_depth_pv(Move singular_move, int depth, const Mov
 
 template<Searcher SearcherType>
 template<bool PV>
-int Search<SearcherType>::search_quiesce(int alpha, int beta, int qs_ply) {
+int Search<SearcherType>::search_quiesce(int alpha, const int beta, const int qs_ply) {
   if constexpr (!PV)
   {
     if (is_hash_score_valid(pos, 0, alpha, beta))
@@ -584,7 +585,7 @@ int Search<SearcherType>::search_quiesce(int alpha, int beta, int qs_ply) {
 }
 
 template<Searcher SearcherType>
-bool Search<SearcherType>::make_move_and_evaluate(Move m, int alpha, int beta) {
+bool Search<SearcherType>::make_move_and_evaluate(const Move m, const int alpha, const int beta) {
   const auto current_nodes = t->node_count.fetch_add(1, std::memory_order_relaxed);
 
   [[unlikely]]
@@ -595,7 +596,8 @@ bool Search<SearcherType>::make_move_and_evaluate(Move m, int alpha, int beta) {
   ++b->plies;
   t->pv_length[b->plies] = b->plies;
 
-  check_sometimes(current_nodes);
+  if constexpr (verbosity)
+    check_sometimes(current_nodes);
 
   get_hash_and_evaluate(pos, b, t->index(), -beta, -alpha, b->plies);
 
@@ -611,12 +613,9 @@ void Search<SearcherType>::unmake_move() {
 }
 
 template<Searcher SearcherType>
-void Search<SearcherType>::check_sometimes(uint64_t nodes) const {
-  if constexpr (verbosity)
-  {
-    if (nodes >= 16383)
-      check_time();
-  }
+void Search<SearcherType>::check_sometimes(const uint64_t nodes) const {
+  if (nodes >= 16383)
+    check_time();
 }
 
 template<Searcher SearcherType>
@@ -634,7 +633,7 @@ void Search<SearcherType>::check_time() const {
 }
 
 template<Searcher SearcherType>
-bool Search<SearcherType>::is_analysing() const {
+bool Search<SearcherType>::is_analysing() {
   if constexpr (!verbosity)
     return true;
   else
@@ -643,7 +642,7 @@ bool Search<SearcherType>::is_analysing() const {
 
 template<Searcher SearcherType>
 template<NodeType NT>
-void Search<SearcherType>::update_pv(Move m, int score, int depth) const {
+void Search<SearcherType>::update_pv(const Move m, const int score, const int depth) const {
   const auto ply      = b->plies;
   const auto next_ply = ply + 1;
   auto &pv            = t->pv;
@@ -681,7 +680,7 @@ void Search<SearcherType>::init_search() {
 }
 
 template<Searcher SearcherType>
-int Search<SearcherType>::store_search_node_score(int score, int depth, NodeType nt, Move m) const {
+int Search<SearcherType>::store_search_node_score(const int score, const int depth, const NodeType nt, const Move m) const {
   store_hash(depth, score, nt, m);
   return score;
 }

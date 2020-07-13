@@ -38,7 +38,7 @@ constexpr TimeUnit time_safety_margin = 1;
 std::unique_ptr<Board> new_board() {
   const auto num_threads = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::THREADS>()]);
   pool.set(num_threads);
-  return std::make_unique<Board>(start_position, pool.main());
+  return std::make_unique<Board>();
 }
 
 constexpr uint64_t nps(const uint64_t nodes, const TimeUnit time) {

@@ -50,4 +50,5 @@ struct Position final {
   Square en_passant_square{};
   Color side_to_move{};
   Bitboard pinned{};
+  Position *previous{};
 };
