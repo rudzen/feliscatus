@@ -200,9 +200,10 @@ constexpr std::array<Square, 2> ooo_king_to{C1, C8};
 enum MoveGenFlags {
   NONE           = 0,
   LEGALMOVES     = 1,
-  STAGES         = 1 << 1
+  STAGES         = 1 << 1,
+  CAPTURES       = 1 << 2,
+  QUIET          = 1 << 3
 };
-
 
 /// color_of() determin color of a square or a piece
 

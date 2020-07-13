@@ -441,7 +441,9 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
     pos->checkers = attackers_to(king_sq(pos->side_to_move));
 
   update_key(pos, m);
+
   pos->material.make_move(m);
+  pos->pinned = get_pinned_pieces(pos->side_to_move, king_sq(pos->side_to_move));
 
   prefetch(TT.find_bucket(pos->key));
 
@@ -724,16 +726,12 @@ std::string Board::move_to_string(const Move m) const {
 }
 
 void Board::print_moves() {
-  auto i = 0;
-
-  auto mg = Moves(this);
-  mg.generate_moves();
-
-  while (const MoveData *m = mg.next_move())
+  auto ml = MoveList<LEGALMOVES>(this);
+  for (auto i = 0; const auto m : ml)
   {
-    fmt::print("%{}. ", i++ + 1);
-    fmt::print(move_to_string(m->move));
-    fmt::print("   {}\n", m->score);
+    fmt::print("{}. ", i++ + 1);
+    fmt::print(move_to_string(m.move));
+    fmt::print("   {}\n", m.score);
   }
 }
 
