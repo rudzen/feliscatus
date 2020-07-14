@@ -22,6 +22,7 @@
 
 #include <concepts>
 #include <cmath>
+#include <string>
 #include <string_view>
 
 #if defined(WIN32) || defined(_MSC_VER)
@@ -149,6 +150,16 @@ constexpr T round(T2 value) {
 #endif
 
 #endif
+}
+
+inline void find_and_replace(std::string &source, const std::string_view &find, const std::string_view &replace, bool only_once = true) {
+  for (std::string::size_type i = 0; (i = source.find(find, i)) != std::string::npos;)
+  {
+    source.replace(i, find.length(), replace);
+    if (only_once)
+      return;
+    i += replace.length();
+  }
 }
 
 }

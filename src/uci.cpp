@@ -236,12 +236,8 @@ void uci::run(const int argc, char *argv[]) {
     else if (token == "ponder")
       pool.main()->ponder = true;
     else if (token == "uci")
-    {
-      fmt::print("id name Feliscatus 0.1\n");
-      fmt::print("id author Gunnar Harms, FireFather, Rudy Alex Kohn\n");
-      fmt::print("{}\n", Options);
-      fmt::print("uciok\n");
-    } else if (token == "isready")
+      fmt::print("{}{}\nuciok\n", misc::print_engine_info<true>(), Options);
+    else if (token == "isready")
       fmt::print("readyok\n");
     else if (token == "ucinewgame")
     {
@@ -255,7 +251,6 @@ void uci::run(const int argc, char *argv[]) {
       position(board.get(), input);
     else if (token == "go")
     {
-      //stop_threads();
       go(input, board->get_fen());
     } else if (token == "perft")
     {
@@ -264,6 +259,4 @@ void uci::run(const int argc, char *argv[]) {
     } else if (token == "quit" || token == "exit")
       break;
   } while (token != "quit" && argc == 1);
-
-  // stop_threads();
 }
