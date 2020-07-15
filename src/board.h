@@ -71,7 +71,7 @@ struct Board {
   [[nodiscard]]
   std::string move_to_string(Move m) const;
 
-  void print_moves() const;
+  void print_moves();
 
   void add_piece(Piece pc, Square s);
 

@@ -31,6 +31,7 @@
 #include "transpositional.h"
 #include "miscellaneous.h"
 #include "prng.h"
+#include "moves.h"
 
 namespace zobrist {
 
@@ -203,10 +204,7 @@ void update_key(Position *pos, const Move m) {
 }// namespace
 
 Board::Board()
-  : pos(position_list.data()), chess960(false), xfen(false) {
-  for (auto &p : position_list)
-    p.b = this;
-}
+  : pos(position_list.data()), chess960(false), xfen(false) { }
 
 Board::Board(const std::string_view fen, thread *t)
   : Board() {
@@ -731,10 +729,13 @@ std::string Board::move_to_string(const Move m) const {
   return s;
 }
 
-void Board::print_moves() const {
+void Board::print_moves() {
   auto i = 0;
 
-  while (const MoveData *m = pos->next_move())
+  auto mg = Moves(this);
+  mg.generate_moves();
+
+  while (const MoveData *m = mg.next_move())
   {
     fmt::print("%{}. ", i++ + 1);
     fmt::print(move_to_string(m->move));

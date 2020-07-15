@@ -23,8 +23,11 @@
 #include "board.h"
 #include "uci.h"
 #include "transpositional.h"
+#include "miscellaneous.h"
 
 int main(const int argc, char *argv[]) {
+
+  fmt::print(misc::print_engine_info<false>());
 
   bitboard::init();
   attacks::init();
@@ -32,5 +35,6 @@ int main(const int argc, char *argv[]) {
   uci::init(Options);
 
   TT.init(1);
+
   uci::run(argc, argv);
 }

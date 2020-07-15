@@ -29,6 +29,7 @@
 #include "transpositional.h"
 #include "miscellaneous.h"
 #include "perft.h"
+#include "moves.h"
 
 namespace {
 
@@ -49,10 +50,12 @@ auto node_info(const TimeUnit time) {
   return std::make_pair(nodes, nps(nodes, time));
 }
 
-Move string_to_move(Position *p, const std::string_view m) {
-  p->generate_moves();
+Move string_to_move(Board *b, const std::string_view m) {
 
-  while (const MoveData *move_data = p->next_move())
+  auto mg = Moves(b);
+  mg.generate_moves();
+
+  while (const MoveData *move_data = mg.next_move())
     if (m == uci::display_uci(move_data->move))
       return move_data->move;
   return MOVE_NONE;
@@ -83,7 +86,7 @@ void position(Board *b, std::istringstream &input) {
 
   // parse any moves if they exist
   while (input >> token)
-    if (const auto m = string_to_move(b->pos, token); m)
+    if (const auto m = string_to_move(b, token); m)
       b->make_move(m, false, true);
 }
 
@@ -233,12 +236,8 @@ void uci::run(const int argc, char *argv[]) {
     else if (token == "ponder")
       pool.main()->ponder = true;
     else if (token == "uci")
-    {
-      fmt::print("id name Feliscatus 0.1\n");
-      fmt::print("id author Gunnar Harms, FireFather, Rudy Alex Kohn\n");
-      fmt::print("{}\n", Options);
-      fmt::print("uciok\n");
-    } else if (token == "isready")
+      fmt::print("{}{}\nuciok\n", misc::print_engine_info<true>(), Options);
+    else if (token == "isready")
       fmt::print("readyok\n");
     else if (token == "ucinewgame")
     {
@@ -252,7 +251,6 @@ void uci::run(const int argc, char *argv[]) {
       position(board.get(), input);
     else if (token == "go")
     {
-      //stop_threads();
       go(input, board->get_fen());
     } else if (token == "perft")
     {
@@ -261,6 +259,4 @@ void uci::run(const int argc, char *argv[]) {
     } else if (token == "quit" || token == "exit")
       break;
   } while (token != "quit" && argc == 1);
-
-  // stop_threads();
 }

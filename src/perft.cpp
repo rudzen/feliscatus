@@ -24,6 +24,7 @@
 #include "stopwatch.h"
 #include "board.h"
 #include "position.h"
+#include "moves.h"
 
 namespace {
 
@@ -31,16 +32,15 @@ uint64_t p(Board *b, const int depth, const int flags) {
   if (depth == 0)
     return 1;
 
-  auto *pos = b->pos;
-
-  pos->generate_moves(nullptr, MOVE_NONE, flags);
+  auto mg = Moves(b);
+  mg.generate_moves(MOVE_NONE, flags);
 
   uint64_t nodes{};
 
   [[likely]]
   if (flags & STAGES || depth != 1)
   {
-    while (const MoveData *move_data = pos->next_move())
+    while (const MoveData *move_data = mg.next_move())
     {
       const auto *m = &move_data->move;
 
@@ -51,7 +51,7 @@ uint64_t p(Board *b, const int depth, const int flags) {
       b->unmake_move();
     }
   } else
-    nodes = pos->move_count();
+    nodes = mg.move_count();
 
   return nodes;
 }
@@ -98,12 +98,12 @@ uint64_t Perft::perft_divide(const int depth) const {
   fmt::print("depth: {}\n", depth);
 
   uint64_t nodes{};
-  auto *pos = b->pos;
   TimeUnit time{};
 
-  pos->generate_moves(nullptr, MOVE_NONE, perft_flags);
+  auto mg = Moves(b);
+  mg.generate_moves(MOVE_NONE, perft_flags);
 
-  while (const MoveData *move_data = pos->next_move())
+  while (const MoveData *move_data = mg.next_move())
   {
     const auto *const m = &move_data->move;
 
