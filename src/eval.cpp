@@ -29,7 +29,6 @@
 #include "board.h"
 #include "parameters.h"
 #include "bitboard.h"
-#include "magic.h"
 #include "position.h"
 #include "pawnhashtable.h"
 #include "score.h"
@@ -420,11 +419,11 @@ void Evaluate<Tuning>::init_evaluate() {
   attack_count[Us]         = 0;
   attack_counter[Us]       = 0;
   const auto ksq           = b->king_sq(Us);
-  const auto attacks       = king_attacks[ksq];
+  const auto attacks       = all_attacks<KING>(ksq);
   const auto our_pawns     = b->pieces(PAWN, Us);
   const auto their_pawns   = b->pieces(PAWN, Them);
   open_files               = ~(pawn_fill[Us](pawn_fill[Them](our_pawns)) | pawn_fill[Us](pawn_fill[Them](their_pawns)));
-  half_open_files[Us]      = ~north_fill(south_fill(our_pawns)) & ~open_files;
+  half_open_files[Us]      = ~fill<NORTH>(fill<SOUTH>(our_pawns)) & ~open_files;
 
   poseval.fill(ZeroScore);
 

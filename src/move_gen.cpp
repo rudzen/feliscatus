@@ -26,43 +26,13 @@ namespace {
 constexpr std::array<PieceType, 5> MoveGenPieceTypes{QUEEN, ROOK, BISHOP, KNIGHT, KING};
 
 template<Color Us>
-[[nodiscard]] bool is_castle_allowed(const Square to, const Board *b) {
-
-  constexpr auto Them = ~Us;
-
-  // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
-  // The following comments were taken from that source.
-
-  // Check that the smallest back rank interval containing the king, the castling rook, and their
-  // destination squares, contains no pieces other than the king and castling rook.
-
-  const auto rook_to          = rook_castles_to[to];
-  const auto rook_from        = rook_castles_from[to];
-  const auto king_square      = b->king_sq(Us);
-  const auto bb_castle_pieces = bit(rook_from, king_square);
-
-  if (const auto bb_castle_span = bb_castle_pieces | between_bb[king_square][rook_from] | between_bb[rook_from][rook_to] | bit(rook_to, to);
-      (bb_castle_span & b->pieces()) != bb_castle_pieces)
-    return false;
-
-  // Check that no square between the king's initial and final squares (including the initial and final
-  // squares) may be under attack by an enemy piece. (Initial square was already checked a this point.)
-
-  for (auto bb = between_bb[king_square][to] | to; bb; reset_lsb(bb))
-    if (b->is_attacked(lsb(bb), Them))
-      return false;
-
-  return true;
-}
-
-template<Color Us>
 [[nodiscard]] bool can_castle_short(Board *b) {
-  return b->castle_rights() & oo_allowed_mask[Us] && is_castle_allowed<Us>(oo_king_to[Us], b);
+  return b->castle_rights() & oo_allowed_mask[Us] && b->is_castleling_impeeded(oo_king_to[Us], Us);
 }
 
 template<Color Us>
 [[nodiscard]] bool can_castle_long(Board *b) {
-  return b->castle_rights() & ooo_allowed_mask[Us] && is_castle_allowed<Us>(ooo_king_to[Us], b);
+  return b->castle_rights() & ooo_allowed_mask[Us] && b->is_castleling_impeeded(ooo_king_to[Us], Us);
 }
 
 }// namespace
@@ -159,25 +129,6 @@ template<MoveGenFlags Flags, Color Us, MoveType Type, Direction D>
     const auto to = pop_lsb(&targets);
     md = add_move<Flags, Us>(b, pawn, to - D, to, Type, md);
   }
-
-
-  //const auto pawn = make_piece(PAWN, Us);
-
-  //auto bb = to_squares;
-
-  //while (bb)
-  //{
-  //  const auto to   = pop_lsb(&bb);
-  //  const auto from = to - D;
-  //  const auto rr   = relative_rank(Us, to);
-  //  [[unlikely]] if (rr == RANK_8) {
-  //    constexpr auto promo_type = Type | PROMOTION;
-
-  //    for (const auto promoted : PromotionPieceTypes)
-  //      md = add_move<Flags, Us>(b, pawn, from, to, promo_type, md, promoted);
-  //  }
-  //  else md = add_move<Flags, Us>(b, pawn, from, to, Type, md);
-  //}
 
   return md;
 }

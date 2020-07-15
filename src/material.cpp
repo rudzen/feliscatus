@@ -23,7 +23,7 @@
 
 #include "material.h"
 #include "board.h"
-#include "magic.h"
+#include "bitboard.h"
 #include "types.h"
 
 namespace {

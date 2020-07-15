@@ -26,7 +26,7 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 
 #include "board.h"
-#include "magic.h"
+#include "bitboard.h"
 #include "util.h"
 #include "transpositional.h"
 #include "miscellaneous.h"
@@ -308,12 +308,12 @@ Bitboard Board::get_pinned_pieces(const Color c, const Square s) const {
   auto pinned_pieces     = ZeroBB;
 
   while (pinners)
-    pinned_pieces |= between_bb[pop_lsb(&pinners)][s] & side_pieces;
+    pinned_pieces |= between(pop_lsb(&pinners), s) & side_pieces;
 
   pinners = xray_rook_attacks(all_pieces, side_pieces, s) & pieces(ROOK, QUEEN, them);
 
   while (pinners)
-    pinned_pieces |= between_bb[pop_lsb(&pinners)][s] & side_pieces;
+    pinned_pieces |= between(pop_lsb(&pinners), s) & side_pieces;
 
   return pinned_pieces;
 }
@@ -365,7 +365,7 @@ bool Board::is_pseudo_legal(const Move m) const {
 
   const auto pt = type_of(move_piece(m));
 
-  return !util::in_between<QUEEN, BISHOP>(pt) || !(between_bb[from][to] & pieces());
+  return !util::in_between<QUEEN, BISHOP>(pt) || !(between(from, to) & pieces());
 }
 
 void Board::print() const {
@@ -792,8 +792,10 @@ bool Board::is_castleling_impeeded(const Square s, const Color us) const {
   const auto ksq              = king_sq(us);
   const auto bb_castle_pieces = bit(rook_from, ksq);
 
-  if (const auto bb_castle_span = bb_castle_pieces | between_bb[ksq][rook_from] | between_bb[rook_from][rook_to] | bit(rook_to, s);
-      (bb_castle_span & pieces()) != bb_castle_pieces)
+  // castle span
+  auto bb = bb_castle_pieces | between(ksq, rook_from) | between(rook_from, rook_to) | bit(rook_to, s);
+
+  if ((bb & pieces()) != bb_castle_pieces)
     return false;
 
   // Check that no square between the king's initial and final squares (including the initial and final
@@ -801,8 +803,10 @@ bool Board::is_castleling_impeeded(const Square s, const Color us) const {
 
   const auto them = ~us;
 
-  for (auto bb = between_bb[ksq][s] | s; bb; reset_lsb(bb))
-    if (is_attacked(lsb(bb), them))
+  bb = between(ksq, s) | s;
+
+  while (bb)
+    if (is_attacked(pop_lsb(&bb), them))
       return false;
 
   return true;
