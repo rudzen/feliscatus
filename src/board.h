@@ -24,7 +24,7 @@
 #include <array>
 
 #include "types.h"
-#include "magic.h"
+#include "bitboard.h"
 #include "position.h"
 #include "tpool.h"
 

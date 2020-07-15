@@ -21,7 +21,6 @@
 #include <optional>
 #include "board.h"
 #include "bitboard.h"
-#include "magic.h"
 #include "types.h"
 
 namespace {

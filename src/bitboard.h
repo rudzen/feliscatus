@@ -29,12 +29,24 @@
 #include "types.h"
 #include "util.h"
 
+//------------------------------------------------
+// magic bb structures
+//------------------------------------------------
+struct Magic final {
+  Bitboard *data{};
+  Bitboard mask{};
+  Bitboard magic{};
+};
+
 namespace bitboard {
 
 std::string print_bitboard(Bitboard bb, std::string_view title);
 void init();
 
 }// namespace bitboard
+
+using MagicTable = std::array<Magic, SQ_NB>;
+inline std::array<MagicTable, 2> MagicTables;
 
 constexpr static Bitboard AllSquares  = ~Bitboard(0);
 constexpr static Bitboard DarkSquares = 0xAA55AA55AA55AA55ULL;
@@ -94,48 +106,6 @@ constexpr std::array<Direction, COL_NB> pawn_double_push_dist{NORTH * 2, SOUTH *
 constexpr std::array<Direction, COL_NB> pawn_west_attack_dist{NORTH_EAST, SOUTH_EAST};
 constexpr std::array<Direction, COL_NB> pawn_east_attack_dist{NORTH_WEST, SOUTH_WEST};
 
-consteval std::array<Bitboard, SQ_NB> make_knight_attacks()
-{
-  std::array<Bitboard, SQ_NB> result{};
-  for (const auto s : Squares)
-  {
-    const auto bbsq = square_bb[s];
-    result[s] =  (bbsq & ~(FileABB | FileBBB)) << 6;
-    result[s] |= (bbsq & ~FileABB) << 15;
-    result[s] |= (bbsq & ~FileHBB) << 17;
-    result[s] |= (bbsq & ~(FileGBB | FileHBB)) << 10;
-    result[s] |= (bbsq & ~(FileGBB | FileHBB)) >> 6;
-    result[s] |= (bbsq & ~FileHBB) >> 15;
-    result[s] |= (bbsq & ~FileABB) >> 17;
-    result[s] |= (bbsq & ~(FileABB | FileBBB)) >> 10;
-  }
-
-  return result;
-}
-
-constexpr std::array<Bitboard, SQ_NB> knight_attacks = make_knight_attacks();
-
-consteval std::array<Bitboard, SQ_NB> make_king_attacks()
-{
-  std::array<Bitboard, SQ_NB> result{};
-  for (const auto s : Squares)
-  {
-    const auto bbsq = square_bb[s];
-    result[s] =  (bbsq & ~FileABB) >> 1;
-    result[s] |= (bbsq & ~FileABB) << 7;
-    result[s] |= bbsq << 8;
-    result[s] |= (bbsq & ~FileHBB) << 9;
-    result[s] |= (bbsq & ~FileHBB) << 1;
-    result[s] |= (bbsq & ~FileHBB) >> 7;
-    result[s] |= bbsq >> 8;
-    result[s] |= (bbsq & ~FileABB) >> 9;
-  }
-
-  return result;
-}
-
-constexpr std::array<Bitboard, SQ_NB> king_attacks = make_king_attacks();
-
 template<typename T1 = Square>
 constexpr int distance(Square x, Square y);
 template<>
@@ -143,12 +113,13 @@ constexpr int distance<File>(const Square x, const Square y) { return util::abs(
 template<>
 constexpr int distance<Rank>(const Square x, const Square y) { return util::abs(rank_of(x) - rank_of(y)); }
 
-inline Bitboard between_bb[SQ_NB][SQ_NB];
 inline Bitboard passed_pawn_front_span[COL_NB][SQ_NB];
 inline Bitboard pawn_front_span[COL_NB][SQ_NB];
 inline Bitboard pawn_captures[COL_NB][SQ_NB];
 inline std::array<Square, 2> oo_king_from{};
 inline std::array<Square, 2> ooo_king_from{};
+inline std::array<std::array<Bitboard, SQ_NB>, PIECETYPE_NB> AllAttacks;
+inline std::array<std::array<Bitboard, SQ_NB>, SQ_NB> Lines;
 
 /// indexed by the position of the king
 inline std::array<Square, SQ_NB> rook_castles_to{};
@@ -290,27 +261,104 @@ constexpr Bitboard shift_bb(const Bitboard bb)
   assert(false);
 }
 
-constexpr Bitboard north_fill(const Bitboard bb) {
+template<Direction D>
+constexpr Bitboard fill(const Bitboard bb) {
+  static_assert(D != NORTH || D != SOUTH);
   auto fill = bb;
-  fill |= (fill << 8);
-  fill |= (fill << 16);
-  fill |= (fill << 32);
+  if constexpr (D == NORTH)
+  {
+    fill |= (fill << 8);
+    fill |= (fill << 16);
+    fill |= (fill << 32);
+  } else
+  {
+    fill |= (fill >> 8);
+    fill |= (fill >> 16);
+    fill |= (fill >> 32);
+  }
   return fill;
 }
 
-constexpr Bitboard south_fill(const Bitboard bb) {
-  auto fill = bb;
-  fill |= (fill >> 8);
-  fill |= (fill >> 16);
-  fill |= (fill >> 32);
-  return fill;
+inline Bitboard line(const Square s1, const Square s2) {
+  return Lines[s1][s2];
+}
+
+inline Bitboard between(const Square s1, const Square s2) {
+  const auto b = line(s1, s2) & ((AllSquares << s1) ^ (AllSquares << s2));
+  return b & (b - 1);
+}
+
+inline bool aligned(const Square s1, const Square s2, const Square s3) {
+  return line(s1, s2) & s3;
 }
 
 constexpr Bitboard (*pawn_east_attacks[COL_NB])(Bitboard) = {shift_bb<NORTH_WEST>, shift_bb<SOUTH_WEST>};
 constexpr Bitboard (*pawn_west_attacks[COL_NB])(Bitboard) = {shift_bb<NORTH_EAST>, shift_bb<SOUTH_EAST>};
-constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard) = {north_fill, south_fill};
+constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard) = {fill<NORTH>, fill<SOUTH>};
 
 constexpr Bitboard pawn_push(const Color c, const Bitboard bb) { return c == WHITE ? shift_bb<NORTH>(bb) : shift_bb<SOUTH>(bb); }
+
+template<PieceType Pt>
+inline Bitboard all_attacks(const Square s) {
+  return AllAttacks[Pt][s];
+}
+
+template<PieceType Pt>
+Bitboard piece_attacks_bb(const Square s, const Bitboard occupied = 0)
+{
+  static_assert(Pt != ROOK || Pt != BISHOP || Pt != QUEEN || Pt != KNIGHT || Pt != KING);
+
+  if constexpr (Pt == ROOK || Pt == BISHOP)
+  {
+    constexpr auto table_index = Pt - 2;
+    constexpr auto shift_modifier = 64 - (Pt == ROOK ? 12 : 9);
+    const auto mag = &MagicTables[table_index][s];
+    return mag->data[((occupied & mag->mask) * mag->magic) >> shift_modifier];
+  } else if constexpr (Pt == QUEEN)
+    return piece_attacks_bb<ROOK>(s, occupied) | piece_attacks_bb<BISHOP>(s, occupied);
+  else
+    return all_attacks<Pt>(s);
+}
+
+inline Bitboard piece_attacks_bb(const PieceType pt, const Square sq, const Bitboard occupied = 0) {
+  switch (pt)
+  {
+  case BISHOP:
+    return piece_attacks_bb<BISHOP>(sq, occupied);
+
+  case ROOK:
+    return piece_attacks_bb<ROOK>(sq, occupied);
+
+  case QUEEN:
+    return piece_attacks_bb<QUEEN>(sq, occupied);
+
+  case KING:
+    return all_attacks<KING>(sq);
+
+  case KNIGHT:
+    return all_attacks<KNIGHT>(sq);
+
+  default:
+    break;// error
+  }
+  return 0;
+}
+
+inline Bitboard pawn_attacks_bb(const Color c, const Square s) {
+  return pawn_captures[c][s];
+}
+
+inline Bitboard xray_rook_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
+  const auto attacks = piece_attacks_bb<ROOK>(sq, occ);
+  blockers &= attacks;
+  return attacks ^ piece_attacks_bb<ROOK>(sq, occ ^ blockers);
+}
+
+inline Bitboard xray_bishop_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
+  const auto attacks = piece_attacks_bb<BISHOP>(sq, occ);
+  blockers &= attacks;
+  return attacks ^ piece_attacks_bb<BISHOP>(sq, occ ^ blockers);
+}
 
 constexpr void reset_lsb(Bitboard &bb) {
     bb &= (bb - 1);

@@ -19,7 +19,6 @@
 */
 
 #include "bitboard.h"
-#include "magic.h"
 #include "board.h"
 #include "uci.h"
 #include "transpositional.h"
@@ -27,7 +26,6 @@
 int main(const int argc, char *argv[]) {
 
   bitboard::init();
-  attacks::init();
   Board::init();
   uci::init(Options);
 
