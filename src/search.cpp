@@ -163,10 +163,10 @@ private:
 
   template<NodeType NT, bool PV>
   [[nodiscard]]
-  std::optional<int> next_depth_not_pv(int depth, int move_count, const MoveData *move_data, int alpha, int &best_score) const;
+  std::optional<int> next_depth_not_pv(int depth, int move_count, Move m, int alpha, int &best_score) const;
 
   [[nodiscard]]
-  int next_depth_pv(Move singular_move, int depth, const MoveData *md) const;
+  int next_depth_pv(Move singular_move, int depth, Move m) const;
 
   template<bool PV>
   [[nodiscard]]
@@ -319,10 +319,10 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta) {
       }
 
       if (PV && move_count == 1)
-        score = search_next_depth<EXACT, true>(next_depth_pv(singular_move, depth, move_data), -beta, -alpha);
+        score = search_next_depth<EXACT, true>(next_depth_pv(singular_move, depth, *move_data), -beta, -alpha);
       else
       {
-        const auto next_depth = next_depth_not_pv<NT, PV>(depth, move_count, move_data, alpha, best_score);
+        const auto next_depth = next_depth_not_pv<NT, PV>(depth, move_count, *move_data, alpha, best_score);
 
         if (!next_depth)
         {
@@ -338,7 +338,7 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta) {
           score = search_next_depth<next_expected_node_type, false>(depth - 1, -alpha - 1, -alpha);
 
         if (score > alpha && score < beta)
-          score = search_next_depth<EXACT, true>(next_depth_pv(MOVE_NONE, depth, move_data), -beta, -alpha);
+          score = search_next_depth<EXACT, true>(next_depth_pv(MOVE_NONE, depth, *move_data), -beta, -alpha);
       }
 
       unmake_move();
@@ -426,7 +426,7 @@ auto Search<SearcherType>::search_fail_low(const int depth, int alpha, const Mov
     if (make_move_and_evaluate(move_data->move, alpha, alpha + 1))
     {
       auto best_score       = -MAXSCORE;// dummy
-      const auto next_depth = next_depth_not_pv<BETA, true>(depth, ++move_count, move_data, alpha, best_score);
+      const auto next_depth = next_depth_not_pv<BETA, true>(depth, ++move_count, *move_data, alpha, best_score);
 
       if (!next_depth)
       {
@@ -459,9 +459,8 @@ bool Search<SearcherType>::should_try_null_move(const int beta) const {
 
 template<Searcher SearcherType>
 template<NodeType NT, bool PV>
-[[nodiscard]] std::optional<int> Search<SearcherType>::next_depth_not_pv(int depth, const int move_count, const MoveData *move_data, int alpha, int &best_score) const {
-  const auto m = move_data->move;
-
+[[nodiscard]]
+std::optional<int> Search<SearcherType>::next_depth_not_pv(int depth, const int move_count, const Move m, int alpha, int &best_score) const {
   if (b->in_check() && b->see_last_move(m) >= 0)
     return std::make_optional(depth);
 
@@ -493,9 +492,7 @@ template<NodeType NT, bool PV>
 }
 
 template<Searcher SearcherType>
-int Search<SearcherType>::next_depth_pv(const Move singular_move, const int depth, const MoveData *md) const {
-  const auto m = md->move;
-
+int Search<SearcherType>::next_depth_pv(const Move singular_move, const int depth, const Move m) const {
   if (m == singular_move)
     return depth;
 

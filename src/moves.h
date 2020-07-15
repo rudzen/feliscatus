@@ -132,18 +132,16 @@ MoveData *generate(Board *b, MoveData *md);
 
 }
 
-// A simplie array wrapper for storing the generated moves
+// A simple array wrapper for storing the generated moves
 
 template<MoveGenFlags Flags>
-struct MoveList final {
-  [[nodiscard]] explicit MoveList(Board *b) : last_move(MoveGen::generate<Flags>(b, move_list.data())){};
-  [[nodiscard]] const MoveData *begin() const { return move_list.data(); }
-  [[nodiscard]] const MoveData *end() const { return last_move; }
+struct MoveList final : std::array<MoveData, 256> {
+  [[nodiscard]] explicit MoveList(Board *b) : std::array<MoveData, 256>({}), last_move(MoveGen::generate<Flags>(b, begin())){};
+  [[nodiscard]] const_iterator end() const { return last_move; }
   [[nodiscard]] std::size_t size() const { return std::distance(begin(), end()); }
   [[nodiscard]] bool empty() const { return size() == 0; }
   [[nodiscard]] bool contains(const Move move) const { return std::find(begin(), end(), move) != end(); }
 
 private:
-  std::array<MoveData, 256> move_list{};
-  MoveData *last_move;
+  const_iterator last_move;
 };
