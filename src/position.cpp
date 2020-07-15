@@ -31,6 +31,7 @@ void Position::clear() {
   last_move                  = MOVE_NONE;
   checkers                   = ZeroBB;
   in_check                   = false;
+  previous                   = nullptr;
   material.clear();
   killer_moves.fill(MOVE_NONE);
 }

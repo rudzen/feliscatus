@@ -28,30 +28,26 @@
 
 namespace {
 
-uint64_t p(Board *b, const int depth, const int flags) {
+uint64_t p(Board *b, const int depth) {
   if (depth == 0)
     return 1;
 
-  auto mg = Moves(b);
-  mg.generate_moves(MOVE_NONE, flags);
+  auto ml = MoveList<LEGALMOVES>(b);
+
+  [[unlikely]]
+  if (depth == 1)
+    return ml.size();
 
   uint64_t nodes{};
 
-  [[likely]]
-  if (flags & STAGES || depth != 1)
+  for (const auto m : ml)
   {
-    while (const MoveData *move_data = mg.next_move())
-    {
-      const auto *m = &move_data->move;
+    if (!b->make_move(m, true, true))
+      continue;
 
-      if (!b->make_move(*m, (flags & LEGALMOVES) == 0, true))
-        continue;
-
-      nodes += p(b, depth - 1, flags);
-      b->unmake_move();
-    }
-  } else
-    nodes = mg.move_count();
+    nodes += p(b, depth - 1);
+    b->unmake_move();
+  }
 
   return nodes;
 }
@@ -84,7 +80,7 @@ uint64_t Perft::perft(const int depth) const {
   for (auto i = 1; i <= depth; i++)
   {
     Stopwatch sw;
-    const auto nodes = p(b, i, perft_flags);
+    const auto nodes = p(b, i);
     total_nodes += nodes;
     const auto time = sw.elapsed_milliseconds() + 1;
     nps = nodes / time * 1000;
@@ -100,22 +96,19 @@ uint64_t Perft::perft_divide(const int depth) const {
   uint64_t nodes{};
   TimeUnit time{};
 
-  auto mg = Moves(b);
-  mg.generate_moves(MOVE_NONE, perft_flags);
+  auto ml = MoveList<LEGALMOVES>(b);
 
-  while (const MoveData *move_data = mg.next_move())
+  for (const auto m : ml)
   {
-    const auto *const m = &move_data->move;
-
-    if (!b->make_move(*m, perft_flags == 0, true))
+    if (!b->make_move(m, true, true))
       continue;
 
     const auto nodes_start = nodes;
     Stopwatch sw;
-    nodes += p(b, depth - 1, perft_flags);
+    nodes += p(b, depth - 1);
     time += sw.elapsed_milliseconds();
     b->unmake_move();
-    fmt::print("move {}: {} nodes\n", b->move_to_string(*m), nodes - nodes_start);
+    fmt::print("move {}: {} nodes\n", b->move_to_string(m), nodes - nodes_start);
   }
 
   const auto nps = nodes / (time + 1) * 1000;

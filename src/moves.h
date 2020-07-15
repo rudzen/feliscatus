@@ -124,3 +124,24 @@ private:
 inline int Moves::move_count() const {
   return number_moves_;
 }
+
+namespace MoveGen {
+
+template<MoveGenFlags Flags>
+MoveData *generate(Board *b, MoveData *md);
+
+}
+
+// A simple array wrapper for storing the generated moves
+
+template<MoveGenFlags Flags>
+struct MoveList final : std::array<MoveData, 256> {
+  [[nodiscard]] explicit MoveList(Board *b) : std::array<MoveData, 256>({}), last_move(MoveGen::generate<Flags>(b, begin())){};
+  [[nodiscard]] const_iterator end() const { return last_move; }
+  [[nodiscard]] std::size_t size() const { return std::distance(begin(), end()); }
+  [[nodiscard]] bool empty() const { return size() == 0; }
+  [[nodiscard]] bool contains(const Move move) const { return std::find(begin(), end(), move) != end(); }
+
+private:
+  const_iterator last_move;
+};

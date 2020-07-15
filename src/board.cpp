@@ -137,7 +137,7 @@ void update_key(Position *pos, const Move m) {
   auto key      = pos->key ^ pawn_key;
 
   pawn_key ^= zobrist::zobrist_side;
-  const auto *prev = (pos - 1);
+  const auto *prev = pos->previous;// (pos - 1);
 
   if (prev->en_passant_square != NO_SQ)
     key ^= zobrist::zobrist_ep_file[file_of(prev->en_passant_square)];
@@ -204,12 +204,7 @@ void update_key(Position *pos, const Move m) {
 }// namespace
 
 Board::Board()
-  : pos(position_list.data()), chess960(false), xfen(false) { }
-
-Board::Board(const std::string_view fen, thread *t)
-  : Board() {
-  set_fen(fen, t);
-}
+  : pos(position_list.data()) { }
 
 void Board::init() {
 
@@ -374,8 +369,6 @@ bool Board::is_pseudo_legal(const Move m) const {
 }
 
 void Board::print() const {
-  constexpr std::string_view piece_letter = "PNBRQK. pnbrqk. ";
-
   fmt::memory_buffer s;
 
   format_to(s, "\n");
@@ -432,6 +425,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
     }
   }
   auto *const prev                = pos++;
+  pos->previous                   = prev;
   pos->side_to_move               = ~prev->side_to_move;
   pos->material                   = prev->material;
   pos->last_move                  = m;
@@ -447,7 +441,9 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
     pos->checkers = attackers_to(king_sq(pos->side_to_move));
 
   update_key(pos, m);
+
   pos->material.make_move(m);
+  pos->pinned = get_pinned_pieces(pos->side_to_move, king_sq(pos->side_to_move));
 
   prefetch(TT.find_bucket(pos->key));
 
@@ -466,6 +462,7 @@ void Board::unmake_move() {
 
 bool Board::make_null_move() {
   auto *const prev                = pos++;
+  pos->previous                   = prev;
   pos->side_to_move               = ~prev->side_to_move;
   pos->material                   = prev->material;
   pos->last_move                  = MOVE_NONE;
@@ -603,7 +600,6 @@ int Board::set_fen(std::string_view fen, thread *t) {
 }
 
 std::string Board::get_fen() const {
-  constexpr std::string_view piece_letter = "PNBRQK  pnbrqk";
   fmt::memory_buffer s;
 
   for (const Rank r : ReverseRanks)
@@ -730,16 +726,12 @@ std::string Board::move_to_string(const Move m) const {
 }
 
 void Board::print_moves() {
-  auto i = 0;
-
-  auto mg = Moves(this);
-  mg.generate_moves();
-
-  while (const MoveData *m = mg.next_move())
+  auto ml = MoveList<LEGALMOVES>(this);
+  for (auto i = 0; const auto m : ml)
   {
-    fmt::print("%{}. ", i++ + 1);
-    fmt::print(move_to_string(m->move));
-    fmt::print("   {}\n", m->score);
+    fmt::print("{}. ", i++ + 1);
+    fmt::print(move_to_string(m.move));
+    fmt::print("   {}\n", m.score);
   }
 }
 

@@ -35,7 +35,6 @@ struct Board {
   using PositionList = std::array<Position, MAXDEPTH * 3>;
 
   Board();
-  explicit Board(std::string_view fen, thread *t);
 
   static void init();
 
@@ -205,8 +204,8 @@ struct Board {
   int max_ply{};
   int search_depth{};
   std::array<int, SQ_NB> castle_rights_mask{};
-  bool chess960;
-  bool xfen;
+  bool chess960{};
+  bool xfen{};
 
 private:
 

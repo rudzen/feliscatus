@@ -23,8 +23,6 @@
 
 #include "uci.h"
 #include "board.h"
-#include "position.h"
-#include "search.h"
 #include "tpool.h"
 #include "transpositional.h"
 #include "miscellaneous.h"
@@ -38,7 +36,9 @@ constexpr TimeUnit time_safety_margin = 1;
 std::unique_ptr<Board> new_board() {
   const auto num_threads = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::THREADS>()]);
   pool.set(num_threads);
-  return std::make_unique<Board>(start_position, pool.main());
+  auto board = std::make_unique<Board>();
+  board->set_fen(start_position, pool.main());
+  return board;
 }
 
 constexpr uint64_t nps(const uint64_t nodes, const TimeUnit time) {
@@ -256,7 +256,10 @@ void uci::run(const int argc, char *argv[]) {
     {
       const auto total = perft::perft(board.get(), 6);
       fmt::print("Total nodes: {}\n", total);
-    } else if (token == "quit" || token == "exit")
+    }
+    else if (token == "print")
+      board->print_moves();
+    else if (token == "quit" || token == "exit")
       break;
   } while (token != "quit" && argc == 1);
 }
