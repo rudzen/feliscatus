@@ -158,12 +158,6 @@ void Moves::reset(const Move m, const int flags) {
       move_flags_ &= ~STAGES;
     }
   }
-
-  if (flags & LEGALMOVES)
-  {
-    const auto stm = b->side_to_move();
-    b->pinned(b->get_pinned_pieces(stm, b->king_sq(stm)));
-  }
 }
 
 void Moves::generate_hash_move() {

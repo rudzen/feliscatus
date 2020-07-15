@@ -188,8 +188,6 @@ struct Board {
   [[nodiscard]]
   Bitboard pinned() const;
 
-  void pinned(Bitboard v) const;
-
   [[nodiscard]]
   thread *my_thread() const;
 
@@ -392,10 +390,6 @@ inline bool Board::in_check() const {
 
 inline Bitboard Board::pinned() const {
   return pos->pinned;
-}
-
-inline void Board::pinned(const Bitboard v) const {
-  pos->pinned = v;
 }
 
 inline thread *Board::my_thread() const {

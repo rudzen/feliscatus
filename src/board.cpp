@@ -442,10 +442,10 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
 
   update_key(pos, m);
 
+  prefetch(TT.find_bucket(pos->key));
+
   pos->material.make_move(m);
   pos->pinned = get_pinned_pieces(pos->side_to_move, king_sq(pos->side_to_move));
-
-  prefetch(TT.find_bucket(pos->key));
 
   return true;
 }
