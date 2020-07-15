@@ -340,6 +340,41 @@ bool Board::is_attacked_by_slider(const Square s, const Color c) const {
   return pieces(QUEEN, c) & (b_attacks | r_attacks);
 }
 
+bool Board::is_pseudo_legal(const Move m) const {
+  // TODO : castleling & en passant moves
+
+  assert(is_ok(m));
+
+  const auto from = move_from(m);
+  const auto pc   = move_piece(m);
+
+  if ((pieces(pc) & from) == 0)
+    return false;
+
+  const auto to = move_to(m);
+  const auto move_stm = move_side(m);
+
+  if (move_stm != side_to_move())
+    return false;
+
+  if (is_capture(m))
+  {
+    if ((pieces(~move_stm) & to) == 0)
+      return false;
+
+    if ((pieces(move_captured(m)) & to) == 0)
+      return false;
+  }
+    // } else if (is_castle_move(m))
+    //    return !b->is_attacked(b->king_sq(side_to_move), side_to_move) && !in_check && ((from < to && can_castle_short()) || (from > to && can_castle_long()));
+  else if (pieces() & to)
+    return false;
+
+  const auto pt = type_of(move_piece(m));
+
+  return !util::in_between<QUEEN, BISHOP>(pt) || !(between_bb[from][to] & pieces());
+}
+
 void Board::print() const {
   constexpr std::string_view piece_letter = "PNBRQK. pnbrqk. ";
 
@@ -749,6 +784,35 @@ Bitboard Board::attackers_to(const Square s, const Bitboard occ) const {
 
 Bitboard Board::attackers_to(const Square s) const {
   return attackers_to(s, pieces());
+}
+
+bool Board::is_castleling_impeeded(const Square s, const Color us) const {
+
+  // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
+  // The following comments were taken from that source.
+
+  // Check that the smallest back rank interval containing the king, the castling rook, and their
+  // destination squares, contains no pieces other than the king and castling rook.
+
+  const auto rook_to          = rook_castles_to[s];
+  const auto rook_from        = rook_castles_from[s];
+  const auto ksq              = king_sq(us);
+  const auto bb_castle_pieces = bit(rook_from, ksq);
+
+  if (const auto bb_castle_span = bb_castle_pieces | between_bb[ksq][rook_from] | between_bb[rook_from][rook_to] | bit(rook_to, s);
+      (bb_castle_span & pieces()) != bb_castle_pieces)
+    return false;
+
+  // Check that no square between the king's initial and final squares (including the initial and final
+  // squares) may be under attack by an enemy piece. (Initial square was already checked a this point.)
+
+  const auto them = ~us;
+
+  for (auto bb = between_bb[ksq][s] | s; bb; reset_lsb(bb))
+    if (is_attacked(lsb(bb), them))
+      return false;
+
+  return true;
 }
 
 bool Board::gives_check(const Move m) {

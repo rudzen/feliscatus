@@ -18,7 +18,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ranges>
+#include <span>
 
 #include "moves.h"
 #include "board.h"
@@ -29,41 +29,11 @@ namespace {
 
 constexpr std::array<PieceType, 5> MoveGenPieceTypes{QUEEN, ROOK, BISHOP, KNIGHT, KING};
 
-template<Color Us>
-[[nodiscard]] bool is_castle_allowed(const Square to, const Board *b) {
-
-  constexpr auto Them = ~Us;
-
-  // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
-  // The following comments were taken from that source.
-
-  // Check that the smallest back rank interval containing the king, the castling rook, and their
-  // destination squares, contains no pieces other than the king and castling rook.
-
-  const auto rook_to          = rook_castles_to[to];
-  const auto rook_from        = rook_castles_from[to];
-  const auto king_square      = b->king_sq(Us);
-  const auto bb_castle_pieces = bit(rook_from, king_square);
-
-  if (const auto bb_castle_span = bb_castle_pieces | between_bb[king_square][rook_from] | between_bb[rook_from][rook_to] | bit(rook_to, to);
-      (bb_castle_span & b->pieces()) != bb_castle_pieces)
-    return false;
-
-  // Check that no square between the king's initial and final squares (including the initial and final
-  // squares) may be under attack by an enemy piece. (Initial square was already checked a this point.)
-
-  for (auto bb = between_bb[king_square][to] | to; bb; reset_lsb(bb))
-    if (b->is_attacked(lsb(bb), Them))
-      return false;
-
-  return true;
-}
-
 }// namespace
 
 void Moves::generate_moves(MoveSorter *sorter, const Move tt_move, const int flags) {
   reset(sorter, tt_move, flags);
-  max_stage_ = 3;
+  max_stage_ = END_STAGE;
 
   if (move_flags_ & STAGES)
     return;
@@ -83,9 +53,9 @@ void Moves::generate_moves(MoveSorter *sorter, const Move tt_move, const int fla
 }
 
 void Moves::generate_captures_and_promotions(MoveSorter *sorter) {
-  reset(sorter, MOVE_NONE, QUEENPROMOTION | STAGES);
-  max_stage_ = 2;
-  stage_     = 1;
+  reset(sorter, MOVE_NONE, STAGES);
+  max_stage_ = QUIET_STAGE;
+  stage_     = CAPTURE_STAGE;
 }
 
 template<Color Us>
@@ -123,49 +93,16 @@ void Moves::generate_pawn_moves(const bool capture, const Bitboard to_squares, c
   }
 }
 
-MoveData *Moves::next_move() {
+const MoveData *Moves::next_move() {
   return b->side_to_move() == WHITE ? get_next_move<WHITE>() : get_next_move<BLACK>();
-}
-
-bool Moves::is_pseudo_legal(const Move m) const {
-  // TODO : castleling & en passant moves
-
-  assert(is_ok(m));
-
-  const auto from = move_from(m);
-  const auto pc   = move_piece(m);
-
-  if ((b->pieces(pc) & from) == 0)
-    return false;
-
-  const auto to = move_to(m);
-
-  if (const auto move_stm = move_side(m); move_stm != b->side_to_move())
-    return false;
-  else if (is_capture(m))
-  {
-    if ((b->pieces(~move_stm) & to) == 0)
-      return false;
-    if ((b->pieces(move_captured(m)) & to) == 0)
-      return false;
-  }
-  // } else if (is_castle_move(m))
-  //    return !b->is_attacked(b->king_sq(side_to_move), side_to_move) && !in_check && ((from < to && can_castle_short()) || (from > to && can_castle_long()));
-  else if (b->pieces() & to)
-    return false;
-
-  if (const auto pt = type_of(move_piece(m)); util::in_between<QUEEN, BISHOP>(pt))
-    if (between_bb[from][to] & b->pieces())
-      return false;
-
-  return true;
 }
 
 void Moves::reset(MoveSorter *sorter, const Move m, const int flags) {
   move_sorter_ = sorter;
   transp_move_ = m;
   move_flags_  = flags;
-  iteration_   = number_moves_ = stage_ = 0;
+  iteration_   = number_moves_ = 0;
+  stage_       = TT_STAGE;
 
   [[likely]]
   if (m)
@@ -174,6 +111,7 @@ void Moves::reset(MoveSorter *sorter, const Move m, const int flags) {
     [[unlikely]]
     if (mt & (CASTLE | EPCAPTURE))
     {
+      // TODO : Finish up Board.is_pseudo_legal()
       // needed because is_pseudo_legal() is not complete yet.
       transp_move_ = MOVE_NONE;
       move_flags_ &= ~STAGES;
@@ -188,12 +126,9 @@ void Moves::reset(MoveSorter *sorter, const Move m, const int flags) {
 }
 
 void Moves::generate_hash_move() {
-  if (transp_move_ && is_pseudo_legal(transp_move_))
-  {
-    move_list[number_moves_].score  = 890010;
-    move_list[number_moves_++].move = transp_move_;
-  }
-  stage_++;
+  if (transp_move_ && b->is_pseudo_legal(transp_move_))
+    move_list[number_moves_++] = {.move = transp_move_, .score = 890010};
+  ++stage_;
 }
 
 template<Color Us>
@@ -208,36 +143,40 @@ void Moves::generate_captures_and_promotions() {
   const auto opponent_pieces  = b->pieces(Them);
   const auto pawns            = b->pieces(PAWN, Us);
 
-  add_moves<Us>(opponent_pieces);
   add_pawn_moves<Us>(pawn_push(Us, pawns & Rank_7) & ~b->pieces(), Up, NORMAL);
   add_pawn_moves<Us>(WestAttacks(pawns) & opponent_pieces, WestDistance, CAPTURE);
   add_pawn_moves<Us>(EastAttacks(pawns) & opponent_pieces, EastDistance, CAPTURE);
+  add_moves<Us>(opponent_pieces);
   [[unlikely]]
-  if (const auto en_passant_square = b->en_passant_square(); en_passant_square != NO_SQ)
+  if (b->en_passant_square() != NO_SQ)
   {
-    add_pawn_moves<Us>(WestAttacks(pawns) & en_passant_square, WestDistance, EPCAPTURE);
-    add_pawn_moves<Us>(EastAttacks(pawns) & en_passant_square, EastDistance, EPCAPTURE);
+    add_pawn_moves<Us>(WestAttacks(pawns) & b->en_passant_square(), WestDistance, EPCAPTURE);
+    add_pawn_moves<Us>(EastAttacks(pawns) & b->en_passant_square(), EastDistance, EPCAPTURE);
   }
-  stage_++;
+  ++stage_;
 }
 
 template<Color Us>
-MoveData *Moves::get_next_move() {
+const MoveData *Moves::get_next_move() {
   while (iteration_ == number_moves_ && stage_ < max_stage_)
   {
     switch (stage_)
     {
-    case 0:
+    case TT_STAGE:
+    {
       generate_hash_move();
       break;
-
-    case 1:
+    }
+    case CAPTURE_STAGE:
+    {
       generate_captures_and_promotions<Us>();
       break;
-
-    case 2:
+    }
+    case QUIET_STAGE:
+    {
       generate_quiet_moves<Us>();
       break;
+    }
 
     default:// error
       return nullptr;
@@ -252,24 +191,21 @@ MoveData *Moves::get_next_move() {
 
   do
   {
-    auto best_idx   = iteration_;
-    auto best_score = move_list[best_idx].score;
-    for (auto i = best_idx + 1; i < number_moves_; ++i)
-    {
-      if (move_list[i].score > best_score)
-      {
-        best_score = move_list[i].score;
-        best_idx   = i;
-      }
-    }
+    const auto first_md = &move_list[iteration_];
+    const auto end_md   = &move_list[number_moves_];
+    const auto best     = std::max_element(first_md, end_md);
 
-    if (max_stage_ > 2 && stage_ == 2 && move_list[best_idx].score < 0)
+    if (max_stage_ > QUIET_STAGE && stage_ == QUIET_STAGE && best->score < 0)
     {
       generate_quiet_moves<Us>();
       continue;
     }
-    std::swap(move_list[iteration_], move_list[best_idx]);
-    return &move_list[iteration_++];
+
+    // set the "best" move as the current iteration move
+    std::swap(*first_md, *best);
+    ++iteration_;
+    return first_md;
+
   } while (true);
 }
 
@@ -293,7 +229,7 @@ void Moves::generate_quiet_moves() {
   add_pawn_moves<Us>(pushed, Up, NORMAL);
   add_pawn_moves<Us>(shift_bb<Up>(pushed & Rank3) & empty_squares, Up * 2, DOUBLEPUSH);
   add_moves<Us>(empty_squares);
-  stage_++;
+  ++stage_;
 }
 
 template<Color Us>
@@ -304,10 +240,9 @@ void Moves::add_move(const Piece pc, const Square from, const Square to, const M
   {
     if (mt & CAPTURE)
       return b->get_piece(to);
-    else if (mt & EPCAPTURE)
+    if (mt & EPCAPTURE)
       return make_piece(PAWN, Them);
-    else
-      return NO_PIECE;
+    return NO_PIECE;
   };
 
   const auto captured = get_captured();
@@ -330,19 +265,25 @@ void Moves::add_move(const Piece pc, const Square from, const Square to, const M
     move_data.score = 0;
 }
 
-template<Color Us>
-void Moves::add_moves(const Bitboard to_squares) {
+template<Color Us, PieceType Pt>
+void Moves::add_piece_moves(const Bitboard to_squares) {
   const auto pieces = b->pieces();
 
-  for (const auto pt : MoveGenPieceTypes)
+  auto bb = b->pieces(Pt, Us);
+  while (bb)
   {
-    auto bb = b->pieces(pt, Us);
-    while (bb)
-    {
-      const auto from = pop_lsb(&bb);
-      add_moves<Us>(pt, from, piece_attacks_bb(pt, from, pieces) & to_squares);
-    }
+    const auto from = pop_lsb(&bb);
+    add_moves<Us>(Pt, from, piece_attacks_bb<Pt>(from, pieces) & to_squares);
   }
+}
+
+template<Color Us>
+void Moves::add_moves(const Bitboard to_squares) {
+  add_piece_moves<Us, KING  >(to_squares);
+  add_piece_moves<Us, QUEEN >(to_squares);
+  add_piece_moves<Us, ROOK  >(to_squares);
+  add_piece_moves<Us, BISHOP>(to_squares);
+  add_piece_moves<Us, KNIGHT>(to_squares);
 }
 
 template<Color Us>
@@ -388,29 +329,30 @@ void Moves::add_pawn_capture_moves(const Bitboard to_squares) {
 
 template<Color Us>
 void Moves::add_pawn_moves(const Bitboard to_squares, const Direction d, const MoveType mt) {
+  constexpr auto Rank8 = bit(relative_rank(Us, RANK_8));
   const auto pawn = make_piece(PAWN, Us);
 
-  for (auto bb = to_squares; bb; reset_lsb(bb))
+  // promotion moves
+
+  auto targets = to_squares & Rank8;
+
+  while (targets)
   {
-    const auto to   = lsb(bb);
-    const auto from = to - d;
+    const auto to         = pop_lsb(&targets);
+    const auto from       = to - d;
+    const auto promo_type = mt | PROMOTION;
+    for (const auto promoted : PromotionPieceTypes)
+      add_move<Us>(pawn, from, to, promo_type, make_piece(promoted, Us));
+  }
 
-    [[unlikely]]
-    if (const auto rr = relative_rank(Us, to); rr == RANK_8)
-    {
+  // non-promotion moves
 
-      const auto promo_type = mt | PROMOTION;
+  targets = to_squares & ~Rank8;
 
-      if (move_flags_ & QUEENPROMOTION)
-      {
-        add_move<Us>(pawn, from, to, promo_type, make_piece(QUEEN, Us));
-        return;
-      }
-
-      for (const auto promoted : PromotionPieceTypes)
-        add_move<Us>(pawn, from, to, promo_type, make_piece(promoted, Us));
-    } else
-      add_move<Us>(pawn, from, to, mt);
+  while (targets)
+  {
+    const auto to = pop_lsb(&targets);
+    add_move<Us>(pawn, to - d, to, mt);
   }
 }
 
@@ -421,10 +363,10 @@ void Moves::add_castle_move(const Square from, const Square to) {
 
 template<Color Us>
 bool Moves::can_castle_short() const {
-  return b->castle_rights() & oo_allowed_mask[Us] && is_castle_allowed<Us>(oo_king_to[Us], b);
+  return b->castle_rights() & oo_allowed_mask[Us] && b->is_castleling_impeeded(oo_king_to[Us], Us);
 }
 
 template<Color Us>
 bool Moves::can_castle_long() const {
-  return b->castle_rights() & ooo_allowed_mask[Us] && is_castle_allowed<Us>(ooo_king_to[Us], b);
+  return b->castle_rights() & ooo_allowed_mask[Us] && b->is_castleling_impeeded(ooo_king_to[Us], Us);
 }

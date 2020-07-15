@@ -91,6 +91,9 @@ struct Board {
   [[nodiscard]]
   bool is_attacked(Square s, Color c) const;
 
+  [[nodiscard]]
+  bool is_pseudo_legal(Move m) const;
+
   void print() const;
 
   [[nodiscard]]
@@ -152,6 +155,9 @@ struct Board {
 
   [[nodiscard]]
   bool can_castle(CastlingRight cr) const;
+
+  [[nodiscard]]
+  bool is_castleling_impeeded(Square s, Color us) const;
 
   [[nodiscard]]
   Key pawn_key() const;

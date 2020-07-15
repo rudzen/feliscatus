@@ -26,15 +26,14 @@
 #include "types.h"
 
 struct MoveData {
-  Move move;
-  int score;
-  operator Move() const { return move; }
-  void operator=(const Move m) { move = m; }  // NOLINT(misc-unconventional-assign-operator)
+  Move move{};
+  int score{};
+  constexpr operator Move() const { return move; }
+  void operator=(const Move m) { move = m; }
+  constexpr auto operator<=> (const MoveData &rhs) {
+    return score <=> rhs.score;
+  }
 };
-
-inline bool operator<(const MoveData &f, const MoveData &s) {
-  return f.score < s.score;
-}
 
 struct MoveSorter {
   virtual ~MoveSorter() = default;
@@ -42,6 +41,13 @@ struct MoveSorter {
 };
 
 struct Board;
+
+enum MoveStage {
+  TT_STAGE,
+  CAPTURE_STAGE,
+  QUIET_STAGE,
+  END_STAGE
+};
 
 struct Moves {
   void generate_moves(MoveSorter *sorter = nullptr, Move tt_move = MOVE_NONE, int flags = 0);
@@ -54,17 +60,10 @@ struct Moves {
   void generate_pawn_moves(bool capture, Bitboard to_squares, Color c);
 
   [[nodiscard]]
-  MoveData *next_move();
+  const MoveData *next_move();
 
   [[nodiscard]]
   int move_count() const;
-
-  void goto_move(int pos);
-
-  [[nodiscard]]
-  bool is_pseudo_legal(Move m) const;
-
-  std::array<MoveData, 256> move_list{};
 
   Board *b{};
 
@@ -81,6 +80,9 @@ private:
 
   template<Color Us>
   void add_move(Piece pc, Square from, Square to, MoveType mt, Piece promoted = NO_PIECE);
+
+  template<Color Us, PieceType Pt>
+  void add_piece_moves(Bitboard to_squares);
 
   template<Color Us>
   void add_moves(Bitboard to_squares);
@@ -101,7 +103,7 @@ private:
   void add_castle_move(Square from, Square to);
 
   template<Color Us>
-  MoveData *get_next_move();
+  const MoveData *get_next_move();
 
   template<Color Us>
   [[nodiscard]]
@@ -111,6 +113,7 @@ private:
   [[nodiscard]]
   bool can_castle_long() const;
 
+  std::array<MoveData, 256> move_list{};
   int iteration_{};
   int stage_{};
   int max_stage_{};
@@ -122,8 +125,4 @@ private:
 
 inline int Moves::move_count() const {
   return number_moves_;
-}
-
-inline void Moves::goto_move(const int pos) {
-  iteration_ = pos;
 }

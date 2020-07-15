@@ -200,8 +200,7 @@ constexpr std::array<Square, 2> ooo_king_to{C1, C8};
 enum MoveGenFlags {
   NONE           = 0,
   LEGALMOVES     = 1,
-  STAGES         = 1 << 1,
-  QUEENPROMOTION = 1 << 2
+  STAGES         = 1 << 1
 };
 
 
@@ -302,8 +301,6 @@ constexpr bool is_castle_move(const Move m) { return type_of(m) & CASTLE; }
 constexpr bool is_promotion(const Move m) { return type_of(m) & PROMOTION; }
 
 constexpr bool is_queen_promotion(const Move m) { return is_promotion(m) && type_of(move_promoted(m)) == QUEEN; }
-
-constexpr bool is_null_move(const Move m) { return m == 0; }
 
 template<MoveType Mt>
 constexpr Move init_move(const Piece pc, const Piece cap, const Square from, const Square to, const Piece promoted) {
