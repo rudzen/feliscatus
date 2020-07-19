@@ -20,29 +20,29 @@
 
 #pragma once
 
-#include <cstdint>
+#include <array>
+#include <vector>
 
-#include "types.h"
-#include "hash.h"
-#include "score.h"
+#include "miscellaneous.hpp"
+#include "types.hpp"
 
-struct Board;
+struct SearchLimits {
+  std::array<TimeUnit, COL_NB> time{};
+  std::array<TimeUnit, COL_NB> inc{};
+  TimeUnit movetime{};
+  int movestogo{};
+  int depth{};
+  bool ponder{};
+  bool infinite{};
+  bool fixed_movetime{};
+  bool fixed_depth{};
+  std::vector<Move> search_moves{};
 
-#pragma pack(1)
-struct alignas(16) PawnHashEntry final {
-  Key zkey{};
-  Score eval{};
-  std::array<Bitboard, COL_NB> passed_pawns{};
-  [[no_unique_address]] int unused{};
+  void clear() {
+    time.fill(0);
+    inc.fill(0);
+    movetime          = 0;
+    movestogo = depth = 0;
+    ponder = infinite = fixed_movetime = fixed_depth = false;
+  }
 };
-#pragma pack()
-
-using PawnHashTable = Table<PawnHashEntry, 131072>;
-
-namespace Pawn {
-  [[nodiscard]]
-  PawnHashEntry *find(Board *b);
-
-  [[nodiscard]]
-  PawnHashEntry *insert(Board *b, Score s, const std::array<Bitboard, 2> &passed_pawns);
-}

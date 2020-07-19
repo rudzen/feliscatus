@@ -20,14 +20,29 @@
 
 #pragma once
 
-#include "types.h"
+#include <cstdint>
 
-struct PVEntry final {
-  uint64_t key;
-  int depth;
-  int score;
-  int previous_score;
-  Move move;
-  NodeType node_type;
-  int eval;
+#include "types.hpp"
+#include "hash.hpp"
+#include "score.hpp"
+
+struct Board;
+
+#pragma pack(1)
+struct alignas(16) PawnHashEntry final {
+  Key zkey{};
+  Score eval{};
+  std::array<Bitboard, COL_NB> passed_pawns{};
+  [[no_unique_address]] int unused{};
 };
+#pragma pack()
+
+using PawnHashTable = Table<PawnHashEntry, 131072>;
+
+namespace Pawn {
+  [[nodiscard]]
+  PawnHashEntry *find(Board *b);
+
+  [[nodiscard]]
+  PawnHashEntry *insert(Board *b, Score s, const std::array<Bitboard, 2> &passed_pawns);
+}

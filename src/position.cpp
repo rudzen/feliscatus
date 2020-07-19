@@ -18,8 +18,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "position.h"
-#include "bitboard.h"
+#include "position.hpp"
+#include "bitboard.hpp"
 
 void Position::clear() {
   castle_rights              = 0;

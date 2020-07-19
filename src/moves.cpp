@@ -21,9 +21,9 @@
 #include <span>
 #include <utility>
 
-#include "moves.h"
-#include "board.h"
-#include "bitboard.h"
+#include "moves.hpp"
+#include "board.hpp"
+#include "bitboard.hpp"
 
 namespace {
 

@@ -24,7 +24,7 @@
 #include <cstdint>
 #include <functional>
 
-#include "types.h"
+#include "types.hpp"
 
 struct MoveData {
   Move move{};

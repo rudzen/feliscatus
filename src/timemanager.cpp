@@ -20,8 +20,9 @@
 
 #include <algorithm>
 #include <chrono>
-#include "timemanager.h"
-#include "util.h"
+
+#include "timemanager.hpp"
+#include "util.hpp"
 
 namespace {
 

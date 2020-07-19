@@ -20,29 +20,35 @@
 
 #pragma once
 
-#include <array>
-#include <vector>
+#include "material.hpp"
 
-#include "miscellaneous.h"
-#include "types.h"
+class HashEntry;
 
-struct SearchLimits {
-  std::array<TimeUnit, COL_NB> time{};
-  std::array<TimeUnit, COL_NB> inc{};
-  TimeUnit movetime{};
-  int movestogo{};
-  int depth{};
-  bool ponder{};
-  bool infinite{};
-  bool fixed_movetime{};
-  bool fixed_depth{};
-  std::vector<Move> search_moves{};
+using KillerMoves = std::array<Move, 4>;
 
-  void clear() {
-    time.fill(0);
-    inc.fill(0);
-    movetime          = 0;
-    movestogo = depth = 0;
-    ponder = infinite = fixed_movetime = fixed_depth = false;
-  }
+struct Position final {
+  void clear();
+
+  int reversible_half_move_count{};
+  Key pawn_structure_key{};
+  Key key{};
+  Material material{};
+  int null_moves_in_row{};
+  int pv_length{};
+  Move last_move{};
+  int eval_score{};
+  int transp_score{};
+  int transp_depth{};
+  NodeType transp_type{};
+  Move transp_move{};
+  int flags{};
+  HashEntry *transposition{};
+  KillerMoves killer_moves{};
+  Bitboard checkers{};
+  bool in_check{};
+  int castle_rights{};
+  Square en_passant_square{};
+  Color side_to_move{};
+  Bitboard pinned{};
+  Position *previous{};
 };

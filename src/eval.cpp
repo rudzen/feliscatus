@@ -24,14 +24,14 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
-#include "eval.h"
-#include "types.h"
-#include "board.h"
-#include "parameters.h"
-#include "bitboard.h"
-#include "position.h"
-#include "pawnhashtable.h"
-#include "score.h"
+#include "eval.hpp"
+#include "types.hpp"
+#include "board.hpp"
+#include "parameters.hpp"
+#include "bitboard.hpp"
+#include "position.hpp"
+#include "pawnhashtable.hpp"
+#include "score.hpp"
 
 namespace {
 

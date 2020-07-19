@@ -20,16 +20,14 @@
 
 #pragma once
 
-#include <cstdint>
-#include <array>
+#include "types.hpp"
 
-#include "types.h"
-
-template<typename Entry, std::size_t N>
-struct Table {
-  [[nodiscard]]
-  Entry *operator[](const Key key) noexcept { return &table_[static_cast<uint32_t>(key) & (N - 1)]; }
-
-private:
-  std::array<Entry, N> table_{};
+struct PVEntry final {
+  uint64_t key;
+  int depth;
+  int score;
+  int previous_score;
+  Move move;
+  NodeType node_type;
+  int eval;
 };

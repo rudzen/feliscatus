@@ -27,15 +27,14 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
-#include "search.h"
-#include "eval.h"
-#include "transpositional.h"
-#include "pv_entry.h"
-#include "position.h"
-#include "tpool.h"
-#include "uci.h"
-#include "board.h"
-#include "moves.h"
+#include "eval.hpp"
+#include "transpositional.hpp"
+#include "pv_entry.hpp"
+#include "position.hpp"
+#include "tpool.hpp"
+#include "uci.hpp"
+#include "board.hpp"
+#include "moves.hpp"
 
 namespace {
 

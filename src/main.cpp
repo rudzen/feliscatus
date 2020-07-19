@@ -18,11 +18,11 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "bitboard.h"
-#include "board.h"
-#include "uci.h"
-#include "transpositional.h"
-#include "miscellaneous.h"
+#include "bitboard.hpp"
+#include "board.hpp"
+#include "uci.hpp"
+#include "transpositional.hpp"
+#include "miscellaneous.hpp"
 
 int main(const int argc, char *argv[]) {
 

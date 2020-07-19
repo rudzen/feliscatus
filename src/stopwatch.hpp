@@ -22,7 +22,7 @@
 
 #include <chrono>
 
-#include "miscellaneous.h"
+#include "miscellaneous.hpp"
 
 struct Stopwatch final {
 

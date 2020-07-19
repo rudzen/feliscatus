@@ -19,11 +19,13 @@
 */
 
 #include <cassert>
+
 #include <fmt/format.h>
-#include "uci.h"
-#include "transpositional.h"
-#include "util.h"
-#include "tpool.h"
+
+#include "uci.hpp"
+#include "transpositional.hpp"
+#include "util.hpp"
+#include "tpool.hpp"
 
 using std::string;
 

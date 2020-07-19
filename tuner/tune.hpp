@@ -27,11 +27,11 @@
 #include <memory>
 #include <map>
 
-#include "pgn_player.h"
-#include "../cli/cli_parser.h"
-#include "../src/bitboard.h"
-#include "../src/moves.h"
-#include "../src/pv_entry.h"
+#include "pgn_player.hpp"
+#include "../cli/cli_parser.hpp"
+#include "../src/bitboard.hpp"
+#include "../src/moves.hpp"
+#include "../src/pv_entry.hpp"
 
 struct Board;
 struct FileResolver;

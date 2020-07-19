@@ -29,13 +29,13 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
-#include "tune.h"
-#include "file_resolver.h"
-#include "../src/board.h"
-#include "../src/eval.h"
-#include "../src/parameters.h"
-#include "../src/util.h"
-#include "../src/tpool.h"
+#include "tune.hpp"
+#include "file_resolver.hpp"
+#include "../src/board.hpp"
+#include "../src/eval.hpp"
+#include "../src/parameters.hpp"
+#include "../src/util.hpp"
+#include "../src/tpool.hpp"
 
 namespace eval {
 

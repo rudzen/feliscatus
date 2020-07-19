@@ -30,10 +30,10 @@
 #include <vector>
 #include <functional>
 
-#include "pawnhashtable.h"
-#include "pv_entry.h"
-#include "timemanager.h"
-#include "types.h"
+#include "pawnhashtable.hpp"
+#include "pv_entry.hpp"
+#include "timemanager.hpp"
+#include "types.hpp"
 
 /// Main thread pool header
 /// Contains pool, thread and main_thread

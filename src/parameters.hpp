@@ -22,8 +22,8 @@
 
 #include <array>
 
-#include "score.h"
-#include "types.h"
+#include "score.hpp"
+#include "types.hpp"
 
 // clang-format off
 

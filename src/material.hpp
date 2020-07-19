@@ -22,7 +22,7 @@
 
 #include <array>
 
-#include "types.h"
+#include "types.hpp"
 
 struct Board;
 enum Move : uint32_t;

@@ -20,13 +20,13 @@
 
 #include <fmt/format.h>
 
-#include "pgn_player.h"
-#include "../src/bitboard.h"
-#include "../src/util.h"
-#include "../src/board.h"
-#include "../src/position.h"
-#include "../src/tpool.h"
-#include "../src/moves.h"
+#include "pgn_player.hpp"
+#include "../src/bitboard.hpp"
+#include "../src/util.hpp"
+#include "../src/board.hpp"
+#include "../src/position.hpp"
+#include "../src/tpool.hpp"
+#include "../src/moves.hpp"
 
 namespace {
 

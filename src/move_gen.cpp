@@ -18,8 +18,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "moves.h"
-#include "board.h"
+#include "moves.hpp"
+#include "board.hpp"
 
 namespace {
 

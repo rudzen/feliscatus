@@ -21,13 +21,13 @@
 #include <sstream>
 #include <cstdio>
 
-#include "uci.h"
-#include "board.h"
-#include "tpool.h"
-#include "transpositional.h"
-#include "miscellaneous.h"
-#include "perft.h"
-#include "moves.h"
+#include "uci.hpp"
+#include "board.hpp"
+#include "tpool.hpp"
+#include "transpositional.hpp"
+#include "miscellaneous.hpp"
+#include "perft.hpp"
+#include "moves.hpp"
 
 namespace {
 

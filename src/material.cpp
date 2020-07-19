@@ -21,10 +21,10 @@
 #include <array>
 #include <algorithm>
 
-#include "material.h"
-#include "board.h"
-#include "bitboard.h"
-#include "types.h"
+#include "material.hpp"
+#include "board.hpp"
+#include "bitboard.hpp"
+#include "types.hpp"
 
 namespace {
 

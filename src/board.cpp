@@ -25,13 +25,13 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
-#include "board.h"
-#include "bitboard.h"
-#include "util.h"
-#include "transpositional.h"
-#include "miscellaneous.h"
-#include "prng.h"
-#include "moves.h"
+#include "board.hpp"
+#include "bitboard.hpp"
+#include "util.hpp"
+#include "transpositional.hpp"
+#include "miscellaneous.hpp"
+#include "prng.hpp"
+#include "moves.hpp"
 
 namespace zobrist {
 

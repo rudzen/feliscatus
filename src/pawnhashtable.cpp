@@ -20,8 +20,8 @@
 
 #include <fmt/format.h>
 
-#include "pawnhashtable.h"
-#include "board.h"
+#include "pawnhashtable.hpp"
+#include "board.hpp"
 
 namespace Pawn {
 

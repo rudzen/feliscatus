@@ -20,10 +20,10 @@
 
 #pragma once
 
-#include "stopwatch.h"
-#include "miscellaneous.h"
-#include "search_limits.h"
-#include "position.h"
+#include "stopwatch.hpp"
+#include "miscellaneous.hpp"
+#include "search_limits.hpp"
+#include "position.hpp"
 
 struct TimeManager final {
 

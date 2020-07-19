@@ -1,13 +1,14 @@
 #define CATCH_CONFIG_MAIN
 
 #include <catch2/catch.hpp>
-#include "../src/transpositional.h"
-#include "../src/bitboard.h"
-#include "../src/magic.h"
-#include "../src/perft.h"
-#include "../src/board.h"
-#include "../src/miscellaneous.h"
-#include "../src/tpool.h"
+
+#include "../src/transpositional.hpp"
+#include "../src/bitboard.hpp"
+#include "../src/magic.hpp"
+#include "../src/perft.hpp"
+#include "../src/board.hpp"
+#include "../src/miscellaneous.hpp"
+#include "../src/tpool.hpp"
 
 TEST_CASE("Perft basic at depth 6", "[perft_basic]")
 {

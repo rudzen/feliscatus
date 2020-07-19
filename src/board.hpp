@@ -23,10 +23,10 @@
 #include <cstdint>
 #include <array>
 
-#include "types.h"
-#include "bitboard.h"
-#include "position.h"
-#include "tpool.h"
+#include "types.hpp"
+#include "bitboard.hpp"
+#include "position.hpp"
+#include "tpool.hpp"
 
 enum Move : uint32_t;
 
