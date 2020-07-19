@@ -18,7 +18,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if defined(__unix__)
+#if defined(__linux__)
 #include <unistd.h>
 #endif
 
@@ -32,9 +32,9 @@
 
 #include <fmt/format.h>
 
-#include "pgn.h"
-#include "../src/types.h"
-#include "../src/util.h"
+#include "pgn.hpp"
+#include "../src/types.hpp"
+#include "../src/util.hpp"
 
 enum Token : uint8_t { Symbol, Integer, String, NAG, Asterisk, Period, LParen, RParen, LBracket, RBracket, LT, GT, Invalid, None };
 
@@ -101,7 +101,7 @@ constexpr bool start_of_tag_value(const Token token) { return token == String; }
 
 struct PGNFile {
   PGNFile(const char *path, const int oflag, const int pmode) {
-#if defined(__unix__)
+#if defined(__linux__)
     constexpr int O_BINARY = 0;
 #endif
 
@@ -271,8 +271,7 @@ void PGNFileReader::read_element_sequence() {
       read_recursive_variation();
     else
       break;
-  }
-  while (true);
+  } while (true);
 }
 
 void PGNFileReader::read_element() {
@@ -302,8 +301,7 @@ void PGNFileReader::read_move_number_indication() {
       break;
 
     periods++;
-  }
-  while (true);
+  } while (true);
 
   side_to_move = periods >= 3 ? BLACK : WHITE;
 }
@@ -312,8 +310,8 @@ void PGNFileReader::read_san_move() {
   from_piece_  = -1;
   from_file_   = -1;
   from_rank_   = -1;
-  from_square_ = no_square;
-  to_square_   = no_square;
+  from_square_ = NO_SQ;
+  to_square_   = NO_SQ;
   promoted_to  = -1;
   pawn_move_   = false;
   castle_move_ = false;
@@ -544,8 +542,7 @@ void PGNFileReader::read_token(Token &token) {
 
     if (strict_ || (token != Invalid && token != LT && token != GT))
       break;
-  }
-  while (true);
+  } while (true);
 }
 
 void PGNFileReader::read_next_token(Token &token) {
@@ -670,8 +667,7 @@ bool PGNFileReader::read_symbol() {
 
     if (!std::isalnum(ch_) && ch_ != '_' && ch_ != '+' && ch_ != '/' && ch_ != '#' && ch_ != '=' && ch_ != ':' && ch_ != '-')
       break;
-  }
-  while (true);
+  } while (true);
 
   while (ch_ == '!' || ch_ == '?')
   {
@@ -748,8 +744,7 @@ bool PGNFileReader::read_string() {
       token_ = String;
       break;
     }
-  }
-  while (true);
+  } while (true);
   token_str[len] = '\0';
   return true;
 }
@@ -777,8 +772,7 @@ int PGNFileReader::get_char(unsigned char &c, bool get, const bool skip_ws, cons
       get = false;
     } else
       break;
-  }
-  while (true);
+  } while (true);
 
   return 1;
 }
@@ -802,8 +796,7 @@ void PGNFileReader::read_comment1() {
       *p = c;
       ++p;
     }
-  }
-  while (true);
+  } while (true);
 
   *p = '\0';
 }
@@ -827,12 +820,10 @@ void PGNFileReader::read_comment2(unsigned char &c) {
 
         if (c != 0x0a && c != 0x0d)
           break;
-      }
-      while (true);
+      } while (true);
       break;
     }
-  }
-  while (true);
+  } while (true);
 }
 
 }

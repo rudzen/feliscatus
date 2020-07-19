@@ -26,16 +26,13 @@
 
 #include <fmt/format.h>
 
-#include "tune.h"
-#include "../src/board.h"
-#include "../src/square.h"
-#include "../src/bitboard.h"
-#include "../src/magic.h"
-#include "../src/zobrist.h"
-#include "../src/transpositional.h"
-#include "../src/datapool.h"
-#include "file_resolver.h"
-#include "../cli/cli_parser.h"
+#include "tune.hpp"
+#include "file_resolver.hpp"
+#include "../src/board.hpp"
+#include "../src/bitboard.hpp"
+#include "../src/transpositional.hpp"
+#include "../src/tpool.hpp"
+#include "../cli/cli_parser.hpp"
 
 namespace {
 
@@ -59,10 +56,8 @@ int main(const int argc, char **argv) {
 
   TT.init(256);
 
-  squares::init();
   bitboard::init();
-  attacks::init();
-  zobrist::init();
+  Board::init();
 
   const Stopwatch sw;
   eval::Tune(std::make_unique<Board>(), cli_parser_settings.get());

@@ -29,12 +29,13 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
-#include "tune.h"
-#include "../src/board.h"
-#include "../src/eval.h"
-#include "../src/parameters.h"
-#include "../src/util.h"
-#include "file_resolver.h"
+#include "tune.hpp"
+#include "file_resolver.hpp"
+#include "../src/board.hpp"
+#include "../src/eval.hpp"
+#include "../src/parameters.hpp"
+#include "../src/util.hpp"
+#include "../src/tpool.hpp"
 
 namespace eval {
 
@@ -376,8 +377,8 @@ void PGNPlayer::read_san_move() {
 
   all_nodes_count_++;
 
-  if (board_->half_move_count() >= 14 && all_nodes_count_ % 7 == 0)
-    current_game_nodes_.emplace_back(board_->get_fen());
+  if (b->half_move_count() >= 14 && all_nodes_count_ % 7 == 0)
+    current_game_nodes_.emplace_back(b->fen());
 }
 
 void PGNPlayer::read_game_termination() {
@@ -403,7 +404,7 @@ void PGNPlayer::print_progress(const bool force) const {
   fmt::print("game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_, all_nodes_count_, all_selected_nodes_.size());
 }
 
-Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : board_(std::move(board)), score_static_(false) {
+Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std::move(board)), score_static_(false) {
   PGNPlayer pgn;
   pgn.read(settings->file_name);
 
@@ -524,7 +525,7 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
 
   for (const auto &node : nodes)
   {
-    board_->set_fen(node.fen_);
+    b->set_fen(node.fen_, pool.main());
     x += std::pow(node.result_ - util::sigmoid(get_score(WHITE), K), 2);
   }
 
@@ -547,23 +548,24 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
 }
 
 void Tune::make_quiet(std::vector<Node> &nodes) {
+  auto *t = pool.main();
   for (auto &node : nodes)
   {
-    board_->set_fen(node.fen_.c_str());
-    pv_length[0] = 0;
+    b->set_fen(node.fen_, t);
+    t->pv_length[0] = 0;
     get_quiesce_score(-32768, 32768, true, 0);
     play_pv();
-    node.fen_ = board_->get_fen();
+    node.fen_ = b->fen();
   }
 }
 
-int Tune::get_score(const Color side) {
-  const auto score = score_static_ ? Eval::tune(board_.get(), 0, -100000, 100000) : get_quiesce_score(-32768, 32768, false, 0);
-  return board_->side_to_move() == side ? score : -score;
+int Tune::get_score(const Color c) const {
+  const auto score = score_static_ ? Eval::tune(b.get(), 0, -100000, 100000) : get_quiesce_score(-32768, 32768, false, 0);
+  return b->side_to_move() == c ? score : -score;
 }
 
-int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) {
-  auto score = Eval::tune(board_.get(), 0, -100000, 100000);
+int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) const {
+  auto score = Eval::tune(b.get(), 0, -100000, 100000);
 
   if (score >= beta)
     return score;
@@ -573,9 +575,13 @@ int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, cons
   if (best_score > alpha)
     alpha = best_score;
 
-  board_->pos->generate_captures_and_promotions(this);
+  auto mg = Moves<true>(b.get());
 
-  while (auto *const move_data = board_->pos->next_move())
+  mg.generate_captures_and_promotions();
+
+  // b->pos->generate_captures_and_promotions(this);
+
+  while (const auto *const move_data = mg.next_move())
   {
     if (!is_promotion(move_data->move) && move_data->score < 0)
       break;
@@ -584,7 +590,7 @@ int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, cons
     {
       score = -get_quiesce_score(-beta, -alpha, store_pv, ply + 1);
 
-      board_->unmake_move();
+      b->unmake_move();
 
       if (score > best_score)
       {
@@ -606,62 +612,41 @@ int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, cons
   return best_score;
 }
 
-bool Tune::make_move(const Move m, int ply) {
-  if (!board_->make_move(m, true, true))
+bool Tune::make_move(const Move m, int ply) const {
+  if (!b->make_move(m, true, true))
     return false;
 
   ++ply;
-  pv_length[ply] = ply;
+  b->my_thread()->pv_length[ply] = ply;
   return true;
 }
 
 void Tune::unmake_move() const {
-  board_->unmake_move();
+  b->unmake_move();
 }
 
-void Tune::play_pv() {
-  for (auto i = 0; i < pv_length[0]; ++i)
-    board_->make_move(pv[0][i].move, false, true);
+void Tune::play_pv() const {
+  auto *t = b->my_thread();
+  for (auto i = 0; i < t->pv_length[0]; ++i)
+    b->make_move(t->pv[0][i].move, false, true);
 }
 
-void Tune::update_pv(const Move move, const int score, const int ply) {
+void Tune::update_pv(const Move m, const int score, const int ply) const {
+  auto *t = b->my_thread();
   assert(ply < MAXDEPTH);
-  assert(pv_length[ply] < MAXDEPTH);
-  auto *entry = &pv[ply][ply];
+  assert(t->pv_length[ply] < MAXDEPTH);
+  auto *entry = &t->pv[ply][ply];
 
   entry->score = score;
-  entry->move  = move;
+  entry->move  = m;
   // entry->eval = game_->pos->eval_score;
 
   const auto next_ply = ply + 1;
 
-  pv_length[ply] = pv_length[next_ply];
+  t->pv_length[ply] = t->pv_length[next_ply];
 
-  for (auto i = next_ply; i < pv_length[ply]; ++i)
-    pv[ply][i] = pv[next_ply][i];
-}
-
-void Tune::sort_move(MoveData &move_data) {
-  const auto m = move_data.move;
-
-  if (is_queen_promotion(m))
-    move_data.score = 890000;
-  else if (is_capture(m))
-  {
-    const auto value_captured = piece_value(move_captured(m));
-    auto value_piece          = piece_value(move_piece(m));
-
-    if (value_piece == 0)
-      value_piece = 1800;
-
-    if (value_piece <= value_captured)
-      move_data.score = 300000 + value_captured * 20 - value_piece;
-    else if (board_->see_move(m) >= 0)
-      move_data.score = 160000 + value_captured * 20 - value_piece;
-    else
-      move_data.score = -100000 + value_captured * 20 - value_piece;
-  } else
-    exit(0);
+  for (auto i = next_ply; i < t->pv_length[ply]; ++i)
+    t->pv[ply][i] = t->pv[next_ply][i];
 }
 
 }// namespace eval

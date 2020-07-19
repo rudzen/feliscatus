@@ -20,11 +20,13 @@
 
 #include <fmt/format.h>
 
-#include "pgn_player.h"
-#include "../src/bitboard.h"
-#include "../src/util.h"
-#include "../src/board.h"
-#include "../src/position.h"
+#include "pgn_player.hpp"
+#include "../src/bitboard.hpp"
+#include "../src/util.hpp"
+#include "../src/board.hpp"
+#include "../src/position.hpp"
+#include "../src/tpool.hpp"
+#include "../src/moves.hpp"
 
 namespace {
 
@@ -32,17 +34,17 @@ constexpr auto detect_piece = [](const int from) {
   switch (from)
   {
   case 'N':
-    return Knight;
+    return KNIGHT;
   case 'B':
-    return Bishop;
+    return BISHOP;
   case 'R':
-    return Rook;
+    return ROOK;
   case 'Q':
-    return Queen;
+    return QUEEN;
   case 'K':
-    return King;
+    return KING;
   default:
-    return NoPieceType;
+    return NO_PT;
   };
 };
 
@@ -60,11 +62,11 @@ bool strieq(const char *s1, const char *s2) {
 }
 
 pgn::PGNPlayer::PGNPlayer([[maybe_unused]] bool check_legal)
-  : PGNFileReader(), board_(std::make_unique<Board>()) {
+  : PGNFileReader(), b(std::make_unique<Board>()) {
 }
 
 void pgn::PGNPlayer::read_pgn_game() {
-  board_->new_game(Board::kStartPosition);
+  b->new_game(pool.main());
   pgn::PGNFileReader::read_pgn_game();
 }
 
@@ -72,44 +74,52 @@ void pgn::PGNPlayer::read_tag_pair() {
   PGNFileReader::read_tag_pair();
 
   if (strieq(tag_name_, "FEN"))
-    board_->set_fen(std::string(tag_value_).substr(1, strlen(tag_value_) - 2).c_str());
+  {
+    const auto fen = std::string(tag_value_).substr(1, strlen(tag_value_) - 2);
+    b->set_fen(fen, pool.main());
+  }
 }
 
 void pgn::PGNPlayer::read_san_move() {
   PGNFileReader::read_san_move();
 
-  Piece piece{NoPiece};
+  Piece piece{NO_PIECE};
+
+  auto mg = Moves<true>(b.get());
 
   if (pawn_move_)
   {
-    piece = make_piece(Pawn, side_to_move);
-    board_->pos->generate_pawn_moves(capture_, bit(to_square_), side_to_move);
+    piece = make_piece(PAWN, side_to_move);
+    mg.generate_pawn_moves(capture_, bit(to_square_), side_to_move);
   } else if (castle_move_)
   {
-    piece = make_piece(King, side_to_move);
-    board_->pos->generate_moves();
+    piece = make_piece(KING, side_to_move);
+    mg.generate_moves();
   } else if (piece_move_)
   {
     const auto pt = detect_piece(from_piece_);
-    if (pt == NoPieceType)
+    if (pt == NO_PT)
     {
       fmt::print("default [{}]\n", std::string(token_str));
       exit(0);
     }
     piece = make_piece(pt, side_to_move);
-    board_->pos->generate_moves(pt, bit(to_square_), side_to_move);
+    if (side_to_move == WHITE)
+      mg.generate_moves<WHITE>(pt, bit(to_square_));
+    else
+      mg.generate_moves<BLACK>(pt, bit(to_square_));
   } else
   {
     fmt::print("else\n");
     exit(0);
   }
 
-  Piece promoted{NoPiece};
+  Piece promoted{NO_PIECE};
 
   if (promoted_to != -1)
   {
     const auto pt = detect_piece(promoted_to);
-    if (pt == NoPieceType)
+    if (pt == NO_PT)
     {
       fmt::print("promoted_to error [{}]\n", std::string(token_str));
       exit(0);
@@ -117,19 +127,16 @@ void pgn::PGNPlayer::read_san_move() {
     promoted = make_piece(pt, side_to_move);
   }
 
-
   auto found            = false;
-  const auto move_count = board_->pos->move_count();
 
-  for (auto i = 0; i < move_count; ++i)
+  while (auto *const move_data = mg.next_move())
   {
-    const auto m = board_->pos->move_list[i].move;
-
-    if (move_piece(m) != piece || move_to(m) != to_square_ || (promoted != NoPiece && move_promoted(m) != promoted) || (capture_ && !is_capture(m))
+    const auto m = move_data->move;
+    if (move_piece(m) != piece || move_to(m) != to_square_ || (promoted != NO_PIECE && move_promoted(m) != promoted) || (capture_ && !is_capture(m))
         || (from_file_ != -1 && file_of(move_from(m)) != from_file_) || (from_rank_ != -1 && rank_of(move_from(m)) != from_rank_))
       continue;
 
-    if (!board_->make_move(m, true, true))
+    if (!b->make_move(m, true, true))
       continue;
 
     found = true;
@@ -146,9 +153,9 @@ void pgn::PGNPlayer::read_san_move() {
     fmt::print("pawn_move_: {}\n", pawn_move_);
     fmt::print("castle_move_: {}\n", castle_move_);
     fmt::print("side_to_move: {}\n", side_to_move);
-    fmt::print("pos->in_check: {}\n", board_->in_check());
+    fmt::print("pos->in_check: {}\n", b->in_check());
     fmt::print("game_count_: {}\n", game_count_);
-    board_->print();
+    b->print();
     exit(0);
   }
 }

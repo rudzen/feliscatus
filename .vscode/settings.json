@@ -102,7 +102,9 @@
         "valarray": "cpp",
         "source_location": "cpp",
         "regex": "cpp",
-        "*.msg": "cpp"
+        "*.msg": "cpp",
+        "span": "cpp",
+        "coroutine": "cpp"
     },
     "git.ignoreLimitWarning": true
 }

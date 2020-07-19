@@ -21,10 +21,10 @@
 #include <array>
 #include <algorithm>
 
-#include "material.h"
-#include "board.h"
-#include "magic.h"
-#include "types.h"
+#include "material.hpp"
+#include "board.hpp"
+#include "bitboard.hpp"
+#include "types.hpp"
 
 namespace {
 
@@ -47,7 +47,7 @@ constexpr uint32_t kqn = 0x10010;
 
 constexpr uint32_t all_pawns = 0xf;
 
-}
+}// namespace
 
 void Material::clear() {
   key.fill(0);
@@ -55,28 +55,22 @@ void Material::clear() {
 }
 
 void Material::remove(const Piece pc) {
-  const auto c = color_of(pc);
+  const auto c  = color_of(pc);
   const auto pt = type_of(pc);
-  update_key(c, pt, -1);
+  update_key<Remove>(c, pt);
   material_value[c] -= piece_values[pt];
 }
 
 void Material::add(const Piece pc) {
-  const auto c = color_of(pc);
+  const auto c  = color_of(pc);
   const auto pt = type_of(pc);
-  update_key(c, pt, 1);
+  update_key<Add>(c, pt);
   material_value[c] += piece_values[pt];
 }
 
-void Material::update_key(const Color c, const PieceType pt, const int delta) {
-  if (pt == King)
-    return;
-  const auto x = count(c, pt) + delta;
-  key[c] &= ~(15 << piece_bit_shift[pt]);
-  key[c] |= x << piece_bit_shift[pt];
+int Material::count(const Color c, const PieceType pt) {
+  return key[c] >> piece_bit_shift[pt] & 15;
 }
-
-int Material::count(const Color c, const PieceType pt) { return key[c] >> piece_bit_shift[pt] & 15; }
 
 void Material::make_move(const Move m) {
   if (is_capture(m))
@@ -89,79 +83,83 @@ void Material::make_move(const Move m) {
   }
 }
 
-int Material::pawn_value() { return static_cast<int>(key[WHITE] & all_pawns) * piece_values[Pawn] + static_cast<int>(key[BLACK] & all_pawns) * piece_values[Pawn]; }
+int Material::pawn_value() {
+  return static_cast<int>(key[WHITE] & all_pawns) * piece_values[PAWN] + static_cast<int>(key[BLACK] & all_pawns) * piece_values[PAWN];
+}
 
-int Material::evaluate(int &flags, const int eval, const Color side_to_move, const Board *b) {
-  material_flags = 0;
-  uint32_t key1;
-  uint32_t key2;
+template<Color Us>
+int Material::evaluate(int &flags, const int eval, const Board *b) {
+  constexpr auto Them = ~Us;
+  this->board              = b;
+  drawish = material_flags = 0;
+
+  uint32_t strong_key;
+  uint32_t weak_key;
   int score;
-  Color side1;
+  Color strong_side;
 
-  if (key[side_to_move] >= key[~side_to_move])
+  if (key[Us] >= key[Them])
   {
-    key1  = key[side_to_move];
-    key2  = key[~side_to_move];
-    side1 = side_to_move;
-    score = eval;
+    strong_key  = key[Us];
+    weak_key    = key[Them];
+    strong_side = Us;
+    score       = eval;
   } else
   {
-    key1  = key[~side_to_move];
-    key2  = key[side_to_move];
-    side1 = ~side_to_move;
-    score = -eval;
+    strong_key  = key[Them];
+    weak_key    = key[Us];
+    strong_side = Them;
+    score       = -eval;
   }
-  const auto side2 = ~side1;
-  const auto pc1     = pawn_count(side1);
-  const auto pc2     = pawn_count(side2);
 
-  this->board = b;
-  drawish     = 0;
+  const auto weak_side         = ~strong_side;
+  const auto strong_pawn_count = pawn_count(strong_side);
+  const auto weak_pawn_count   = pawn_count(weak_side);
 
-  switch (key1 & ~all_pawns)
+  switch (strong_key & ~all_pawns)
   {
   case kqb:
-    score = KQBKX(score, key2);
+    score = KQBKX(score, weak_key);
     break;
 
   case kqn:
-    score = KQNKX(score, key2);
+    score = KQNKX(score, weak_key);
     break;
 
   case krb:
-    score = KRBKX(score, key2);
+    score = KRBKX(score, weak_key);
     break;
 
   case krn:
-    score = KRNKX(score, key2);
+    score = KRNKX(score, weak_key);
     break;
 
   case kr:
-    score = KRKX(score, key2);
+    score = KRKX(score, weak_key);
     break;
 
   case kbb:
-    score = KBBKX(score, key2);
+    score = KBBKX(score, weak_key);
     break;
 
   case kbn:
-    score = KBNKX(score, key2, pc1, pc2, side1);
+    score = KBNKX(score, weak_key, strong_pawn_count, weak_pawn_count, strong_side);
     break;
 
   case kb:
-    score = KBKX(score, key1, key2, pc1, pc2, side1, side2, side_to_move);
+    score = KBKX(score, strong_key, weak_key, strong_pawn_count, weak_pawn_count, strong_side, weak_side, Us);
     break;
 
   case kn:
-    score = KNKX(score, key2, pc1, pc2, side1, side2, side_to_move);
+    score = KNKX(score, weak_key, strong_pawn_count, weak_pawn_count, strong_side, weak_side, Us);
     break;
 
   case knn:
-    score = KNNKX(score, key2, pc1);
+    score = KNNKX(score, weak_key, strong_pawn_count);
     break;
 
   case k:
-    score = KKx(score, key1, key2, pc1, pc2, side1);
+    score = KKx(score, strong_pawn_count, weak_pawn_count, strong_side);
     break;
 
   default:
@@ -170,16 +168,28 @@ int Material::evaluate(int &flags, const int eval, const Color side_to_move, con
 
   if (drawish)
   {
-    if (const auto drawish_score = score / drawish; pc1 + pc2 == 0)
+    if (const auto drawish_score = score / drawish; strong_pawn_count + weak_pawn_count == 0)
       score = drawish_score;
-    else if (pc1 == 0)
+    else if (strong_pawn_count == 0)
       score = std::min<int>(drawish_score, score);
-    else if (pc2 == 0)
+    else if (weak_pawn_count == 0)
       score = std::max<int>(drawish_score, score);
   }
 
   flags = material_flags;
-  return side1 != side_to_move ? -score : score;
+  return strong_side != Us ? -score : score;
+}
+
+template int Material::evaluate<WHITE>(int &, int, const Board *);
+template int Material::evaluate<BLACK>(int &, int, const Board *);
+
+template<Material::KeyUpdateType Type>
+void Material::update_key(const Color c, const PieceType pt) {
+  if (pt == KING)
+    return;
+  const auto x = count(c, pt) + Type == Add ? 1 : -1;
+  key[c] &= ~(15 << piece_bit_shift[pt]);
+  key[c] |= x << piece_bit_shift[pt];
 }
 
 int Material::KQBKX(const int eval, const uint32_t key2) {
@@ -273,21 +283,18 @@ int Material::KBBKX(const int eval, const uint32_t key2) {
     drawish = 16;
     break;
 
-    //case kn:
-    //  break;
-
   default:
     break;
   }
   return eval;
 }
 
-int Material::KBNKX(const int eval, const uint32_t key2, const int pc1, const int pc2, const Color side1) {
+int Material::KBNKX(const int eval, const uint32_t key2, const int pc1, const int pc2, const Color c1) {
   switch (key2 & ~all_pawns)
   {
   case k:
     if (pc1 + pc2 == 0)
-      return KBNK(eval, side1);
+      return KBNK(eval, c1);
     break;
 
   case kb:
@@ -304,24 +311,21 @@ int Material::KBNKX(const int eval, const uint32_t key2, const int pc1, const in
   return eval;
 }
 
-int Material::KBNK(const int eval, const Color side1) const {
-  const auto loosing_kingsq = board->king_sq(~side1);
+int Material::KBNK(const int eval, const Color c1) const {
+  const auto loosing_kingsq = board->king_sq(~c1);
 
-  constexpr auto get_winning_squares = [](const bool dark)
-  {
-    return dark ? std::make_pair(a1, h8) : std::make_pair(a8, h1);
-  };
+  constexpr auto winning_squares = [](const bool dark) { return dark ? std::make_pair(A1, H8) : std::make_pair(A8, H1); };
 
-  const auto dark = is_dark(lsb(board->pieces(Bishop, side1)));
+  const auto dark = is_dark(lsb(board->pieces(BISHOP, c1)));
 
-  const auto [first_corner, second_corner] = get_winning_squares(dark);
+  const auto [first_corner, second_corner] = winning_squares(dark);
 
-  return eval + 175 - std::min<int>(25 * distance(first_corner, loosing_kingsq), 25 * distance(second_corner, loosing_kingsq));
+  return eval + 175 - (25 * std::min<int>(distance(first_corner, loosing_kingsq), distance(second_corner, loosing_kingsq)));
 }
 
-int Material::KBKX(const int eval, const uint32_t key1, const uint32_t key2, const int pc1, const int pc2, const Color side1, const Color side2, const Color side_to_move) {
+int Material::KBKX(const int eval, const uint32_t key1, const uint32_t key2, const int pc1, const int pc2, const Color c1, const Color c2, const Color c) {
   if (pc1 > 0)
-    return KBxKX(eval, key1, key2, side1);
+    return KBxKX(eval, key1, key2, c1);
 
   switch (key2 & ~all_pawns)
   {
@@ -330,9 +334,9 @@ int Material::KBKX(const int eval, const uint32_t key1, const uint32_t key2, con
       return draw_score();
     if (pc1 == 0 && pc2 == 1)
     {
-      if (side1 == side_to_move || !board->is_attacked(lsb(board->pieces(Bishop, side1)), side2))
+      if (c1 == c || !board->is_attacked(lsb(board->pieces(BISHOP, c1)), c2))
       {
-        if (const auto bishopbb = board->pieces(Bishop, side1); pawn_front_span[side2][lsb(board->pieces(Pawn, side2))] & (piece_attacks_bb<Bishop>(lsb(bishopbb), board->pieces()) | bishopbb))
+        if (const auto bishopbb = board->pieces(BISHOP, c1); pawn_front_span[c2][lsb(board->pieces(PAWN, c2))] & (piece_attacks_bb<BISHOP>(lsb(bishopbb), board->pieces()) | bishopbb))
           return draw_score();
       }
     }
@@ -348,10 +352,10 @@ int Material::KBKX(const int eval, const uint32_t key1, const uint32_t key2, con
   default:
     break;
   }
-  return std::min(0, eval);
+  return std::min<int>(0, eval);
 }
 
-int Material::KNKX(const int eval, const uint32_t key2, const int pc1, const int pc2, const Color side1, const Color side2, const Color side_to_move) {
+int Material::KNKX(const int eval, const uint32_t key2, const int pc1, const int pc2, const Color c1, const Color c2, const Color c) {
   switch (key2 & ~all_pawns)
   {
   case k: {
@@ -360,9 +364,9 @@ int Material::KNKX(const int eval, const uint32_t key2, const int pc1, const int
 
     if (pc1 == 0 && pc2 == 1)
     {
-      if (side1 == side_to_move || !board->is_attacked(lsb(board->pieces(Knight, side1)), side2))
+      if (c1 == c || !board->is_attacked(lsb(board->pieces(KNIGHT, c1)), c2))
       {
-        if (const auto knightbb = board->pieces(Knight, side1); pawn_front_span[side2][lsb(board->pieces(Pawn, side2))] & (piece_attacks_bb<Knight>(lsb(knightbb)) | knightbb))
+        if (const auto knightbb = board->pieces(KNIGHT, c1); pawn_front_span[c2][lsb(board->pieces(PAWN, c2))] & (piece_attacks_bb<KNIGHT>(lsb(knightbb)) | knightbb))
           return draw_score();
       }
     }
@@ -376,7 +380,7 @@ int Material::KNKX(const int eval, const uint32_t key2, const int pc1, const int
   default:
     break;
   }
-  return pc1 == 0 ? std::min(0, eval) : eval;
+  return pc1 == 0 ? std::min<int>(0, eval) : eval;
 }
 
 int Material::KNNKX(const int eval, const uint32_t key2, const int pc1) {
@@ -390,28 +394,28 @@ int Material::KNNKX(const int eval, const uint32_t key2, const int pc1) {
   default:
     break;
   }
-  return pc1 == 0 ? std::min(0, eval) : eval;
+  return pc1 == 0 ? std::min<int>(0, eval) : eval;
 }
 
-int Material::KKx(const int eval, const uint32_t key1, const uint32_t key2, const int pc1, const int pc2, const Color side1) {
-  if (pc1 + pc2 == 0)
-    return draw_score();
-  if (pc2 > 0)
-    return KxKx(eval, key1, key2, pc1, pc2, side1);
-  return eval;
+int Material::KKx(const int eval, const int pc1, const int pc2, const Color c1) {
+  return pc1 + pc2 == 0
+                    ? draw_score()
+                    : pc2 > 0
+                      ? KxKx(eval, pc1, pc2, c1)
+                      : eval;
 }
 
-int Material::KBxKX(const int eval, const uint32_t key1, const uint32_t key2, const Color side1) {
+int Material::KBxKX(const int eval, const uint32_t key1, const uint32_t key2, const Color c1) {
   switch (key2 & ~all_pawns)
   {
   case kb:
-    if (!same_color(lsb(board->pieces(Bishop, WHITE)), lsb(board->pieces(Bishop, BLACK))) && abs(pawn_count(WHITE) - pawn_count(BLACK)) <= 2)
+    if (!same_color(lsb(board->pieces(BISHOP, WHITE)), lsb(board->pieces(BISHOP, BLACK))) && util::abs(pawn_count(WHITE) - pawn_count(BLACK)) <= 2)
       return eval / 2;
 
     break;
 
   case k:
-    return KBxKx(eval, key1, key2, side1);
+    return KBxKx(eval, key1, key2, c1);
 
   default:
     break;
@@ -419,40 +423,35 @@ int Material::KBxKX(const int eval, const uint32_t key1, const uint32_t key2, co
   return eval;
 }
 
-int Material::KBxKx(const int eval, const uint32_t key1, const uint32_t key2, const Color side1) {
-  if ((key1 & all_pawns) == 1 && (key2 & all_pawns) == 0)
-    return KBpK(eval, side1);
-
-  return eval;
+int Material::KBxKx(const int eval, const uint32_t key1, const uint32_t key2, const Color c1) {
+  return (key1 & all_pawns) == 1 && (key2 & all_pawns) == 0 ? KBpK(eval, c1) : eval;
 }
 
-int Material::KBpK(const int eval, const Color side1) {
-  const auto pawnsq1  = lsb(board->pieces(Pawn, side1));
-  const auto promosq1 = static_cast<Square>(side1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
+int Material::KBpK(const int eval, const Color c1) {
+  const auto pawnsq1  = lsb(board->pieces(PAWN, c1));
+  const auto promosq1 = static_cast<Square>(c1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
 
-  if (!same_color(promosq1, lsb(board->pieces(Bishop, side1))))
+  if (!same_color(promosq1, lsb(board->pieces(BISHOP, c1))))
   {
-    if (const auto bbk2 = board->king(~side1); (promosq1 == h8 && bbk2 & corner_h8) || (promosq1 == a8 && bbk2 & corner_a8) || (promosq1 == h1 && bbk2 & corner_h1) || (
-                                                  promosq1 == a1 && bbk2 & corner_a1))
+    if (const auto bbk2 = board->king(~c1);
+        (promosq1 == H8 && bbk2 & corner_h8) || (promosq1 == A8 && bbk2 & corner_a8) || (promosq1 == H1 && bbk2 & corner_h1) || (promosq1 == A1 && bbk2 & corner_a1))
       return draw_score();
   }
   return eval;
 }
 
-int Material::KxKx(const int eval, [[maybe_unused]] const uint32_t key1, [[maybe_unused]] const uint32_t key2, const int pc1, const int pc2, const Color side1) {
-  return pc1 == 1 && pc2 == 0 ? KpK(eval, side1) : eval;
+int Material::KxKx(const int eval, const int pc1, const int pc2, const Color c1) {
+  return pc1 == 1 && pc2 == 0 ? KpK(eval, c1) : eval;
 }
 
-int Material::KpK(const int eval, const Color side1) {
-  const auto pawnsq1  = lsb(board->pieces(Pawn, side1));
-  const auto promosq1 = static_cast<Square>(side1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
+int Material::KpK(const int eval, const Color c1) {
+  const auto pawnsq1  = lsb(board->pieces(PAWN, c1));
+  const auto promosq1 = static_cast<Square>(c1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
+  const auto bbk2     = board->king(~c1);
 
-  if (const auto bbk2 = board->king(~side1); (promosq1 == h8 && bbk2 & corner_h8)
-                                          || (promosq1 == a8 && bbk2 & corner_a8)
-                                          || (promosq1 == h1 && bbk2 & corner_h1)
-                                          || (promosq1 == a1 && bbk2 & corner_a1))
-    return draw_score();
-  return eval;
+  return (promosq1 == H8 && bbk2 & corner_h8) || (promosq1 == A8 && bbk2 & corner_a8) || (promosq1 == H1 && bbk2 & corner_h1) || (promosq1 == A1 && bbk2 & corner_a1)
+       ? draw_score()
+       : eval;
 }
 
 int Material::draw_score() {

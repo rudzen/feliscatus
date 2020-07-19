@@ -103,3 +103,7 @@ build/
 .idea/
 
 logs/
+
+Testing/
+
+cmake-build-debug-gcc/

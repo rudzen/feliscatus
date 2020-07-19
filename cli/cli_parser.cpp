@@ -1,5 +1,5 @@
 #include <CLI/CLI.hpp>
-#include "cli_parser.h"
+#include "cli_parser.hpp"
 
 struct CliParser final {
   CliParser(const int argc, char **argv, const std::string &title) : argc_(argc), argv_(argv), app_(title) {}

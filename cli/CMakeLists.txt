@@ -1,6 +1,6 @@
 file(GLOB files
         "*.cpp"
-        "*.h"
+        "*.hpp"
         )
 
 include(FetchContent)

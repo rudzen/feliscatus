@@ -18,19 +18,21 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <assert.h>
+#include <cassert>
+
 #include <fmt/format.h>
-#include "uci.h"
-#include "transpositional.h"
-#include "datapool.h"
-#include "util.h"
+
+#include "uci.hpp"
+#include "transpositional.hpp"
+#include "util.hpp"
+#include "tpool.hpp"
 
 using std::string;
 
 namespace {
 
 constexpr std::array<std::string_view, 2> bool_string{"false", "true"};
-constexpr int MaxHashMB = 131072;
+constexpr int MaxHashMB            = 131072;
 constinit std::size_t insert_order = 0;
 
 }// namespace
@@ -46,7 +48,7 @@ void on_hash_size(const Option &o) {
 }
 
 void on_threads(const Option &o) {
-  Pool.set(o);
+  pool.set(o);
 }
 
 bool CaseInsensitiveLess::operator()(const std::string_view s1, const std::string_view s2) const noexcept {
@@ -55,11 +57,13 @@ bool CaseInsensitiveLess::operator()(const std::string_view s1, const std::strin
 
 void init(OptionsMap &o) {
   o[get_uci_name<UciOptions::THREADS>()] << Option(1, 1, 512, on_threads);
-  o[get_uci_name<UciOptions::HASH>()] << Option(64, 1, MaxHashMB, on_hash_size);
+  o[get_uci_name<UciOptions::HASH>()] << Option(256, 1, MaxHashMB, on_hash_size);
+  o[get_uci_name<UciOptions::HASH_X_THREADS>()] << Option(true);
   o[get_uci_name<UciOptions::CLEAR_HASH>()] << Option(on_clear_hash);
   o[get_uci_name<UciOptions::CLEAR_HASH_NEW_GAME>()] << Option(false);
   o[get_uci_name<UciOptions::PONDER>()] << Option(false);
   o[get_uci_name<UciOptions::UCI_Chess960>()] << Option(false);
+  o[get_uci_name<UciOptions::SHOW_CPU>()] << Option(false);
 }
 
 /// Option class constructors and conversion operators
@@ -79,7 +83,7 @@ Option::operator int() const {
   return (type_ == "spin" ? util::to_integral<int>(current_value_) : current_value_ == bool_string[true]);
 }
 
-Option::operator std::string() const {
+Option::operator std::string_view() const {
   assert(type_ == "string");
   return current_value_;
 }
@@ -104,7 +108,7 @@ Option &Option::operator=(const string &v) noexcept {
 
   assert(!type_.empty());
 
-  if ((type_ != "button" && v.empty()) || (type_ == "check" && std::find(bool_string.begin(), bool_string.end(), v) != bool_string.end()) || (type_ == "spin" && (util::to_integral<int>(v) < min_ || util::to_integral<int>(v) > max_)))
+  if ((type_ != "button" && v.empty()) || (type_ == "check" && v != "true" && v != "false") || (type_ == "spin" && (!util::in_between(util::to_integral<int>(v), min_, max_))))
     return *this;
 
   if (type_ != "button")
