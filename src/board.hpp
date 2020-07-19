@@ -62,7 +62,7 @@ struct Board {
   int set_fen(std::string_view fen, thread* t);
 
   [[nodiscard]]
-  std::string get_fen() const;
+  std::string fen() const;
 
   [[nodiscard]]
   bool setup_castling(std::string_view s);
@@ -79,13 +79,13 @@ struct Board {
   void unperform_move(Move m);
 
   [[nodiscard]]
-  Piece get_piece(Square s) const;
+  Piece piece(Square s) const;
 
   [[nodiscard]]
-  PieceType get_piece_type(Square s) const;
+  PieceType piece_type(Square s) const;
 
   [[nodiscard]]
-  Bitboard get_pinned_pieces(Color c, Square s) const;
+  Bitboard pinned_pieces(Color c, Square s) const;
 
   [[nodiscard]]
   bool is_attacked(Square s, Color c) const;
@@ -264,11 +264,11 @@ inline void Board::remove_piece(const Square s) {
   board[s] = NO_PIECE;
 }
 
-inline Piece Board::get_piece(const Square s) const {
+inline Piece Board::piece(const Square s) const {
   return board[s];
 }
 
-inline PieceType Board::get_piece_type(const Square s) const {
+inline PieceType Board::piece_type(const Square s) const {
   return type_of(board[s]);
 }
 
@@ -296,7 +296,7 @@ inline Bitboard Board::pieces() const {
   return occupied_by_type[ALL_PIECE_TYPES];
 }
 
-inline Bitboard Board::pieces(Piece pc) const {
+inline Bitboard Board::pieces(const Piece pc) const {
   return pieces(type_of(pc), color_of(pc));
 }
 

@@ -314,11 +314,11 @@ int Material::KBNKX(const int eval, const uint32_t key2, const int pc1, const in
 int Material::KBNK(const int eval, const Color c1) const {
   const auto loosing_kingsq = board->king_sq(~c1);
 
-  constexpr auto get_winning_squares = [](const bool dark) { return dark ? std::make_pair(A1, H8) : std::make_pair(A8, H1); };
+  constexpr auto winning_squares = [](const bool dark) { return dark ? std::make_pair(A1, H8) : std::make_pair(A8, H1); };
 
   const auto dark = is_dark(lsb(board->pieces(BISHOP, c1)));
 
-  const auto [first_corner, second_corner] = get_winning_squares(dark);
+  const auto [first_corner, second_corner] = winning_squares(dark);
 
   return eval + 175 - (25 * std::min<int>(distance(first_corner, loosing_kingsq), distance(second_corner, loosing_kingsq)));
 }

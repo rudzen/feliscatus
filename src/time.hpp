@@ -25,7 +25,7 @@
 #include "search_limits.hpp"
 #include "position.hpp"
 
-struct TimeManager final {
+struct Time final {
 
   void init(Color c, SearchLimits &limits);
 

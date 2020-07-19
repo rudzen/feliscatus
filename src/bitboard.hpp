@@ -127,8 +127,7 @@ inline std::array<Square, SQ_NB> rook_castles_to{};
 /// indexed by the position of the king
 inline std::array<Square, SQ_NB> rook_castles_from{};
 
-consteval std::array<std::array<int, SQ_NB>, SQ_NB> make_distance()
-{
+consteval std::array<std::array<int, SQ_NB>, SQ_NB> make_distance() {
   std::array<std::array<int, SQ_NB>, SQ_NB> result{};
   for (const auto sq1 : Squares)
     for (const auto sq2 : Squares)
@@ -137,7 +136,7 @@ consteval std::array<std::array<int, SQ_NB>, SQ_NB> make_distance()
   return result;
 }
 
-constexpr std::array<std::array<int, SQ_NB>, SQ_NB> dist = make_distance(); /// chebyshev distance
+constexpr std::array<std::array<int, SQ_NB>, SQ_NB> dist = make_distance();/// chebyshev distance
 
 template<>
 constexpr int distance<Square>(const Square x, const Square y) { return dist[x][y]; }

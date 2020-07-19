@@ -97,7 +97,7 @@ private:
   void add_castle_move(Square from, Square to);
 
   template<Color Us>
-  [[nodiscard]] const MoveData *get_next_move();
+  [[nodiscard]] const MoveData *next_move();
 
   template<Color Us>
   [[nodiscard]] bool can_castle_short() const;

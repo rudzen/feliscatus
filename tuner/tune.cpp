@@ -378,7 +378,7 @@ void PGNPlayer::read_san_move() {
   all_nodes_count_++;
 
   if (b->half_move_count() >= 14 && all_nodes_count_ % 7 == 0)
-    current_game_nodes_.emplace_back(b->get_fen());
+    current_game_nodes_.emplace_back(b->fen());
 }
 
 void PGNPlayer::read_game_termination() {
@@ -555,7 +555,7 @@ void Tune::make_quiet(std::vector<Node> &nodes) {
     t->pv_length[0] = 0;
     get_quiesce_score(-32768, 32768, true, 0);
     play_pv();
-    node.fen_ = b->get_fen();
+    node.fen_ = b->fen();
   }
 }
 

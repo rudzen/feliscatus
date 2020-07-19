@@ -251,7 +251,7 @@ void uci::run(const int argc, char *argv[]) {
       position(board.get(), input);
     else if (token == "go")
     {
-      go(input, board->get_fen());
+      go(input, board->fen());
     } else if (token == "perft")
     {
       const auto total = perft::perft(board.get(), 6);

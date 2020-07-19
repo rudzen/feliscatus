@@ -74,7 +74,7 @@ bool is_hash_score_valid(const Position *pos, const int depth, const int alpha, 
          && (pos->transposition->is_exact() || (pos->transposition->is_beta() && pos->transp_score >= beta) || (pos->transposition->is_alpha() && pos->transp_score <= alpha));
 }
 
-void get_hash_and_evaluate(Position *pos, Board *b, const std::size_t pool_index, const int alpha, const int beta, const int plies) {
+void hash_and_evaluate(Position *pos, Board *b, const std::size_t pool_index, const int alpha, const int beta, const int plies) {
   if ((pos->transposition = TT.find(b->key())) == nullptr)
   {
     pos->eval_score  = Eval::evaluate(b, pool_index, alpha, beta);
@@ -217,7 +217,7 @@ int Search<SearcherType>::go() {
       {
         t->pv_length[0] = 0;
 
-        get_hash_and_evaluate(pos, b, t->index(), alpha, beta, b->plies);
+        hash_and_evaluate(pos, b, t->index(), alpha, beta, b->plies);
 
         const auto score = search<EXACT, true>(b->search_depth, alpha, beta);
 
@@ -393,7 +393,7 @@ int Search<SearcherType>::search_next_depth(const int depth, const int alpha, co
 
 template<Searcher SearcherType>
 template<bool PV>
-Move Search<SearcherType>::get_singular_move(int depth) {
+Move Search<SearcherType>::get_singular_move(const int depth) {
   if constexpr (!PV)
     return MOVE_NONE;
   else
@@ -594,7 +594,7 @@ bool Search<SearcherType>::make_move_and_evaluate(const Move m, const int alpha,
   if constexpr (verbosity)
     check_sometimes(current_nodes);
 
-  get_hash_and_evaluate(pos, b, t->index(), -beta, -alpha, b->plies);
+  hash_and_evaluate(pos, b, t->index(), -beta, -alpha, b->plies);
 
   b->max_ply = std::max<int>(b->max_ply, b->plies);
   return true;

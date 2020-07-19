@@ -26,8 +26,6 @@
 
 namespace {
 
-constexpr std::array<PieceType, 5> MoveGenPieceTypes{QUEEN, ROOK, BISHOP, KNIGHT, KING};
-
 constexpr int KILLERMOVESCORE    = 124900;
 constexpr int PROMOTIONMOVESCORE = 50000;
 
@@ -131,7 +129,7 @@ template void Moves<false>::generate_captures_and_promotions();
 
 template<bool Tuning>
 template<Color Us>
-void Moves<Tuning>::generate_moves(PieceType pt, Bitboard to_squares) {
+void Moves<Tuning>::generate_moves(const PieceType pt, const Bitboard to_squares) {
   reset(MOVE_NONE, 0);
 
   const auto pieces = b->pieces();
@@ -173,7 +171,7 @@ template void Moves<false>::generate_pawn_moves(bool, Bitboard, Color);
 
 template<bool Tuning>
 const MoveData * Moves<Tuning>::next_move() {
-  return b->side_to_move() == WHITE ? get_next_move<WHITE>() : get_next_move<BLACK>();
+  return b->side_to_move() == WHITE ? next_move<WHITE>() : next_move<BLACK>();
 }
 
 template const MoveData* Moves< true>::next_move();
@@ -257,16 +255,16 @@ template<Color Us>
 void Moves<Tuning>::add_move(const Piece pc, const Square from, const Square to, const MoveType mt, const Piece promoted) {
   constexpr auto Them = ~Us;
 
-  const auto get_captured = [&]() {
+  const auto captured = [&]() {
     if (mt & CAPTURE)
-      return b->get_piece(to);
+      return b->piece(to);
     if (mt & EPCAPTURE)
       return make_piece(PAWN, Them);
     return NO_PIECE;
   };
 
-  const auto captured = get_captured();
-  const auto move     = init_move(pc, captured, from, to, mt, promoted);
+  const auto captured_piece = captured();
+  const auto move           = init_move(pc, captured_piece, from, to, mt, promoted);
 
   if (transp_move_ == move)
     return;
@@ -310,7 +308,7 @@ void Moves<Tuning>::add_moves(const PieceType pt, const Square from, const Bitbo
   for (auto bb = attacks; bb;)
   {
     const auto to = pop_lsb(&bb);
-    add_move<Us>(pc, from, to, b->get_piece(to) == NO_PIECE ? NORMAL : CAPTURE);
+    add_move<Us>(pc, from, to, b->piece(to) == NO_PIECE ? NORMAL : CAPTURE);
   }
 }
 
@@ -382,7 +380,7 @@ void Moves<Tuning>::add_castle_move(const Square from, const Square to) {
 
 template<bool Tuning>
 template<Color Us>
-const MoveData * Moves<Tuning>::get_next_move() {
+const MoveData * Moves<Tuning>::next_move() {
   while (iteration_ == number_moves_ && stage_ < max_stage_)
   {
     switch (stage_)

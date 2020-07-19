@@ -35,7 +35,7 @@
 
 namespace {
 
-constexpr auto get_actual_eval   = [](const std::array<int, COL_NB> &e) { return e[WHITE] - e[BLACK]; };
+constexpr auto actual_eval   = [](const std::array<int, COL_NB> &e) { return e[WHITE] - e[BLACK]; };
 constexpr Bitboard CenterBB      = make_bitboard(D4, E4, D5, E5);
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
@@ -43,7 +43,7 @@ constexpr auto max_log_files     = 3;
 std::shared_ptr<spdlog::logger> eval_logger = spdlog::rotating_logger_mt("eval_logger", "logs/eval.txt", max_log_file_size, max_log_files);
 
 [[nodiscard]]
-auto get_stages(Material &mat) {
+auto stages(Material &mat) {
   const auto stage = (mat.value() - mat.pawn_value()) / static_cast<double>(Material::max_value_without_pawns);
   return std::make_pair(stage, 1 - stage);
 }
@@ -118,7 +118,7 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 
 #if !defined(NO_EVAL_LAZY_THRESHOLD)
 
-  const auto mat_eval = get_actual_eval(posistion_value);
+  const auto mat_eval = actual_eval(posistion_value);
 
   if (const auto lazy_eval = Us == WHITE ? mat_eval : -mat_eval; lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
     return b->material().evaluate<Us>(b->flags(), lazy_eval, b);
@@ -144,10 +144,10 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 
   posistion_value[Us] += tempo;
 
-  const auto [stage_mg, stage_eg] = get_stages(b->material());
+  const auto [stage_mg, stage_eg] = stages(b->material());
   const auto pos_eval_mg          = static_cast<int>(result.mg() * stage_mg);
   const auto pos_eval_eg          = static_cast<int>(result.eg() * stage_eg);
-  const auto pos_eval             = pos_eval_mg + pos_eval_eg + get_actual_eval(posistion_value);
+  const auto pos_eval             = pos_eval_mg + pos_eval_eg + actual_eval(posistion_value);
   const auto eval                 = b->material().evaluate<Us>(b->flags(), Us == WHITE ? pos_eval : -pos_eval, b);
 
   return eval;
