@@ -66,8 +66,6 @@ struct ParamIndexRecord final {
   double improved_{};
 };
 
-// TODO : replace with <=>
-
 inline bool operator<(const ParamIndexRecord &lhs, const ParamIndexRecord &rhs) {
   return lhs.improved_ >= rhs.improved_;
 }
@@ -561,12 +559,12 @@ void Tune::make_quiet(std::vector<Node> &nodes) {
   }
 }
 
-int Tune::get_score(const Color c) {
+int Tune::get_score(const Color c) const {
   const auto score = score_static_ ? Eval::tune(b.get(), 0, -100000, 100000) : get_quiesce_score(-32768, 32768, false, 0);
   return b->side_to_move() == c ? score : -score;
 }
 
-int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) {
+int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) const {
   auto score = Eval::tune(b.get(), 0, -100000, 100000);
 
   if (score >= beta)
@@ -577,9 +575,13 @@ int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, cons
   if (best_score > alpha)
     alpha = best_score;
 
-  b->pos->generate_captures_and_promotions(this);
+  auto mg = Moves<true>(b.get());
 
-  while (auto *const move_data = b->pos->next_move())
+  mg.generate_captures_and_promotions();
+
+  // b->pos->generate_captures_and_promotions(this);
+
+  while (const auto *const move_data = mg.next_move())
   {
     if (!is_promotion(move_data->move) && move_data->score < 0)
       break;
@@ -610,7 +612,7 @@ int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, cons
   return best_score;
 }
 
-bool Tune::make_move(const Move m, int ply) {
+bool Tune::make_move(const Move m, int ply) const {
   if (!b->make_move(m, true, true))
     return false;
 
@@ -623,13 +625,13 @@ void Tune::unmake_move() const {
   b->unmake_move();
 }
 
-void Tune::play_pv() {
+void Tune::play_pv() const {
   auto *t = b->my_thread();
   for (auto i = 0; i < t->pv_length[0]; ++i)
     b->make_move(t->pv[0][i].move, false, true);
 }
 
-void Tune::update_pv(const Move m, const int score, const int ply) {
+void Tune::update_pv(const Move m, const int score, const int ply) const {
   auto *t = b->my_thread();
   assert(ply < MAXDEPTH);
   assert(t->pv_length[ply] < MAXDEPTH);
@@ -645,29 +647,6 @@ void Tune::update_pv(const Move m, const int score, const int ply) {
 
   for (auto i = next_ply; i < t->pv_length[ply]; ++i)
     t->pv[ply][i] = t->pv[next_ply][i];
-}
-
-void Tune::sort_move(MoveData &md) {
-  const auto m = md.move;
-
-  if (is_queen_promotion(m))
-      md.score = 890000;
-  else if (is_capture(m))
-  {
-    const auto value_captured = piece_value(move_captured(m));
-    auto value_piece          = piece_value(move_piece(m));
-
-    if (value_piece == 0)
-      value_piece = 1800;
-
-    if (value_piece <= value_captured)
-        md.score = 300000 + value_captured * 20 - value_piece;
-    else if (b->see_move(m) >= 0)
-        md.score = 160000 + value_captured * 20 - value_piece;
-    else
-        md.score = -100000 + value_captured * 20 - value_piece;
-  } else
-    exit(0);
 }
 
 }// namespace eval

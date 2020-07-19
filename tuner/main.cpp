@@ -30,7 +30,6 @@
 #include "file_resolver.hpp"
 #include "../src/board.hpp"
 #include "../src/bitboard.hpp"
-#include "../src/magic.hpp"
 #include "../src/transpositional.hpp"
 #include "../src/tpool.hpp"
 #include "../cli/cli_parser.hpp"
@@ -58,7 +57,6 @@ int main(const int argc, char **argv) {
   TT.init(256);
 
   bitboard::init();
-  attacks::init();
   Board::init();
 
   const Stopwatch sw;
