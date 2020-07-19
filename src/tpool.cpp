@@ -61,7 +61,7 @@ void thread::idle_loop() {
     cv.notify_one();
     cv.wait(lk, [&] { return searching; });
 
-    // check exit flag, this is set when the class is destroyed
+    // check exit flag, this is set when the class is being destroyed
     if (exit)
       return;
 
@@ -83,7 +83,7 @@ void thread::wait_for_search_finished() {
 }
 
 #if defined(linux)
-thread_pool::thread_pool() /*: node_counters({[&] { return node_count_seq(); }, [&] { return node_count_par(); }})*/ {}
+thread_pool::thread_pool() {}
 #else
 thread_pool::thread_pool() : node_counters({[&] { return node_count_seq(); }, [&] { return node_count_par(); }}) {}
 #endif

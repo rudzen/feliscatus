@@ -19,6 +19,8 @@
 */
 
 #include <cstring>
+#include <limits>
+
 #include "cpu.h"
 #include "util.h"
 

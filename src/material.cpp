@@ -352,7 +352,7 @@ int Material::KBKX(const int eval, const uint32_t key1, const uint32_t key2, con
   default:
     break;
   }
-  return std::min(0, eval);
+  return std::min<int>(0, eval);
 }
 
 int Material::KNKX(const int eval, const uint32_t key2, const int pc1, const int pc2, const Color c1, const Color c2, const Color c) {
@@ -380,7 +380,7 @@ int Material::KNKX(const int eval, const uint32_t key2, const int pc1, const int
   default:
     break;
   }
-  return pc1 == 0 ? std::min(0, eval) : eval;
+  return pc1 == 0 ? std::min<int>(0, eval) : eval;
 }
 
 int Material::KNNKX(const int eval, const uint32_t key2, const int pc1) {
@@ -394,7 +394,7 @@ int Material::KNNKX(const int eval, const uint32_t key2, const int pc1) {
   default:
     break;
   }
-  return pc1 == 0 ? std::min(0, eval) : eval;
+  return pc1 == 0 ? std::min<int>(0, eval) : eval;
 }
 
 int Material::KKx(const int eval, const int pc1, const int pc2, const Color c1) {

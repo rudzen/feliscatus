@@ -20,7 +20,6 @@
 
 #include <span>
 #include <cassert>
-#include <assert.h>
 #include <algorithm>
 #include <optional>
 #include <functional>
@@ -416,7 +415,7 @@ auto Search<SearcherType>::search_fail_low(const int depth, int alpha, const Mov
 
   auto move_count = 0;
 
-  while (auto *const move_data = mg.next_move())
+  while (const auto *const move_data = mg.next_move())
   {
     if (pool.stop)
       return false;
