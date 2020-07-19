@@ -22,9 +22,11 @@
 #include <cstdint>
 #include <cstdlib>
 #include <vector>
+
 #include <fmt/format.h>
-#include "transpositional.h"
-#include "uci.h"
+
+#include "transpositional.hpp"
+#include "uci.hpp"
 
 namespace {
 

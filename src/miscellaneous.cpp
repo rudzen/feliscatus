@@ -48,8 +48,8 @@ typedef bool (*fun3_t)(HANDLE, CONST GROUP_AFFINITY *, PGROUP_AFFINITY);
 
 #include <fmt/format.h>
 
-#include "miscellaneous.h"
-#include "util.h"
+#include "miscellaneous.hpp"
+#include "util.hpp"
 
 namespace {
 

@@ -20,45 +20,29 @@
 
 #pragma once
 
-#include "stopwatch.h"
-#include "miscellaneous.h"
-#include "search_limits.h"
-#include "position.h"
+#include <cstdint>
 
-struct TimeManager final {
+#include "types.hpp"
+#include "hash.hpp"
+#include "score.hpp"
 
-  void init(Color c, SearchLimits &limits);
+struct Board;
 
-  [[nodiscard]]
-  bool time_up() const noexcept;
-
-  [[nodiscard]]
-  bool plenty_time() const noexcept;
-
-  void ponder_hit() noexcept;
-
-  [[nodiscard]]
-  TimeUnit elapsed() const noexcept;
-
-  [[nodiscard]]
-  bool should_post_curr_move() noexcept;
-
-  bool should_post_info() noexcept;
-
-  [[nodiscard]]
-  bool is_analysing() const noexcept { return limits.infinite | limits.ponder; }
-
-  [[nodiscard]]
-  bool is_fixed_depth() const noexcept { return limits.fixed_depth; }
-
-  [[nodiscard]]
-  int get_depth() const noexcept { return limits.depth; }
-
-private:
-  Stopwatch start_time{};
-  double n_{};
-  SearchLimits limits{};
-  TimeUnit search_time{};
-  std::chrono::milliseconds last_curr_post{};
-  std::chrono::milliseconds last_post_info{};
+#pragma pack(1)
+struct alignas(16) PawnHashEntry final {
+  Key zkey{};
+  Score eval{};
+  std::array<Bitboard, COL_NB> passed_pawns{};
+  [[no_unique_address]] int unused{};
 };
+#pragma pack()
+
+using PawnHashTable = Table<PawnHashEntry, 131072>;
+
+namespace Pawn {
+  [[nodiscard]]
+  PawnHashEntry *find(Board *b);
+
+  [[nodiscard]]
+  PawnHashEntry *insert(Board *b, Score s, const std::array<Bitboard, 2> &passed_pawns);
+}

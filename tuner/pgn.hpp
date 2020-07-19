@@ -22,7 +22,7 @@
 
 #include <memory>
 
-#include "../src/types.h"
+#include "../src/types.hpp"
 
 struct PGNFile;
 enum Token : uint8_t;

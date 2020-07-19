@@ -22,7 +22,8 @@
 
 #include <cassert>
 #include <concepts>
-#include "types.h"
+
+#include "types.hpp"
 
 template <class T>
 concept PRNGCompatible = std::is_convertible_v<T, Key>;

@@ -26,14 +26,13 @@
 
 #include <fmt/format.h>
 
-#include "tune.h"
-#include "file_resolver.h"
-#include "../src/board.h"
-#include "../src/bitboard.h"
-#include "../src/magic.h"
-#include "../src/transpositional.h"
-#include "../src/tpool.h"
-#include "../cli/cli_parser.h"
+#include "tune.hpp"
+#include "file_resolver.hpp"
+#include "../src/board.hpp"
+#include "../src/bitboard.hpp"
+#include "../src/transpositional.hpp"
+#include "../src/tpool.hpp"
+#include "../cli/cli_parser.hpp"
 
 namespace {
 
@@ -58,7 +57,6 @@ int main(const int argc, char **argv) {
   TT.init(256);
 
   bitboard::init();
-  attacks::init();
   Board::init();
 
   const Stopwatch sw;

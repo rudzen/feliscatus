@@ -20,11 +20,11 @@
 
 #include <fmt/format.h>
 
-#include "perft.h"
-#include "stopwatch.h"
-#include "board.h"
-#include "position.h"
-#include "moves.h"
+#include "perft.hpp"
+#include "stopwatch.hpp"
+#include "board.hpp"
+#include "position.hpp"
+#include "moves.hpp"
 
 namespace {
 

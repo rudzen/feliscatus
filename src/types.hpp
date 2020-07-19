@@ -26,7 +26,7 @@
 #include <cstdio>
 #include <string_view>
 
-#include "util.h"
+#include "util.hpp"
 
 using Bitboard = uint64_t;
 using Key      = uint64_t;
@@ -326,4 +326,3 @@ constexpr bool is_ok(const T t) {
   else if constexpr (std::is_same_v<T, Move>)
     return t != MOVE_NONE && move_from(t) != move_to(t);
 }
-

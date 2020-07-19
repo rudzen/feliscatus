@@ -152,7 +152,7 @@ constexpr T round(T2 value) {
 #endif
 }
 
-inline void find_and_replace(std::string &source, const std::string_view &find, const std::string_view &replace, bool only_once = true) {
+inline void find_and_replace(std::string &source, const std::string_view &find, const std::string_view &replace, const bool only_once = true) {
   for (std::string::size_type i = 0; (i = source.find(find, i)) != std::string::npos;)
   {
     source.replace(i, find.length(), replace);

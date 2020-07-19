@@ -24,7 +24,7 @@
 #include <cstdint>
 #include <functional>
 
-#include "types.h"
+#include "types.hpp"
 
 struct MoveData {
   Move move{};
@@ -43,9 +43,10 @@ enum MoveStage {
   END_STAGE
 };
 
+template<bool Tuning = false>
 struct Moves final {
 
-  explicit Moves(Board *board);
+  explicit Moves(Board *board) : b(board) { }
 
   void generate_moves(Move tt_move = MOVE_NONE, int flags = 0);
 
@@ -56,11 +57,9 @@ struct Moves final {
 
   void generate_pawn_moves(bool capture, Bitboard to_squares, Color c);
 
-  [[nodiscard]]
-  const MoveData *next_move();
+  [[nodiscard]] const MoveData *next_move();
 
-  [[nodiscard]]
-  int move_count() const;
+  [[nodiscard]] int move_count() const;
 
 private:
   void reset(Move m, int flags);
@@ -98,16 +97,13 @@ private:
   void add_castle_move(Square from, Square to);
 
   template<Color Us>
-  [[nodiscard]]
-  const MoveData *get_next_move();
+  [[nodiscard]] const MoveData *next_move();
 
   template<Color Us>
-  [[nodiscard]]
-  bool can_castle_short() const;
+  [[nodiscard]] bool can_castle_short() const;
 
   template<Color Us>
-  [[nodiscard]]
-  bool can_castle_long() const;
+  [[nodiscard]] bool can_castle_long() const;
 
   std::array<MoveData, 256> move_list{};
   int iteration_{};
@@ -119,7 +115,8 @@ private:
   Board *b{};
 };
 
-inline int Moves::move_count() const {
+template<bool Tuning>
+int Moves<Tuning>::move_count() const {
   return number_moves_;
 }
 

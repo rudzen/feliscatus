@@ -30,10 +30,10 @@
 #include <vector>
 #include <functional>
 
-#include "pawnhashtable.h"
-#include "pv_entry.h"
-#include "timemanager.h"
-#include "types.h"
+#include "pawnhashtable.hpp"
+#include "pv_entry.hpp"
+#include "time.hpp"
+#include "types.hpp"
 
 /// Main thread pool header
 /// Contains pool, thread and main_thread
@@ -86,7 +86,7 @@ struct main_thread final : thread {
   void search() override;
 
   std::atomic_bool ponder;
-  TimeManager time{};
+  Time time{};
 };
 
 struct thread_pool : std::vector<std::unique_ptr<thread>> {

@@ -18,8 +18,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "moves.h"
-#include "board.h"
+#include "moves.hpp"
+#include "board.hpp"
 
 namespace {
 
@@ -45,7 +45,7 @@ template<MoveGenFlags Flags, Color Us>
 
   const auto get_captured = [&]() {
     if (mt & CAPTURE)
-      return b->get_piece(to);
+      return b->piece(to);
     if (mt & EPCAPTURE)
       return make_piece(PAWN, Them);
     return NO_PIECE;
@@ -70,7 +70,7 @@ template<MoveGenFlags Flags, Color Us>
   for (auto bb = attacks; bb;)
   {
     const auto to = pop_lsb(&bb);
-    md            = add_move<Flags, Us>(b, pc, from, to, b->get_piece(to) == NO_PIECE ? NORMAL : CAPTURE, md);
+    md            = add_move<Flags, Us>(b, pc, from, to, b->piece(to) == NO_PIECE ? NORMAL : CAPTURE, md);
   }
 
   return md;
@@ -134,7 +134,7 @@ template<MoveGenFlags Flags, Color Us, MoveType Type, Direction D>
 }
 
 template<MoveGenFlags Flags, Color Us>
-[[nodiscard]] MoveData *generate_pawn_moves(Board *b, MoveData *md, Bitboard targets) {
+[[nodiscard]] MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets) {
 
   constexpr auto pc        = make_piece(PAWN, Us);
   constexpr auto Them = ~Us;
@@ -143,7 +143,6 @@ template<MoveGenFlags Flags, Color Us>
   constexpr auto Up    = pawn_push(Us);
   constexpr auto NorthEast = pawn_east_attack_dist[Us];
   constexpr auto NorthWest = pawn_west_attack_dist[Us];
-  const auto king_square = b->king_sq(Us);
 
   const auto get_pawns = [&]() {
     const auto pawns         = b->pieces(PAWN, Us);
@@ -285,7 +284,7 @@ template<Color Us, MoveGenFlags Flags>
   else if constexpr (Flags == QUIET)
     targets = ~b->pieces();
 
-
+  // TODO : Finish
 
   return md;
 }

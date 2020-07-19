@@ -20,35 +20,27 @@
 
 #pragma once
 
-#include "material.h"
+#include <memory>
 
-class HashEntry;
+#include "pgn.hpp"
 
-using KillerMoves = std::array<Move, 4>;
+struct Board;
 
-struct Position final {
-  void clear();
+namespace pgn {
 
-  int reversible_half_move_count{};
-  Key pawn_structure_key{};
-  Key key{};
-  Material material{};
-  int null_moves_in_row{};
-  int pv_length{};
-  Move last_move{};
-  int eval_score{};
-  int transp_score{};
-  int transp_depth{};
-  NodeType transp_type{};
-  Move transp_move{};
-  int flags{};
-  HashEntry *transposition{};
-  KillerMoves killer_moves{};
-  Bitboard checkers{};
-  bool in_check{};
-  int castle_rights{};
-  Square en_passant_square{};
-  Color side_to_move{};
-  Bitboard pinned{};
-  Position *previous{};
+struct PGNPlayer : PGNFileReader {
+
+  explicit PGNPlayer(bool check_legal = true);
+
+  virtual ~PGNPlayer() = default;
+
+  void read_pgn_game() override;
+
+  void read_tag_pair() override;
+
+  void read_san_move() override;
+
+protected:
+  std::unique_ptr<Board> b;
 };
+}// namespace pgn

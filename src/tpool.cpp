@@ -21,10 +21,10 @@
 #include <numeric>
 #include <execution>
 
-#include "tpool.h"
-#include "uci.h"
-#include "board.h"
-#include "transpositional.h"
+#include "tpool.hpp"
+#include "uci.hpp"
+#include "board.hpp"
+#include "transpositional.hpp"
 
 namespace {
   constexpr std::size_t parallel_threshold = 8;

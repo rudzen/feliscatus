@@ -32,9 +32,9 @@
 
 #include <fmt/format.h>
 
-#include "pgn.h"
-#include "../src/types.h"
-#include "../src/util.h"
+#include "pgn.hpp"
+#include "../src/types.hpp"
+#include "../src/util.hpp"
 
 enum Token : uint8_t { Symbol, Integer, String, NAG, Asterisk, Period, LParen, RParen, LBracket, RBracket, LT, GT, Invalid, None };
 

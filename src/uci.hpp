@@ -28,11 +28,11 @@
 
 #include <fmt/format.h>
 
-#include "miscellaneous.h"
-#include "types.h"
-#include "pv_entry.h"
-#include "search_limits.h"
-#include "cpu.h"
+#include "miscellaneous.hpp"
+#include "types.hpp"
+#include "pv_entry.hpp"
+#include "search_limits.hpp"
+#include "cpu.hpp"
 
 struct Felis;
 struct Board;

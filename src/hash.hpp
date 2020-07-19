@@ -20,27 +20,16 @@
 
 #pragma once
 
-#include <memory>
+#include <cstdint>
+#include <array>
 
-#include "pgn.h"
+#include "types.hpp"
 
-struct Board;
+template<typename Entry, std::size_t N>
+struct Table {
+  [[nodiscard]]
+  Entry *operator[](const Key key) noexcept { return &table_[static_cast<uint32_t>(key) & (N - 1)]; }
 
-namespace pgn {
-
-struct PGNPlayer : PGNFileReader {
-
-  explicit PGNPlayer(bool check_legal = true);
-
-  virtual ~PGNPlayer() = default;
-
-  void read_pgn_game() override;
-
-  void read_tag_pair() override;
-
-  void read_san_move() override;
-
-protected:
-  std::unique_ptr<Board> b;
+private:
+  std::array<Entry, N> table_{};
 };
-}// namespace pgn

@@ -23,7 +23,7 @@
 
 #include <fmt/format.h>
 
-#include "bitboard.h"
+#include "bitboard.hpp"
 
 namespace {
 

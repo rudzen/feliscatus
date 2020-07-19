@@ -20,13 +20,13 @@
 
 #include <fmt/format.h>
 
-#include "pgn_player.h"
-#include "../src/bitboard.h"
-#include "../src/util.h"
-#include "../src/board.h"
-#include "../src/position.h"
-#include "../src/tpool.h"
-#include "../src/moves.h"
+#include "pgn_player.hpp"
+#include "../src/bitboard.hpp"
+#include "../src/util.hpp"
+#include "../src/board.hpp"
+#include "../src/position.hpp"
+#include "../src/tpool.hpp"
+#include "../src/moves.hpp"
 
 namespace {
 
@@ -85,14 +85,16 @@ void pgn::PGNPlayer::read_san_move() {
 
   Piece piece{NO_PIECE};
 
+  auto mg = Moves<true>(b.get());
+
   if (pawn_move_)
   {
     piece = make_piece(PAWN, side_to_move);
-    b->pos->generate_pawn_moves(capture_, bit(to_square_), side_to_move);
+    mg.generate_pawn_moves(capture_, bit(to_square_), side_to_move);
   } else if (castle_move_)
   {
     piece = make_piece(KING, side_to_move);
-    b->pos->generate_moves();
+    mg.generate_moves();
   } else if (piece_move_)
   {
     const auto pt = detect_piece(from_piece_);
@@ -103,9 +105,9 @@ void pgn::PGNPlayer::read_san_move() {
     }
     piece = make_piece(pt, side_to_move);
     if (side_to_move == WHITE)
-      b->pos->generate_moves<WHITE>(pt, bit(to_square_));
+      mg.generate_moves<WHITE>(pt, bit(to_square_));
     else
-      b->pos->generate_moves<BLACK>(pt, bit(to_square_));
+      mg.generate_moves<BLACK>(pt, bit(to_square_));
   } else
   {
     fmt::print("else\n");
@@ -126,12 +128,10 @@ void pgn::PGNPlayer::read_san_move() {
   }
 
   auto found            = false;
-  const auto move_count = b->pos->move_count();
 
-  for (auto i = 0; i < move_count; ++i)
+  while (auto *const move_data = mg.next_move())
   {
-    const auto m = b->pos->move_list[i].move;
-
+    const auto m = move_data->move;
     if (move_piece(m) != piece || move_to(m) != to_square_ || (promoted != NO_PIECE && move_promoted(m) != promoted) || (capture_ && !is_capture(m))
         || (from_file_ != -1 && file_of(move_from(m)) != from_file_) || (from_rank_ != -1 && rank_of(move_from(m)) != from_rank_))
       continue;

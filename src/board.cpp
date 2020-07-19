@@ -25,13 +25,13 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
-#include "board.h"
-#include "bitboard.h"
-#include "util.h"
-#include "transpositional.h"
-#include "miscellaneous.h"
-#include "prng.h"
-#include "moves.h"
+#include "board.hpp"
+#include "bitboard.hpp"
+#include "util.hpp"
+#include "transpositional.hpp"
+#include "miscellaneous.hpp"
+#include "prng.hpp"
+#include "moves.hpp"
 
 namespace zobrist {
 
@@ -51,7 +51,7 @@ constexpr auto max_log_files     = 3;
 
 std::shared_ptr<spdlog::logger> logger = spdlog::rotating_logger_mt("castleling_logger", "logs/castleling.txt", max_log_file_size, max_log_files);
 
-[[nodiscard]] std::optional<Square> get_ep_square(std::string_view s) {
+[[nodiscard]] std::optional<Square> ep_square(std::string_view s) {
   if (s.empty() || s.length() == 1 || s.front() == '-')
     return std::make_optional(NO_SQ);
 
@@ -76,7 +76,7 @@ void add_short_castle_rights(Board *b, std::optional<File> rook_file) {
   {
     for (const auto f : ReverseFiles)
     {
-      if (b->get_piece_type(make_square(f, Rank_1)) == ROOK)
+      if (b->piece_type(make_square(f, Rank_1)) == ROOK)
       {
         rook_file = f;// right outermost rook for side
         break;
@@ -110,7 +110,7 @@ void add_long_castle_rights(Board *b, std::optional<File> rook_file) {
   {
     for (const auto f : Files)
     {
-      if (b->get_piece_type(make_square(f, Rank_1)) == ROOK)
+      if (b->piece_type(make_square(f, Rank_1)) == ROOK)
       {
         rook_file = f;// left outermost rook for side
         break;
@@ -300,7 +300,7 @@ void Board::unperform_move(const Move m) {
     king_square[move_side(m)] = from;
 }
 
-Bitboard Board::get_pinned_pieces(const Color c, const Square s) const {
+Bitboard Board::pinned_pieces(const Color c, const Square s) const {
   const auto them        = ~c;
   const auto all_pieces  = pieces();
   const auto side_pieces = pieces(c);
@@ -380,7 +380,7 @@ void Board::print() const {
     for (const auto file : Files)
     {
       const auto sq = make_square(file, rank);
-      const auto pc = get_piece(sq);
+      const auto pc = piece(sq);
       format_to(s, "{} ", piece_letter[pc]);
     }
     format_to(s, "\n");
@@ -445,7 +445,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
   prefetch(TT.find_bucket(pos->key));
 
   pos->material.make_move(m);
-  pos->pinned = get_pinned_pieces(pos->side_to_move, king_sq(pos->side_to_move));
+  pos->pinned = pinned_pieces(pos->side_to_move, king_sq(pos->side_to_move));
 
   return true;
 }
@@ -488,7 +488,7 @@ uint64_t Board::calculate_key() const {
       while (bb)
       {
         const auto sq = pop_lsb(&bb);
-        const auto pc = get_piece(sq);
+        const auto pc = piece(sq);
         key ^= zobrist::zobrist_pst[pc][sq];
       }
     }
@@ -583,7 +583,7 @@ int Board::set_fen(std::string_view fen, thread *t) {
   // En-passant
   space++;
   current = update_current();
-  if (const auto ep_sq = get_ep_square(current); ep_sq)
+  if (const auto ep_sq = ep_square(current); ep_sq)
     pos->en_passant_square = ep_sq.value();
   else
     return 6;
@@ -599,7 +599,7 @@ int Board::set_fen(std::string_view fen, thread *t) {
   return 0;
 }
 
-std::string Board::get_fen() const {
+std::string Board::fen() const {
   fmt::memory_buffer s;
 
   for (const Rank r : ReverseRanks)
@@ -609,7 +609,7 @@ std::string Board::get_fen() const {
     for (const auto f : Files)
     {
       const auto sq = make_square(f, r);
-      const auto pc = get_piece(sq);
+      const auto pc = piece(sq);
 
       if (pc != NO_PIECE)
       {
@@ -746,7 +746,7 @@ void Board::update_position(Position *p) const {
   while (b)
   {
     const auto sq = pop_lsb(&b);
-    const auto pc = get_piece(sq);
+    const auto pc = piece(sq);
     key ^= zobrist::zobrist_pst[pc][sq];
     if (type_of(pc) == PAWN)
       pawn_key ^= zobrist::zobrist_pst[pc][sq];
