@@ -131,7 +131,7 @@ void initialize_magics(const std::array<MagicInit, 64> &magicInit, MagicTable &m
   constexpr auto shift      = 64 - (Pt == ROOK ? 12 : 9);
   constexpr auto directions = Pt == ROOK ? RookDirections : BishopDirections;
 
-  std::vector<int> squares(SQ_NB);
+  std::vector<int> squares(SQ_NB / 2);
 
   for (const auto sq : Squares)
   {
@@ -148,21 +148,24 @@ void initialize_magics(const std::array<MagicInit, 64> &magicInit, MagicTable &m
     for (Bitboard k = 0; k < (OneBB << squares.size()); ++k)
     {
       auto bb2 = bb = 0;
+
       for (auto j = 0; j < static_cast<int>(squares.size()); ++j)
         if (test_bit(k, j))
           set_bit(bb, squares[j]);
-      for (auto j = 0; j < 4; ++j)
+
+      for (const auto &direction : directions)
       {
-        for (auto d = 1; !((sq88 + d * directions[j][1]) & 0x88); ++d)
+        for (auto d = 1; !((sq88 + d * direction[1]) & 0x88); ++d)
         {
-          const auto s = sq + d * directions[j][0];
+          const auto s = sq + d * direction[0];
           bb2 |= s;
           if (bb & s)
             break;
         }
       }
-      const auto j      = ((bb * magic[sq].magic) >> shift);
-      magic[sq].data[j] = bb2;
+
+      const auto l      = ((bb * magic[sq].magic) >> shift);
+      magic[sq].data[l] = bb2;
     }
   }
 }

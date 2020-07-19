@@ -31,9 +31,7 @@ struct MoveData {
   int score{};
   constexpr operator Move() const { return move; }
   void operator=(const Move m) { move = m; }
-  constexpr auto operator<=> (const MoveData &rhs) {
-    return score <=> rhs.score;
-  }
+  constexpr auto operator<=> (const MoveData &rhs) { return score <=> rhs.score; }
 };
 
 struct Board;
