@@ -72,8 +72,8 @@ private:
   template<Color Us>
   void generate_quiet_moves();
 
-  template<Color Us>
-  void add_move(Piece pc, Square from, Square to, MoveType mt, Piece promoted = NO_PIECE);
+  template<Color Us, MoveType Type>
+  void add_move(Piece pc, Square from, Square to, Piece promoted = NO_PIECE);
 
   template<Color Us, PieceType Pt>
   void add_piece_moves(Bitboard to_squares);
@@ -90,8 +90,8 @@ private:
   template<Color Us>
   void add_pawn_capture_moves(Bitboard to_squares);
 
-  template<Color Us>
-  void add_pawn_moves(Bitboard to_squares, Direction d, MoveType mt);
+  template<Color Us, MoveType Type>
+  void add_pawn_moves(Bitboard to_squares, Direction d);
 
   template<Color Us>
   void add_castle_move(Square from, Square to);
