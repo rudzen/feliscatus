@@ -20,16 +20,35 @@
 
 #pragma once
 
-#include <cstdint>
-#include <array>
+#include "material.hpp"
 
-#include "types.h"
+class HashEntry;
 
-template<typename Entry, std::size_t N>
-struct Table {
-  [[nodiscard]]
-  Entry *operator[](const Key key) noexcept { return &table_[static_cast<uint32_t>(key) & (N - 1)]; }
+using KillerMoves = std::array<Move, 4>;
 
-private:
-  std::array<Entry, N> table_{};
+struct Position final {
+  void clear();
+
+  int reversible_half_move_count{};
+  Key pawn_structure_key{};
+  Key key{};
+  Material material{};
+  int null_moves_in_row{};
+  int pv_length{};
+  Move last_move{};
+  int eval_score{};
+  int transp_score{};
+  int transp_depth{};
+  NodeType transp_type{};
+  Move transp_move{};
+  int flags{};
+  HashEntry *transposition{};
+  KillerMoves killer_moves{};
+  Bitboard checkers{};
+  bool in_check{};
+  int castle_rights{};
+  Square en_passant_square{};
+  Color side_to_move{};
+  Bitboard pinned{};
+  Position *previous{};
 };

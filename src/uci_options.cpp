@@ -18,12 +18,14 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <assert.h>
+#include <cassert>
+
 #include <fmt/format.h>
-#include "uci.h"
-#include "transpositional.h"
-#include "util.h"
-#include "tpool.h"
+
+#include "uci.hpp"
+#include "transpositional.hpp"
+#include "util.hpp"
+#include "tpool.hpp"
 
 using std::string;
 

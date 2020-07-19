@@ -27,11 +27,11 @@
 #include <memory>
 #include <map>
 
-#include "pgn_player.h"
-#include "../cli/cli_parser.h"
-#include "../src/bitboard.h"
-#include "../src/moves.h"
-#include "../src/pv_entry.h"
+#include "pgn_player.hpp"
+#include "../cli/cli_parser.hpp"
+#include "../src/bitboard.hpp"
+#include "../src/moves.hpp"
+#include "../src/pv_entry.hpp"
 
 struct Board;
 struct FileResolver;
@@ -65,7 +65,7 @@ private:
   int64_t all_nodes_count_{};
 };
 
-class Tune final : public MoveSorter {
+class Tune final {
 public:
   explicit Tune(std::unique_ptr<Board> board, const ParserSettings *settings);
 
@@ -73,19 +73,17 @@ public:
 
   void make_quiet(std::vector<Node> &nodes);
 
-  int get_score(Color c);
+  int get_score(Color c) const;
 
-  int get_quiesce_score(int alpha, int beta, bool store_pv, int ply);
+  int get_quiesce_score(int alpha, int beta, bool store_pv, int ply) const;
 
-  bool make_move(Move m, int ply);
+  bool make_move(Move m, int ply) const;
 
   void unmake_move() const;
 
-  void play_pv();
+  void play_pv() const;
 
-  void update_pv(Move m, int score, int ply);
-
-  void sort_move(MoveData &md) override;
+  void update_pv(Move m, int score, int ply) const;
 
 private:
   std::unique_ptr<Board> b;

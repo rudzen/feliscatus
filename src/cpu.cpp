@@ -19,8 +19,10 @@
 */
 
 #include <cstring>
-#include "cpu.h"
-#include "util.h"
+#include <limits>
+
+#include "cpu.hpp"
+#include "util.hpp"
 
 namespace {
 

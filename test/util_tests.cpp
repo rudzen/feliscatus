@@ -2,8 +2,8 @@
 
 #include <catch2/catch.hpp>
 
-#include "../src/util.h"
-#include "../src/types.h"
+#include "../src/util.hpp"
+#include "../src/types.hpp"
 
 TEST_CASE("Abs test", "[abs]") {
 

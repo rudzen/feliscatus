@@ -21,14 +21,13 @@
 #include <sstream>
 #include <cstdio>
 
-#include "uci.h"
-#include "board.h"
-#include "position.h"
-#include "search.h"
-#include "tpool.h"
-#include "transpositional.h"
-#include "miscellaneous.h"
-#include "perft.h"
+#include "uci.hpp"
+#include "board.hpp"
+#include "tpool.hpp"
+#include "transpositional.hpp"
+#include "miscellaneous.hpp"
+#include "perft.hpp"
+#include "moves.hpp"
 
 namespace {
 
@@ -37,7 +36,9 @@ constexpr TimeUnit time_safety_margin = 1;
 std::unique_ptr<Board> new_board() {
   const auto num_threads = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::THREADS>()]);
   pool.set(num_threads);
-  return std::make_unique<Board>(start_position, pool.main());
+  auto board = std::make_unique<Board>();
+  board->set_fen(start_position, pool.main());
+  return board;
 }
 
 constexpr uint64_t nps(const uint64_t nodes, const TimeUnit time) {
@@ -49,10 +50,12 @@ auto node_info(const TimeUnit time) {
   return std::make_pair(nodes, nps(nodes, time));
 }
 
-Move string_to_move(Position *p, const std::string_view m) {
-  p->generate_moves();
+Move string_to_move(Board *b, const std::string_view m) {
 
-  while (const MoveData *move_data = p->next_move())
+  auto mg = Moves(b);
+  mg.generate_moves();
+
+  while (const MoveData *move_data = mg.next_move())
     if (m == uci::display_uci(move_data->move))
       return move_data->move;
   return MOVE_NONE;
@@ -83,7 +86,7 @@ void position(Board *b, std::istringstream &input) {
 
   // parse any moves if they exist
   while (input >> token)
-    if (const auto m = string_to_move(b->pos, token); m)
+    if (const auto m = string_to_move(b, token); m)
       b->make_move(m, false, true);
 }
 
@@ -233,12 +236,8 @@ void uci::run(const int argc, char *argv[]) {
     else if (token == "ponder")
       pool.main()->ponder = true;
     else if (token == "uci")
-    {
-      fmt::print("id name Feliscatus 0.1\n");
-      fmt::print("id author Gunnar Harms, FireFather, Rudy Alex Kohn\n");
-      fmt::print("{}\n", Options);
-      fmt::print("uciok\n");
-    } else if (token == "isready")
+      fmt::print("{}{}\nuciok\n", misc::print_engine_info<true>(), Options);
+    else if (token == "isready")
       fmt::print("readyok\n");
     else if (token == "ucinewgame")
     {
@@ -252,15 +251,15 @@ void uci::run(const int argc, char *argv[]) {
       position(board.get(), input);
     else if (token == "go")
     {
-      //stop_threads();
-      go(input, board->get_fen());
+      go(input, board->fen());
     } else if (token == "perft")
     {
       const auto total = perft::perft(board.get(), 6);
       fmt::print("Total nodes: {}\n", total);
-    } else if (token == "quit" || token == "exit")
+    }
+    else if (token == "print")
+      board->print_moves();
+    else if (token == "quit" || token == "exit")
       break;
   } while (token != "quit" && argc == 1);
-
-  // stop_threads();
 }

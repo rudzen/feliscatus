@@ -22,8 +22,8 @@
 
 #include <cstdint>
 
-#include "types.h"
-#include "miscellaneous.h"
+#include "types.hpp"
+#include "miscellaneous.hpp"
 
 #pragma pack(1)
 struct alignas(16) HashEntry {

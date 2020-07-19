@@ -18,19 +18,31 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "bitboard.h"
-#include "magic.h"
-#include "board.h"
-#include "uci.h"
-#include "transpositional.h"
+#pragma once
 
-int main(const int argc, char *argv[]) {
+#include <array>
+#include <vector>
 
-  bitboard::init();
-  attacks::init();
-  Board::init();
-  uci::init(Options);
+#include "miscellaneous.hpp"
+#include "types.hpp"
 
-  TT.init(1);
-  uci::run(argc, argv);
-}
+struct SearchLimits {
+  std::array<TimeUnit, COL_NB> time{};
+  std::array<TimeUnit, COL_NB> inc{};
+  TimeUnit movetime{};
+  int movestogo{};
+  int depth{};
+  bool ponder{};
+  bool infinite{};
+  bool fixed_movetime{};
+  bool fixed_depth{};
+  std::vector<Move> search_moves{};
+
+  void clear() {
+    time.fill(0);
+    inc.fill(0);
+    movetime          = 0;
+    movestogo = depth = 0;
+    ponder = infinite = fixed_movetime = fixed_depth = false;
+  }
+};

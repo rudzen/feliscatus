@@ -1,6 +1,6 @@
 file(GLOB files
         "*.cpp"
-        "*.h"
+        "*.hpp"
         )
 
 list(REMOVE_ITEM files "main.cpp")

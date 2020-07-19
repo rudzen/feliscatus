@@ -26,7 +26,7 @@
 #include <cstdio>
 #include <string_view>
 
-#include "util.h"
+#include "util.hpp"
 
 using Bitboard = uint64_t;
 using Key      = uint64_t;
@@ -201,9 +201,9 @@ enum MoveGenFlags {
   NONE           = 0,
   LEGALMOVES     = 1,
   STAGES         = 1 << 1,
-  QUEENPROMOTION = 1 << 2
+  CAPTURES       = 1 << 2,
+  QUIET          = 1 << 3
 };
-
 
 /// color_of() determin color of a square or a piece
 
@@ -303,8 +303,6 @@ constexpr bool is_promotion(const Move m) { return type_of(m) & PROMOTION; }
 
 constexpr bool is_queen_promotion(const Move m) { return is_promotion(m) && type_of(move_promoted(m)) == QUEEN; }
 
-constexpr bool is_null_move(const Move m) { return m == 0; }
-
 template<MoveType Mt>
 constexpr Move init_move(const Piece pc, const Piece cap, const Square from, const Square to, const Piece promoted) {
   return static_cast<Move>((pc << 26) | (cap << 22) | (promoted << 18) | (Mt << 12) | (from << 6) | static_cast<int>(to));
@@ -328,4 +326,3 @@ constexpr bool is_ok(const T t) {
   else if constexpr (std::is_same_v<T, Move>)
     return t != MOVE_NONE && move_from(t) != move_to(t);
 }
-

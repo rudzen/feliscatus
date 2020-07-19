@@ -1,15 +1,16 @@
+#include <cstdint>
 #include <iterator>
 #include <utility>
 #include <fmt/format.h>
 
-[[nodiscard]] auto sum_values(const uint8_t *Data, size_t Size)
+[[nodiscard]] auto sum_values(const uint8_t *data, const size_t size)
 {
   constexpr auto scale = 1000;
 
-  int value = 0;
-  for (std::size_t offset = 0; offset < Size; ++offset) {
-    value += static_cast<int>(*std::next(Data, static_cast<long>(offset))) * scale;
-  }
+  auto value = 0;
+  for (std::size_t offset = 0; offset < size; ++offset)
+    value += static_cast<int>(*std::next(data, static_cast<long>(offset))) * scale;
+
   return value;
 }
 

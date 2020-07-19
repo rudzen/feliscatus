@@ -19,10 +19,10 @@
 */
 
 #include <optional>
-#include "board.h"
-#include "bitboard.h"
-#include "magic.h"
-#include "types.h"
+
+#include "board.hpp"
+#include "bitboard.hpp"
+#include "types.hpp"
 
 namespace {
 

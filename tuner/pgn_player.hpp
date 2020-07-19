@@ -20,29 +20,27 @@
 
 #pragma once
 
-#include <array>
-#include <vector>
+#include <memory>
 
-#include "miscellaneous.h"
-#include "types.h"
+#include "pgn.hpp"
 
-struct SearchLimits {
-  std::array<TimeUnit, COL_NB> time{};
-  std::array<TimeUnit, COL_NB> inc{};
-  TimeUnit movetime{};
-  int movestogo{};
-  int depth{};
-  bool ponder{};
-  bool infinite{};
-  bool fixed_movetime{};
-  bool fixed_depth{};
-  std::vector<Move> search_moves{};
+struct Board;
 
-  void clear() {
-    time.fill(0);
-    inc.fill(0);
-    movetime          = 0;
-    movestogo = depth = 0;
-    ponder = infinite = fixed_movetime = fixed_depth = false;
-  }
+namespace pgn {
+
+struct PGNPlayer : PGNFileReader {
+
+  explicit PGNPlayer(bool check_legal = true);
+
+  virtual ~PGNPlayer() = default;
+
+  void read_pgn_game() override;
+
+  void read_tag_pair() override;
+
+  void read_san_move() override;
+
+protected:
+  std::unique_ptr<Board> b;
 };
+}// namespace pgn

@@ -22,11 +22,13 @@
 
 #include <chrono>
 #include <string_view>
+#include <string>
 
 using TimeUnit = std::chrono::milliseconds::rep;
 
-constexpr std::string_view start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+constexpr std::string_view start_position{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
 constexpr std::string_view piece_index{"pnbrqk"};
+constexpr std::string_view piece_letter{"PNBRQK. pnbrqk. "};
 
 #if defined(NO_PREFETCH)
 
@@ -63,4 +65,9 @@ inline uint64_t mul_hi64(const uint64_t a, const uint64_t b) {
 
 namespace WinProcGroup {
   void bind_this_thread(std::size_t idx);
+}
+
+namespace misc {
+  template<bool AsUci>
+  std::string print_engine_info();
 }

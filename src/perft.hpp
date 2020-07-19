@@ -22,7 +22,7 @@
 
 #include <cstdint>
 
-#include "types.h"
+#include "types.hpp"
 
 struct Board;
 

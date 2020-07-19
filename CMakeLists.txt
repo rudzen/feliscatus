@@ -79,8 +79,11 @@ endif()
 # cli lib wrapper
 add_subdirectory(cli)
 
-# main engine lib
+# main lib
 add_subdirectory(src)
+
+# engine
+add_subdirectory(engine)
 
 # tuner
 add_subdirectory(tuner)

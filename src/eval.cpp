@@ -24,19 +24,18 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
-#include "eval.h"
-#include "types.h"
-#include "board.h"
-#include "parameters.h"
-#include "bitboard.h"
-#include "magic.h"
-#include "position.h"
-#include "pawnhashtable.h"
-#include "score.h"
+#include "eval.hpp"
+#include "types.hpp"
+#include "board.hpp"
+#include "parameters.hpp"
+#include "bitboard.hpp"
+#include "position.hpp"
+#include "pawnhashtable.hpp"
+#include "score.hpp"
 
 namespace {
 
-constexpr auto get_actual_eval   = [](const std::array<int, COL_NB> &e) { return e[WHITE] - e[BLACK]; };
+constexpr auto actual_eval   = [](const std::array<int, COL_NB> &e) { return e[WHITE] - e[BLACK]; };
 constexpr Bitboard CenterBB      = make_bitboard(D4, E4, D5, E5);
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
@@ -44,7 +43,7 @@ constexpr auto max_log_files     = 3;
 std::shared_ptr<spdlog::logger> eval_logger = spdlog::rotating_logger_mt("eval_logger", "logs/eval.txt", max_log_file_size, max_log_files);
 
 [[nodiscard]]
-auto get_stages(Material &mat) {
+auto stages(Material &mat) {
   const auto stage = (mat.value() - mat.pawn_value()) / static_cast<double>(Material::max_value_without_pawns);
   return std::make_pair(stage, 1 - stage);
 }
@@ -119,7 +118,7 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 
 #if !defined(NO_EVAL_LAZY_THRESHOLD)
 
-  const auto mat_eval = get_actual_eval(posistion_value);
+  const auto mat_eval = actual_eval(posistion_value);
 
   if (const auto lazy_eval = Us == WHITE ? mat_eval : -mat_eval; lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
     return b->material().evaluate<Us>(b->flags(), lazy_eval, b);
@@ -145,10 +144,10 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 
   posistion_value[Us] += tempo;
 
-  const auto [stage_mg, stage_eg] = get_stages(b->material());
+  const auto [stage_mg, stage_eg] = stages(b->material());
   const auto pos_eval_mg          = static_cast<int>(result.mg() * stage_mg);
   const auto pos_eval_eg          = static_cast<int>(result.eg() * stage_eg);
-  const auto pos_eval             = pos_eval_mg + pos_eval_eg + get_actual_eval(posistion_value);
+  const auto pos_eval             = pos_eval_mg + pos_eval_eg + actual_eval(posistion_value);
   const auto eval                 = b->material().evaluate<Us>(b->flags(), Us == WHITE ? pos_eval : -pos_eval, b);
 
   return eval;
@@ -420,11 +419,11 @@ void Evaluate<Tuning>::init_evaluate() {
   attack_count[Us]         = 0;
   attack_counter[Us]       = 0;
   const auto ksq           = b->king_sq(Us);
-  const auto attacks       = king_attacks[ksq];
+  const auto attacks       = all_attacks<KING>(ksq);
   const auto our_pawns     = b->pieces(PAWN, Us);
   const auto their_pawns   = b->pieces(PAWN, Them);
   open_files               = ~(pawn_fill[Us](pawn_fill[Them](our_pawns)) | pawn_fill[Us](pawn_fill[Them](their_pawns)));
-  half_open_files[Us]      = ~north_fill(south_fill(our_pawns)) & ~open_files;
+  half_open_files[Us]      = ~fill<NORTH>(fill<SOUTH>(our_pawns)) & ~open_files;
 
   poseval.fill(ZeroScore);
 

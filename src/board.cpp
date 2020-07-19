@@ -25,12 +25,13 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
-#include "board.h"
-#include "magic.h"
-#include "util.h"
-#include "transpositional.h"
-#include "miscellaneous.h"
-#include "prng.h"
+#include "board.hpp"
+#include "bitboard.hpp"
+#include "util.hpp"
+#include "transpositional.hpp"
+#include "miscellaneous.hpp"
+#include "prng.hpp"
+#include "moves.hpp"
 
 namespace zobrist {
 
@@ -50,7 +51,7 @@ constexpr auto max_log_files     = 3;
 
 std::shared_ptr<spdlog::logger> logger = spdlog::rotating_logger_mt("castleling_logger", "logs/castleling.txt", max_log_file_size, max_log_files);
 
-[[nodiscard]] std::optional<Square> get_ep_square(std::string_view s) {
+[[nodiscard]] std::optional<Square> ep_square(std::string_view s) {
   if (s.empty() || s.length() == 1 || s.front() == '-')
     return std::make_optional(NO_SQ);
 
@@ -75,7 +76,7 @@ void add_short_castle_rights(Board *b, std::optional<File> rook_file) {
   {
     for (const auto f : ReverseFiles)
     {
-      if (b->get_piece_type(make_square(f, Rank_1)) == ROOK)
+      if (b->piece_type(make_square(f, Rank_1)) == ROOK)
       {
         rook_file = f;// right outermost rook for side
         break;
@@ -109,7 +110,7 @@ void add_long_castle_rights(Board *b, std::optional<File> rook_file) {
   {
     for (const auto f : Files)
     {
-      if (b->get_piece_type(make_square(f, Rank_1)) == ROOK)
+      if (b->piece_type(make_square(f, Rank_1)) == ROOK)
       {
         rook_file = f;// left outermost rook for side
         break;
@@ -136,7 +137,7 @@ void update_key(Position *pos, const Move m) {
   auto key      = pos->key ^ pawn_key;
 
   pawn_key ^= zobrist::zobrist_side;
-  const auto *prev = (pos - 1);
+  const auto *prev = pos->previous;// (pos - 1);
 
   if (prev->en_passant_square != NO_SQ)
     key ^= zobrist::zobrist_ep_file[file_of(prev->en_passant_square)];
@@ -203,15 +204,7 @@ void update_key(Position *pos, const Move m) {
 }// namespace
 
 Board::Board()
-  : pos(position_list.data()), chess960(false), xfen(false) {
-  for (auto &p : position_list)
-    p.b = this;
-}
-
-Board::Board(const std::string_view fen, thread *t)
-  : Board() {
-  set_fen(fen, t);
-}
+  : pos(position_list.data()) { }
 
 void Board::init() {
 
@@ -307,7 +300,7 @@ void Board::unperform_move(const Move m) {
     king_square[move_side(m)] = from;
 }
 
-Bitboard Board::get_pinned_pieces(const Color c, const Square s) const {
+Bitboard Board::pinned_pieces(const Color c, const Square s) const {
   const auto them        = ~c;
   const auto all_pieces  = pieces();
   const auto side_pieces = pieces(c);
@@ -315,12 +308,12 @@ Bitboard Board::get_pinned_pieces(const Color c, const Square s) const {
   auto pinned_pieces     = ZeroBB;
 
   while (pinners)
-    pinned_pieces |= between_bb[pop_lsb(&pinners)][s] & side_pieces;
+    pinned_pieces |= between(pop_lsb(&pinners), s) & side_pieces;
 
   pinners = xray_rook_attacks(all_pieces, side_pieces, s) & pieces(ROOK, QUEEN, them);
 
   while (pinners)
-    pinned_pieces |= between_bb[pop_lsb(&pinners)][s] & side_pieces;
+    pinned_pieces |= between(pop_lsb(&pinners), s) & side_pieces;
 
   return pinned_pieces;
 }
@@ -340,9 +333,42 @@ bool Board::is_attacked_by_slider(const Square s, const Color c) const {
   return pieces(QUEEN, c) & (b_attacks | r_attacks);
 }
 
-void Board::print() const {
-  constexpr std::string_view piece_letter = "PNBRQK. pnbrqk. ";
+bool Board::is_pseudo_legal(const Move m) const {
+  // TODO : castleling & en passant moves
 
+  assert(is_ok(m));
+
+  const auto from = move_from(m);
+  const auto pc   = move_piece(m);
+
+  if ((pieces(pc) & from) == 0)
+    return false;
+
+  const auto to = move_to(m);
+  const auto move_stm = move_side(m);
+
+  if (move_stm != side_to_move())
+    return false;
+
+  if (is_capture(m))
+  {
+    if ((pieces(~move_stm) & to) == 0)
+      return false;
+
+    if ((pieces(move_captured(m)) & to) == 0)
+      return false;
+  }
+    // } else if (is_castle_move(m))
+    //    return !b->is_attacked(b->king_sq(side_to_move), side_to_move) && !in_check && ((from < to && can_castle_short()) || (from > to && can_castle_long()));
+  else if (pieces() & to)
+    return false;
+
+  const auto pt = type_of(move_piece(m));
+
+  return !util::in_between<QUEEN, BISHOP>(pt) || !(between(from, to) & pieces());
+}
+
+void Board::print() const {
   fmt::memory_buffer s;
 
   format_to(s, "\n");
@@ -354,7 +380,7 @@ void Board::print() const {
     for (const auto file : Files)
     {
       const auto sq = make_square(file, rank);
-      const auto pc = get_piece(sq);
+      const auto pc = piece(sq);
       format_to(s, "{} ", piece_letter[pc]);
     }
     format_to(s, "\n");
@@ -399,6 +425,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
     }
   }
   auto *const prev                = pos++;
+  pos->previous                   = prev;
   pos->side_to_move               = ~prev->side_to_move;
   pos->material                   = prev->material;
   pos->last_move                  = m;
@@ -414,9 +441,11 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
     pos->checkers = attackers_to(king_sq(pos->side_to_move));
 
   update_key(pos, m);
-  pos->material.make_move(m);
 
   prefetch(TT.find_bucket(pos->key));
+
+  pos->material.make_move(m);
+  pos->pinned = pinned_pieces(pos->side_to_move, king_sq(pos->side_to_move));
 
   return true;
 }
@@ -433,6 +462,7 @@ void Board::unmake_move() {
 
 bool Board::make_null_move() {
   auto *const prev                = pos++;
+  pos->previous                   = prev;
   pos->side_to_move               = ~prev->side_to_move;
   pos->material                   = prev->material;
   pos->last_move                  = MOVE_NONE;
@@ -458,7 +488,7 @@ uint64_t Board::calculate_key() const {
       while (bb)
       {
         const auto sq = pop_lsb(&bb);
-        const auto pc = get_piece(sq);
+        const auto pc = piece(sq);
         key ^= zobrist::zobrist_pst[pc][sq];
       }
     }
@@ -553,7 +583,7 @@ int Board::set_fen(std::string_view fen, thread *t) {
   // En-passant
   space++;
   current = update_current();
-  if (const auto ep_sq = get_ep_square(current); ep_sq)
+  if (const auto ep_sq = ep_square(current); ep_sq)
     pos->en_passant_square = ep_sq.value();
   else
     return 6;
@@ -569,8 +599,7 @@ int Board::set_fen(std::string_view fen, thread *t) {
   return 0;
 }
 
-std::string Board::get_fen() const {
-  constexpr std::string_view piece_letter = "PNBRQK  pnbrqk";
+std::string Board::fen() const {
   fmt::memory_buffer s;
 
   for (const Rank r : ReverseRanks)
@@ -580,7 +609,7 @@ std::string Board::get_fen() const {
     for (const auto f : Files)
     {
       const auto sq = make_square(f, r);
-      const auto pc = get_piece(sq);
+      const auto pc = piece(sq);
 
       if (pc != NO_PIECE)
       {
@@ -696,14 +725,13 @@ std::string Board::move_to_string(const Move m) const {
   return s;
 }
 
-void Board::print_moves() const {
-  auto i = 0;
-
-  while (const MoveData *m = pos->next_move())
+void Board::print_moves() {
+  auto ml = MoveList<LEGALMOVES>(this);
+  for (auto i = 0; const auto m : ml)
   {
-    fmt::print("%{}. ", i++ + 1);
-    fmt::print(move_to_string(m->move));
-    fmt::print("   {}\n", m->score);
+    fmt::print("{}. ", i++ + 1);
+    fmt::print(move_to_string(m.move));
+    fmt::print("   {}\n", m.score);
   }
 }
 
@@ -718,7 +746,7 @@ void Board::update_position(Position *p) const {
   while (b)
   {
     const auto sq = pop_lsb(&b);
-    const auto pc = get_piece(sq);
+    const auto pc = piece(sq);
     key ^= zobrist::zobrist_pst[pc][sq];
     if (type_of(pc) == PAWN)
       pawn_key ^= zobrist::zobrist_pst[pc][sq];
@@ -749,6 +777,39 @@ Bitboard Board::attackers_to(const Square s, const Bitboard occ) const {
 
 Bitboard Board::attackers_to(const Square s) const {
   return attackers_to(s, pieces());
+}
+
+bool Board::is_castleling_impeeded(const Square s, const Color us) const {
+
+  // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
+  // The following comments were taken from that source.
+
+  // Check that the smallest back rank interval containing the king, the castling rook, and their
+  // destination squares, contains no pieces other than the king and castling rook.
+
+  const auto rook_to          = rook_castles_to[s];
+  const auto rook_from        = rook_castles_from[s];
+  const auto ksq              = king_sq(us);
+  const auto bb_castle_pieces = bit(rook_from, ksq);
+
+  // castle span
+  auto bb = bb_castle_pieces | between(ksq, rook_from) | between(rook_from, rook_to) | bit(rook_to, s);
+
+  if ((bb & pieces()) != bb_castle_pieces)
+    return false;
+
+  // Check that no square between the king's initial and final squares (including the initial and final
+  // squares) may be under attack by an enemy piece. (Initial square was already checked a this point.)
+
+  const auto them = ~us;
+
+  bb = between(ksq, s) | s;
+
+  while (bb)
+    if (is_attacked(pop_lsb(&bb), them))
+      return false;
+
+  return true;
 }
 
 bool Board::gives_check(const Move m) {

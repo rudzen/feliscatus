@@ -21,10 +21,10 @@
 #include <array>
 #include <algorithm>
 
-#include "material.h"
-#include "board.h"
-#include "magic.h"
-#include "types.h"
+#include "material.hpp"
+#include "board.hpp"
+#include "bitboard.hpp"
+#include "types.hpp"
 
 namespace {
 
@@ -314,11 +314,11 @@ int Material::KBNKX(const int eval, const uint32_t key2, const int pc1, const in
 int Material::KBNK(const int eval, const Color c1) const {
   const auto loosing_kingsq = board->king_sq(~c1);
 
-  constexpr auto get_winning_squares = [](const bool dark) { return dark ? std::make_pair(A1, H8) : std::make_pair(A8, H1); };
+  constexpr auto winning_squares = [](const bool dark) { return dark ? std::make_pair(A1, H8) : std::make_pair(A8, H1); };
 
   const auto dark = is_dark(lsb(board->pieces(BISHOP, c1)));
 
-  const auto [first_corner, second_corner] = get_winning_squares(dark);
+  const auto [first_corner, second_corner] = winning_squares(dark);
 
   return eval + 175 - (25 * std::min<int>(distance(first_corner, loosing_kingsq), distance(second_corner, loosing_kingsq)));
 }
@@ -352,7 +352,7 @@ int Material::KBKX(const int eval, const uint32_t key1, const uint32_t key2, con
   default:
     break;
   }
-  return std::min(0, eval);
+  return std::min<int>(0, eval);
 }
 
 int Material::KNKX(const int eval, const uint32_t key2, const int pc1, const int pc2, const Color c1, const Color c2, const Color c) {
@@ -380,7 +380,7 @@ int Material::KNKX(const int eval, const uint32_t key2, const int pc1, const int
   default:
     break;
   }
-  return pc1 == 0 ? std::min(0, eval) : eval;
+  return pc1 == 0 ? std::min<int>(0, eval) : eval;
 }
 
 int Material::KNNKX(const int eval, const uint32_t key2, const int pc1) {
@@ -394,7 +394,7 @@ int Material::KNNKX(const int eval, const uint32_t key2, const int pc1) {
   default:
     break;
   }
-  return pc1 == 0 ? std::min(0, eval) : eval;
+  return pc1 == 0 ? std::min<int>(0, eval) : eval;
 }
 
 int Material::KKx(const int eval, const int pc1, const int pc2, const Color c1) {

@@ -18,16 +18,23 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include <fmt/format.h>
 
-#include "types.h"
+#include "../src/bitboard.hpp"
+#include "../src/board.hpp"
+#include "../src/uci.hpp"
+#include "../src/transpositional.hpp"
+#include "../src/miscellaneous.hpp"
 
-struct PVEntry final {
-  uint64_t key;
-  int depth;
-  int score;
-  int previous_score;
-  Move move;
-  NodeType node_type;
-  int eval;
-};
+int main(const int argc, char *argv[]) {
+
+  fmt::print(misc::print_engine_info<false>());
+
+  bitboard::init();
+  Board::init();
+  uci::init(Options);
+
+  TT.init(1);
+
+  uci::run(argc, argv);
+}

@@ -23,10 +23,10 @@
 #include <cstdint>
 #include <array>
 
-#include "types.h"
-#include "magic.h"
-#include "position.h"
-#include "tpool.h"
+#include "types.hpp"
+#include "bitboard.hpp"
+#include "position.hpp"
+#include "tpool.hpp"
 
 enum Move : uint32_t;
 
@@ -35,7 +35,6 @@ struct Board {
   using PositionList = std::array<Position, MAXDEPTH * 3>;
 
   Board();
-  explicit Board(std::string_view fen, thread *t);
 
   static void init();
 
@@ -63,7 +62,7 @@ struct Board {
   int set_fen(std::string_view fen, thread* t);
 
   [[nodiscard]]
-  std::string get_fen() const;
+  std::string fen() const;
 
   [[nodiscard]]
   bool setup_castling(std::string_view s);
@@ -71,7 +70,7 @@ struct Board {
   [[nodiscard]]
   std::string move_to_string(Move m) const;
 
-  void print_moves() const;
+  void print_moves();
 
   void add_piece(Piece pc, Square s);
 
@@ -80,16 +79,19 @@ struct Board {
   void unperform_move(Move m);
 
   [[nodiscard]]
-  Piece get_piece(Square s) const;
+  Piece piece(Square s) const;
 
   [[nodiscard]]
-  PieceType get_piece_type(Square s) const;
+  PieceType piece_type(Square s) const;
 
   [[nodiscard]]
-  Bitboard get_pinned_pieces(Color c, Square s) const;
+  Bitboard pinned_pieces(Color c, Square s) const;
 
   [[nodiscard]]
   bool is_attacked(Square s, Color c) const;
+
+  [[nodiscard]]
+  bool is_pseudo_legal(Move m) const;
 
   void print() const;
 
@@ -154,6 +156,9 @@ struct Board {
   bool can_castle(CastlingRight cr) const;
 
   [[nodiscard]]
+  bool is_castleling_impeeded(Square s, Color us) const;
+
+  [[nodiscard]]
   Key pawn_key() const;
 
   [[nodiscard]]
@@ -183,8 +188,6 @@ struct Board {
   [[nodiscard]]
   Bitboard pinned() const;
 
-  void pinned(Bitboard v) const;
-
   [[nodiscard]]
   thread *my_thread() const;
 
@@ -199,8 +202,8 @@ struct Board {
   int max_ply{};
   int search_depth{};
   std::array<int, SQ_NB> castle_rights_mask{};
-  bool chess960;
-  bool xfen;
+  bool chess960{};
+  bool xfen{};
 
 private:
 
@@ -261,11 +264,11 @@ inline void Board::remove_piece(const Square s) {
   board[s] = NO_PIECE;
 }
 
-inline Piece Board::get_piece(const Square s) const {
+inline Piece Board::piece(const Square s) const {
   return board[s];
 }
 
-inline PieceType Board::get_piece_type(const Square s) const {
+inline PieceType Board::piece_type(const Square s) const {
   return type_of(board[s]);
 }
 
@@ -293,7 +296,7 @@ inline Bitboard Board::pieces() const {
   return occupied_by_type[ALL_PIECE_TYPES];
 }
 
-inline Bitboard Board::pieces(Piece pc) const {
+inline Bitboard Board::pieces(const Piece pc) const {
   return pieces(type_of(pc), color_of(pc));
 }
 
@@ -387,10 +390,6 @@ inline bool Board::in_check() const {
 
 inline Bitboard Board::pinned() const {
   return pos->pinned;
-}
-
-inline void Board::pinned(const Bitboard v) const {
-  pos->pinned = v;
 }
 
 inline thread *Board::my_thread() const {
