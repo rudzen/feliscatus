@@ -215,13 +215,13 @@ void Moves<Tuning>::generate_captures_and_promotions() {
   const auto opponent_pieces  = b->pieces(Them);
   const auto pawns            = b->pieces(PAWN, Us);
 
-  add_pawn_moves<Us>(pawn_push(Us, pawns & Rank_7) & ~b->pieces(), Up, NORMAL);
-  add_pawn_moves<Us>(WestAttacks(pawns) & opponent_pieces, WestDistance, CAPTURE);
-  add_pawn_moves<Us>(EastAttacks(pawns) & opponent_pieces, EastDistance, CAPTURE);
+  add_pawn_moves<Us, NORMAL>(pawn_push(Us, pawns & Rank_7) & ~b->pieces(), Up);
+  add_pawn_moves<Us, CAPTURE>(WestAttacks(pawns) & opponent_pieces, WestDistance);
+  add_pawn_moves<Us, CAPTURE>(EastAttacks(pawns) & opponent_pieces, EastDistance);
   add_moves<Us>(opponent_pieces);
   [[unlikely]] if (b->en_passant_square() != NO_SQ) {
-    add_pawn_moves<Us>(WestAttacks(pawns) & b->en_passant_square(), WestDistance, EPCAPTURE);
-    add_pawn_moves<Us>(EastAttacks(pawns) & b->en_passant_square(), EastDistance, EPCAPTURE);
+    add_pawn_moves<Us, EPCAPTURE>(WestAttacks(pawns) & b->en_passant_square(), WestDistance);
+    add_pawn_moves<Us, EPCAPTURE>(EastAttacks(pawns) & b->en_passant_square(), EastDistance);
   }
   ++stage_;
 }
@@ -244,32 +244,35 @@ void Moves<Tuning>::generate_quiet_moves() {
       add_castle_move<Us>(ooo_king_from[Us], ooo_king_to[Us]);
   }
 
-  add_pawn_moves<Us>(pushed, Up, NORMAL);
-  add_pawn_moves<Us>(shift_bb<Up>(pushed & Rank3) & empty_squares, Up * 2, DOUBLEPUSH);
+  add_pawn_moves<Us, NORMAL>(pushed, Up);
+  add_pawn_moves<Us, DOUBLEPUSH>(shift_bb<Up>(pushed & Rank3) & empty_squares, Up * 2);
   add_moves<Us>(empty_squares);
   ++stage_;
 }
 
 template<bool Tuning>
-template<Color Us>
-void Moves<Tuning>::add_move(const Piece pc, const Square from, const Square to, const MoveType mt, const Piece promoted) {
+template<Color Us, MoveType Type>
+void Moves<Tuning>::add_move(const Piece pc, const Square from, const Square to, const Piece promoted) {
   constexpr auto Them = ~Us;
 
   const auto captured = [&]() {
-    if (mt & CAPTURE)
+    if constexpr (Type & CAPTURE)
       return b->piece(to);
-    if (mt & EPCAPTURE)
+    else if constexpr (Type & EPCAPTURE)
       return make_piece(PAWN, Them);
-    return NO_PIECE;
+    else
+      return NO_PIECE;
   };
 
   const auto captured_piece = captured();
-  const auto move           = init_move(pc, captured_piece, from, to, mt, promoted);
+  const auto move           = init_move<Type>(pc, captured_piece, from, to, promoted);
 
   if (transp_move_ == move)
     return;
 
-  [[unlikely]] if (move_flags_ & LEGALMOVES && !b->is_legal(move, pc, from, mt)) return;
+  [[unlikely]]
+  if (move_flags_ & LEGALMOVES && !b->is_legal(move, pc, from, Type))
+    return;
 
   auto &move_data = move_list[number_moves_++];
   move_data       = move;
@@ -308,7 +311,10 @@ void Moves<Tuning>::add_moves(const PieceType pt, const Square from, const Bitbo
   for (auto bb = attacks; bb;)
   {
     const auto to = pop_lsb(&bb);
-    add_move<Us>(pc, from, to, b->piece(to) == NO_PIECE ? NORMAL : CAPTURE);
+    if (b->piece(to) == NO_PIECE)
+      add_move<Us, NORMAL>(pc, from, to);
+    else
+      add_move<Us, CAPTURE>(pc, from, to);
   }
 }
 
@@ -319,8 +325,8 @@ void Moves<Tuning>::add_pawn_quiet_moves(const Bitboard to_squares) {
   const auto empty_squares = ~b->pieces();
   const auto pushed        = pawn_push(Us, b->pieces(PAWN, Us)) & empty_squares;
 
-  add_pawn_moves<Us>(pushed & to_squares, pawn_push(Us), NORMAL);
-  add_pawn_moves<Us>(pawn_push(Us, pushed & Rank_3) & empty_squares & to_squares, pawn_push(Us) * 2, DOUBLEPUSH);
+  add_pawn_moves<Us, NORMAL>(pushed & to_squares, pawn_push(Us));
+  add_pawn_moves<Us, DOUBLEPUSH>(pawn_push(Us, pushed & Rank_3) & empty_squares & to_squares, pawn_push(Us) * 2);
 }
 
 template<bool Tuning>
@@ -334,31 +340,39 @@ void Moves<Tuning>::add_pawn_capture_moves(const Bitboard to_squares) {
   const auto opponent_pieces  = b->pieces(Them);
   const auto pawns            = b->pieces(PAWN, Us);
 
-  add_pawn_moves<Us>(WestAttacks(pawns) & opponent_pieces & to_squares, WestDistance, CAPTURE);
-  add_pawn_moves<Us>(EastAttacks(pawns) & opponent_pieces & to_squares, EastDistance, CAPTURE);
+  add_pawn_moves<Us, CAPTURE>(WestAttacks(pawns) & opponent_pieces & to_squares, WestDistance);
+  add_pawn_moves<Us, CAPTURE>(EastAttacks(pawns) & opponent_pieces & to_squares, EastDistance);
   [[unlikely]] if (b->en_passant_square() != NO_SQ) {
-    add_pawn_moves<Us>(WestAttacks(pawns) & to_squares & b->en_passant_square(), WestDistance, EPCAPTURE);
-    add_pawn_moves<Us>(EastAttacks(pawns) & to_squares & b->en_passant_square(), EastDistance, EPCAPTURE);
+    add_pawn_moves<Us, EPCAPTURE>(WestAttacks(pawns) & to_squares & b->en_passant_square(), WestDistance);
+    add_pawn_moves<Us, EPCAPTURE>(EastAttacks(pawns) & to_squares & b->en_passant_square(), EastDistance);
   }
 }
 
 template<bool Tuning>
-template<Color Us>
-void Moves<Tuning>::add_pawn_moves(const Bitboard to_squares, const Direction d, const MoveType mt) {
+template<Color Us, MoveType Type>
+void Moves<Tuning>::add_pawn_moves(const Bitboard to_squares, const Direction d) {
   constexpr auto Rank8 = bit(relative_rank(Us, RANK_8));
-  const auto pawn      = make_piece(PAWN, Us);
+  constexpr auto pawn  = make_piece(PAWN, Us);
 
-  // promotion moves
+  Bitboard targets;
 
-  auto targets = to_squares & Rank8;
-
-  while (targets)
+  if constexpr (Type != EPCAPTURE)
   {
-    const auto to         = pop_lsb(&targets);
-    const auto from       = to - d;
-    const auto promo_type = mt | PROMOTION;
-    for (const auto promoted : PromotionPieceTypes)
-      add_move<Us>(pawn, from, to, promo_type, make_piece(promoted, Us));
+    // promotion moves
+
+    targets = to_squares & Rank8;
+
+    constexpr auto promo_type = Type | PROMOTION;
+
+    while (targets)
+    {
+      const auto to         = pop_lsb(&targets);
+      const auto from       = to - d;
+      add_move<Us, promo_type>(pawn, from, to, make_piece(QUEEN, Us));
+      add_move<Us, promo_type>(pawn, from, to, make_piece(ROOK, Us));
+      add_move<Us, promo_type>(pawn, from, to, make_piece(BISHOP, Us));
+      add_move<Us, promo_type>(pawn, from, to, make_piece(KNIGHT, Us));
+    }
   }
 
   // non-promotion moves
@@ -368,14 +382,14 @@ void Moves<Tuning>::add_pawn_moves(const Bitboard to_squares, const Direction d,
   while (targets)
   {
     const auto to = pop_lsb(&targets);
-    add_move<Us>(pawn, to - d, to, mt);
+    add_move<Us, Type>(pawn, to - d, to);
   }
 }
 
 template<bool Tuning>
 template<Color Us>
 void Moves<Tuning>::add_castle_move(const Square from, const Square to) {
-  add_move<Us>(make_piece(KING, Us), from, to, CASTLE);
+  add_move<Us, CASTLE>(make_piece(KING, Us), from, to);
 }
 
 template<bool Tuning>
