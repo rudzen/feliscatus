@@ -51,7 +51,8 @@ constexpr auto max_log_files     = 3;
 
 std::shared_ptr<spdlog::logger> logger = spdlog::rotating_logger_mt("castleling_logger", "logs/castleling.txt", max_log_file_size, max_log_files);
 
-[[nodiscard]] std::optional<Square> ep_square(std::string_view s) {
+[[nodiscard]]
+std::optional<Square> ep_square(std::string_view s) {
   if (s.empty() || s.length() == 1 || s.front() == '-')
     return std::make_optional(NO_SQ);
 
@@ -251,6 +252,7 @@ void Board::perform_move(const Move m) {
   {
     remove_piece(from);
 
+    [[unlikely]]
     if (mt & EPCAPTURE)
     {
       const auto direction = pawn_push(color_of(pc));
@@ -258,12 +260,14 @@ void Board::perform_move(const Move m) {
     } else if (mt & CAPTURE)
       remove_piece(to);
 
+    [[unlikely]]
     if (mt & PROMOTION)
       pc = move_promoted(m);
 
     add_piece(pc, to);
   }
 
+  [[unlikely]]
   if (type_of(pc) == KING)
     king_square[move_side(m)] = to;
 }
@@ -275,6 +279,7 @@ void Board::unperform_move(const Move m) {
   const auto pc   = move_piece(m);
   const auto mt   = type_of(m);
 
+  [[unlikely]]
   if (mt & CASTLE)
   {
     const auto rook = make_piece(ROOK, move_side(m));
@@ -286,6 +291,7 @@ void Board::unperform_move(const Move m) {
   {
     remove_piece(to);
 
+    [[unlikely]]
     if (mt & EPCAPTURE)
     {
       const auto direction = pawn_push(color_of(pc));
@@ -296,6 +302,7 @@ void Board::unperform_move(const Move m) {
     add_piece(pc, from);
   }
 
+  [[unlikely]]
   if (type_of(pc) == KING)
     king_square[move_side(m)] = from;
 }
@@ -341,12 +348,14 @@ bool Board::is_pseudo_legal(const Move m) const {
   const auto from = move_from(m);
   const auto pc   = move_piece(m);
 
+  [[unlikely]]
   if ((pieces(pc) & from) == 0)
     return false;
 
   const auto to = move_to(m);
   const auto move_stm = move_side(m);
 
+  [[unlikely]]
   if (move_stm != side_to_move())
     return false;
 
@@ -409,6 +418,7 @@ bool Board::is_pawn_behind(const Square s, const Color c) const {
 }
 
 bool Board::make_move(const Move m, const bool check_legal, const bool calculate_in_check) {
+  [[unlikely]]
   if (!m)
     return make_null_move();
 
@@ -455,6 +465,7 @@ bool Board::make_move(const Move m, const bool check_legal) {
 }
 
 void Board::unmake_move() {
+  [[likely]]
   if (pos->last_move)
     unperform_move(pos->last_move);
   pos--;
@@ -495,6 +506,7 @@ uint64_t Board::calculate_key() const {
   }
   key ^= zobrist::zobrist_castling[pos->castle_rights];
 
+  [[unlikely]]
   if (pos->en_passant_square != NO_SQ)
     key ^= zobrist::zobrist_ep_file[file_of(pos->en_passant_square)];
 
@@ -512,6 +524,7 @@ bool Board::is_repetition() const {
   {
     prev -= 2;
 
+    [[unlikely]]
     if (prev->key == pos->key)
       return true;
   }
@@ -534,7 +547,7 @@ int Board::set_fen(std::string_view fen, thread *t) {
 
   constexpr auto splitter = ' ';
 
-  Square sq = A8;
+  auto sq = A8;
 
   // indicates where in the fen the last space was located
   std::size_t space{};
@@ -577,12 +590,14 @@ int Board::set_fen(std::string_view fen, thread *t) {
   // Castleling
   space++;
   current = update_current();
+  [[unlikely]]
   if (!setup_castling(current))
     return 5;
 
   // En-passant
   space++;
   current = update_current();
+  [[likely]]
   if (const auto ep_sq = ep_square(current); ep_sq)
     pos->en_passant_square = ep_sq.value();
   else
@@ -632,22 +647,28 @@ std::string Board::fen() const {
 
   format_to(s, " {} ", pos->side_to_move == WHITE ? 'w' : 'b');
 
+  [[unlikely]]
   if (can_castle())
   {
+    [[unlikely]]
     if (can_castle(WHITE_OO))
       format_to(s, "K");
 
+    [[unlikely]]
     if (can_castle(WHITE_OOO))
       format_to(s, "Q");
 
+    [[unlikely]]
     if (can_castle(BLACK_OO))
       format_to(s, "k");
 
+    [[unlikely]]
     if (can_castle(BLACK_OOO))
       format_to(s, "q");
   } else
     format_to(s, "-");
 
+  [[unlikely]]
   if (const auto en_pessant_sq = en_passant_square(); en_pessant_sq != NO_SQ)
     format_to(s, " {} ", square_to_string(en_pessant_sq));
   else
@@ -662,6 +683,7 @@ bool Board::setup_castling(const std::string_view s) {
 
   castle_rights_mask.fill(15);
 
+  [[likely]]
   if (s.front() == '-')
     return true;
 
@@ -718,21 +740,18 @@ std::string Board::move_to_string(const Move m) const {
     // shredder fen
     return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(rook_castles_from[move_to(m)]));
   }
-  auto s = fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)));
 
-  if (mt & PROMOTION)
-    s += piece_to_string(type_of(move_promoted(m)));
-  return s;
+  [[likely]]
+  if (!(mt & PROMOTION))
+    return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)));
+
+  return fmt::format("{}{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)), piece_to_string(type_of(move_promoted(m))));
 }
 
 void Board::print_moves() {
   auto ml = MoveList<LEGALMOVES>(this);
   for (auto i = 0; const auto m : ml)
-  {
-    fmt::print("{}. ", i++ + 1);
-    fmt::print(move_to_string(m.move));
-    fmt::print("   {}\n", m.score);
-  }
+    fmt::print("{}. {}   {}\n", i++ + 1, move_to_string(m.move), m.score);
 }
 
 void Board::update_position(Position *p) const {
@@ -748,12 +767,14 @@ void Board::update_position(Position *p) const {
     const auto sq = pop_lsb(&b);
     const auto pc = piece(sq);
     key ^= zobrist::zobrist_pst[pc][sq];
+    [[likely]]
     if (type_of(pc) == PAWN)
       pawn_key ^= zobrist::zobrist_pst[pc][sq];
 
     p->material.add(pc);
   }
 
+  [[unlikely]]
   if (p->en_passant_square != NO_SQ)
     key ^= zobrist::zobrist_ep_file[file_of(p->en_passant_square)];
 

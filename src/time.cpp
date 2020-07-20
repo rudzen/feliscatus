@@ -37,6 +37,7 @@ void Time::init(const Color c, SearchLimits &search_limits) {
   last_curr_post = last_post_info = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
 
   start_time.start();
+  [[unlikely]]
   if (limits.fixed_movetime)
     search_time = 950 * limits.movetime / 1000;
   else

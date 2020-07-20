@@ -37,6 +37,11 @@
 struct Cpu final {
 
   Cpu();
+  ~Cpu()                      = default;
+  Cpu(const Cpu &other)       = delete;
+  Cpu(Cpu &&other)            = delete;
+  Cpu &operator=(const Cpu &) = delete;
+  Cpu &operator=(Cpu &&other) = delete;
 
   int usage();
 

@@ -3,7 +3,8 @@
 #include <utility>
 #include <fmt/format.h>
 
-[[nodiscard]] auto sum_values(const uint8_t *data, const size_t size)
+[[nodiscard]]
+auto sum_values(const uint8_t *data, const size_t size)
 {
   constexpr auto scale = 1000;
 

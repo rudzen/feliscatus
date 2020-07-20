@@ -99,7 +99,7 @@ constexpr bool start_of_tag_value(const Token token) { return token == String; }
 
 }
 
-struct PGNFile {
+struct PGNFile final {
   PGNFile(const char *path, const int oflag, const int pmode) {
 #if defined(__linux__)
     constexpr int O_BINARY = 0;
