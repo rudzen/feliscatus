@@ -298,7 +298,7 @@ constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard) = {fill<NORTH>, fill<SOUTH>};
 constexpr Bitboard pawn_push(const Color c, const Bitboard bb) { return c == WHITE ? shift_bb<NORTH>(bb) : shift_bb<SOUTH>(bb); }
 
 template<PieceType Pt>
-inline Bitboard all_attacks(const Square s) {
+Bitboard all_attacks(const Square s) {
   return AllAttacks[Pt][s];
 }
 

@@ -42,6 +42,7 @@ uint64_t p(Board *b, const int depth) {
 
   for (const auto m : ml)
   {
+    [[unlikely]]
     if (!b->make_move(m, true, true))
       continue;
 
@@ -100,6 +101,7 @@ uint64_t Perft::perft_divide(const int depth) const {
 
   for (const auto m : ml)
   {
+    [[unlikely]]
     if (!b->make_move(m, true, true))
       continue;
 

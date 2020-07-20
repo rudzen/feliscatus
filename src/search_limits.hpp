@@ -26,7 +26,7 @@
 #include "miscellaneous.hpp"
 #include "types.hpp"
 
-struct SearchLimits {
+struct SearchLimits final {
   std::array<TimeUnit, COL_NB> time{};
   std::array<TimeUnit, COL_NB> inc{};
   TimeUnit movetime{};

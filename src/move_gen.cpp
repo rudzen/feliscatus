@@ -26,12 +26,14 @@ namespace {
 constexpr std::array<PieceType, 5> MoveGenPieceTypes{QUEEN, ROOK, BISHOP, KNIGHT, KING};
 
 template<Color Us>
-[[nodiscard]] bool can_castle_short(Board *b) {
+[[nodiscard]]
+bool can_castle_short(Board *b) {
   return b->castle_rights() & oo_allowed_mask[Us] && b->is_castleling_impeeded(oo_king_to[Us], Us);
 }
 
 template<Color Us>
-[[nodiscard]] bool can_castle_long(Board *b) {
+[[nodiscard]]
+bool can_castle_long(Board *b) {
   return b->castle_rights() & ooo_allowed_mask[Us] && b->is_castleling_impeeded(ooo_king_to[Us], Us);
 }
 
@@ -40,7 +42,8 @@ template<Color Us>
 namespace MoveGen {
 
 template<MoveGenFlags Flags, Color Us>
-[[nodiscard]] MoveData *add_move(Board *b, const Piece pc, const Square from, const Square to, const MoveType mt, MoveData *md, const PieceType promo_pt = NO_PT) {
+[[nodiscard]]
+MoveData *add_move(Board *b, const Piece pc, const Square from, const Square to, const MoveType mt, MoveData *md, const PieceType promo_pt = NO_PT) {
   constexpr auto Them = ~Us;
 
   const auto get_captured = [&]() {
@@ -64,7 +67,8 @@ template<MoveGenFlags Flags, Color Us>
 }
 
 template<MoveGenFlags Flags, Color Us>
-[[nodiscard]] MoveData *add_moves(Board *b, const PieceType pt, const Square from, const Bitboard attacks, MoveData *md) {
+[[nodiscard]]
+MoveData *add_moves(Board *b, const PieceType pt, const Square from, const Bitboard attacks, MoveData *md) {
   const auto pc = make_piece(pt, Us);
 
   for (auto bb = attacks; bb;)
@@ -77,7 +81,8 @@ template<MoveGenFlags Flags, Color Us>
 }
 
 template<MoveGenFlags Flags, Color Us>
-[[nodiscard]] MoveData *add_moves(Board *b, const Bitboard to_squares, MoveData *md) {
+[[nodiscard]]
+MoveData *add_moves(Board *b, const Bitboard to_squares, MoveData *md) {
   const auto pieces = b->pieces();
 
   for (const auto pt : MoveGenPieceTypes)
@@ -94,12 +99,14 @@ template<MoveGenFlags Flags, Color Us>
 }
 
 template<MoveGenFlags Flags, Color Us>
-[[nodiscard]] MoveData *add_castle_move(Board *b, const Square from, const Square to, MoveData *md) {
+[[nodiscard]]
+MoveData *add_castle_move(Board *b, const Square from, const Square to, MoveData *md) {
   return add_move<Flags, Us>(b, make_piece(KING, Us), from, to, CASTLE, md);
 }
 
 template<MoveGenFlags Flags, Color Us, MoveType Type, Direction D>
-[[nodiscard]] MoveData *add_pawn_moves(Board *b, const Bitboard to_squares, MoveData *md) {
+[[nodiscard]]
+MoveData *add_pawn_moves(Board *b, const Bitboard to_squares, MoveData *md) {
   constexpr auto Rank8 = bit(relative_rank(Us, RANK_8));
   const auto pawn      = make_piece(PAWN, Us);
 
@@ -134,7 +141,8 @@ template<MoveGenFlags Flags, Color Us, MoveType Type, Direction D>
 }
 
 template<MoveGenFlags Flags, Color Us>
-[[nodiscard]] MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets) {
+[[nodiscard]]
+MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets) {
 
   constexpr auto pc        = make_piece(PAWN, Us);
   constexpr auto Them = ~Us;
@@ -223,7 +231,8 @@ template<MoveGenFlags Flags, Color Us>
 
 
 template<MoveGenFlags Flags, Color Us>
-[[nodiscard]] MoveData *generate_quiet_moves(Board *b, MoveData *md) {
+[[nodiscard]]
+MoveData *generate_quiet_moves(Board *b, MoveData *md) {
   constexpr auto NotRank7  = ~rank_7[Us];
   constexpr auto Rank3     = rank_3[Us];
   constexpr auto Up        = pawn_push(Us);
@@ -248,7 +257,8 @@ template<MoveGenFlags Flags, Color Us>
 }
 
 template<MoveGenFlags Flags, Color Us>
-[[nodiscard]] MoveData *generate_captures_and_promotions(Board *b, MoveData *md) {
+[[nodiscard]]
+MoveData *generate_captures_and_promotions(Board *b, MoveData *md) {
   constexpr auto Them         = ~Us;
   constexpr auto WestAttacks  = pawn_west_attacks[Us];
   constexpr auto EastAttacks  = pawn_east_attacks[Us];
@@ -273,7 +283,8 @@ template<MoveGenFlags Flags, Color Us>
 }
 
 template<Color Us, MoveGenFlags Flags>
-[[nodiscard]] MoveData *generate_all_moves(Board *b, MoveData *md) {
+[[nodiscard]]
+MoveData *generate_all_moves(Board *b, MoveData *md) {
 
   constexpr auto Them = ~Us;
 
@@ -290,7 +301,8 @@ template<Color Us, MoveGenFlags Flags>
 }
 
 template<>
-[[nodiscard]] MoveData *generate<CAPTURES>(Board *b, MoveData *md) {
+[[nodiscard]]
+MoveData *generate<CAPTURES>(Board *b, MoveData *md) {
   const auto c = b->side_to_move();
   return c == WHITE
             ? generate_captures_and_promotions<LEGALMOVES, WHITE>(b, md)
@@ -298,7 +310,8 @@ template<>
 }
 
 template<>
-[[nodiscard]] MoveData *generate<QUIET>(Board *b, MoveData *md) {
+[[nodiscard]]
+MoveData *generate<QUIET>(Board *b, MoveData *md) {
   const auto c = b->side_to_move();
   return c == WHITE
             ? generate_quiet_moves<QUIET, WHITE>(b, md)
@@ -306,7 +319,8 @@ template<>
 }
 
 template<MoveGenFlags Flags>
-[[nodiscard]] MoveData *generate(Board *b, MoveData *md) {
+[[nodiscard]]
+MoveData *generate(Board *b, MoveData *md) {
 
   static_assert(Flags == LEGALMOVES);
 

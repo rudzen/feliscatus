@@ -76,6 +76,7 @@ void Material::make_move(const Move m) {
   if (is_capture(m))
     remove(move_captured(m));
 
+  [[unlikely]]
   if (is_promotion(m))
   {
     remove(move_piece(m));
@@ -185,8 +186,10 @@ template int Material::evaluate<BLACK>(int &, int, const Board *);
 
 template<Material::KeyUpdateType Type>
 void Material::update_key(const Color c, const PieceType pt) {
+  [[unlikely]]
   if (pt == KING)
     return;
+
   const auto x = count(c, pt) + Type == Add ? 1 : -1;
   key[c] &= ~(15 << piece_bit_shift[pt]);
   key[c] |= x << piece_bit_shift[pt];
@@ -380,7 +383,9 @@ int Material::KNKX(const int eval, const uint32_t key2, const int pc1, const int
   default:
     break;
   }
-  return pc1 == 0 ? std::min<int>(0, eval) : eval;
+  return pc1 == 0
+       ? std::min<int>(0, eval)
+       : eval;
 }
 
 int Material::KNNKX(const int eval, const uint32_t key2, const int pc1) {

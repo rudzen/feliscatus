@@ -26,7 +26,7 @@
 #include "miscellaneous.hpp"
 
 #pragma pack(1)
-struct alignas(16) HashEntry {
+struct alignas(16) HashEntry final {
   [[nodiscard]]
   bool is_exact() const noexcept { return f & EXACT; }
 

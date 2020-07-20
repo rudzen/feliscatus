@@ -32,7 +32,7 @@ enum Move : uint32_t;
 
 struct Board {
 
-  using PositionList = std::array<Position, MAXDEPTH * 3>;
+  using PositionList = std::array<Position, MAXDEPTH * 2>;
 
   Board();
 
@@ -252,12 +252,16 @@ inline void Board::add_piece(const Piece pc, const Square s) {
   occupied_by_type[ALL_PIECE_TYPES] |= s;
   board[s] = pc;
 
+  [[unlikely]]
   if (type_of(pc) == KING)
     king_square[color_of(pc)] = s;
 }
 
 inline void Board::remove_piece(const Square s) {
   const auto pc   = board[s];
+
+  assert(type_of(pc) != KING);
+
   occupied_by_side[color_of(pc)] ^= s;
   occupied_by_type[type_of(pc)] ^= s;
   occupied_by_type[ALL_PIECE_TYPES] ^= s;

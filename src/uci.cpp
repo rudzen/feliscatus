@@ -56,6 +56,7 @@ Move string_to_move(Board *b, const std::string_view m) {
   mg.generate_moves();
 
   while (const MoveData *move_data = mg.next_move())
+    [[unlikely]]
     if (m == uci::display_uci(move_data->move))
       return move_data->move;
   return MOVE_NONE;
@@ -86,6 +87,7 @@ void position(Board *b, std::istringstream &input) {
 
   // parse any moves if they exist
   while (input >> token)
+    [[likely]]
     if (const auto m = string_to_move(b, token); m)
       b->make_move(m, false, true);
 }
@@ -105,6 +107,7 @@ void set_option(std::istringstream &input) {
   while (input >> token)
     option_value += (option_value.empty() ? "" : " ") + token;
 
+  [[likely]]
   if (Options.contains(option_name))
   {
     Options[option_name] = option_value;
@@ -197,6 +200,7 @@ void uci::post_pv(const int d, const int max_ply, const int score, const std::sp
 
 std::string uci::display_uci(const Move m) {
 
+  [[unlikely]]
   if (m == MOVE_NONE)
     return std::string("0000");
 

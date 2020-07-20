@@ -62,6 +62,7 @@ void thread::idle_loop() {
     cv.wait(lk, [&] { return searching; });
 
     // check exit flag, this is set when the class is being destroyed
+    [[unlikely]]
     if (exit)
       return;
 

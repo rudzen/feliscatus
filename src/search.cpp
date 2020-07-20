@@ -127,7 +127,6 @@ void update_quiet_history(thread *t, Position *pos, const Move best_move, const 
   for (auto &history_score : t->history_scores)
     for (auto &k : history_score)
       k >>= 2;
-
 }
 
 }// namespace
@@ -186,13 +185,16 @@ private:
 
   void init_search();
 
-  [[nodiscard]] int store_search_node_score(int score, int depth, NodeType nt, Move m) const;
+  [[nodiscard]]
+  int store_search_node_score(int score, int depth, NodeType nt, Move m) const;
 
-  [[nodiscard]] int draw_score() const;
+  [[nodiscard]]
+  int draw_score() const;
 
   void store_hash(int depth, int score, NodeType nt, Move m) const;
 
-  [[nodiscard]] bool move_is_easy() const;
+  [[nodiscard]]
+  bool move_is_easy() const;
 
   Board *b;
   Position *pos{};
@@ -232,7 +234,9 @@ int Search<SearcherType>::go() {
 
       store_pv(t->pv.front(), t->pv_length.front());
 
-      [[unlikely]] if (move_is_easy()) break;
+      [[unlikely]]
+      if (move_is_easy())
+        break;
 
       alpha = std::max<int>(-MAXSCORE, t->pv[0][0].score - 20);
       beta  = std::min<int>(MAXSCORE, t->pv[0][0].score + 20);
@@ -241,6 +245,7 @@ int Search<SearcherType>::go() {
       while (b->plies)
         unmake_move();
 
+      [[likely]]
       if (const auto pv_len = t->pv_length.front(); pv_len)
         store_pv(t->pv.front(), pv_len);
     }
@@ -281,6 +286,7 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta) {
     }
 
     // Razoring
+    [[unlikely]]
     if (depth <= 3 && pos->eval_score + razor_margin[depth] < beta)
     {
       const auto score = search_quiesce<false>(beta - 1, beta, 0);
@@ -416,10 +422,13 @@ auto Search<SearcherType>::search_fail_low(const int depth, int alpha, const Mov
 
   while (const auto *const move_data = mg.next_move())
   {
+    [[unlikely]]
     if (pool.stop)
       return false;
 
-    [[unlikely]] if (move_data->move == exclude) continue;
+    [[unlikely]]
+    if (move_data->move == exclude)
+      continue;
 
     if (make_move_and_evaluate(move_data->move, alpha, alpha + 1))
     {
@@ -494,9 +503,9 @@ int Search<SearcherType>::next_depth_pv(const Move singular_move, const int dept
   if (m == singular_move)
     return depth;
 
-  if ((b->in_check() || b->is_passed_pawn_move(m)) && b->see_last_move(m) >= 0)
-    return depth;
-  return depth - 1;
+  return (b->in_check() || b->is_passed_pawn_move(m)) && b->see_last_move(m) >= 0
+       ? depth
+       : depth - 1;
 }
 
 template<Searcher SearcherType>
@@ -538,6 +547,7 @@ int Search<SearcherType>::search_quiesce(int alpha, const int beta, const int qs
       }
     }
 
+    [[likely]]
     if (make_move_and_evaluate(move_data->move, alpha, beta))
     {
       ++move_count;
@@ -705,10 +715,10 @@ bool Search<SearcherType>::move_is_easy() const {
     return false;
   else
   {
-
     if (b->search_depth > 9 && Moves(b).move_count() == 1)
       return true;
 
+    [[unlikely]]
     if ((pool.main()->time.is_fixed_depth() && pool.main()->time.get_depth() == b->search_depth) || (t->pv[0][0].score == MAXSCORE - 1))
       return true;
 
@@ -739,6 +749,7 @@ void main_thread::search() {
   // Wait until all threads have finished
   pool.wait_for_search_finished();
 
+  [[likely]]
   if (root_board->pos->pv_length)
   {
     const auto [m, p_move] = std::make_pair(pv[0][0].move, root_board->pos->pv_length > 1 ? pv[0][1].move : MOVE_NONE);

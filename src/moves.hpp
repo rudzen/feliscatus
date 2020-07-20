@@ -26,7 +26,7 @@
 
 #include "types.hpp"
 
-struct MoveData {
+struct MoveData final {
   Move move{};
   int score{};
   constexpr operator Move() const { return move; }
@@ -57,9 +57,11 @@ struct Moves final {
 
   void generate_pawn_moves(bool capture, Bitboard to_squares, Color c);
 
-  [[nodiscard]] const MoveData *next_move();
+  [[nodiscard]]
+  const MoveData *next_move();
 
-  [[nodiscard]] int move_count() const;
+  [[nodiscard]]
+  int move_count() const;
 
 private:
   void reset(Move m, int flags);
@@ -97,13 +99,16 @@ private:
   void add_castle_move(Square from, Square to);
 
   template<Color Us>
-  [[nodiscard]] const MoveData *next_move();
+  [[nodiscard]]
+  const MoveData *next_move();
 
   template<Color Us>
-  [[nodiscard]] bool can_castle_short() const;
+  [[nodiscard]]
+  bool can_castle_short() const;
 
   template<Color Us>
-  [[nodiscard]] bool can_castle_long() const;
+  [[nodiscard]]
+  bool can_castle_long() const;
 
   std::array<MoveData, 256> move_list{};
   int iteration_{};
@@ -131,11 +136,20 @@ MoveData *generate(Board *b, MoveData *md);
 
 template<MoveGenFlags Flags>
 struct MoveList final : std::array<MoveData, 256> {
-  [[nodiscard]] explicit MoveList(Board *b) : std::array<MoveData, 256>({}), last_move(MoveGen::generate<Flags>(b, begin())){};
-  [[nodiscard]] const_iterator end() const { return last_move; }
-  [[nodiscard]] std::size_t size() const { return std::distance(begin(), end()); }
-  [[nodiscard]] bool empty() const { return size() == 0; }
-  [[nodiscard]] bool contains(const Move move) const { return std::find(begin(), end(), move) != end(); }
+  [[nodiscard]]
+  explicit MoveList(Board *b) : std::array<MoveData, 256>({}), last_move(MoveGen::generate<Flags>(b, begin())){};
+
+  [[nodiscard]]
+  const_iterator end() const { return last_move; }
+
+  [[nodiscard]]
+  std::size_t size() const { return std::distance(begin(), end()); }
+
+  [[nodiscard]]
+  bool empty() const { return size() == 0; }
+
+  [[nodiscard]]
+  bool contains(const Move move) const { return std::find(begin(), end(), move) != end(); }
 
 private:
   const_iterator last_move;
