@@ -526,7 +526,8 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
   for (const auto &node : nodes)
   {
     b->set_fen(node.fen_, pool.main());
-    x += std::pow(node.result_ - util::sigmoid(get_score(WHITE), K), 2);
+    const auto z = node.result_ - util::sigmoid(get_score(WHITE), K);
+    x += z * z;
   }
 
   x /= nodes.empty() ? 1.0 : static_cast<double>(nodes.size());

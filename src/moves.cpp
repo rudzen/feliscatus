@@ -26,66 +26,52 @@
 
 namespace {
 
-constexpr int KILLERMOVESCORE    = 124900;
-constexpr int PROMOTIONMOVESCORE = 50000;
-
 template<bool Tuning>
 void score_move(MoveData &md, Board *b) {
-  const auto m = md.move;
+  constexpr int KILLERMOVESCORE    = 124900;
+  constexpr int PROMOTIONMOVESCORE = 50000;
+
+  const auto get_capture_value = [&](const Move m) {
+    constexpr std::array<int, 3> values{300000, 160000, -100000};
+    const auto value_captured = piece_value(move_captured(m));
+    auto value_piece          = piece_value(move_piece(m));
+    if (!value_piece)
+      value_piece = 1800;
+    const auto index = value_piece <= value_captured ? 0 : b->see_move(md) >= 0 ? 1 : 2;
+    return value_captured * 20 - value_piece + values[index];
+  };
 
   if constexpr (!Tuning)
   {
-    if (b->pos->transp_move == m)
+    if (b->pos->transp_move == md)
       md.score = 890010;
-    else if (is_queen_promotion(m))
+    else if (is_queen_promotion(md))
       md.score = 890000;
-    else if (is_capture(m))// also en-pessant
-    {
-      const auto value_captured = piece_value(move_captured(m));
-      auto value_piece          = piece_value(move_piece(m));
-
-      if (value_piece == 0)
-        value_piece = 1800;
-
-      if (value_piece <= value_captured)
-        md.score = 300000 + value_captured * 20 - value_piece;
-      else if (b->see_move(m) >= 0)
-        md.score = 160000 + value_captured * 20 - value_piece;
-      else
-        md.score = -100000 + value_captured * 20 - value_piece;
-    } else if (is_promotion(m))
-      md.score = PROMOTIONMOVESCORE + piece_value(move_promoted(m));
-    else if (m == b->pos->killer_moves[0])
+    else if (is_capture(md))// also en-pessant
+      md.score = get_capture_value(md);
+    else if (is_promotion(md))
+      md.score = PROMOTIONMOVESCORE + piece_value(move_promoted(md));
+    else if (md == b->pos->killer_moves[0])
       md.score = KILLERMOVESCORE + 20;
-    else if (m == b->pos->killer_moves[1])
+    else if (md == b->pos->killer_moves[1])
       md.score = KILLERMOVESCORE + 19;
-    else if (m == b->pos->killer_moves[2])
+    else if (md == b->pos->killer_moves[2])
       md.score = KILLERMOVESCORE + 18;
-    else if (m == b->pos->killer_moves[3])
+    else if (md == b->pos->killer_moves[3])
       md.score = KILLERMOVESCORE + 17;
-    else if (b->pos->last_move && b->my_thread()->counter_moves[move_piece(b->pos->last_move)][move_to(b->pos->last_move)] == m)
+    else if (b->pos->last_move && b->my_thread()->counter_moves[move_piece(b->pos->last_move)][move_to(b->pos->last_move)] == md)
       md.score = 60000;
     else
-      md.score = b->my_thread()->history_scores[move_piece(m)][move_to(m)];
+      md.score = b->my_thread()->history_scores[move_piece(md)][move_to(md)];
   } else
   {
-    if (is_queen_promotion(m))
+    if (is_queen_promotion(md))
       md.score = 890000;
-    else if (is_capture(m))
-    {
-      const auto value_captured = piece_value(move_captured(m));
-      auto value_piece          = piece_value(move_piece(m));
-
-      if (value_piece == 0)
-        value_piece = 1800;
-
-      if (value_piece <= value_captured)
-        md.score = 300000 + value_captured * 20 - value_piece;
-      else if (b->see_move(m) >= 0)
-        md.score = 160000 + value_captured * 20 - value_piece;
-      else
-        md.score = -100000 + value_captured * 20 - value_piece;
-    } else
+    else if (is_promotion(md))
+      md.score = PROMOTIONMOVESCORE + piece_value(move_promoted(md));
+    else if (is_capture(md))
+      md.score = get_capture_value(md);
+    else
       exit(0);
   }
 }
