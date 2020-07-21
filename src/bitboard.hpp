@@ -96,13 +96,10 @@ constexpr std::array<Bitboard, SQ_NB> square_bb{
 
 constexpr std::array<Bitboard, RANK_NB> RankBB{Rank1BB, Rank2BB, Rank3BB, Rank4BB, Rank5BB, Rank6BB, Rank7BB, Rank8BB};
 constexpr std::array<Bitboard, FILE_NB> FileBB{FileABB, FileBBB, FileCBB, FileDBB, FileEBB, FileFBB, FileGBB, FileHBB};
-constexpr std::array<Bitboard, COL_NB> rank_1{Rank1BB, Rank8BB};
 constexpr std::array<Bitboard, COL_NB> rank_3{Rank3BB, Rank6BB};
 constexpr std::array<Bitboard, COL_NB> rank_7{Rank7BB, Rank2BB};
 constexpr std::array<Bitboard, COL_NB> rank_6_and_7{Rank6BB | Rank7BB, Rank2BB | Rank3BB};
 constexpr std::array<Bitboard, COL_NB> rank_7_and_8{Rank7BB | Rank8BB, Rank1BB | Rank2BB};
-constexpr std::array<Direction, COL_NB> pawn_push_dist{NORTH, SOUTH};
-constexpr std::array<Direction, COL_NB> pawn_double_push_dist{NORTH * 2, SOUTH * 2};
 constexpr std::array<Direction, COL_NB> pawn_west_attack_dist{NORTH_EAST, SOUTH_EAST};
 constexpr std::array<Direction, COL_NB> pawn_east_attack_dist{NORTH_WEST, SOUTH_WEST};
 
@@ -120,12 +117,6 @@ inline std::array<Square, 2> oo_king_from{};
 inline std::array<Square, 2> ooo_king_from{};
 inline std::array<std::array<Bitboard, SQ_NB>, PIECETYPE_NB> AllAttacks;
 inline std::array<std::array<Bitboard, SQ_NB>, SQ_NB> Lines;
-
-/// indexed by the position of the king
-inline std::array<Square, SQ_NB> rook_castles_to{};
-
-/// indexed by the position of the king
-inline std::array<Square, SQ_NB> rook_castles_from{};
 
 consteval std::array<std::array<int, SQ_NB>, SQ_NB> make_distance() {
   std::array<std::array<int, SQ_NB>, SQ_NB> result{};

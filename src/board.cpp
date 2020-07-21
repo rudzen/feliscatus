@@ -46,6 +46,10 @@ Key zobrist_side, zobrist_nopawn{};
 
 namespace {
 
+/// indexed by the position of the king
+std::array<Square, SQ_NB> rook_castles_to{NO_SQ};
+std::array<Square, SQ_NB> rook_castles_from{NO_SQ};
+
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
 
@@ -223,6 +227,15 @@ void Board::init() {
 
   for (auto &z : zobrist::zobrist_ep_file)
     z = rng();
+
+  // initialize other data
+
+  for (const auto side : Colors)
+  {
+    const auto rank1                            = relative_rank(side, RANK_1);
+    rook_castles_to[make_square(FILE_G, rank1)] = make_square(FILE_F, rank1);
+    rook_castles_to[make_square(FILE_C, rank1)] = make_square(FILE_D, rank1);
+  }
 }
 
 void Board::clear() {
