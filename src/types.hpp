@@ -199,9 +199,10 @@ constexpr std::array<Square, 2> oo_king_to{G1, G8};
 
 constexpr std::array<Square, 2> ooo_king_to{C1, C8};
 
+
 template<Color C, CastlingRight S>
-struct MakeCastling final {
-  static constexpr CastlingRight right = C == WHITE ? S == QUEEN_SIDE ? WHITE_OOO : WHITE_OO : S == QUEEN_SIDE ? BLACK_OOO : BLACK_OO;
+constexpr CastlingRight make_castling() {
+  return C == WHITE ? S == QUEEN_SIDE ? WHITE_OOO : WHITE_OO : S == QUEEN_SIDE ? BLACK_OOO : BLACK_OO;
 };
 
 enum MoveGenFlags {

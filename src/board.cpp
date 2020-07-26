@@ -101,7 +101,7 @@ std::optional<File> find_rook_file(Board *b) {
 template<Color Us>
 void add_short_castle_rights(Board *b, std::optional<File> rook_file) {
 
-  constexpr auto CastleRights = Us == WHITE ? WHITE_OO : BLACK_OO;
+  constexpr auto CastleRights = make_castling<Us, KING_SIDE>();
   constexpr auto Rank_1       = relative_rank(Us, RANK_1);
   const auto ksq              = b->king_sq(Us);
 
@@ -115,8 +115,8 @@ void add_short_castle_rights(Board *b, std::optional<File> rook_file) {
 
   const auto rook_square = make_square(rook_file.value(), Rank_1);
 
-  b->castle_rights_mask[rook_square] ^= oo_allowed_mask[Us];
-  b->castle_rights_mask[ksq] ^= oo_allowed_mask[Us];
+  b->castle_rights_mask[rook_square] ^= CastleRights;
+  b->castle_rights_mask[ksq] ^= CastleRights;
   rook_castles_from[make_square(FILE_G, Rank_1)] = rook_square;
   oo_king_from[Us]                               = ksq;
 
@@ -127,8 +127,7 @@ void add_short_castle_rights(Board *b, std::optional<File> rook_file) {
 template<Color Us>
 void add_long_castle_rights(Board *b, std::optional<File> rook_file) {
 
-  // constexpr auto Them         = ~Us;
-  constexpr auto CastleRights = Us == WHITE ? WHITE_OOO : BLACK_OOO;
+  constexpr auto CastleRights = make_castling<Us, QUEEN_SIDE>();
   constexpr auto Rank_1       = relative_rank(Us, RANK_1);
   const auto ksq              = b->king_sq(Us);
 
@@ -142,8 +141,8 @@ void add_long_castle_rights(Board *b, std::optional<File> rook_file) {
 
   const auto rook_square = make_square(rook_file.value(), Rank_1);
 
-  b->castle_rights_mask[rook_square] ^= ooo_allowed_mask[Us];
-  b->castle_rights_mask[ksq] ^= ooo_allowed_mask[Us];
+  b->castle_rights_mask[rook_square] ^= CastleRights;
+  b->castle_rights_mask[ksq] ^= CastleRights;
   rook_castles_from[make_square(FILE_C, Rank_1)] = rook_square;
   ooo_king_from[Us]                              = ksq;
 

@@ -171,9 +171,6 @@ struct Board {
   int &flags() const;
 
   [[nodiscard]]
-  int castle_rights() const;
-
-  [[nodiscard]]
   Square en_passant_square() const;
 
   [[nodiscard]]
@@ -370,10 +367,6 @@ inline Material &Board::material() const {
 
 inline int &Board::flags() const {
   return pos->flags;
-}
-
-inline int Board::castle_rights() const {
-  return pos->castle_rights;
 }
 
 inline Square Board::en_passant_square() const {

@@ -28,13 +28,13 @@ constexpr std::array<PieceType, 5> MoveGenPieceTypes{QUEEN, ROOK, BISHOP, KNIGHT
 template<Color Us>
 [[nodiscard]]
 bool can_castle_short(Board *b) {
-  return b->castle_rights() & oo_allowed_mask[Us] && b->is_castleling_impeeded(oo_king_to[Us], Us);
+  return b->can_castle(make_castling<Us, KING_SIDE>()) && b->is_castleling_impeeded(oo_king_to[Us], Us);
 }
 
 template<Color Us>
 [[nodiscard]]
 bool can_castle_long(Board *b) {
-  return b->castle_rights() & ooo_allowed_mask[Us] && b->is_castleling_impeeded(ooo_king_to[Us], Us);
+  return b->can_castle(make_castling<Us, QUEEN_SIDE>()) && b->is_castleling_impeeded(ooo_king_to[Us], Us);
 }
 
 }// namespace
