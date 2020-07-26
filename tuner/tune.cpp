@@ -526,7 +526,7 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
   for (const auto &node : nodes)
   {
     b->set_fen(node.fen_, pool.main());
-    const auto z = node.result_ - util::sigmoid(get_score(WHITE), K);
+    const auto z = node.result_ - util::sigmoid(score(WHITE), K);
     x += z * z;
   }
 
@@ -554,18 +554,18 @@ void Tune::make_quiet(std::vector<Node> &nodes) {
   {
     b->set_fen(node.fen_, t);
     t->pv_length[0] = 0;
-    get_quiesce_score(-32768, 32768, true, 0);
+    quiesce_score(-32768, 32768, true, 0);
     play_pv();
     node.fen_ = b->fen();
   }
 }
 
-int Tune::get_score(const Color c) const {
-  const auto score = score_static_ ? Eval::tune(b.get(), 0, -100000, 100000) : get_quiesce_score(-32768, 32768, false, 0);
+int Tune::score(const Color c) const {
+  const auto score = score_static_ ? Eval::tune(b.get(), 0, -100000, 100000) : quiesce_score(-32768, 32768, false, 0);
   return b->side_to_move() == c ? score : -score;
 }
 
-int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) const {
+int Tune::quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) const {
   auto score = Eval::tune(b.get(), 0, -100000, 100000);
 
   if (score >= beta)
@@ -589,7 +589,7 @@ int Tune::get_quiesce_score(int alpha, const int beta, const bool store_pv, cons
 
     if (make_move(move_data->move, ply))
     {
-      score = -get_quiesce_score(-beta, -alpha, store_pv, ply + 1);
+      score = -quiesce_score(-beta, -alpha, store_pv, ply + 1);
 
       b->unmake_move();
 

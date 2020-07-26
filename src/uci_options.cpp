@@ -56,14 +56,14 @@ bool CaseInsensitiveLess::operator()(const std::string_view s1, const std::strin
 }
 
 void init(OptionsMap &o) {
-  o[get_uci_name<UciOptions::THREADS>()] << Option(1, 1, 512, on_threads);
-  o[get_uci_name<UciOptions::HASH>()] << Option(256, 1, MaxHashMB, on_hash_size);
-  o[get_uci_name<UciOptions::HASH_X_THREADS>()] << Option(true);
-  o[get_uci_name<UciOptions::CLEAR_HASH>()] << Option(on_clear_hash);
-  o[get_uci_name<UciOptions::CLEAR_HASH_NEW_GAME>()] << Option(false);
-  o[get_uci_name<UciOptions::PONDER>()] << Option(false);
-  o[get_uci_name<UciOptions::UCI_Chess960>()] << Option(false);
-  o[get_uci_name<UciOptions::SHOW_CPU>()] << Option(false);
+  o[uci_name<UciOptions::THREADS>()] << Option(1, 1, 512, on_threads);
+  o[uci_name<UciOptions::HASH>()] << Option(256, 1, MaxHashMB, on_hash_size);
+  o[uci_name<UciOptions::HASH_X_THREADS>()] << Option(true);
+  o[uci_name<UciOptions::CLEAR_HASH>()] << Option(on_clear_hash);
+  o[uci_name<UciOptions::CLEAR_HASH_NEW_GAME>()] << Option(false);
+  o[uci_name<UciOptions::PONDER>()] << Option(false);
+  o[uci_name<UciOptions::UCI_Chess960>()] << Option(false);
+  o[uci_name<UciOptions::SHOW_CPU>()] << Option(false);
 }
 
 /// Option class constructors and conversion operators

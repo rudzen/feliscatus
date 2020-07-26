@@ -34,14 +34,14 @@
 #include "sys/vtimes.h"
 #endif
 
-struct Cpu final {
+struct CpuLoad final {
 
-  Cpu();
-  ~Cpu()                      = default;
-  Cpu(const Cpu &other)       = delete;
-  Cpu(Cpu &&other)            = delete;
-  Cpu &operator=(const Cpu &) = delete;
-  Cpu &operator=(Cpu &&other) = delete;
+  CpuLoad();
+  ~CpuLoad()                      = default;
+  CpuLoad(const CpuLoad &other)       = delete;
+  CpuLoad(CpuLoad &&other)            = delete;
+  CpuLoad &operator=(const CpuLoad &) = delete;
+  CpuLoad &operator=(CpuLoad &&other) = delete;
 
   int usage();
 

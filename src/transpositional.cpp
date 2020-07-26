@@ -37,30 +37,30 @@ constexpr uint32_t key32(const Key key) {
 }// namespace
 
 HashTable::~HashTable() {
-  std::free(mem);
+  std::free(mem_);
 }
 
 void HashTable::init(const uint64_t new_size_mb) {
-  if (size_mb == new_size_mb)
+  if (size_mb_ == new_size_mb)
     return;
 
   // Original code from SF
 
-  bucket_count = new_size_mb * 1024 * 1024 / sizeof(Bucket);
-  fullness_element = bucket_count * BucketSize;
-  std::free(mem);
-  size = bucket_count * sizeof(Bucket) + CacheLineSize - 1;
+  bucket_count_ = new_size_mb * 1024 * 1024 / sizeof(Bucket);
+  fullness_element_ = bucket_count_ * BucketSize;
+  std::free(mem_);
+  size_ = bucket_count_ * sizeof(Bucket) + CacheLineSize - 1;
   // TODO : replace with std::aligned_alloc() at some point;
-  mem  = std::malloc(size);
+  mem_  = std::malloc(size_);
 
-  if (!mem)
+  if (!mem_)
   {
     fmt::print(stderr, "Failed to allocate {}MB for transposition table.\n", new_size_mb);
     exit(EXIT_FAILURE);
   }
 
-  table = reinterpret_cast<Bucket *>((uintptr_t(mem) + CacheLineSize - 1) & ~(CacheLineSize - 1));
-  size_mb = new_size_mb;
+  table_ = reinterpret_cast<Bucket *>((uintptr_t(mem_) + CacheLineSize - 1) & ~(CacheLineSize - 1));
+  size_mb_ = new_size_mb;
   clear();
 }
 
@@ -68,7 +68,7 @@ void HashTable::clear() {
 
   // Original code from SF
 
-  const auto thread_count = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::THREADS>()]);
+  const auto thread_count = static_cast<std::size_t>(Options[uci::uci_name<uci::UciOptions::THREADS>()]);
   std::vector<std::jthread> threads(thread_count);
 
   for (std::size_t idx = 0; idx < thread_count; idx++)
@@ -79,12 +79,12 @@ void HashTable::clear() {
         WinProcGroup::bind_this_thread(idx);
 
       // Each thread will zero its part of the hash table
-      const auto stride = bucket_count / thread_count, start = stride * idx, len = idx != thread_count - 1
+      const auto stride = bucket_count_ / thread_count, start = stride * idx, len = idx != thread_count - 1
                                                                                         ? stride
-                                                                                        : bucket_count - start;
+                                                                                        : bucket_count_ - start;
 
       // treat as void* to shut up compiler warning -Wclass-memaccess as this is "totally" safe
-      std::memset(reinterpret_cast<void*>(&table[start]), 0, len * sizeof(Bucket));
+      std::memset(reinterpret_cast<void*>(&table_[start]), 0, len * sizeof(Bucket));
     }));
   }
 }
@@ -100,7 +100,7 @@ HashEntry *HashTable::insert(const Key key, const int depth, const int score, co
   auto *transp = get_entry_to_replace(key, depth);
 
   if (transp->f == NO_NT)
-    occupied++;
+    occupied_++;
 
   const auto k32 = key32(key);
 
@@ -110,7 +110,7 @@ HashEntry *HashTable::insert(const Key key, const int depth, const int score, co
   transp->s = static_cast<int16_t>(score);
   transp->d = static_cast<uint8_t>(depth);
   transp->f = nt;
-  transp->a   = static_cast<uint16_t>(age);
+  transp->a   = static_cast<uint16_t>(age_);
   transp->e  = static_cast<int16_t>(eval);
   return transp;
 }
@@ -124,7 +124,7 @@ HashEntry *HashTable::get_entry_to_replace(const Key key, [[maybe_unused]] const
   if (entry->f == NO_NT || entry->k == k32)
     return entry;
 
-  constexpr auto replacement_score = [&](const HashEntry *e) { return (e->a << 9) + e->d; };
+  constexpr auto replacement_score = [](const HashEntry *e) { return (e->a << 9) + e->d; };
   auto match                       = [&k32](HashEntry *e) { return e->f == NO_NT || e->k == k32; };
   auto *replace                    = entry;
   auto replace_score               = replacement_score(replace);

@@ -151,7 +151,7 @@ private:
   int search_next_depth(int depth, int alpha, int beta);
 
   template<bool PV>
-  Move get_singular_move(int depth);
+  Move singular_move(int depth);
 
   auto search_fail_low(int depth, int alpha, Move exclude);
 
@@ -296,7 +296,7 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta) {
     }
   }
 
-  const auto singular_move = get_singular_move<PV>(depth);
+  const auto singular = singular_move<PV>(depth);
 
   auto mg = Moves(b);
   mg.generate_moves(pos->transp_move, STAGES);
@@ -323,7 +323,7 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta) {
       }
 
       if (PV && move_count == 1)
-        score = search_next_depth<EXACT, true>(next_depth_pv(singular_move, depth, *move_data), -beta, -alpha);
+        score = search_next_depth<EXACT, true>(next_depth_pv(singular, depth, *move_data), -beta, -alpha);
       else
       {
         const auto next_depth = next_depth_not_pv<NT, PV>(depth, move_count, *move_data, alpha, best_score);
@@ -399,7 +399,7 @@ int Search<SearcherType>::search_next_depth(const int depth, const int alpha, co
 
 template<Searcher SearcherType>
 template<bool PV>
-Move Search<SearcherType>::get_singular_move(const int depth) {
+Move Search<SearcherType>::singular_move(const int depth) {
   if constexpr (!PV)
     return MOVE_NONE;
   else
@@ -719,7 +719,7 @@ bool Search<SearcherType>::move_is_easy() const {
       return true;
 
     [[unlikely]]
-    if ((pool.main()->time.is_fixed_depth() && pool.main()->time.get_depth() == b->search_depth) || (t->pv[0][0].score == MAXSCORE - 1))
+    if ((pool.main()->time.is_fixed_depth() && pool.main()->time.depth() == b->search_depth) || (t->pv[0][0].score == MAXSCORE - 1))
       return true;
 
     return !is_analysing() && !pool.main()->time.is_fixed_depth() && pool.main()->time.plenty_time();

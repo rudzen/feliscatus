@@ -49,7 +49,7 @@ void thread::clear_data() {
 
 void thread::idle_loop() {
   // NUMA fix
-  if (Options[uci::get_uci_name<uci::UciOptions::THREADS>()] > 8)
+  if (Options[uci::uci_name<uci::UciOptions::THREADS>()] > 8)
     WinProcGroup::bind_this_thread(idx);
 
   do
@@ -104,9 +104,9 @@ void thread_pool::set(const std::size_t v) {
 
     clear_data();
 
-    auto tt_size = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::HASH>()]);
+    auto tt_size = static_cast<std::size_t>(Options[uci::uci_name<uci::UciOptions::HASH>()]);
 
-    if (Options[uci::get_uci_name<uci::UciOptions::HASH_X_THREADS>()])
+    if (Options[uci::uci_name<uci::UciOptions::HASH_X_THREADS>()])
       tt_size *= size();
 
     TT.init(tt_size);
@@ -126,7 +126,7 @@ void thread_pool::start_thinking(std::string_view fen) {
   stop                 = false;
   front_thread->ponder = limits.ponder;
 
-  const auto setup = [&](std::unique_ptr<thread> &t) {
+  const auto setup = [&fen](std::unique_ptr<thread> &t) {
     t->node_count = 0;
     t->root_board->set_fen(fen, t.get());
   };

@@ -94,10 +94,10 @@ public:
   void init_search();
 
   [[nodiscard]]
-  HashEntry *first_entry(const Key key) const { return &table[mul_hi64(key, bucket_count)].entry[0]; }
+  HashEntry *first_entry(const Key key) const { return &table_[mul_hi64(key, bucket_count_)].entry[0]; }
 
   [[nodiscard]]
-  Bucket *find_bucket(const Key key) const { return &table[mul_hi64(key, bucket_count)]; }
+  Bucket *find_bucket(const Key key) const { return &table_[mul_hi64(key, bucket_count_)]; }
 
   [[nodiscard]]
   HashEntry *find(Key key) const;
@@ -108,37 +108,36 @@ public:
   HashEntry *get_entry_to_replace(Key key, [[maybe_unused]] int depth) const;
 
   [[nodiscard]]
-  int get_load() const;
+  int load() const;
 
   [[nodiscard]]
-  int get_size_mb() const;
+  int size_mb() const;
 
 private:
 
   static_assert(CacheLineSize % sizeof(Bucket) == 0, "Bucket size incorrect");
 
-  Bucket* table{};
-  void* mem{};
+  Bucket* table_{};
+  void* mem_{};
 
-  std::size_t bucket_count{};
-  std::size_t fullness_element{};
-  uint64_t occupied{};
-  uint64_t size_mb{};
-  uint64_t size{};
-
-  int age{};
+  std::size_t bucket_count_{};
+  std::size_t fullness_element_{};
+  uint64_t occupied_{};
+  uint64_t size_mb_{};
+  uint64_t size_{};
+  int age_{};
 };
 
 inline void HashTable::init_search() {
-  age++;
+  age_++;
 }
 
-inline int HashTable::get_load() const {
-  return static_cast<int>(static_cast<double>(occupied) / fullness_element * 1000);
+inline int HashTable::load() const {
+  return static_cast<int>(static_cast<double>(occupied_) / fullness_element_ * 1000);
 }
 
-inline int HashTable::get_size_mb() const {
-  return static_cast<int>(size_mb);
+inline int HashTable::size_mb() const {
+  return static_cast<int>(size_mb_);
 }
 
 constinit inline HashTable TT;

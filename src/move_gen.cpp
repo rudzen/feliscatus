@@ -44,18 +44,17 @@ namespace MoveGen {
 template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]
 MoveData *add_move(Board *b, const Piece pc, const Square from, const Square to, const MoveType mt, MoveData *md, const PieceType promo_pt = NO_PT) {
-  constexpr auto Them = ~Us;
 
-  const auto get_captured = [&]() {
+  const auto captured = [&mt, &b, &to]() {
     if (mt & CAPTURE)
       return b->piece(to);
     if (mt & EPCAPTURE)
-      return make_piece(PAWN, Them);
+      return make_piece(PAWN, ~Us);
     return NO_PIECE;
   };
 
-  const auto captured = get_captured();
-  const auto move     = init_move(pc, captured, from, to, mt, make_piece(promo_pt, Us));
+  const auto captured_piece = captured();
+  const auto move           = init_move(pc, captured_piece, from, to, mt, make_piece(promo_pt, Us));
 
   // if constexpr (Flags & LEGALMOVES)
   if (!b->is_legal(move, pc, from, mt))
@@ -144,20 +143,17 @@ template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]
 MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets) {
 
-  constexpr auto pc        = make_piece(PAWN, Us);
+  constexpr auto pc   = make_piece(PAWN, Us);
   constexpr auto Them = ~Us;
-  constexpr auto Rank7 = rank_7[Us];
-  constexpr auto Rank3 = rank_3[Us];
-  constexpr auto Up    = pawn_push(Us);
-  constexpr auto NorthEast = pawn_east_attack_dist[Us];
-  constexpr auto NorthWest = pawn_west_attack_dist[Us];
+  constexpr auto Up   = pawn_push(Us);
 
-  const auto get_pawns = [&]() {
-    const auto pawns         = b->pieces(PAWN, Us);
+  const auto pawns = [&b]() {
+    constexpr auto Rank7 = rank_7[Us];
+    const auto pawns     = b->pieces(PAWN, Us);
     return std::make_pair(pawns & Rank7, pawns & ~Rank7);
   };
 
-  const auto [promotion_pawns, non_promotion_pawns] = get_pawns();
+  const auto [promotion_pawns, non_promotion_pawns] = pawns();
 
   Bitboard not_occupied, opponents;
 
@@ -168,6 +164,7 @@ MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets) {
 
   if constexpr (Flags == QUIET)
   {
+    constexpr auto Rank3 = rank_3[Us];
     not_occupied = targets;
 
     auto pawn_single_push = shift_bb<Up>(non_promotion_pawns) & not_occupied;
@@ -191,6 +188,9 @@ MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets) {
     // handle captures
     if constexpr (Flags == CAPTURES)
     {
+      constexpr auto NorthEast = pawn_east_attack_dist[Us];
+      constexpr auto NorthWest = pawn_west_attack_dist[Us];
+
       not_occupied = ~b->pieces();
       auto pawns_up_east = shift_bb<NorthEast>(promotion_pawns) & opponents;
       auto pawns_up_west = shift_bb<NorthWest>(promotion_pawns) & opponents;
@@ -228,7 +228,6 @@ MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets) {
 
   return md;
 }
-
 
 template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]

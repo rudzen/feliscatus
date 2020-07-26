@@ -31,13 +31,13 @@ void score_move(MoveData &md, Board *b) {
   constexpr int KILLERMOVESCORE    = 124900;
   constexpr int PROMOTIONMOVESCORE = 50000;
 
-  const auto get_capture_value = [&](const Move m) {
+  const auto capture_value = [&b](const Move m) {
     constexpr std::array<int, 3> values{300000, 160000, -100000};
     const auto value_captured = piece_value(move_captured(m));
     auto value_piece          = piece_value(move_piece(m));
     if (!value_piece)
       value_piece = 1800;
-    const auto index = value_piece <= value_captured ? 0 : b->see_move(md) >= 0 ? 1 : 2;
+    const auto index = value_piece <= value_captured ? 0 : b->see_move(m) >= 0 ? 1 : 2;
     return value_captured * 20 - value_piece + values[index];
   };
 
@@ -48,7 +48,7 @@ void score_move(MoveData &md, Board *b) {
     else if (is_queen_promotion(md))
       md.score = 890000;
     else if (is_capture(md))// also en-pessant
-      md.score = get_capture_value(md);
+      md.score = capture_value(md);
     else if (is_promotion(md))
       md.score = PROMOTIONMOVESCORE + piece_value(move_promoted(md));
     else if (md == b->pos->killer_moves[0])
@@ -70,7 +70,7 @@ void score_move(MoveData &md, Board *b) {
     else if (is_promotion(md))
       md.score = PROMOTIONMOVESCORE + piece_value(move_promoted(md));
     else if (is_capture(md))
-      md.score = get_capture_value(md);
+      md.score = capture_value(md);
     else
       exit(0);
   }

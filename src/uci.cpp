@@ -34,7 +34,7 @@ namespace {
 constexpr TimeUnit time_safety_margin = 1;
 
 std::unique_ptr<Board> new_board() {
-  const auto num_threads = static_cast<std::size_t>(Options[uci::get_uci_name<uci::UciOptions::THREADS>()]);
+  const auto num_threads = static_cast<std::size_t>(Options[uci::uci_name<uci::UciOptions::THREADS>()]);
   pool.set(num_threads);
   auto board = std::make_unique<Board>();
   board->set_fen(start_position, pool.main());
@@ -167,10 +167,10 @@ void uci::post_moves(const Move m, const Move ponder_move) {
 void uci::post_info(const int d, const int selective_depth) {
   const auto time = pool.main()->time.elapsed() + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
-  if (!Options[get_uci_name<UciOptions::SHOW_CPU>()])
-    fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, TT.get_load(), node_count, nodes_per_second, time);
+  if (!Options[uci_name<UciOptions::SHOW_CPU>()])
+    fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, TT.load(), node_count, nodes_per_second, time);
   else
-    fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {} cpuload {}\n", d, selective_depth, TT.get_load(), node_count, nodes_per_second, time, CpuLoad.usage());
+    fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {} cpuload {}\n", d, selective_depth, TT.load(), node_count, nodes_per_second, time, Cpu.usage());
 }
 
 void uci::post_curr_move(const Move m, const int m_number) {
@@ -190,7 +190,7 @@ void uci::post_pv(const int d, const int max_ply, const int score, const std::sp
   const auto time = pool.main()->time.elapsed() + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
 
-  fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", TT.get_load(), node_count, nodes_per_second, time);
+  fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", TT.load(), node_count, nodes_per_second, time);
 
   for (auto &pv : pv_line)
     fmt::format_to(buffer, "{} ", pv.move);
@@ -245,7 +245,7 @@ void uci::run(const int argc, char *argv[]) {
       fmt::print("readyok\n");
     else if (token == "ucinewgame")
     {
-      if (Options[uci::get_uci_name<UciOptions::CLEAR_HASH_NEW_GAME>()])
+      if (Options[uci::uci_name<UciOptions::CLEAR_HASH_NEW_GAME>()])
         TT.clear();
       board = new_board();
       fmt::print("readyok\n");

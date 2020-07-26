@@ -32,7 +32,7 @@ constexpr double DEFAULT_OVERFLOW_VALUE = std::numeric_limits<double>::min();
 
 #if defined(WIN32)
 
-Cpu::Cpu() : self(GetCurrentProcess()) {
+CpuLoad::CpuLoad() : self(GetCurrentProcess()) {
 
   SYSTEM_INFO sys_info{};
   FILETIME ftime{};
@@ -52,7 +52,7 @@ Cpu::Cpu() : self(GetCurrentProcess()) {
 }
 #else
 
-Cpu::Cpu() {
+CpuLoad::CpuLoad() {
 
   struct tms time_sample {};
   std::array<char, 128> line{};
@@ -72,7 +72,7 @@ Cpu::Cpu() {
 
 #endif
 
-int Cpu::usage() {
+int CpuLoad::usage() {
   double percent;
 
 #if defined(WIN32)

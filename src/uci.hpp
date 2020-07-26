@@ -39,7 +39,7 @@ struct Board;
 
 namespace uci {
 
-inline Cpu CpuLoad;
+inline CpuLoad Cpu;
 
 enum class UciOptions {
   THREADS,
@@ -69,7 +69,7 @@ constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB
 
 template<UciOptions Option>
 [[nodiscard]]
-constexpr std::string_view get_uci_name() {
+constexpr std::string_view uci_name() {
   return UciStrings[static_cast<uci_t>(Option)];
 }
 

@@ -73,9 +73,9 @@ public:
 
   void make_quiet(std::vector<Node> &nodes);
 
-  int get_score(Color c) const;
+  int score(Color c) const;
 
-  int get_quiesce_score(int alpha, int beta, bool store_pv, int ply) const;
+  int quiesce_score(int alpha, int beta, bool store_pv, int ply) const;
 
   bool make_move(Move m, int ply) const;
 

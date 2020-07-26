@@ -52,7 +52,7 @@ struct Time final {
   bool is_fixed_depth() const noexcept { return limits.fixed_depth; }
 
   [[nodiscard]]
-  int get_depth() const noexcept { return limits.depth; }
+  int depth() const noexcept { return limits.depth; }
 
 private:
   Stopwatch start_time{};
