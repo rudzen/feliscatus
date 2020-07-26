@@ -149,8 +149,8 @@ MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets) {
 
   const auto pawns = [&b]() {
     constexpr auto Rank7 = rank_7[Us];
-    const auto pawns     = b->pieces(PAWN, Us);
-    return std::make_pair(pawns & Rank7, pawns & ~Rank7);
+    const auto our_pawns = b->pieces(PAWN, Us);
+    return std::make_pair(our_pawns & Rank7, our_pawns & ~Rank7);
   };
 
   const auto [promotion_pawns, non_promotion_pawns] = pawns();

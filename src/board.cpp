@@ -70,6 +70,34 @@ std::optional<Square> ep_square(std::string_view s) {
   return !util::in_between<'3', '6'>(s.front()) ? std::nullopt : std::make_optional(static_cast<Square>(first - 'a' + (s.front() - '1') * 8));
 }
 
+template<CastlingRight Right, Rank Rank_1>
+std::optional<File> find_rook_file(Board *b) {
+
+  const auto is_rook_on_square = [&b](const Square sq) { return b->piece_type(sq) == ROOK; };
+
+  if constexpr (Right == KING_SIDE)
+  {
+    // right outermost rook for side
+    for (const auto f : ReverseFiles)
+    {
+      const auto sq = make_square(f, Rank_1);
+      if (is_rook_on_square(sq))
+        return std::make_optional(f);
+    }
+  } else
+  {
+    for (const auto f : Files)
+    {
+      const auto sq = make_square(f, Rank_1);
+      if (is_rook_on_square(sq))
+        return std::make_optional(f);
+    }
+  }
+
+  return std::nullopt;
+}
+
+
 template<Color Us>
 void add_short_castle_rights(Board *b, std::optional<File> rook_file) {
 
@@ -79,14 +107,7 @@ void add_short_castle_rights(Board *b, std::optional<File> rook_file) {
 
   if (!rook_file.has_value())
   {
-    for (const auto f : ReverseFiles)
-    {
-      if (b->piece_type(make_square(f, Rank_1)) == ROOK)
-      {
-        rook_file = f;// right outermost rook for side
-        break;
-      }
-    }
+    rook_file = find_rook_file<KING_SIDE, Rank_1>(b);
     b->xfen = true;
   }
 
@@ -94,8 +115,8 @@ void add_short_castle_rights(Board *b, std::optional<File> rook_file) {
 
   const auto rook_square = make_square(rook_file.value(), Rank_1);
 
-  b->castle_rights_mask[rook_square] -= oo_allowed_mask[Us];
-  b->castle_rights_mask[ksq] -= oo_allowed_mask[Us];
+  b->castle_rights_mask[rook_square] ^= oo_allowed_mask[Us];
+  b->castle_rights_mask[ksq] ^= oo_allowed_mask[Us];
   rook_castles_from[make_square(FILE_G, Rank_1)] = rook_square;
   oo_king_from[Us]                               = ksq;
 
@@ -113,14 +134,7 @@ void add_long_castle_rights(Board *b, std::optional<File> rook_file) {
 
   if (!rook_file.has_value())
   {
-    for (const auto f : Files)
-    {
-      if (b->piece_type(make_square(f, Rank_1)) == ROOK)
-      {
-        rook_file = f;// left outermost rook for side
-        break;
-      }
-    }
+    rook_file = find_rook_file<QUEEN_SIDE, Rank_1>(b);
     b->xfen = true;
   }
 
@@ -128,8 +142,8 @@ void add_long_castle_rights(Board *b, std::optional<File> rook_file) {
 
   const auto rook_square = make_square(rook_file.value(), Rank_1);
 
-  b->castle_rights_mask[rook_square] -= ooo_allowed_mask[Us];
-  b->castle_rights_mask[ksq] -= ooo_allowed_mask[Us];
+  b->castle_rights_mask[rook_square] ^= ooo_allowed_mask[Us];
+  b->castle_rights_mask[ksq] ^= ooo_allowed_mask[Us];
   rook_castles_from[make_square(FILE_C, Rank_1)] = rook_square;
   ooo_king_from[Us]                              = ksq;
 
