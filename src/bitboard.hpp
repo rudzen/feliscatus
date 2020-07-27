@@ -32,18 +32,20 @@
 //------------------------------------------------
 // magic bb structures
 //------------------------------------------------
-struct Magic final {
+struct Magic final
+{
   Bitboard *data{};
   Bitboard mask{};
   Bitboard magic{};
 };
 
-namespace bitboard {
+namespace bitboard
+{
 
 std::string print_bitboard(Bitboard bb, std::string_view title);
 void init();
 
-}// namespace bitboard
+}   // namespace bitboard
 
 using MagicTable = std::array<Magic, SQ_NB>;
 inline std::array<MagicTable, 2> MagicTables;
@@ -57,7 +59,8 @@ constexpr static Bitboard OneBB       = 0x1ULL;
 // constexpr generate functions
 //------------------------------------------------
 template<typename... Squares>
-constexpr Bitboard make_bitboard(Squares... squares) {
+constexpr Bitboard make_bitboard(Squares... squares)
+{
   return (... | (OneBB << squares));
 }
 
@@ -85,14 +88,17 @@ constexpr Bitboard corner_h1 = make_bitboard(H1, G1, H2, G2);
 constexpr Bitboard corner_h8 = make_bitboard(H8, G8, H7, G7);
 
 constexpr std::array<Bitboard, SQ_NB> square_bb{
-        make_bitboard(A1), make_bitboard(B1), make_bitboard(C1), make_bitboard(D1), make_bitboard(E1), make_bitboard(F1), make_bitboard(G1), make_bitboard(H1),
-        make_bitboard(A2), make_bitboard(B2), make_bitboard(C2), make_bitboard(D2), make_bitboard(E2), make_bitboard(F2), make_bitboard(G2), make_bitboard(H2),
-        make_bitboard(A3), make_bitboard(B3), make_bitboard(C3), make_bitboard(D3), make_bitboard(E3), make_bitboard(F3), make_bitboard(G3), make_bitboard(H3),
-        make_bitboard(A4), make_bitboard(B4), make_bitboard(C4), make_bitboard(D4), make_bitboard(E4), make_bitboard(F4), make_bitboard(G4), make_bitboard(H4),
-        make_bitboard(A5), make_bitboard(B5), make_bitboard(C5), make_bitboard(D5), make_bitboard(E5), make_bitboard(F5), make_bitboard(G5), make_bitboard(H5),
-        make_bitboard(A6), make_bitboard(B6), make_bitboard(C6), make_bitboard(D6), make_bitboard(E6), make_bitboard(F6), make_bitboard(G6), make_bitboard(H6),
-        make_bitboard(A7), make_bitboard(B7), make_bitboard(C7), make_bitboard(D7), make_bitboard(E7), make_bitboard(F7), make_bitboard(G7), make_bitboard(H7),
-        make_bitboard(A8), make_bitboard(B8), make_bitboard(C8), make_bitboard(D8), make_bitboard(E8), make_bitboard(F8), make_bitboard(G8), make_bitboard(H8)};
+  make_bitboard(A1), make_bitboard(B1), make_bitboard(C1), make_bitboard(D1), make_bitboard(E1), make_bitboard(F1),
+  make_bitboard(G1), make_bitboard(H1), make_bitboard(A2), make_bitboard(B2), make_bitboard(C2), make_bitboard(D2),
+  make_bitboard(E2), make_bitboard(F2), make_bitboard(G2), make_bitboard(H2), make_bitboard(A3), make_bitboard(B3),
+  make_bitboard(C3), make_bitboard(D3), make_bitboard(E3), make_bitboard(F3), make_bitboard(G3), make_bitboard(H3),
+  make_bitboard(A4), make_bitboard(B4), make_bitboard(C4), make_bitboard(D4), make_bitboard(E4), make_bitboard(F4),
+  make_bitboard(G4), make_bitboard(H4), make_bitboard(A5), make_bitboard(B5), make_bitboard(C5), make_bitboard(D5),
+  make_bitboard(E5), make_bitboard(F5), make_bitboard(G5), make_bitboard(H5), make_bitboard(A6), make_bitboard(B6),
+  make_bitboard(C6), make_bitboard(D6), make_bitboard(E6), make_bitboard(F6), make_bitboard(G6), make_bitboard(H6),
+  make_bitboard(A7), make_bitboard(B7), make_bitboard(C7), make_bitboard(D7), make_bitboard(E7), make_bitboard(F7),
+  make_bitboard(G7), make_bitboard(H7), make_bitboard(A8), make_bitboard(B8), make_bitboard(C8), make_bitboard(D8),
+  make_bitboard(E8), make_bitboard(F8), make_bitboard(G8), make_bitboard(H8)};
 
 constexpr std::array<Bitboard, RANK_NB> RankBB{Rank1BB, Rank2BB, Rank3BB, Rank4BB, Rank5BB, Rank6BB, Rank7BB, Rank8BB};
 constexpr std::array<Bitboard, FILE_NB> FileBB{FileABB, FileBBB, FileCBB, FileDBB, FileEBB, FileFBB, FileGBB, FileHBB};
@@ -106,9 +112,15 @@ constexpr std::array<Direction, COL_NB> pawn_east_attack_dist{NORTH_WEST, SOUTH_
 template<typename T1 = Square>
 constexpr int distance(Square x, Square y);
 template<>
-constexpr int distance<File>(const Square x, const Square y) { return util::abs(file_of(x) - file_of(y)); }
+constexpr int distance<File>(const Square x, const Square y)
+{
+  return util::abs(file_of(x) - file_of(y));
+}
 template<>
-constexpr int distance<Rank>(const Square x, const Square y) { return util::abs(rank_of(x) - rank_of(y)); }
+constexpr int distance<Rank>(const Square x, const Square y)
+{
+  return util::abs(rank_of(x) - rank_of(y));
+}
 
 inline Bitboard passed_pawn_front_span[COL_NB][SQ_NB];
 inline Bitboard pawn_front_span[COL_NB][SQ_NB];
@@ -118,7 +130,8 @@ inline std::array<Square, 2> ooo_king_from{};
 inline std::array<std::array<Bitboard, SQ_NB>, PIECETYPE_NB> AllAttacks;
 inline std::array<std::array<Bitboard, SQ_NB>, SQ_NB> Lines;
 
-consteval std::array<std::array<int, SQ_NB>, SQ_NB> make_distance() {
+consteval std::array<std::array<int, SQ_NB>, SQ_NB> make_distance()
+{
   std::array<std::array<int, SQ_NB>, SQ_NB> result{};
   for (const auto sq1 : Squares)
     for (const auto sq2 : Squares)
@@ -127,104 +140,131 @@ consteval std::array<std::array<int, SQ_NB>, SQ_NB> make_distance() {
   return result;
 }
 
-constexpr std::array<std::array<int, SQ_NB>, SQ_NB> dist = make_distance();/// chebyshev distance
+constexpr std::array<std::array<int, SQ_NB>, SQ_NB> dist = make_distance();   /// chebyshev distance
 
 template<>
-constexpr int distance<Square>(const Square x, const Square y) { return dist[x][y]; }
+constexpr int distance<Square>(const Square x, const Square y)
+{
+  return dist[x][y];
+}
 
 template<Square Sq>
-constexpr Bitboard bit() {
+constexpr Bitboard bit()
+{
   return square_bb[Sq];
 }
 
 template<typename... Squares>
-constexpr Bitboard bit(Squares... squares) {
+constexpr Bitboard bit(Squares... squares)
+{
   return (... | square_bb[squares]);
 }
 
-constexpr Bitboard bit() {
+constexpr Bitboard bit()
+{
   return 0;
 }
 
 template<typename... Ranks>
-constexpr Bitboard bit(const Rank r, Ranks... ranks) {
+constexpr Bitboard bit(const Rank r, Ranks... ranks)
+{
   return RankBB[r] | bit(ranks...);
 }
 
 template<typename... Files>
-constexpr Bitboard bit(const File f, Files... files) {
+constexpr Bitboard bit(const File f, Files... files)
+{
   return FileBB[f] | bit(files...);
 }
 
-constexpr Bitboard bb_rank(const Rank r) {
+constexpr Bitboard bb_rank(const Rank r)
+{
   return RankBB[r];
 }
 
-constexpr Bitboard bb_file(const File f) {
+constexpr Bitboard bb_file(const File f)
+{
   return FileBB[f];
 }
 
-constexpr Bitboard bb_file(const Square s) {
+constexpr Bitboard bb_file(const Square s)
+{
   return bb_file(file_of(s));
 }
 
 //------------------------------------------------
 // Additional Square operators
 //------------------------------------------------
-constexpr Bitboard operator&(const Bitboard bb, const Square s) noexcept {
+constexpr Bitboard operator&(const Bitboard bb, const Square s) noexcept
+{
   return bb & square_bb[s];
 }
-constexpr Bitboard operator|(const Bitboard bb, const Square s) noexcept {
+constexpr Bitboard operator|(const Bitboard bb, const Square s) noexcept
+{
   return bb | square_bb[s];
 }
-constexpr Bitboard operator^(const Bitboard bb, const Square s) noexcept {
+constexpr Bitboard operator^(const Bitboard bb, const Square s) noexcept
+{
   return bb ^ square_bb[s];
 }
-constexpr Bitboard &operator|=(Bitboard &bb, const Square s) noexcept {
+constexpr Bitboard &operator|=(Bitboard &bb, const Square s) noexcept
+{
   return bb |= square_bb[s];
 }
-constexpr Bitboard &operator^=(Bitboard &bb, const Square s) noexcept {
+constexpr Bitboard &operator^=(Bitboard &bb, const Square s) noexcept
+{
   return bb ^= square_bb[s];
 }
 
 //------------------------------------------------
 // Additional File operators
 //------------------------------------------------
-constexpr Bitboard operator&(const Bitboard bb, const File f) noexcept {
+constexpr Bitboard operator&(const Bitboard bb, const File f) noexcept
+{
   return bb & FileBB[f];
 }
-constexpr Bitboard operator|(const Bitboard bb, const File f) noexcept {
+constexpr Bitboard operator|(const Bitboard bb, const File f) noexcept
+{
   return bb | FileBB[f];
 }
-constexpr Bitboard operator^(const Bitboard bb, const File f) noexcept {
+constexpr Bitboard operator^(const Bitboard bb, const File f) noexcept
+{
   return bb ^ FileBB[f];
 }
-constexpr Bitboard &operator|=(Bitboard &bb, const File f) noexcept {
+constexpr Bitboard &operator|=(Bitboard &bb, const File f) noexcept
+{
   return bb |= FileBB[f];
 }
-constexpr Bitboard &operator^=(Bitboard &bb, const File f) noexcept {
+constexpr Bitboard &operator^=(Bitboard &bb, const File f) noexcept
+{
   return bb ^= FileBB[f];
 }
 
 //------------------------------------------------
 // Additional Rank operators
 //------------------------------------------------
-constexpr Bitboard operator&(const Bitboard bb, const Rank r) noexcept {
+constexpr Bitboard operator&(const Bitboard bb, const Rank r) noexcept
+{
   return bb & RankBB[r];
 }
-constexpr Bitboard operator&(const Rank r, const Bitboard bb) noexcept {
+constexpr Bitboard operator&(const Rank r, const Bitboard bb) noexcept
+{
   return bb & RankBB[r];
 }
-constexpr Bitboard operator|(const Bitboard bb, const Rank r) noexcept {
+constexpr Bitboard operator|(const Bitboard bb, const Rank r) noexcept
+{
   return bb | RankBB[r];
 }
-constexpr Bitboard operator^(const Bitboard bb, const Rank r) noexcept {
+constexpr Bitboard operator^(const Bitboard bb, const Rank r) noexcept
+{
   return bb ^ RankBB[r];
 }
-constexpr Bitboard &operator|=(Bitboard &bb, const Rank r) noexcept {
+constexpr Bitboard &operator|=(Bitboard &bb, const Rank r) noexcept
+{
   return bb |= RankBB[r];
 }
-constexpr Bitboard &operator^=(Bitboard &bb, const Rank r) noexcept {
+constexpr Bitboard &operator^=(Bitboard &bb, const Rank r) noexcept
+{
   return bb ^= RankBB[r];
 }
 
@@ -252,7 +292,8 @@ constexpr Bitboard shift_bb(const Bitboard bb)
 }
 
 template<Direction D>
-constexpr Bitboard fill(const Bitboard bb) {
+constexpr Bitboard fill(const Bitboard bb)
+{
   static_assert(D != NORTH || D != SOUTH);
   auto fill = bb;
   if constexpr (D == NORTH)
@@ -269,27 +310,34 @@ constexpr Bitboard fill(const Bitboard bb) {
   return fill;
 }
 
-inline Bitboard line(const Square s1, const Square s2) {
+inline Bitboard line(const Square s1, const Square s2)
+{
   return Lines[s1][s2];
 }
 
-inline Bitboard between(const Square s1, const Square s2) {
+inline Bitboard between(const Square s1, const Square s2)
+{
   const auto b = line(s1, s2) & ((AllSquares << s1) ^ (AllSquares << s2));
   return b & (b - 1);
 }
 
-inline bool aligned(const Square s1, const Square s2, const Square s3) {
+inline bool aligned(const Square s1, const Square s2, const Square s3)
+{
   return line(s1, s2) & s3;
 }
 
 constexpr Bitboard (*pawn_east_attacks[COL_NB])(Bitboard) = {shift_bb<NORTH_WEST>, shift_bb<SOUTH_WEST>};
 constexpr Bitboard (*pawn_west_attacks[COL_NB])(Bitboard) = {shift_bb<NORTH_EAST>, shift_bb<SOUTH_EAST>};
-constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard) = {fill<NORTH>, fill<SOUTH>};
+constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard)         = {fill<NORTH>, fill<SOUTH>};
 
-constexpr Bitboard pawn_push(const Color c, const Bitboard bb) { return c == WHITE ? shift_bb<NORTH>(bb) : shift_bb<SOUTH>(bb); }
+constexpr Bitboard pawn_push(const Color c, const Bitboard bb)
+{
+  return c == WHITE ? shift_bb<NORTH>(bb) : shift_bb<SOUTH>(bb);
+}
 
 template<PieceType Pt>
-Bitboard all_attacks(const Square s) {
+Bitboard all_attacks(const Square s)
+{
   return AllAttacks[Pt][s];
 }
 
@@ -300,9 +348,9 @@ Bitboard piece_attacks_bb(const Square s, const Bitboard occupied = 0)
 
   if constexpr (Pt == ROOK || Pt == BISHOP)
   {
-    constexpr auto table_index = Pt - 2;
+    constexpr auto table_index    = Pt - 2;
     constexpr auto shift_modifier = 64 - (Pt == ROOK ? 12 : 9);
-    const auto mag = &MagicTables[table_index][s];
+    const auto mag                = &MagicTables[table_index][s];
     return mag->data[((occupied & mag->mask) * mag->magic) >> shift_modifier];
   } else if constexpr (Pt == QUEEN)
     return piece_attacks_bb<ROOK>(s, occupied) | piece_attacks_bb<BISHOP>(s, occupied);
@@ -310,7 +358,8 @@ Bitboard piece_attacks_bb(const Square s, const Bitboard occupied = 0)
     return all_attacks<Pt>(s);
 }
 
-inline Bitboard piece_attacks_bb(const PieceType pt, const Square sq, const Bitboard occupied = 0) {
+inline Bitboard piece_attacks_bb(const PieceType pt, const Square sq, const Bitboard occupied = 0)
+{
   switch (pt)
   {
   case BISHOP:
@@ -329,45 +378,53 @@ inline Bitboard piece_attacks_bb(const PieceType pt, const Square sq, const Bitb
     return all_attacks<KNIGHT>(sq);
 
   default:
-    break;// error
+    break;   // error
   }
   return 0;
 }
 
-inline Bitboard pawn_attacks_bb(const Color c, const Square s) {
+inline Bitboard pawn_attacks_bb(const Color c, const Square s)
+{
   return pawn_captures[c][s];
 }
 
-inline Bitboard xray_rook_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
+inline Bitboard xray_rook_attacks(const Bitboard occ, Bitboard blockers, const Square sq)
+{
   const auto attacks = piece_attacks_bb<ROOK>(sq, occ);
   blockers &= attacks;
   return attacks ^ piece_attacks_bb<ROOK>(sq, occ ^ blockers);
 }
 
-inline Bitboard xray_bishop_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
+inline Bitboard xray_bishop_attacks(const Bitboard occ, Bitboard blockers, const Square sq)
+{
   const auto attacks = piece_attacks_bb<BISHOP>(sq, occ);
   blockers &= attacks;
   return attacks ^ piece_attacks_bb<BISHOP>(sq, occ ^ blockers);
 }
 
-constexpr void reset_lsb(Bitboard &bb) {
-    bb &= (bb - 1);
+constexpr void reset_lsb(Bitboard &bb)
+{
+  bb &= (bb - 1);
 }
 
-constexpr Square lsb(const Bitboard bb) {
+constexpr Square lsb(const Bitboard bb)
+{
   return static_cast<Square>(std::countr_zero(bb));
 }
 
-constexpr Square pop_lsb(Bitboard *bb) {
+constexpr Square pop_lsb(Bitboard *bb)
+{
   const auto s = lsb(*bb);
   *bb &= *bb - 1;
   return s;
 }
 
-constexpr bool more_than_one(const Bitboard bb) {
+constexpr bool more_than_one(const Bitboard bb)
+{
   return bb & (bb - 1);
 }
 
-constexpr bool is_opposite_colors(const Square s1, const Square s2) {
+constexpr bool is_opposite_colors(const Square s1, const Square s2)
+{
   return (static_cast<int>(s1) + static_cast<int>(rank_of(s1)) + s2 + rank_of(s2)) & 1;
 }
