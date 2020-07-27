@@ -69,23 +69,21 @@ std::optional<Square> ep_square(std::string_view s) {
   return !util::in_between<'3', '6'>(s.front()) ? std::nullopt : std::make_optional(static_cast<Square>(first - 'a' + (s.front() - '1') * 8));
 }
 
-template<Color Us, CastlingRight Right>
-Square find_rook_square(Board *b) {
+Square find_rook_square(Board *b, const Color us, const bool king_side) {
+  const auto rook = make_piece(ROOK, us);
+  const auto relative = [&us](const Square s) { return relative_square(us, s); };
+  const auto is_rook_on_square = [&b, &rook](const Square sq) { return b->piece(sq) == rook; };
+  const auto filter = std::views::transform(relative) | std::views::filter(is_rook_on_square);
 
-  constexpr auto Rook = make_piece(ROOK, Us);
-  constexpr auto relative = [](const Square s) { return relative_square(Us, s); };
-  const auto is_rook_on_square = [&b](const Square sq) { return b->piece(sq) == Rook; };
-
-  if constexpr (Right == KING_SIDE)
+  if (king_side)
   {
-    for (const auto sq : CastlelingSquaresKing | std::views::transform(relative))
-      if (is_rook_on_square(sq))
-        return sq;
-  } else
+    auto res = CastlelingSquaresKing | filter;
+    return *std::ranges::begin(res);
+  }
+  else
   {
-    for (const auto sq : CastlelingSquaresQueen | std::views::transform(relative))
-      if (is_rook_on_square(sq))
-        return sq;
+    auto res = CastlelingSquaresQueen | filter;
+    return *std::ranges::begin(res);
   }
 
   return NO_SQ;
@@ -674,7 +672,6 @@ bool Board::setup_castling(const std::string_view s) {
     else if (util::in_between<'A', 'H'>(c))
     {
       chess960 = true;
-      xfen     = false;
 
       const auto rook_file = std::make_optional(static_cast<File>(c - 'A'));
 
@@ -685,7 +682,6 @@ bool Board::setup_castling(const std::string_view s) {
     } else if (util::in_between<'a', 'h'>(c))
     {
       chess960 = true;
-      xfen     = false;
 
       const auto rook_file = std::make_optional(static_cast<File>(c - 'a'));
 
@@ -704,22 +700,17 @@ std::string Board::move_to_string(const Move m) const {
 
   const auto mt = type_of(m);
 
+  // shredder fen
   [[unlikely]]
   if (mt & CASTLE && chess960)
-  {
-    if (xfen && move_to(m) == ooo_king_to[move_side(m)])
-      return std::string("O-O-O");
-    if (xfen)
-      return std::string("O-O");
-    // shredder fen
     return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(rook_castles_from[move_to(m)]));
-  }
 
-  [[likely]]
-  if (!(mt & PROMOTION))
-    return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)));
+  [[unlikely]]
+  if (mt & PROMOTION)
+    return fmt::format("{}{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)), piece_to_string(type_of(move_promoted(m))));
 
-  return fmt::format("{}{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)), piece_to_string(type_of(move_promoted(m))));
+  return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)));
+
 }
 
 void Board::print_moves() {
@@ -783,10 +774,7 @@ void Board::add_short_castle_rights(std::optional<File> rook_file) {
   Square rook_square;
 
   if (!rook_file.has_value())
-  {
-    rook_square = find_rook_square<Us, KING_SIDE>(this);
-    xfen   = true;
-  }
+    rook_square = find_rook_square(this, Us, true);
   else
     rook_square = make_square(rook_file.value(), Rank_1);
 
@@ -809,10 +797,7 @@ void Board::add_long_castle_rights(std::optional<File> rook_file) {
   Square rook_square;
 
   if (!rook_file.has_value())
-  {
-    rook_square = find_rook_square<Us, QUEEN_SIDE>(this);
-    xfen   = true;
-  }
+    rook_square = find_rook_square(this, Us, false);
   else
     rook_square = make_square(rook_file.value(), Rank_1);
 

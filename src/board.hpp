@@ -201,7 +201,6 @@ struct Board {
   int search_depth{};
   std::array<int, SQ_NB> castle_rights_mask{};
   bool chess960{};
-  bool xfen{};
 
 private:
 
