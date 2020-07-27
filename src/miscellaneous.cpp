@@ -22,7 +22,7 @@
 #if defined(_WIN32)
 #if _WIN32_WINNT < 0x0601
 #undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0601// Force to include needed API prototypes
+#define _WIN32_WINNT 0x0601   // Force to include needed API prototypes
 #endif
 
 #if !defined(NOMINMAX)
@@ -51,9 +51,11 @@ typedef bool (*fun3_t)(HANDLE, CONST GROUP_AFFINITY *, PGROUP_AFFINITY);
 #include "miscellaneous.hpp"
 #include "util.hpp"
 
-namespace {
+namespace
+{
 
-std::string compiler_info() {
+std::string compiler_info()
+{
 #if defined(__clang__)
   return fmt::format("[Clang/LLVM v{}{}{}]", std::string(__clang_major__), __clang_minor__, __clang_patchlevel__);
 #elif defined(__GNUC__) || defined(__GNUG__)
@@ -65,13 +67,15 @@ std::string compiler_info() {
 #endif
 }
 
-}// namespace
+}   // namespace
 
-namespace WinProcGroup {
+namespace WinProcGroup
+{
 
 #ifndef _WIN32
 
-void bind_this_thread(std::size_t) {}
+void bind_this_thread(std::size_t)
+{ }
 
 #else
 
@@ -79,7 +83,8 @@ void bind_this_thread(std::size_t) {}
 /// API and returns the best group id for the thread with index idx. Original
 /// code from Texel by Peter �sterlund.
 
-std::optional<int> best_group(const std::size_t idx) {
+std::optional<int> best_group(const std::size_t idx)
+{
 
   auto threads = 0;
   auto nodes = 0;
@@ -89,7 +94,8 @@ std::optional<int> best_group(const std::size_t idx) {
 
   // Early exit if the needed API is not available at runtime
   auto *const k32 = GetModuleHandle("Kernel32.dll");
-  const auto fun1 = reinterpret_cast<fun1_t>(reinterpret_cast<void (*)()>(GetProcAddress(k32, "GetLogicalProcessorInformationEx")));
+  const auto fun1 =
+    reinterpret_cast<fun1_t>(reinterpret_cast<void (*)()>(GetProcAddress(k32, "GetLogicalProcessorInformationEx")));
   if (!fun1)
     return std::nullopt;
 
@@ -148,7 +154,8 @@ std::optional<int> best_group(const std::size_t idx) {
 
 /// bind_this_thread() set the group affinity of the current thread
 
-void bind_this_thread(const std::size_t idx) {
+void bind_this_thread(const std::size_t idx)
+{
 
   // Use only local variables to be thread-safe
   const auto group = best_group(idx);
@@ -157,8 +164,10 @@ void bind_this_thread(const std::size_t idx) {
 
   // Early exit if the needed API are not available at runtime
   auto *const k32 = GetModuleHandle("Kernel32.dll");
-  const auto fun2 = reinterpret_cast<fun2_t>(reinterpret_cast<void (*)()>(GetProcAddress(k32, "GetNumaNodeProcessorMaskEx")));
-  const auto fun3 = reinterpret_cast<fun3_t>(reinterpret_cast<void (*)()>(GetProcAddress(k32, "SetThreadGroupAffinity")));
+  const auto fun2 =
+    reinterpret_cast<fun2_t>(reinterpret_cast<void (*)()>(GetProcAddress(k32, "GetNumaNodeProcessorMaskEx")));
+  const auto fun3 =
+    reinterpret_cast<fun3_t>(reinterpret_cast<void (*)()>(GetProcAddress(k32, "SetThreadGroupAffinity")));
 
   if (!fun2 || !fun3)
     return;
@@ -170,12 +179,14 @@ void bind_this_thread(const std::size_t idx) {
 
 #endif
 
-}// namespace WinProcGroup
+}   // namespace WinProcGroup
 
-namespace misc {
+namespace misc
+{
 
 template<bool AsUci>
-std::string print_engine_info() {
+std::string print_engine_info()
+{
   constexpr std::string_view title_short{"FelisCatus"};
   constexpr std::string_view all_months{"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec"};
   std::string m, d, y, uci;
@@ -196,7 +207,8 @@ std::string print_engine_info() {
   if constexpr (AsUci)
   {
     constexpr std::string_view authors{"Gunnar Harms, FireFather, Rudy Alex Kohn"};
-    fmt::format_to(ver_info, "id name {} {:02}-{:02}-{} {}\nid author {}", title_short, month, day, year, compiler, authors);
+    fmt::format_to(
+      ver_info, "id name {} {:02}-{:02}-{} {}\nid author {}", title_short, month, day, year, compiler, authors);
   } else
     fmt::format_to(ver_info, "{} {:02}-{:02}-{} {}", title_short, month, day, year, compiler);
 
@@ -212,10 +224,10 @@ std::string print_engine_info() {
 
 #endif
 
-  return fmt::format("{}\n", fmt::to_string(ver_info));
+    return fmt::format("{}\n", fmt::to_string(ver_info));
 }
 
 template std::string misc::print_engine_info<true>();
 template std::string misc::print_engine_info<false>();
 
-}// namespace misc
+}   // namespace misc

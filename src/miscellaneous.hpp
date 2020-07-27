@@ -32,16 +32,19 @@ constexpr std::string_view piece_letter{"PNBRQK. pnbrqk. "};
 
 #if defined(NO_PREFETCH)
 
-inline void prefetch(void *) {}
+inline void prefetch(void *)
+{ }
 
 #else
 
-inline void prefetch(void* addr) {
+inline void prefetch(void *addr)
+{
   __builtin_prefetch(addr);
 }
 #endif
 
-inline uint64_t mul_hi64(const uint64_t a, const uint64_t b) {
+inline uint64_t mul_hi64(const uint64_t a, const uint64_t b)
+{
 #if defined(__GNUC__)
   __extension__ typedef unsigned __int128 uint128;
   return (static_cast<uint128>(a) * static_cast<uint128>(b)) >> 64;
@@ -63,11 +66,13 @@ inline uint64_t mul_hi64(const uint64_t a, const uint64_t b) {
 /// called to set group affinity for each thread. Original code from Texel by
 /// Peter Österlund.
 
-namespace WinProcGroup {
-  void bind_this_thread(std::size_t idx);
+namespace WinProcGroup
+{
+void bind_this_thread(std::size_t idx);
 }
 
-namespace misc {
-  template<bool AsUci>
-  std::string print_engine_info();
+namespace misc
+{
+template<bool AsUci>
+std::string print_engine_info();
 }
