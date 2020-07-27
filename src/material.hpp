@@ -27,7 +27,8 @@
 struct Board;
 enum Move : uint32_t;
 
-struct Material {
+struct Material
+{
   void clear();
 
   void remove(Piece pc);
@@ -67,9 +68,10 @@ struct Material {
   static constexpr int max_value               = max_value_without_pawns + 2 * 8 * piece_values[PAWN];
 
 private:
-
-  enum KeyUpdateType {
-    Add, Remove
+  enum KeyUpdateType
+  {
+    Add,
+    Remove
   };
 
   using Keys = std::array<uint32_t, COL_NB>;
@@ -149,34 +151,42 @@ private:
   static constexpr int RECOGNIZEDDRAW = 1;
 };
 
-inline bool Material::is_kx(const Color c) {
+inline bool Material::is_kx(const Color c)
+{
   return key[c] == (key[c] & 15);
 }
 
-inline bool Material::is_kx() {
+inline bool Material::is_kx()
+{
   return is_kx(WHITE) && is_kx(BLACK);
 }
 
-inline int Material::value() {
+inline int Material::value()
+{
   return material_value[WHITE] + material_value[BLACK];
 }
 
-inline int Material::value(const Color c) {
+inline int Material::value(const Color c)
+{
   return material_value[c];
 }
 
-inline int Material::pawn_count() {
+inline int Material::pawn_count()
+{
   return static_cast<int>(key[WHITE] & 15) + static_cast<int>(key[BLACK] & 15);
 }
 
-inline int Material::balance() {
+inline int Material::balance()
+{
   return material_value[WHITE] - material_value[BLACK];
 }
 
-inline int Material::pawn_count(const Color c) {
+inline int Material::pawn_count(const Color c)
+{
   return static_cast<int>(key[c] & 15);
 }
 
-constexpr int Material::recognize_draw() {
-   return RECOGNIZEDDRAW;
+constexpr int Material::recognize_draw()
+{
+  return RECOGNIZEDDRAW;
 }
