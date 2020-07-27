@@ -22,6 +22,7 @@
 
 #include <cstdint>
 #include <array>
+#include <optional>
 
 #include "types.hpp"
 #include "bitboard.hpp"
@@ -234,6 +235,12 @@ private:
 
   [[nodiscard]]
   Bitboard attackers_to(Square s) const;
+
+  template<Color Us>
+  void add_short_castle_rights(std::optional<File> rook_file);
+
+  template<Color Us>
+  void add_long_castle_rights(std::optional<File> rook_file);
 
   std::array<Piece, SQ_NB> board{};
   std::array<Bitboard, COL_NB> occupied_by_side{};
