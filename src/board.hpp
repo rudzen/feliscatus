@@ -58,15 +58,14 @@ struct Board {
   [[nodiscard]]
   int64_t half_move_count() const;
 
-  int new_game(thread *t);
+  void new_game(thread *t);
 
-  int set_fen(std::string_view fen, thread* t);
+  void set_fen(std::string_view fen, thread* t);
 
   [[nodiscard]]
   std::string fen() const;
 
-  [[nodiscard]]
-  bool setup_castling(std::string_view s);
+  void setup_castling(std::string_view s);
 
   [[nodiscard]]
   std::string move_to_string(Move m) const;

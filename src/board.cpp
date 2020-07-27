@@ -55,18 +55,18 @@ constexpr auto max_log_files     = 3;
 std::shared_ptr<spdlog::logger> logger = spdlog::rotating_logger_mt("castleling_logger", "logs/castleling.txt", max_log_file_size, max_log_files);
 
 [[nodiscard]]
-std::optional<Square> ep_square(std::string_view s) {
+Square ep_square(std::string_view s) {
   if (s.empty() || s.length() == 1 || s.front() == '-')
-    return std::make_optional(NO_SQ);
+    return NO_SQ;
 
   const auto first = s.front();
 
   if (!util::in_between<'a', 'h'>(first))
-    return std::nullopt;
+    return NO_SQ;
 
   s.remove_prefix(1);
 
-  return !util::in_between<'3', '6'>(s.front()) ? std::nullopt : std::make_optional(static_cast<Square>(first - 'a' + (s.front() - '1') * 8));
+  return !util::in_between<'3', '6'>(s.front()) ? NO_SQ : static_cast<Square>(first - 'a' + (s.front() - '1') * 8);
 }
 
 Square find_rook_square(Board *b, const Color us, const bool king_side) {
@@ -508,11 +508,11 @@ int64_t Board::half_move_count() const {
   return pos - position_list.data();
 }
 
-int Board::new_game(thread *t) {
-  return set_fen(start_position, t);
+void Board::new_game(thread *t) {
+  set_fen(start_position, t);
 }
 
-int Board::set_fen(std::string_view fen, thread *t) {
+void Board::set_fen(std::string_view fen, thread *t) {
   pos = position_list.data();
   pos->clear();
   clear();
@@ -562,18 +562,12 @@ int Board::set_fen(std::string_view fen, thread *t) {
   // Castleling
   space++;
   current = update_current();
-  [[unlikely]]
-  if (!setup_castling(current))
-    return 5;
+  setup_castling(current);
 
   // En-passant
   space++;
   current = update_current();
-  [[likely]]
-  if (const auto ep_sq = ep_square(current); ep_sq)
-    pos->en_passant_square = ep_sq.value();
-  else
-    return 6;
+  pos->en_passant_square = ep_square(current);
 
   // TODO : Parse the rest
 
@@ -582,8 +576,6 @@ int Board::set_fen(std::string_view fen, thread *t) {
   update_position(pos);
 
   my_t = t;
-
-  return 0;
 }
 
 std::string Board::fen() const {
@@ -651,13 +643,13 @@ std::string Board::fen() const {
   return fmt::to_string(s);
 }
 
-bool Board::setup_castling(const std::string_view s) {
+void Board::setup_castling(const std::string_view s) {
 
   castle_rights_mask.fill(NO_CASTLING);
 
   [[likely]]
   if (s.front() == '-')
-    return true;
+    return;
 
   for (const auto c : s)
   {
@@ -689,11 +681,8 @@ bool Board::setup_castling(const std::string_view s) {
         add_short_castle_rights<BLACK>(rook_file);
       else
         add_long_castle_rights<BLACK>(rook_file);
-    } else
-      return false;
+    }
   }
-
-  return true;
 }
 
 std::string Board::move_to_string(const Move m) const {
