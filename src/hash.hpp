@@ -26,9 +26,13 @@
 #include "types.hpp"
 
 template<typename Entry, std::size_t N>
-struct Table {
+struct Table
+{
   [[nodiscard]]
-  Entry *operator[](const Key key) noexcept { return &table_[static_cast<uint32_t>(key) & (N - 1)]; }
+  Entry *operator[](const Key key) noexcept
+  {
+    return &table_[static_cast<uint32_t>(key) & (N - 1)];
+  }
 
 private:
   std::array<Entry, N> table_{};
