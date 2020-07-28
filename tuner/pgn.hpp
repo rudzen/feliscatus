@@ -27,11 +27,18 @@
 struct PGNFile;
 enum Token : uint8_t;
 
-enum Result : uint8_t { WhiteWin, Draw, BlackWin };
+enum Result : uint8_t
+{
+  WhiteWin,
+  Draw,
+  BlackWin
+};
 
-namespace pgn {
+namespace pgn
+{
 
-class PGNFileReader {
+class PGNFileReader
+{
 public:
   PGNFileReader();
 
@@ -74,7 +81,10 @@ protected:
 
   virtual void read_pawn_capture(char *&p);
 
-  virtual void read_pawn_quiet_move(char *&p) { p += 2; }
+  virtual void read_pawn_quiet_move(char *&p)
+  {
+    p += 2;
+  }
 
   virtual void read_promoted_to(char *&p);
 
@@ -190,7 +200,7 @@ protected:
   int game_count_;
   Result result_;
 };
-}// namespace pgn
+}   // namespace pgn
 
 /*
 http://www6.chessclub.com/help/PGN-spec

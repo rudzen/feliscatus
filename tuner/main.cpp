@@ -34,7 +34,8 @@
 #include "../src/tpool.hpp"
 #include "../cli/cli_parser.hpp"
 
-namespace {
+namespace
+{
 
 constexpr auto title =
   R"(
@@ -46,10 +47,10 @@ constexpr auto title =
            |  _| || | ' \/ -_) '_|
             \__|\_,_|_||_\___|_|)";
 
-}// namespace
+}   // namespace
 
-int main(const int argc, char **argv) {
-
+int main(const int argc, char **argv)
+{
   fmt::print("{}\n", title);
 
   const auto cli_parser_settings = cli::make_parser(argc, argv, title, ParserType::Tuner);
