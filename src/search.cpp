@@ -23,7 +23,6 @@
 #include <algorithm>
 #include <optional>
 #include <functional>
-#include <numeric>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -160,19 +159,15 @@ struct Search final
 
 private:
   template<NodeType NT, bool PV>
-  [[nodiscard]]
   int search(int depth, int alpha, int beta);
 
   template<NodeType NT, bool PV>
-  [[nodiscard]]
   int search_next_depth(int depth, int alpha, int beta);
 
   template<bool PV>
-  [[nodiscard]]
   Move singular_move(int depth);
 
-  [[nodiscard]]
-  bool search_fail_low(int depth, int alpha, Move exclude);
+  auto search_fail_low(int depth, int alpha, Move exclude);
 
   [[nodiscard]]
   bool should_try_null_move(int beta) const;
@@ -232,14 +227,10 @@ int Search<SearcherType>::go()
 
   while (!pool.stop && b->search_depth < MAXDEPTH)
   {
-    auto delta = -MAXSCORE;
-    b->search_depth++;
-
-    for (auto i = 0; i < t->pv_length[0]; ++i)
-      t->pv[0][i].previous_score = t->pv[0][i].score;
-
     try
     {
+      b->search_depth++;
+
       do
       {
         t->pv_length[0] = 0;
@@ -248,19 +239,13 @@ int Search<SearcherType>::go()
 
         const auto score = search<EXACT, true>(b->search_depth, alpha, beta);
 
-        if (score <= alpha)
-        {
-          beta = std::midpoint(alpha, beta);
-          alpha = std::max<int>(score - delta, -MAXSCORE);
-        }
-        else if (score >= beta)
-          beta = std::min<int>(score + delta, MAXSCORE);
-        else
+        if (score > alpha && score < beta)
           break;
 
         check_time();
 
-        delta = delta / 4 + 5;
+        alpha = std::max<int>(-MAXSCORE, score - 100);
+        beta  = std::min<int>(MAXSCORE, score + 100);
       } while (true);
 
       store_pv(t->pv.front(), t->pv_length.front());
@@ -447,7 +432,7 @@ Move Search<SearcherType>::singular_move(const int depth)
 }
 
 template<Searcher SearcherType>
-bool Search<SearcherType>::search_fail_low(const int depth, int alpha, const Move exclude)
+auto Search<SearcherType>::search_fail_low(const int depth, int alpha, const Move exclude)
 {
   auto mg = Moves(b);
   mg.generate_moves(pos->transp_move, STAGES);
