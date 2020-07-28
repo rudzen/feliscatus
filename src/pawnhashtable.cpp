@@ -23,13 +23,16 @@
 #include "pawnhashtable.hpp"
 #include "board.hpp"
 
-namespace Pawn {
+namespace Pawn
+{
 
-PawnHashEntry *find(Board *b) {
+PawnHashEntry *find(Board *b)
+{
   return b->my_thread()->pawn_hash[b->pawn_key()];
 }
 
-PawnHashEntry *insert(Board *b, const Score s, const std::array<Bitboard, 2> &passed_pawns) {
+PawnHashEntry *insert(Board *b, const Score s, const std::array<Bitboard, 2> &passed_pawns)
+{
   static_assert(sizeof(PawnHashEntry) == 32);
   const auto key = b->pawn_key();
   auto *pawnp    = b->my_thread()->pawn_hash[key];
@@ -39,4 +42,4 @@ PawnHashEntry *insert(Board *b, const Score s, const std::array<Bitboard, 2> &pa
   return pawnp;
 }
 
-}
+}   // namespace Pawn

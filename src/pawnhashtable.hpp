@@ -29,7 +29,8 @@
 struct Board;
 
 #pragma pack(1)
-struct alignas(16) PawnHashEntry final {
+struct alignas(16) PawnHashEntry final
+{
   Key zkey{};
   Score eval{};
   std::array<Bitboard, COL_NB> passed_pawns{};
@@ -39,10 +40,11 @@ struct alignas(16) PawnHashEntry final {
 
 using PawnHashTable = Table<PawnHashEntry, 131072>;
 
-namespace Pawn {
-  [[nodiscard]]
-  PawnHashEntry *find(Board *b);
+namespace Pawn
+{
+[[nodiscard]]
+PawnHashEntry *find(Board *b);
 
-  [[nodiscard]]
-  PawnHashEntry *insert(Board *b, Score s, const std::array<Bitboard, 2> &passed_pawns);
-}
+[[nodiscard]]
+PawnHashEntry *insert(Board *b, Score s, const std::array<Bitboard, 2> &passed_pawns);
+}   // namespace Pawn
