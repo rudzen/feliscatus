@@ -22,6 +22,7 @@
 
 #include <cstdint>
 #include <array>
+#include <optional>
 
 #include "types.hpp"
 #include "bitboard.hpp"
@@ -57,15 +58,14 @@ struct Board {
   [[nodiscard]]
   int64_t half_move_count() const;
 
-  int new_game(thread *t);
+  void new_game(thread *t);
 
-  int set_fen(std::string_view fen, thread* t);
+  void set_fen(std::string_view fen, thread* t);
 
   [[nodiscard]]
   std::string fen() const;
 
-  [[nodiscard]]
-  bool setup_castling(std::string_view s);
+  void setup_castling(std::string_view s);
 
   [[nodiscard]]
   std::string move_to_string(Move m) const;
@@ -171,9 +171,6 @@ struct Board {
   int &flags() const;
 
   [[nodiscard]]
-  int castle_rights() const;
-
-  [[nodiscard]]
   Square en_passant_square() const;
 
   [[nodiscard]]
@@ -203,7 +200,6 @@ struct Board {
   int search_depth{};
   std::array<int, SQ_NB> castle_rights_mask{};
   bool chess960{};
-  bool xfen{};
 
 private:
 
@@ -237,6 +233,12 @@ private:
 
   [[nodiscard]]
   Bitboard attackers_to(Square s) const;
+
+  template<Color Us>
+  void add_short_castle_rights(std::optional<File> rook_file);
+
+  template<Color Us>
+  void add_long_castle_rights(std::optional<File> rook_file);
 
   std::array<Piece, SQ_NB> board{};
   std::array<Bitboard, COL_NB> occupied_by_side{};
@@ -370,10 +372,6 @@ inline Material &Board::material() const {
 
 inline int &Board::flags() const {
   return pos->flags;
-}
-
-inline int Board::castle_rights() const {
-  return pos->castle_rights;
 }
 
 inline Square Board::en_passant_square() const {

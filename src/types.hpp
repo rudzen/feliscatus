@@ -185,17 +185,34 @@ enum CastlingRight {
   WHITE_OOO         = WHITE_OO << 1,
   BLACK_OO          = WHITE_OO << 2,
   BLACK_OOO         = WHITE_OO << 3,
-  ANY_CASTLING      = WHITE_OO | WHITE_OOO | BLACK_OO | BLACK_OOO,
+  KING_SIDE         = WHITE_OO | BLACK_OO,
+  QUEEN_SIDE        = WHITE_OOO | BLACK_OOO,
+  WHITE_ANY         = WHITE_OO | WHITE_OOO,
+  BLACK_ANY         = BLACK_OO | BLACK_OOO,
+  ANY_CASTLING      = KING_SIDE | QUEEN_SIDE,
   CASTLING_RIGHT_NB = 16
 };
 
-constexpr std::array<uint32_t, 2> oo_allowed_mask{WHITE_OO, BLACK_OO};
+constexpr std::array<CastlingRight, 2> oo_allowed_mask{WHITE_OO, BLACK_OO};
 
-constexpr std::array<uint32_t, 2> ooo_allowed_mask{WHITE_OOO, BLACK_OOO};
+constexpr std::array<CastlingRight, 2> ooo_allowed_mask{WHITE_OOO, BLACK_OOO};
+
+constexpr std::array<Square, FILE_NB> CastlelingSquaresKing{H1, G1, F1, E1, D1, C1, B1, A1};
+
+constexpr std::ranges::reverse_view CastlelingSquaresQueen {CastlelingSquaresKing};
 
 constexpr std::array<Square, 2> oo_king_to{G1, G8};
 
 constexpr std::array<Square, 2> ooo_king_to{C1, C8};
+
+template<Color C, CastlingRight S>
+constexpr CastlingRight make_castling() {
+  return C == WHITE ? S == QUEEN_SIDE ? WHITE_OOO : WHITE_OO : S == QUEEN_SIDE ? BLACK_OOO : BLACK_OO;
+};
+
+constexpr CastlingRight operator&(const Color c, const CastlingRight cr) {
+  return static_cast<CastlingRight>((c == WHITE ? WHITE_ANY : BLACK_ANY) & cr);
+}
 
 enum MoveGenFlags {
   NONE           = 0,

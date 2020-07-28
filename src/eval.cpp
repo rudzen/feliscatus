@@ -302,7 +302,7 @@ Score Evaluate<Tuning>::eval_pieces() {
         const auto king_file = file_of(b->king_sq(Us));
         if ((king_file < FILE_E) == (file_of(s) < king_file))
         {
-          const auto modifier = 1 + (Us & !b->castle_rights());
+          const auto modifier = 1 + (Us & !b->can_castle());
           result -= king_obstructs_rook * modifier;
         }
       }

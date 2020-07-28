@@ -18,7 +18,6 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <optional>
 #include <string>
 
 #include <fmt/format.h>
@@ -56,85 +55,38 @@ constexpr auto max_log_files     = 3;
 std::shared_ptr<spdlog::logger> logger = spdlog::rotating_logger_mt("castleling_logger", "logs/castleling.txt", max_log_file_size, max_log_files);
 
 [[nodiscard]]
-std::optional<Square> ep_square(std::string_view s) {
+Square ep_square(std::string_view s) {
   if (s.empty() || s.length() == 1 || s.front() == '-')
-    return std::make_optional(NO_SQ);
+    return NO_SQ;
 
   const auto first = s.front();
 
   if (!util::in_between<'a', 'h'>(first))
-    return std::nullopt;
+    return NO_SQ;
 
   s.remove_prefix(1);
 
-  return !util::in_between<'3', '6'>(s.front()) ? std::nullopt : std::make_optional(static_cast<Square>(first - 'a' + (s.front() - '1') * 8));
+  return !util::in_between<'3', '6'>(s.front()) ? NO_SQ : static_cast<Square>(first - 'a' + (s.front() - '1') * 8);
 }
 
-template<Color Us>
-void add_short_castle_rights(Board *b, std::optional<File> rook_file) {
+Square find_rook_square(Board *b, const Color us, const bool king_side) {
+  const auto rook = make_piece(ROOK, us);
+  const auto relative = [&us](const Square s) { return relative_square(us, s); };
+  const auto is_rook_on_square = [&b, &rook](const Square sq) { return b->piece(sq) == rook; };
+  const auto filter = std::views::transform(relative) | std::views::filter(is_rook_on_square);
 
-  constexpr auto CastleRights = Us == WHITE ? WHITE_OO : BLACK_OO;
-  constexpr auto Rank_1       = relative_rank(Us, RANK_1);
-  const auto ksq              = b->king_sq(Us);
-
-  if (!rook_file.has_value())
+  if (king_side)
   {
-    for (const auto f : ReverseFiles)
-    {
-      if (b->piece_type(make_square(f, Rank_1)) == ROOK)
-      {
-        rook_file = f;// right outermost rook for side
-        break;
-      }
-    }
-    b->xfen = true;
+    auto res = CastlelingSquaresKing | filter;
+    return *std::ranges::begin(res);
+  }
+  else
+  {
+    auto res = CastlelingSquaresQueen | filter;
+    return *std::ranges::begin(res);
   }
 
-  b->pos->castle_rights |= CastleRights;
-
-  const auto rook_square = make_square(rook_file.value(), Rank_1);
-
-  b->castle_rights_mask[rook_square] -= oo_allowed_mask[Us];
-  b->castle_rights_mask[ksq] -= oo_allowed_mask[Us];
-  rook_castles_from[make_square(FILE_G, Rank_1)] = rook_square;
-  oo_king_from[Us]                               = ksq;
-
-  if (file_of(ksq) != FILE_E || rook_file.value() != FILE_H)
-    b->chess960 = true;
-}
-
-template<Color Us>
-void add_long_castle_rights(Board *b, std::optional<File> rook_file) {
-
-  // constexpr auto Them         = ~Us;
-  constexpr auto CastleRights = Us == WHITE ? WHITE_OOO : BLACK_OOO;
-  constexpr auto Rank_1       = relative_rank(Us, RANK_1);
-  const auto ksq              = b->king_sq(Us);
-
-  if (!rook_file.has_value())
-  {
-    for (const auto f : Files)
-    {
-      if (b->piece_type(make_square(f, Rank_1)) == ROOK)
-      {
-        rook_file = f;// left outermost rook for side
-        break;
-      }
-    }
-    b->xfen = true;
-  }
-
-  b->pos->castle_rights |= CastleRights;
-
-  const auto rook_square = make_square(rook_file.value(), Rank_1);
-
-  b->castle_rights_mask[rook_square] -= ooo_allowed_mask[Us];
-  b->castle_rights_mask[ksq] -= ooo_allowed_mask[Us];
-  rook_castles_from[make_square(FILE_C, Rank_1)] = rook_square;
-  ooo_king_from[Us]                              = ksq;
-
-  if (file_of(ksq) != FILE_E || rook_file.value() != FILE_A)
-    b->chess960 = true;
+  return NO_SQ;
 }
 
 void update_key(Position *pos, const Move m) {
@@ -447,21 +399,28 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
       return false;
     }
   }
+
+  const auto from = move_from(m);
+  const auto to = move_to(m);
+
   auto *const prev                = pos++;
   pos->previous                   = prev;
   pos->side_to_move               = ~prev->side_to_move;
   pos->material                   = prev->material;
   pos->last_move                  = m;
-  pos->castle_rights              = prev->castle_rights & castle_rights_mask[move_from(m)] & castle_rights_mask[move_to(m)];
+  pos->castle_rights              = prev->castle_rights;
   pos->null_moves_in_row          = 0;
   pos->reversible_half_move_count = mt & (CAPTURE | EPCAPTURE) || type_of(move_piece(m)) == PAWN ? 0 : prev->reversible_half_move_count + 1;
-  pos->en_passant_square          = type_of(m) & DOUBLEPUSH ? move_to(m) + pawn_push(pos->side_to_move) : NO_SQ;
+  pos->en_passant_square          = type_of(m) & DOUBLEPUSH ? to + pawn_push(pos->side_to_move) : NO_SQ;
   pos->key                        = prev->key;
   pos->pawn_structure_key         = prev->pawn_structure_key;
   if (calculate_in_check)
     pos->in_check = is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move);
   if (pos->in_check)
     pos->checkers = attackers_to(king_sq(pos->side_to_move));
+
+  if (pos->castle_rights && (castle_rights_mask[from] | castle_rights_mask[to]))
+      pos->castle_rights &= ~(castle_rights_mask[from] | castle_rights_mask[to]);
 
   update_key(pos, m);
 
@@ -549,11 +508,11 @@ int64_t Board::half_move_count() const {
   return pos - position_list.data();
 }
 
-int Board::new_game(thread *t) {
-  return set_fen(start_position, t);
+void Board::new_game(thread *t) {
+  set_fen(start_position, t);
 }
 
-int Board::set_fen(std::string_view fen, thread *t) {
+void Board::set_fen(std::string_view fen, thread *t) {
   pos = position_list.data();
   pos->clear();
   clear();
@@ -603,18 +562,12 @@ int Board::set_fen(std::string_view fen, thread *t) {
   // Castleling
   space++;
   current = update_current();
-  [[unlikely]]
-  if (!setup_castling(current))
-    return 5;
+  setup_castling(current);
 
   // En-passant
   space++;
   current = update_current();
-  [[likely]]
-  if (const auto ep_sq = ep_square(current); ep_sq)
-    pos->en_passant_square = ep_sq.value();
-  else
-    return 6;
+  pos->en_passant_square = ep_square(current);
 
   // TODO : Parse the rest
 
@@ -623,8 +576,6 @@ int Board::set_fen(std::string_view fen, thread *t) {
   update_position(pos);
 
   my_t = t;
-
-  return 0;
 }
 
 std::string Board::fen() const {
@@ -692,73 +643,63 @@ std::string Board::fen() const {
   return fmt::to_string(s);
 }
 
-bool Board::setup_castling(const std::string_view s) {
+void Board::setup_castling(const std::string_view s) {
 
-  castle_rights_mask.fill(15);
+  castle_rights_mask.fill(NO_CASTLING);
 
   [[likely]]
   if (s.front() == '-')
-    return true;
+    return;
 
   for (const auto c : s)
   {
     if (c == 'K')
-      add_short_castle_rights<WHITE>(this, std::nullopt);
+      add_short_castle_rights<WHITE>(std::nullopt);
     else if (c == 'Q')
-      add_long_castle_rights<WHITE>(this, std::nullopt);
+      add_long_castle_rights<WHITE>(std::nullopt);
     else if (c == 'k')
-      add_short_castle_rights<BLACK>(this, std::nullopt);
+      add_short_castle_rights<BLACK>(std::nullopt);
     else if (c == 'q')
-      add_long_castle_rights<BLACK>(this, std::nullopt);
+      add_long_castle_rights<BLACK>(std::nullopt);
     else if (util::in_between<'A', 'H'>(c))
     {
       chess960 = true;
-      xfen     = false;
 
       const auto rook_file = std::make_optional(static_cast<File>(c - 'A'));
 
       if (rook_file.value() > file_of(king_sq(WHITE)))
-        add_short_castle_rights<WHITE>(this, rook_file);
+        add_short_castle_rights<WHITE>(rook_file);
       else
-        add_long_castle_rights<WHITE>(this, rook_file);
+        add_long_castle_rights<WHITE>(rook_file);
     } else if (util::in_between<'a', 'h'>(c))
     {
       chess960 = true;
-      xfen     = false;
 
       const auto rook_file = std::make_optional(static_cast<File>(c - 'a'));
 
       if (rook_file.value() > file_of(king_sq(BLACK)))
-        add_short_castle_rights<BLACK>(this, rook_file);
+        add_short_castle_rights<BLACK>(rook_file);
       else
-        add_long_castle_rights<BLACK>(this, rook_file);
-    } else
-      return false;
+        add_long_castle_rights<BLACK>(rook_file);
+    }
   }
-
-  return true;
 }
 
 std::string Board::move_to_string(const Move m) const {
 
   const auto mt = type_of(m);
 
+  // shredder fen
   [[unlikely]]
   if (mt & CASTLE && chess960)
-  {
-    if (xfen && move_to(m) == ooo_king_to[move_side(m)])
-      return std::string("O-O-O");
-    if (xfen)
-      return std::string("O-O");
-    // shredder fen
     return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(rook_castles_from[move_to(m)]));
-  }
 
-  [[likely]]
-  if (!(mt & PROMOTION))
-    return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)));
+  [[unlikely]]
+  if (mt & PROMOTION)
+    return fmt::format("{}{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)), piece_to_string(type_of(move_promoted(m))));
 
-  return fmt::format("{}{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)), piece_to_string(type_of(move_promoted(m))));
+  return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)));
+
 }
 
 void Board::print_moves() {
@@ -811,6 +752,52 @@ Bitboard Board::attackers_to(const Square s, const Bitboard occ) const {
 
 Bitboard Board::attackers_to(const Square s) const {
   return attackers_to(s, pieces());
+}
+
+template<Color Us>
+void Board::add_short_castle_rights(std::optional<File> rook_file) {
+
+  constexpr auto CastleRights = make_castling<Us, KING_SIDE>();
+  constexpr auto Rank_1       = relative_rank(Us, RANK_1);
+  const auto ksq              = king_sq(Us);
+  Square rook_square;
+
+  if (!rook_file.has_value())
+    rook_square = find_rook_square(this, Us, true);
+  else
+    rook_square = make_square(rook_file.value(), Rank_1);
+
+  pos->castle_rights |= CastleRights;
+  castle_rights_mask[rook_square] |= CastleRights;
+  castle_rights_mask[ksq] |= CastleRights;
+  rook_castles_from[make_square(FILE_G, Rank_1)] = rook_square;
+  oo_king_from[Us]                               = ksq;
+
+  if (file_of(ksq) != FILE_E || file_of(rook_square) != FILE_H)
+    chess960 = true;
+}
+
+template<Color Us>
+void Board::add_long_castle_rights(std::optional<File> rook_file) {
+
+  constexpr auto CastleRights = make_castling<Us, QUEEN_SIDE>();
+  constexpr auto Rank_1       = relative_rank(Us, RANK_1);
+  const auto ksq              = king_sq(Us);
+  Square rook_square;
+
+  if (!rook_file.has_value())
+    rook_square = find_rook_square(this, Us, false);
+  else
+    rook_square = make_square(rook_file.value(), Rank_1);
+
+  pos->castle_rights |= CastleRights;
+  castle_rights_mask[rook_square] |= CastleRights;
+  castle_rights_mask[ksq] |= CastleRights;
+  rook_castles_from[make_square(FILE_C, Rank_1)] = rook_square;
+  ooo_king_from[Us]                              = ksq;
+
+  if (file_of(ksq) != FILE_E || file_of(rook_square) != FILE_A)
+    chess960 = true;
 }
 
 bool Board::is_castleling_impeeded(const Square s, const Color us) const {
