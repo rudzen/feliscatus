@@ -22,7 +22,8 @@
 
 #include "types.hpp"
 
-struct PVEntry final {
+struct PVEntry final
+{
   uint64_t key;
   int depth;
   int score;

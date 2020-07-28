@@ -26,7 +26,8 @@
 #include "miscellaneous.hpp"
 #include "types.hpp"
 
-struct SearchLimits final {
+struct SearchLimits final
+{
   std::array<TimeUnit, COL_NB> time{};
   std::array<TimeUnit, COL_NB> inc{};
   TimeUnit movetime{};
@@ -38,10 +39,11 @@ struct SearchLimits final {
   bool fixed_depth{};
   std::vector<Move> search_moves{};
 
-  void clear() {
+  void clear()
+  {
     time.fill(0);
     inc.fill(0);
-    movetime          = 0;
+    movetime  = 0;
     movestogo = depth = 0;
     ponder = infinite = fixed_movetime = fixed_depth = false;
   }
