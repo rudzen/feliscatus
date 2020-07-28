@@ -29,11 +29,13 @@
 #include "perft.hpp"
 #include "moves.hpp"
 
-namespace {
+namespace
+{
 
 constexpr TimeUnit time_safety_margin = 1;
 
-std::unique_ptr<Board> new_board() {
+std::unique_ptr<Board> new_board()
+{
   const auto num_threads = static_cast<std::size_t>(Options[uci::uci_name<uci::UciOptions::THREADS>()]);
   pool.set(num_threads);
   auto board = std::make_unique<Board>();
@@ -41,17 +43,19 @@ std::unique_ptr<Board> new_board() {
   return board;
 }
 
-constexpr uint64_t nps(const uint64_t nodes, const TimeUnit time) {
+constexpr uint64_t nps(const uint64_t nodes, const TimeUnit time)
+{
   return nodes * 1000 / time;
 }
 
-auto node_info(const TimeUnit time) {
+auto node_info(const TimeUnit time)
+{
   const auto nodes = pool.node_count();
   return std::make_pair(nodes, nps(nodes, time));
 }
 
-Move string_to_move(Board *b, const std::string_view m) {
-
+Move string_to_move(Board *b, const std::string_view m)
+{
   auto mg = Moves(b);
   mg.generate_moves();
 
@@ -62,8 +66,8 @@ Move string_to_move(Board *b, const std::string_view m) {
   return MOVE_NONE;
 }
 
-void position(Board *b, std::istringstream &input) {
-
+void position(Board *b, std::istringstream &input)
+{
   std::string token;
 
   input >> token;
@@ -92,8 +96,8 @@ void position(Board *b, std::istringstream &input) {
       b->make_move(m, false, true);
 }
 
-void set_option(std::istringstream &input) {
-
+void set_option(std::istringstream &input)
+{
   std::string token, option_name, option_value, output;
 
   // get rid of "name"
@@ -112,14 +116,14 @@ void set_option(std::istringstream &input) {
   {
     Options[option_name] = option_value;
     output               = "Option {} = {}\n";
-  } else
-    output = "Uknown option {} = {}\n";
+  }
+  else output = "Uknown option {} = {}\n";
 
   fmt::print(uci::info(fmt::format(output, option_name, option_value)));
 }
 
-void go(std::istringstream &input, std::string_view fen) {
-
+void go(std::istringstream &input, std::string_view fen)
+{
   auto &limits = pool.limits;
 
   limits.clear();
@@ -147,12 +151,12 @@ void go(std::istringstream &input, std::string_view fen) {
       limits.ponder = true;
 
   pool.start_thinking(fen);
-
 }
 
-}
+}   // namespace
 
-void uci::post_moves(const Move m, const Move ponder_move) {
+void uci::post_moves(const Move m, const Move ponder_move)
+{
   fmt::memory_buffer buffer;
 
   fmt::format_to(buffer, "bestmove {}", display_uci(m));
@@ -164,21 +168,27 @@ void uci::post_moves(const Move m, const Move ponder_move) {
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-void uci::post_info(const int d, const int selective_depth) {
-  const auto time = pool.main()->time.elapsed() + time_safety_margin;
+void uci::post_info(const int d, const int selective_depth)
+{
+  const auto time                           = pool.main()->time.elapsed() + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
   if (!Options[uci_name<UciOptions::SHOW_CPU>()])
-    fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, TT.load(), node_count, nodes_per_second, time);
+    fmt::print(
+      "info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, TT.load(), node_count,
+      nodes_per_second, time);
   else
-    fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {} cpuload {}\n", d, selective_depth, TT.load(), node_count, nodes_per_second, time, Cpu.usage());
+    fmt::print(
+      "info depth {} seldepth {} hashfull {} nodes {} nps {} time {} cpuload {}\n", d, selective_depth, TT.load(),
+      node_count, nodes_per_second, time, Cpu.usage());
 }
 
-void uci::post_curr_move(const Move m, const int m_number) {
+void uci::post_curr_move(const Move m, const int m_number)
+{
   fmt::print("info currmove {} currmovenumber {}\n", display_uci(m), m_number);
 }
 
-void uci::post_pv(const int d, const int max_ply, const int score, const std::span<PVEntry> &pv_line, const NodeType nt) {
-
+void uci::post_pv(const int d, const int max_ply, const int score, const std::span<PVEntry> &pv_line, const NodeType nt)
+{
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
 
@@ -187,7 +197,7 @@ void uci::post_pv(const int d, const int max_ply, const int score, const std::sp
   else if (nt == BETA)
     fmt::format_to(buffer, "lowerbound ");
 
-  const auto time = pool.main()->time.elapsed() + time_safety_margin;
+  const auto time                           = pool.main()->time.elapsed() + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
 
   fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", TT.load(), node_count, nodes_per_second, time);
@@ -198,23 +208,24 @@ void uci::post_pv(const int d, const int max_ply, const int score, const std::sp
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-std::string uci::display_uci(const Move m) {
-
+std::string uci::display_uci(const Move m)
+{
   [[unlikely]]
   if (m == MOVE_NONE)
     return std::string("0000");
 
   // append piece promotion if the move is a promotion.
-  return !is_promotion(m)
-       ? fmt::format("{}{}", move_from(m), move_to(m))
-       : fmt::format("{}{}{}", move_from(m), move_to(m), piece_index[type_of(move_promoted(m))]);
+  return !is_promotion(m) ? fmt::format("{}{}", move_from(m), move_to(m))
+                          : fmt::format("{}{}{}", move_from(m), move_to(m), piece_index[type_of(move_promoted(m))]);
 }
 
-std::string uci::info(const std::string_view info_string) {
+std::string uci::info(const std::string_view info_string)
+{
   return fmt::format("info string {}", info_string);
 }
 
-void uci::run(const int argc, char *argv[]) {
+void uci::run(const int argc, char *argv[])
+{
   std::setbuf(stdout, nullptr);
 
   auto board = new_board();
@@ -260,10 +271,9 @@ void uci::run(const int argc, char *argv[]) {
     {
       const auto total = perft::perft(board.get(), 6);
       fmt::print("Total nodes: {}\n", total);
-    }
-    else if (token == "print")
+    } else if (token == "print")
       board->print_moves();
-    else if (token == "quit" || token == "exit")
+    else if (token == "exit")
       break;
   } while (token != "quit" && argc == 1);
 }
