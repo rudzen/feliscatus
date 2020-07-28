@@ -85,7 +85,6 @@ void bind_this_thread(std::size_t)
 
 std::optional<int> best_group(const std::size_t idx)
 {
-
   auto threads = 0;
   auto nodes = 0;
   auto cores = 0;
@@ -156,7 +155,6 @@ std::optional<int> best_group(const std::size_t idx)
 
 void bind_this_thread(const std::size_t idx)
 {
-
   // Use only local variables to be thread-safe
   const auto group = best_group(idx);
 
