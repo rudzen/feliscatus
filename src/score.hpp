@@ -29,37 +29,47 @@
 /// Multi-valued type which is used to hold the mg and mg scores.
 ///
 
-struct Score final {
+struct Score final
+{
 
   [[nodiscard]]
   constexpr Score() = default;
   [[nodiscard]]
-  constexpr Score(const int mg, const int eg) : value(static_cast<int>(static_cast<unsigned int>(eg) << 16) + mg) {}
+  constexpr Score(const int mg, const int eg)
+    : value(static_cast<int>(static_cast<unsigned int>(eg) << 16) + mg)
+  { }
   [[nodiscard]]
-  constexpr Score(const int v) : value(v) {}
+  constexpr Score(const int v) : value(v)
+  { }
 
   [[nodiscard]]
-  constexpr Score &operator=(const int v) noexcept {
+  constexpr Score &operator=(const int v) noexcept
+  {
     value = v;
     return *this;
   }
 
   [[nodiscard]]
-  constexpr bool operator==(const Score &b) const { return value == b.value; }
+  constexpr bool operator==(const Score &b) const
+  {
+    return value == b.value;
+  }
 
-  constexpr Score &operator+=(const int d2) noexcept {
+  constexpr Score &operator+=(const int d2) noexcept
+  {
     this->value += d2;
     return *this;
   }
 
-  constexpr Score &operator-=(const int d2) noexcept {
+  constexpr Score &operator-=(const int d2) noexcept
+  {
     value -= d2;
     return *this;
   }
 
-
   [[nodiscard]]
-  constexpr int eg() const noexcept {
+  constexpr int eg() const noexcept
+  {
     const union {
       uint16_t u;
       int16_t s;
@@ -68,7 +78,8 @@ struct Score final {
   }
 
   [[nodiscard]]
-  constexpr int mg() const noexcept {
+  constexpr int mg() const noexcept
+  {
     const union {
       uint16_t u;
       int16_t s;
@@ -77,10 +88,16 @@ struct Score final {
   }
 
   [[nodiscard]]
-  constexpr int raw() const noexcept { return value; }
+  constexpr int raw() const noexcept
+  {
+    return value;
+  }
 
   [[nodiscard]]
-  constexpr int combine() const noexcept { return mg() - eg(); }
+  constexpr int combine() const noexcept
+  {
+    return mg() - eg();
+  }
 
 private:
   int value{};
@@ -90,40 +107,47 @@ constexpr Score ZeroScore = Score(0);
 
 // TODO : Move some operators inside Score
 
-constexpr Score operator+(const Score d1, const int d2) noexcept {
+constexpr Score operator+(const Score d1, const int d2) noexcept
+{
   return d1.raw() + d2;
 }
 
-constexpr Score operator-(const Score d1, const int d2) noexcept {
+constexpr Score operator-(const Score d1, const int d2) noexcept
+{
   return d1.raw() - d2;
 }
 
-constexpr Score operator-(const Score d1, const Score d2) noexcept {
+constexpr Score operator-(const Score d1, const Score d2) noexcept
+{
   return {d1.mg() - d2.mg(), d1.eg() - d2.eg()};
 }
 
-constexpr Score operator-(const Score d) noexcept {
+constexpr Score operator-(const Score d) noexcept
+{
   return -d.raw();
 }
 
-constexpr Score &operator+=(Score &d1, const Score d2) noexcept {
+constexpr Score &operator+=(Score &d1, const Score d2) noexcept
+{
   return d1 = {d1.mg() + d2.mg(), d1.eg() + d2.eg()};
 }
 
-constexpr Score &operator-=(Score &d1, const Score d2) noexcept {
+constexpr Score &operator-=(Score &d1, const Score d2) noexcept
+{
   return d1 = {d1.mg() - d2.mg(), d1.eg() - d2.eg()};
 }
 
 /// Division of a Score must be handled separately for each term
-constexpr Score operator/(const Score s, const int i) {
+constexpr Score operator/(const Score s, const int i)
+{
   return {s.mg() / i, s.eg() / i};
 }
 
 Score operator*(Score, Score) = delete;
 
 /// Multiplication of a Score by an integer. We check for overflow in debug mode.
-constexpr Score operator*(const Score s, const int i) {
-
+constexpr Score operator*(const Score s, const int i)
+{
   const auto result = Score(s.raw() * i);
 
   assert(result.eg() == i * s.eg());
@@ -134,18 +158,18 @@ constexpr Score operator*(const Score s, const int i) {
 }
 
 /// Multiplication of a Score by a boolean
-constexpr Score operator*(const Score s, const bool b) {
+constexpr Score operator*(const Score s, const bool b)
+{
   return b ? s : ZeroScore;
 }
 
-///
-/// Score formatter for fmt
-///
 template<>
-struct fmt::formatter<Score> : formatter<std::string_view> {
+struct fmt::formatter<Score> : formatter<std::string_view>
+{
   // parse is inherited from formatter<string_view>.
   template<typename FormatContext>
-  auto format(const Score s, FormatContext &ctx) {
+  auto format(const Score s, FormatContext &ctx)
+  {
     return formatter<std::string_view>::format(fmt::format("m:{} e:{}", s.mg(), s.eg()), ctx);
   }
 };
