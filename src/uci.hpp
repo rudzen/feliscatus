@@ -37,11 +37,13 @@
 struct Felis;
 struct Board;
 
-namespace uci {
+namespace uci
+{
 
 inline CpuLoad Cpu;
 
-enum class UciOptions {
+enum class UciOptions
+{
   THREADS,
   HASH,
   HASH_X_THREADS,
@@ -55,28 +57,21 @@ enum class UciOptions {
 
 using uci_t = std::underlying_type_t<UciOptions>;
 
-constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB)> UciStrings
-{
-  "Threads",
-  "Hash",
-  "Hash * Threads",
-  "Clear Hash",
-  "Clear hash on new game",
-  "Ponder",
-  "UCI_Chess960",
-  "Show CPU usage"
-};
-
 template<UciOptions Option>
-[[nodiscard]]
-constexpr std::string_view uci_name() {
+[[nodiscard]] constexpr std::string_view uci_name()
+{
+  constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB)> UciStrings{
+    "Threads", "Hash",         "Hash * Threads", "Clear Hash", "Clear hash on new game",
+    "Ponder",  "UCI_Chess960", "Show CPU usage"};
+
   return UciStrings[static_cast<uci_t>(Option)];
 }
 
 class Option;
 
 /// Custom comparator because UCI options should be case insensitive
-struct CaseInsensitiveLess final {
+struct CaseInsensitiveLess final
+{
   bool operator()(std::string_view, std::string_view) const noexcept;
 };
 
@@ -84,7 +79,8 @@ struct CaseInsensitiveLess final {
 using OptionsMap = std::map<std::string_view, Option, CaseInsensitiveLess>;
 
 /// Option class implements an option as defined by UCI protocol
-class [[nodiscard]] Option final {
+class [[nodiscard]] Option final
+{
 
   typedef void (*on_change)(const Option &);
 
@@ -163,7 +159,7 @@ std::string info(std::string_view info_string);
 
 void run(int argc, char *argv[]);
 
-}// namespace uci
+}   // namespace uci
 
 inline uci::OptionsMap Options;
 
@@ -171,10 +167,12 @@ inline uci::OptionsMap Options;
 /// Options formatter
 ///
 template<>
-struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view> {
+struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view>
+{
   // parse is inherited from formatter<string_view>.
   template<typename FormatContext>
-  auto format(const uci::OptionsMap om, FormatContext &ctx) {
+  auto format(const uci::OptionsMap om, FormatContext &ctx)
+  {
     fmt::memory_buffer buffer;
 
     for (std::size_t idx = 0; idx < om.size(); ++idx)
@@ -183,8 +181,8 @@ struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view> {
         if (it.second.index() != idx)
           continue;
 
-        const auto &o = it.second;
-        const auto type = o.type();
+        const auto &o            = it.second;
+        const auto type          = o.type();
         const auto default_value = o.default_value();
 
         fmt::format_to(buffer, "\noption name {} type {}", it.first, type);
@@ -202,38 +200,32 @@ struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view> {
   }
 };
 
-///
-/// Move formatter
-///
 template<>
-struct fmt::formatter<Move> : formatter<std::string_view> {
-  // parse is inherited from formatter<string_view>.
+struct fmt::formatter<Move> : formatter<std::string_view>
+{
   template<typename FormatContext>
-  auto format(const Move m, FormatContext &ctx) {
+  auto format(const Move m, FormatContext &ctx)
+  {
     return formatter<std::string_view>::format(uci::display_uci(m), ctx);
   }
 };
 
-///
-/// Square formatter
-///
 template<>
-struct fmt::formatter<Square> : formatter<std::string_view> {
-  // parse is inherited from formatter<string_view>.
+struct fmt::formatter<Square> : formatter<std::string_view>
+{
   template<typename FormatContext>
-  auto format(const Square s, FormatContext &ctx) {
+  auto format(const Square s, FormatContext &ctx)
+  {
     return formatter<std::string_view>::format(SquareString[s], ctx);
   }
 };
 
-///
-/// File formatter
-///
 template<>
-struct fmt::formatter<File> : formatter<std::string_view> {
-  // parse is inherited from formatter<string_view>.
+struct fmt::formatter<File> : formatter<std::string_view>
+{
   template<typename FormatContext>
-  auto format(const File f, FormatContext &ctx) {
+  auto format(const File f, FormatContext &ctx)
+  {
     return formatter<std::string_view>::format('a' + static_cast<char>(f), ctx);
   }
 };

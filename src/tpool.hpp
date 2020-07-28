@@ -41,14 +41,18 @@
 using HistoryScores = std::array<std::array<int, SQ_NB>, 16>;
 using CounterMoves  = std::array<std::array<Move, SQ_NB>, 16>;
 
-enum class Searcher { Master, Slave };
+enum class Searcher
+{
+  Master,
+  Slave
+};
 
-struct thread {
-
+struct thread
+{
   explicit thread(std::size_t index);
   virtual ~thread();
-  thread(const thread &other)       = delete;
-  thread(thread &&other)            = delete;
+  thread(const thread &other) = delete;
+  thread(thread &&other)      = delete;
   thread &operator=(const thread &) = delete;
   thread &operator=(thread &&other) = delete;
 
@@ -59,7 +63,10 @@ struct thread {
   void wait_for_search_finished();
 
   [[nodiscard]]
-  std::size_t index() const { return idx; }
+  std::size_t index() const
+  {
+    return idx;
+  }
 
   PawnHashTable pawn_hash{};
   HistoryScores history_scores{};
@@ -80,7 +87,8 @@ private:
   bool searching;
 };
 
-struct main_thread final : thread {
+struct main_thread final : thread
+{
   using thread::thread;
 
   void search() override;
@@ -89,12 +97,12 @@ struct main_thread final : thread {
   Time time{};
 };
 
-struct thread_pool : std::vector<std::unique_ptr<thread>> {
-
+struct thread_pool : std::vector<std::unique_ptr<thread>>
+{
   thread_pool();
-  ~thread_pool()                              = default;
-  thread_pool(const thread_pool &other)       = delete;
-  thread_pool(thread_pool &&other)            = delete;
+  ~thread_pool()                        = default;
+  thread_pool(const thread_pool &other) = delete;
+  thread_pool(thread_pool &&other)      = delete;
   thread_pool &operator=(const thread_pool &) = delete;
   thread_pool &operator=(thread_pool &&other) = delete;
 
@@ -105,12 +113,15 @@ struct thread_pool : std::vector<std::unique_ptr<thread>> {
   void wait_for_search_finished();
 
   [[nodiscard]]
-  main_thread *main() const { return static_cast<main_thread *>(front().get()); }
+  main_thread *main() const
+  {
+    return static_cast<main_thread *>(front().get());
+  }
 
   void clear_data();
 
   [[nodiscard]]
-  uint64_t node_count() const;
+  std::uint64_t node_count() const;
 
   SearchLimits limits{};
   std::atomic_bool stop;
@@ -118,13 +129,13 @@ struct thread_pool : std::vector<std::unique_ptr<thread>> {
 #if !defined(linux)
 private:
   [[nodiscard]]
-  uint64_t node_count_par() const;
+  std::uint64_t node_count_par() const;
 
   [[nodiscard]]
-  uint64_t node_count_seq() const;
+  std::uint64_t node_count_seq() const;
 
   bool parallel{};
-  const std::array<std::function<uint64_t()>, 2> node_counters;
+  const std::array<std::function<std::uint64_t()>, 2> node_counters;
 #endif
 };
 

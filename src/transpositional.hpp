@@ -26,78 +26,110 @@
 #include "miscellaneous.hpp"
 
 #pragma pack(1)
-struct alignas(16) HashEntry final {
+struct alignas(16) HashEntry final
+{
   [[nodiscard]]
-  bool is_exact() const noexcept { return f & EXACT; }
+  bool is_exact() const noexcept
+  {
+    return f & EXACT;
+  }
 
   [[nodiscard]]
-  bool is_beta() const noexcept { return f & BETA; }
+  bool is_beta() const noexcept
+  {
+    return f & BETA;
+  }
 
   [[nodiscard]]
-  bool is_alpha() const noexcept { return f & ALPHA; }
+  bool is_alpha() const noexcept
+  {
+    return f & ALPHA;
+  }
 
   [[nodiscard]]
-  uint8_t depth() const noexcept { return d; }
+  std::uint8_t depth() const noexcept
+  {
+    return d;
+  }
 
   [[nodiscard]]
-  NodeType flags() const noexcept { return static_cast<NodeType>(f & 7); }
+  NodeType flags() const noexcept
+  {
+    return static_cast<NodeType>(f & 7);
+  }
 
   [[nodiscard]]
-  int16_t score() const noexcept { return s; }
+  std::int16_t score() const noexcept
+  {
+    return s;
+  }
 
   [[nodiscard]]
-  int16_t eval() const noexcept { return e; }
+  std::int16_t eval() const noexcept
+  {
+    return e;
+  }
 
   [[nodiscard]]
-  Move move() const noexcept { return m; }
+  Move move() const noexcept
+  {
+    return m;
+  }
 
 private:
-  uint32_t k;// key
-  uint16_t a;// age, 7 bits left
-  uint8_t d; // depth
-  NodeType f;// flags, 5 bits left
-  int16_t s; // score
-  Move m;    // move
-  int16_t e; // eval
+  std::uint32_t k;   // key
+  std::uint16_t a;   // age, 7 bits left
+  std::uint8_t d;    // depth
+  NodeType f;   // flags, 5 bits left
+  std::int16_t s;    // score
+  Move m;       // move
+  std::int16_t e;    // eval
 
   friend class HashTable;
 };
 #pragma pack()
 
-struct HashTable final {
+struct HashTable final
+{
 private:
   friend struct HashEntry;
 
-  static constexpr int CacheLineSize = 64;
+  static constexpr int CacheLineSize      = 64;
   static constexpr std::size_t BucketSize = 4;
 
   using BucketArray = std::array<HashEntry, BucketSize>;
 
   // Just use a simple array for bucket
-  struct Bucket final {
+  struct Bucket final
+  {
     BucketArray entry{};
   };
 
 public:
-
   ~HashTable();
-  constexpr HashTable()                   = default;
-  HashTable(const HashTable &other)       = delete;
-  HashTable(HashTable &&other)            = delete;
+  constexpr HashTable()             = default;
+  HashTable(const HashTable &other) = delete;
+  HashTable(HashTable &&other)      = delete;
   HashTable &operator=(const HashTable &) = delete;
   HashTable &operator=(HashTable &&other) = delete;
 
-  void init(uint64_t new_size_mb);
+  void init(std::uint64_t new_size_mb);
 
   void clear();
 
   void init_search();
 
   [[nodiscard]]
-  HashEntry *first_entry(const Key key) const { return &table_[mul_hi64(key, bucket_count_)].entry[0]; }
+  HashEntry *first_entry(const Key key) const
+  {
+    return &table_[mul_hi64(key, bucket_count_)].entry[0];
+  }
 
   [[nodiscard]]
-  Bucket *find_bucket(const Key key) const { return &table_[mul_hi64(key, bucket_count_)]; }
+  Bucket *find_bucket(const Key key) const
+  {
+    return &table_[mul_hi64(key, bucket_count_)];
+  }
 
   [[nodiscard]]
   HashEntry *find(Key key) const;
@@ -114,29 +146,31 @@ public:
   int size_mb() const;
 
 private:
-
   static_assert(CacheLineSize % sizeof(Bucket) == 0, "Bucket size incorrect");
 
-  Bucket* table_{};
-  void* mem_{};
+  Bucket *table_{};
+  void *mem_{};
 
   std::size_t bucket_count_{};
   std::size_t fullness_element_{};
-  uint64_t occupied_{};
-  uint64_t size_mb_{};
-  uint64_t size_{};
+  std::uint64_t occupied_{};
+  std::uint64_t size_mb_{};
+  std::uint64_t size_{};
   int age_{};
 };
 
-inline void HashTable::init_search() {
+inline void HashTable::init_search()
+{
   age_++;
 }
 
-inline int HashTable::load() const {
+inline int HashTable::load() const
+{
   return static_cast<int>(static_cast<double>(occupied_) / fullness_element_ * 1000);
 }
 
-inline int HashTable::size_mb() const {
+inline int HashTable::size_mb() const
+{
   return static_cast<int>(size_mb_);
 }
 

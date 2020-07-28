@@ -21,17 +21,18 @@
 #include "position.hpp"
 #include "bitboard.hpp"
 
-void Position::clear() {
+void Position::clear()
+{
   castle_rights              = 0;
   reversible_half_move_count = 0;
-  pawn_structure_key = key   = 0;
-  last_move                  = MOVE_NONE;
-  null_moves_in_row          = 0;
-  transposition              = nullptr;
-  last_move                  = MOVE_NONE;
-  checkers                   = ZeroBB;
-  in_check                   = false;
-  previous                   = nullptr;
+  pawn_structure_key = key = 0;
+  last_move                = MOVE_NONE;
+  null_moves_in_row        = 0;
+  transposition            = nullptr;
+  last_move                = MOVE_NONE;
+  checkers                 = ZeroBB;
+  in_check                 = false;
+  previous                 = nullptr;
   material.clear();
   killer_moves.fill(MOVE_NONE);
 }

@@ -26,9 +26,11 @@
 
 struct Board;
 
-namespace pgn {
+namespace pgn
+{
 
-struct PGNPlayer : PGNFileReader {
+struct PGNPlayer : PGNFileReader
+{
 
   explicit PGNPlayer(bool check_legal = true);
 
@@ -43,4 +45,4 @@ struct PGNPlayer : PGNFileReader {
 protected:
   std::unique_ptr<Board> b;
 };
-}// namespace pgn
+}   // namespace pgn

@@ -26,8 +26,8 @@
 #include "../src/transpositional.hpp"
 #include "../src/miscellaneous.hpp"
 
-int main(const int argc, char *argv[]) {
-
+int main(const int argc, char *argv[])
+{
   fmt::print(misc::print_engine_info<false>());
 
   bitboard::init();

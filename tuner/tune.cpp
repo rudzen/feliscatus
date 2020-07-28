@@ -37,10 +37,13 @@
 #include "../src/util.hpp"
 #include "../src/tpool.hpp"
 
-namespace eval {
+namespace eval
+{
 
-struct Node final {
-  Node(std::string fen) : fen_(std::move(fen)) {}
+struct Node final
+{
+  Node(std::string fen) : fen_(std::move(fen))
+  { }
 
   std::string fen_;
   double result_{};
@@ -48,8 +51,11 @@ struct Node final {
 
 inline bool x_;
 
-struct Param final {
-  Param(std::string name, Score &value, const Score initial_value, const int step, const int stages = 2) : name_(std::move(name)), initial_value_(initial_value), value_(value), step_(step), stages_(stages) {
+struct Param final
+{
+  Param(std::string name, Score &value, const Score initial_value, const int step, const int stages = 2)
+    : name_(std::move(name)), initial_value_(initial_value), value_(value), step_(step), stages_(stages)
+  {
     if (x_)
       value = initial_value;
   }
@@ -61,24 +67,28 @@ struct Param final {
   int stages_;
 };
 
-struct ParamIndexRecord final {
+struct ParamIndexRecord final
+{
   size_t idx_{};
   double improved_{};
 };
 
-inline bool operator<(const ParamIndexRecord &lhs, const ParamIndexRecord &rhs) {
+inline bool operator<(const ParamIndexRecord &lhs, const ParamIndexRecord &rhs)
+{
   return lhs.improved_ >= rhs.improved_;
 }
 
-}// namespace eval
+}   // namespace eval
 
-namespace {
+namespace
+{
 
-auto console = spdlog::stdout_color_mt("tuner");
+auto console    = spdlog::stdout_color_mt("tuner");
 auto err_logger = spdlog::stderr_color_mt("stderr");
 std::shared_ptr<spdlog::logger> file_logger;
 
-enum SelectedParams : uint64_t {
+enum SelectedParams : std::uint64_t
+{
   none          = 0,
   psqt          = 1,
   piecevalue    = 1 << 1,
@@ -102,8 +112,8 @@ enum SelectedParams : uint64_t {
 };
 
 template<bool Hr>
-std::string emit_code(const std::vector<eval::Param> &params0) {
-
+std::string emit_code(const std::vector<eval::Param> &params0)
+{
   std::unordered_map<std::string, std::vector<eval::Param>> params1;
 
   for (const auto &param : params0)
@@ -144,7 +154,8 @@ std::string emit_code(const std::vector<eval::Param> &params0) {
   return fmt::to_string(s);
 }
 
-void print_best_values(const double E, const std::vector<eval::Param> &params) {
+void print_best_values(const double E, const std::vector<eval::Param> &params)
+{
   auto finished = 0;
 
   for (std::size_t i = 0; i < params.size(); ++i)
@@ -158,7 +169,8 @@ void print_best_values(const double E, const std::vector<eval::Param> &params) {
   console->info("Finished:{} %", finished == 0 ? 100.0 : finished * 100.0 / params.size());
 }
 
-constexpr double bestK() {
+constexpr double bestK()
+{
   /*
   double smallestE;
   double bestK = -1;
@@ -176,7 +188,8 @@ constexpr double bestK() {
 }
 
 
-void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings) {
+void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
+{
   auto step = 1;
 
   eval::x_ = false;
@@ -360,19 +373,22 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
   //   params.emplace_back("tempo", tempo, 0, step);
 }
 
-}// namespace
+}   // namespace
 
+namespace eval
+{
 
-namespace eval {
+PGNPlayer::PGNPlayer() : pgn::PGNPlayer()
+{ }
 
-PGNPlayer::PGNPlayer() : pgn::PGNPlayer() {}
-
-void PGNPlayer::read_pgn_database() {
+void PGNPlayer::read_pgn_database()
+{
   PGNFileReader::read_pgn_database();
   print_progress(true);
 }
 
-void PGNPlayer::read_san_move() {
+void PGNPlayer::read_san_move()
+{
   pgn::PGNPlayer::read_san_move();
 
   all_nodes_count_++;
@@ -381,7 +397,8 @@ void PGNPlayer::read_san_move() {
     current_game_nodes_.emplace_back(b->fen());
 }
 
-void PGNPlayer::read_game_termination() {
+void PGNPlayer::read_game_termination()
+{
   pgn::PGNPlayer::read_game_termination();
 
   for (auto &node : current_game_nodes_)
@@ -393,18 +410,23 @@ void PGNPlayer::read_game_termination() {
   print_progress(false);
 }
 
-void PGNPlayer::read_comment1() {
+void PGNPlayer::read_comment1()
+{
   pgn::PGNPlayer::read_comment1();
 }
 
-void PGNPlayer::print_progress(const bool force) const {
+void PGNPlayer::print_progress(const bool force) const
+{
   if (!force && game_count_ % 100 != 0)
     return;
 
-  fmt::print("game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_, all_nodes_count_, all_selected_nodes_.size());
+  fmt::print(
+    "game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_, all_nodes_count_,
+    all_selected_nodes_.size());
 }
 
-Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std::move(board)), score_static_(false) {
+Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std::move(board)), score_static_(false)
+{
   PGNPlayer pgn;
   pgn.read(settings->file_name);
 
@@ -438,7 +460,7 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
   out << fmt::format("Old Values:\n{}\n", emit_code<true>(params));
 
   // 0 == mg, 1 == eg
-  auto stage = 0;
+  auto stage     = 0;
   Score original = ZeroScore;
 
   while (improved)
@@ -451,7 +473,8 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
       auto idx    = params_index[i].idx_;
       auto &step  = params[idx].step_;
       auto &value = params[idx].value_;
-      do {
+      do
+      {
 
         if (step == 0)
           continue;
@@ -481,7 +504,8 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
           step = -step;
           value += 2 * step;
 
-          fmt::print("Tuning prm[{}] {} i:{}  current:{}  trying:{}...\n", idx, params[idx].name_, i, value - step, value);
+          fmt::print(
+            "Tuning prm[{}] {} i:{}  current:{}  trying:{}...\n", idx, params[idx].name_, i, value - step, value);
 
           new_e = e(pgn.all_selected_nodes_, params, params_index, K);
 
@@ -505,7 +529,7 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
           step                      = 0;
         }
 
-      } while(stage <= params[idx].stages_);
+      } while (stage <= params[idx].stages_);
     }
 
     if (improved)
@@ -520,7 +544,10 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
   fmt::print("{}\n", emit_code<true>(params));
 }
 
-double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, const double K) {
+double Tune::e(
+  const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index,
+  const double K)
+{
   auto x = 0.0;
 
   for (const auto &node : nodes)
@@ -534,7 +561,7 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
 
   fmt::memory_buffer s;
 
-  //fmt::print("x:{}", x);
+  // fmt::print("x:{}", x);
   format_to(s, "x:{:.{}f}", x, 12);
 
   for (std::size_t i = 0; i < params_index.size(); ++i)
@@ -548,7 +575,8 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
   return x;
 }
 
-void Tune::make_quiet(std::vector<Node> &nodes) {
+void Tune::make_quiet(std::vector<Node> &nodes)
+{
   auto *t = pool.main();
   for (auto &node : nodes)
   {
@@ -560,12 +588,14 @@ void Tune::make_quiet(std::vector<Node> &nodes) {
   }
 }
 
-int Tune::score(const Color c) const {
+int Tune::score(const Color c) const
+{
   const auto score = score_static_ ? Eval::tune(b.get(), 0, -100000, 100000) : quiesce_score(-32768, 32768, false, 0);
   return b->side_to_move() == c ? score : -score;
 }
 
-int Tune::quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) const {
+int Tune::quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) const
+{
   auto score = Eval::tune(b.get(), 0, -100000, 100000);
 
   if (score >= beta)
@@ -613,7 +643,8 @@ int Tune::quiesce_score(int alpha, const int beta, const bool store_pv, const in
   return best_score;
 }
 
-bool Tune::make_move(const Move m, int ply) const {
+bool Tune::make_move(const Move m, int ply) const
+{
   if (!b->make_move(m, true, true))
     return false;
 
@@ -622,17 +653,20 @@ bool Tune::make_move(const Move m, int ply) const {
   return true;
 }
 
-void Tune::unmake_move() const {
+void Tune::unmake_move() const
+{
   b->unmake_move();
 }
 
-void Tune::play_pv() const {
+void Tune::play_pv() const
+{
   auto *t = b->my_thread();
   for (auto i = 0; i < t->pv_length[0]; ++i)
     b->make_move(t->pv[0][i].move, false, true);
 }
 
-void Tune::update_pv(const Move m, const int score, const int ply) const {
+void Tune::update_pv(const Move m, const int score, const int ply) const
+{
   auto *t = b->my_thread();
   assert(ply < MAXDEPTH);
   assert(t->pv_length[ply] < MAXDEPTH);
@@ -650,4 +684,4 @@ void Tune::update_pv(const Move m, const int score, const int ply) const {
     t->pv[ply][i] = t->pv[next_ply][i];
 }
 
-}// namespace eval
+}   // namespace eval

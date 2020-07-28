@@ -26,20 +26,27 @@
 #include "board.hpp"
 #include "transpositional.hpp"
 
-namespace {
-  constexpr std::size_t parallel_threshold = 8;
+namespace
+{
+
+constexpr std::size_t parallel_threshold = 8;
+
 }
 
-thread::thread(const std::size_t index) : root_board(std::make_unique<Board>()), idx(index), jthread(&thread::idle_loop, this), searching(true) {}
+thread::thread(const std::size_t index)
+  : root_board(std::make_unique<Board>()), idx(index), jthread(&thread::idle_loop, this), searching(true)
+{ }
 
-thread::~thread() {
+thread::~thread()
+{
   assert(!searching);
 
   exit = true;
   start_searching();
 }
 
-void thread::clear_data() {
+void thread::clear_data()
+{
   std::memset(history_scores.data(), 0, sizeof history_scores);
   std::memset(counter_moves.data(), 0, sizeof counter_moves);
   pv_length.fill(0);
@@ -47,7 +54,8 @@ void thread::clear_data() {
   draw_score.fill(0);
 }
 
-void thread::idle_loop() {
+void thread::idle_loop()
+{
   // NUMA fix
   if (Options[uci::uci_name<uci::UciOptions::THREADS>()] > 8)
     WinProcGroup::bind_this_thread(idx);
@@ -59,7 +67,9 @@ void thread::idle_loop() {
 
     // Wake up anyone waiting for search finished
     cv.notify_one();
-    cv.wait(lk, [&] { return searching; });
+    cv.wait(lk, [&] {
+      return searching;
+    });
 
     // check exit flag, this is set when the class is being destroyed
     [[unlikely]]
@@ -72,24 +82,38 @@ void thread::idle_loop() {
   } while (true);
 }
 
-void thread::start_searching() {
+void thread::start_searching()
+{
   std::lock_guard<std::mutex> lk(mutex);
   searching = true;
-  cv.notify_one();// Wake up the thread in idle_loop()
+  cv.notify_one();   // Wake up the thread in idle_loop()
 }
 
-void thread::wait_for_search_finished() {
+void thread::wait_for_search_finished()
+{
   std::unique_lock<std::mutex> lk(mutex);
-  cv.wait(lk, [&] { return !searching; });
+  cv.wait(lk, [&] {
+    return !searching;
+  });
 }
 
 #if defined(linux)
-thread_pool::thread_pool() {}
+thread_pool::thread_pool()
+{ }
 #else
-thread_pool::thread_pool() : node_counters({[&] { return node_count_seq(); }, [&] { return node_count_par(); }}) {}
+thread_pool::thread_pool()
+  : node_counters(
+    {[&] {
+       return node_count_seq();
+     },
+     [&] {
+       return node_count_par();
+     }})
+{ }
 #endif
 
-void thread_pool::set(const std::size_t v) {
+void thread_pool::set(const std::size_t v)
+{
   while (!empty())
     pop_back();
 
@@ -117,8 +141,8 @@ void thread_pool::set(const std::size_t v) {
   }
 }
 
-void thread_pool::start_thinking(std::string_view fen) {
-
+void thread_pool::start_thinking(std::string_view fen)
+{
   auto *front_thread = main();
 
   front_thread->wait_for_search_finished();
@@ -140,24 +164,34 @@ void thread_pool::start_thinking(std::string_view fen) {
   front_thread->start_searching();
 }
 
-void thread_pool::start_searching() {
-  auto start = [](std::unique_ptr<thread> &t) { t->start_searching(); };
+void thread_pool::start_searching()
+{
+  auto start = [](std::unique_ptr<thread> &t) {
+    t->start_searching();
+  };
   std::for_each(std::next(begin()), end(), start);
 }
 
-void thread_pool::wait_for_search_finished() {
-  auto wait = [](std::unique_ptr<thread> &t) { t->wait_for_search_finished(); };
+void thread_pool::wait_for_search_finished()
+{
+  auto wait = [](std::unique_ptr<thread> &t) {
+    t->wait_for_search_finished();
+  };
   std::for_each(std::next(begin()), end(), wait);
 }
 
-void thread_pool::clear_data() {
+void thread_pool::clear_data()
+{
   for (auto &w : *this)
     w->clear_data();
 }
 
-uint64_t thread_pool::node_count() const {
+std::uint64_t thread_pool::node_count() const
+{
 #if defined(linux)
-  const auto accumulator = [](const uint64_t r, const std::unique_ptr<thread> &d) { return r + d->node_count.load(std::memory_order_relaxed); };
+  const auto accumulator = [](const std::uint64_t r, const std::unique_ptr<thread> &d) {
+    return r + d->node_count.load(std::memory_order_relaxed);
+  };
   return std::accumulate(cbegin(), cend(), 0ull, accumulator);
 #else
   return node_counters[parallel]();
@@ -165,13 +199,19 @@ uint64_t thread_pool::node_count() const {
 }
 
 #if !defined(linux)
-uint64_t thread_pool::node_count_seq() const {
-  const auto accumulator = [](const uint64_t r, const std::unique_ptr<thread> &d) { return r + d->node_count.load(std::memory_order_relaxed); };
+std::uint64_t thread_pool::node_count_seq() const
+{
+  const auto accumulator = [](const std::uint64_t r, const std::unique_ptr<thread> &d) {
+    return r + d->node_count.load(std::memory_order_relaxed);
+  };
   return std::accumulate(cbegin(), cend(), 0ull, accumulator);
 }
 
-uint64_t thread_pool::node_count_par() const {
-  const auto accumulator = [](const std::unique_ptr<thread> &d) { return d->node_count.load(std::memory_order_relaxed); };
+std::uint64_t thread_pool::node_count_par() const
+{
+  const auto accumulator = [](const std::unique_ptr<thread> &d) {
+    return d->node_count.load(std::memory_order_relaxed);
+  };
   return std::transform_reduce(std::execution::par_unseq, cbegin(), cend(), 0ull, std::plus<>(), accumulator);
 }
 #endif

@@ -25,8 +25,8 @@
 #include "search_limits.hpp"
 #include "position.hpp"
 
-struct Time final {
-
+struct Time final
+{
   void init(Color c, SearchLimits &limits);
 
   [[nodiscard]]
@@ -46,13 +46,22 @@ struct Time final {
   bool should_post_info() noexcept;
 
   [[nodiscard]]
-  bool is_analysing() const noexcept { return limits.infinite | limits.ponder; }
+  bool is_analysing() const noexcept
+  {
+    return limits.infinite | limits.ponder;
+  }
 
   [[nodiscard]]
-  bool is_fixed_depth() const noexcept { return limits.fixed_depth; }
+  bool is_fixed_depth() const noexcept
+  {
+    return limits.fixed_depth;
+  }
 
   [[nodiscard]]
-  int depth() const noexcept { return limits.depth; }
+  int depth() const noexcept
+  {
+    return limits.depth;
+  }
 
 private:
   Stopwatch start_time{};

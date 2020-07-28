@@ -22,8 +22,9 @@
 
 #include "types.hpp"
 
-struct PVEntry final {
-  uint64_t key;
+struct PVEntry final
+{
+  Key key;
   int depth;
   int score;
   int previous_score;

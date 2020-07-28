@@ -28,7 +28,8 @@
 #include "../src/tpool.hpp"
 #include "../src/moves.hpp"
 
-namespace {
+namespace
+{
 
 constexpr auto detect_piece = [](const int from) {
   switch (from)
@@ -48,7 +49,8 @@ constexpr auto detect_piece = [](const int from) {
   };
 };
 
-bool strieq(const char *s1, const char *s2) {
+bool strieq(const char *s1, const char *s2)
+{
   if (std::strlen(s1) != std::strlen(s2))
     return false;
 
@@ -59,18 +61,19 @@ bool strieq(const char *s1, const char *s2) {
   return true;
 }
 
-}
+}   // namespace
 
-pgn::PGNPlayer::PGNPlayer([[maybe_unused]] bool check_legal)
-  : PGNFileReader(), b(std::make_unique<Board>()) {
-}
+pgn::PGNPlayer::PGNPlayer([[maybe_unused]] bool check_legal) : PGNFileReader(), b(std::make_unique<Board>())
+{ }
 
-void pgn::PGNPlayer::read_pgn_game() {
+void pgn::PGNPlayer::read_pgn_game()
+{
   b->new_game(pool.main());
   pgn::PGNFileReader::read_pgn_game();
 }
 
-void pgn::PGNPlayer::read_tag_pair() {
+void pgn::PGNPlayer::read_tag_pair()
+{
   PGNFileReader::read_tag_pair();
 
   if (strieq(tag_name_, "FEN"))
@@ -80,7 +83,8 @@ void pgn::PGNPlayer::read_tag_pair() {
   }
 }
 
-void pgn::PGNPlayer::read_san_move() {
+void pgn::PGNPlayer::read_san_move()
+{
   PGNFileReader::read_san_move();
 
   Piece piece{NO_PIECE};
@@ -127,13 +131,15 @@ void pgn::PGNPlayer::read_san_move() {
     promoted = make_piece(pt, side_to_move);
   }
 
-  auto found            = false;
+  auto found = false;
 
   while (auto *const move_data = mg.next_move())
   {
     const auto m = move_data->move;
-    if (move_piece(m) != piece || move_to(m) != to_square_ || (promoted != NO_PIECE && move_promoted(m) != promoted) || (capture_ && !is_capture(m))
-        || (from_file_ != -1 && file_of(move_from(m)) != from_file_) || (from_rank_ != -1 && rank_of(move_from(m)) != from_rank_))
+    if (
+      move_piece(m) != piece || move_to(m) != to_square_ || (promoted != NO_PIECE && move_promoted(m) != promoted)
+      || (capture_ && !is_capture(m)) || (from_file_ != -1 && file_of(move_from(m)) != from_file_)
+      || (from_rank_ != -1 && rank_of(move_from(m)) != from_rank_))
       continue;
 
     if (!b->make_move(m, true, true))

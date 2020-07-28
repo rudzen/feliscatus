@@ -24,7 +24,8 @@
 #include "cpu.hpp"
 #include "util.hpp"
 
-namespace {
+namespace
+{
 
 constexpr double DEFAULT_OVERFLOW_VALUE = std::numeric_limits<double>::min();
 
@@ -32,8 +33,8 @@ constexpr double DEFAULT_OVERFLOW_VALUE = std::numeric_limits<double>::min();
 
 #if defined(WIN32)
 
-CpuLoad::CpuLoad() : self(GetCurrentProcess()) {
-
+CpuLoad::CpuLoad() : self(GetCurrentProcess())
+{
   SYSTEM_INFO sys_info{};
   FILETIME ftime{};
   FILETIME fsys{};
@@ -52,9 +53,11 @@ CpuLoad::CpuLoad() : self(GetCurrentProcess()) {
 }
 #else
 
-CpuLoad::CpuLoad() {
-
-  struct tms time_sample {};
+CpuLoad::CpuLoad()
+{
+  struct tms time_sample
+  {
+  };
   std::array<char, 128> line{};
 
   lastCPU     = times(&time_sample);
@@ -72,7 +75,8 @@ CpuLoad::CpuLoad() {
 
 #endif
 
-int CpuLoad::usage() {
+int CpuLoad::usage()
+{
   double percent;
 
 #if defined(WIN32)
@@ -98,7 +102,9 @@ int CpuLoad::usage() {
   lastSysCPU  = sys;
 
 #else
-  struct tms time_sample {};
+  struct tms time_sample
+  {
+  };
   const clock_t now = times(&time_sample);
 
   if (now <= lastCPU || time_sample.tms_stime < lastSysCPU || time_sample.tms_utime < lastUserCPU)

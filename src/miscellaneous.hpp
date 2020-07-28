@@ -32,27 +32,30 @@ constexpr std::string_view piece_letter{"PNBRQK. pnbrqk. "};
 
 #if defined(NO_PREFETCH)
 
-inline void prefetch(void *) {}
+inline void prefetch(void *)
+{ }
 
 #else
 
-inline void prefetch(void* addr) {
+inline void prefetch(void *addr)
+{
   __builtin_prefetch(addr);
 }
 #endif
 
-inline uint64_t mul_hi64(const uint64_t a, const uint64_t b) {
+inline std::uint64_t mul_hi64(const std::uint64_t a, const std::uint64_t b)
+{
 #if defined(__GNUC__)
   __extension__ typedef unsigned __int128 uint128;
   return (static_cast<uint128>(a) * static_cast<uint128>(b)) >> 64;
 #else
-  const uint64_t aL = static_cast<uint32_t>(a);
-  const uint64_t aH = a >> 32;
-  const uint64_t bL = static_cast<uint32_t>(b);
-  const uint64_t bH = b >> 32;
-  const uint64_t c1 = (aL * bL) >> 32;
-  const uint64_t c2 = aH * bL + c1;
-  const uint64_t c3 = aL * bH + static_cast<uint32_t>(c2);
+  const std::uint64_t aL = static_cast<uint32_t>(a);
+  const std::uint64_t aH = a >> 32;
+  const std::uint64_t bL = static_cast<uint32_t>(b);
+  const std::uint64_t bH = b >> 32;
+  const std::uint64_t c1 = (aL * bL) >> 32;
+  const std::uint64_t c2 = aH * bL + c1;
+  const std::uint64_t c3 = aL * bH + static_cast<uint32_t>(c2);
   return aH * bH + (c2 >> 32) + (c3 >> 32);
 #endif
 }
@@ -63,11 +66,13 @@ inline uint64_t mul_hi64(const uint64_t a, const uint64_t b) {
 /// called to set group affinity for each thread. Original code from Texel by
 /// Peter Österlund.
 
-namespace WinProcGroup {
-  void bind_this_thread(std::size_t idx);
+namespace WinProcGroup
+{
+void bind_this_thread(std::size_t idx);
 }
 
-namespace misc {
-  template<bool AsUci>
-  std::string print_engine_info();
+namespace misc
+{
+template<bool AsUci>
+std::string print_engine_info();
 }

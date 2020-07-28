@@ -29,10 +29,10 @@
 #include "position.hpp"
 #include "tpool.hpp"
 
-enum Move : uint32_t;
+enum Move : std::uint32_t;
 
-struct Board {
-
+struct Board
+{
   using PositionList = std::array<Position, MAXDEPTH * 2>;
 
   Board();
@@ -50,17 +50,17 @@ struct Board {
   bool make_null_move();
 
   [[nodiscard]]
-  uint64_t calculate_key() const;
+  std::uint64_t calculate_key() const;
 
   [[nodiscard]]
   bool is_repetition() const;
 
   [[nodiscard]]
-  int64_t half_move_count() const;
+  std::int64_t half_move_count() const;
 
   void new_game(thread *t);
 
-  void set_fen(std::string_view fen, thread* t);
+  void set_fen(std::string_view fen, thread *t);
 
   [[nodiscard]]
   std::string fen() const;
@@ -202,7 +202,6 @@ struct Board {
   bool chess960{};
 
 private:
-
   void remove_piece(Square s);
 
   [[nodiscard]]
@@ -248,19 +247,19 @@ private:
   thread *my_t{};
 };
 
-inline void Board::add_piece(const Piece pc, const Square s) {
+inline void Board::add_piece(const Piece pc, const Square s)
+{
   occupied_by_side[color_of(pc)] |= s;
   occupied_by_type[type_of(pc)] |= s;
   occupied_by_type[ALL_PIECE_TYPES] |= s;
   board[s] = pc;
 
-  [[unlikely]]
-  if (type_of(pc) == KING)
-    king_square[color_of(pc)] = s;
+  [[unlikely]] if (type_of(pc) == KING) king_square[color_of(pc)] = s;
 }
 
-inline void Board::remove_piece(const Square s) {
-  const auto pc   = board[s];
+inline void Board::remove_piece(const Square s)
+{
+  const auto pc = board[s];
 
   assert(type_of(pc) != KING);
 
@@ -270,130 +269,165 @@ inline void Board::remove_piece(const Square s) {
   board[s] = NO_PIECE;
 }
 
-inline Piece Board::piece(const Square s) const {
+inline Piece Board::piece(const Square s) const
+{
   return board[s];
 }
 
-inline PieceType Board::piece_type(const Square s) const {
+inline PieceType Board::piece_type(const Square s) const
+{
   return type_of(board[s]);
 }
 
-inline bool Board::is_occupied(const Square s) const {
+inline bool Board::is_occupied(const Square s) const
+{
   return pieces() & s;
 }
 
-inline bool Board::is_attacked(const Square s, const Color c) const {
-  return is_attacked_by_slider(s, c) || is_attacked_by_knight(s, c) || is_attacked_by_pawn(s, c) || is_attacked_by_king(s, c);
+inline bool Board::is_attacked(const Square s, const Color c) const
+{
+  return is_attacked_by_slider(s, c)
+         || is_attacked_by_knight(s, c)
+         || is_attacked_by_pawn(s, c)
+         || is_attacked_by_king(s, c);
 }
 
-inline bool Board::is_attacked_by_knight(const Square s, const Color c) const {
+inline bool Board::is_attacked_by_knight(const Square s, const Color c) const
+{
   return pieces(KNIGHT, c) & piece_attacks_bb(KNIGHT, s);
 }
 
-inline bool Board::is_attacked_by_pawn(const Square s, const Color c) const {
+inline bool Board::is_attacked_by_pawn(const Square s, const Color c) const
+{
   return pieces(PAWN, c) & pawn_attacks_bb(~c, s);
 }
 
-inline bool Board::is_attacked_by_king(const Square s, const Color c) const {
+inline bool Board::is_attacked_by_king(const Square s, const Color c) const
+{
   return piece_attacks_bb(KING, s) & king_sq(c);
 }
 
-inline Bitboard Board::pieces() const {
+inline Bitboard Board::pieces() const
+{
   return occupied_by_type[ALL_PIECE_TYPES];
 }
 
-inline Bitboard Board::pieces(const Piece pc) const {
+inline Bitboard Board::pieces(const Piece pc) const
+{
   return pieces(type_of(pc), color_of(pc));
 }
 
-inline Bitboard Board::pieces(const PieceType pt) const {
+inline Bitboard Board::pieces(const PieceType pt) const
+{
   return occupied_by_type[pt];
 }
 
-inline Bitboard Board::pieces(const PieceType pt, const PieceType pt2) const {
+inline Bitboard Board::pieces(const PieceType pt, const PieceType pt2) const
+{
   return occupied_by_type[pt] | occupied_by_type[pt2];
 }
 
-inline Bitboard Board::pieces(const PieceType pt, const Color c) const {
+inline Bitboard Board::pieces(const PieceType pt, const Color c) const
+{
   return occupied_by_side[c] & occupied_by_type[pt];
 }
 
-inline Bitboard Board::pieces(const PieceType pt, const PieceType pt2, const Color c) const {
+inline Bitboard Board::pieces(const PieceType pt, const PieceType pt2, const Color c) const
+{
   return occupied_by_side[c] & (occupied_by_type[pt] | occupied_by_type[pt2]);
 }
 
-inline Bitboard Board::pieces(const Color c) const {
+inline Bitboard Board::pieces(const Color c) const
+{
   return occupied_by_side[c];
 }
 
-inline Bitboard Board::king(const Color c) const {
+inline Bitboard Board::king(const Color c) const
+{
   return bit(king_sq(c));
 }
 
-inline Square Board::king_sq(const Color c) const {
+inline Square Board::king_sq(const Color c) const
+{
   return king_square[c];
 }
 
-inline bool Board::is_pawn_passed(const Square s, const Color c) const {
+inline bool Board::is_pawn_passed(const Square s, const Color c) const
+{
   return !(passed_pawn_front_span[c][s] & pieces(PAWN, ~c));
 }
 
-inline bool Board::is_piece_on_square(const PieceType pt, const Square s, const Color c) {
+inline bool Board::is_piece_on_square(const PieceType pt, const Square s, const Color c)
+{
   return board[s] == make_piece(pt, c);
 }
 
-inline bool Board::is_piece_on_file(const PieceType pt, const Square s, const Color c) const {
+inline bool Board::is_piece_on_file(const PieceType pt, const Square s, const Color c) const
+{
   return bb_file(s) & pieces(pt, c);
 }
 
-inline bool Board::is_draw() const {
+inline bool Board::is_draw() const
+{
   return flags() & Material::recognize_draw();
 }
 
-inline bool Board::can_castle() const {
+inline bool Board::can_castle() const
+{
   return pos->castle_rights;
 }
 
-inline bool Board::can_castle(const CastlingRight cr) const {
+inline bool Board::can_castle(const CastlingRight cr) const
+{
   return pos->castle_rights & cr;
 }
 
-inline Key Board::pawn_key() const {
+inline Key Board::pawn_key() const
+{
   return pos->pawn_structure_key;
 }
 
-inline Key Board::key() const {
+inline Key Board::key() const
+{
   return pos->key;
 }
 
-inline Material &Board::material() const {
+inline Material &Board::material() const
+{
   return pos->material;
 }
 
-inline int &Board::flags() const {
+inline int &Board::flags() const
+{
   return pos->flags;
 }
 
-inline Square Board::en_passant_square() const {
+inline Square Board::en_passant_square() const
+{
   return pos->en_passant_square;
 }
 
-inline Color Board::side_to_move() const {
+inline Color Board::side_to_move() const
+{
   return pos->side_to_move;
 }
 
-inline Bitboard Board::checkers() const {
+inline Bitboard Board::checkers() const
+{
   return pos->checkers;
 }
 
-inline bool Board::in_check() const {
+inline bool Board::in_check() const
+{
   return pos->in_check;
 }
 
-inline Bitboard Board::pinned() const {
+inline Bitboard Board::pinned() const
+{
   return pos->pinned;
 }
 
-inline thread *Board::my_thread() const {
+inline thread *Board::my_thread() const
+{
   return my_t;
 }

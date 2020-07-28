@@ -33,33 +33,40 @@
 #include "pawnhashtable.hpp"
 #include "score.hpp"
 
-namespace {
+namespace
+{
 
-constexpr auto actual_eval   = [](const std::array<int, COL_NB> &e) { return e[WHITE] - e[BLACK]; };
+constexpr auto actual_eval = [](const std::array<int, COL_NB> &e) {
+  return e[WHITE] - e[BLACK];
+};
 constexpr Bitboard CenterBB      = make_bitboard(D4, E4, D5, E5);
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
 
-std::shared_ptr<spdlog::logger> eval_logger = spdlog::rotating_logger_mt("eval_logger", "logs/eval.txt", max_log_file_size, max_log_files);
+std::shared_ptr<spdlog::logger> eval_logger =
+  spdlog::rotating_logger_mt("eval_logger", "logs/eval.txt", max_log_file_size, max_log_files);
 
 [[nodiscard]]
-auto stages(Material &mat) {
+auto stages(Material &mat)
+{
   const auto stage = (mat.value() - mat.pawn_value()) / static_cast<double>(Material::max_value_without_pawns);
   return std::make_pair(stage, 1 - stage);
 }
 
-}// namespace
+}   // namespace
 
 template<bool Tuning>
-struct Evaluate {
+struct Evaluate
+{
 
-  Evaluate()                            = delete;
-  ~Evaluate()                           = default;
-  Evaluate(const Evaluate &other)       = delete;
-  Evaluate(Evaluate &&other)            = delete;
+  Evaluate()                      = delete;
+  ~Evaluate()                     = default;
+  Evaluate(const Evaluate &other) = delete;
+  Evaluate(Evaluate &&other)      = delete;
   Evaluate &operator=(const Evaluate &) = delete;
   Evaluate &operator=(Evaluate &&other) = delete;
-  Evaluate(Board *board, const std::size_t pool_index) : b(board), pool_index_(pool_index) {}
+  Evaluate(Board *board, const std::size_t pool_index) : b(board), pool_index_(pool_index)
+  { }
 
   template<Color Us>
   int evaluate(int alpha, int beta);
@@ -108,8 +115,8 @@ private:
 
 template<bool Tuning>
 template<Color Us>
-int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
-
+int Evaluate<Tuning>::evaluate(const int alpha, const int beta)
+{
   init_evaluate<WHITE>();
   init_evaluate<BLACK>();
 
@@ -120,18 +127,19 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 
   const auto mat_eval = actual_eval(posistion_value);
 
-  if (const auto lazy_eval = Us == WHITE ? mat_eval : -mat_eval; lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
+  if (const auto lazy_eval = Us == WHITE ? mat_eval : -mat_eval;
+      lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
     return b->material().evaluate<Us>(b->flags(), lazy_eval, b);
 
 #endif
 
   // Pass 1.
   auto result = eval_pawns_both_sides();
-  result     += eval_pieces<KNIGHT, WHITE>() - eval_pieces<KNIGHT, BLACK>();
-  result     += eval_pieces<BISHOP, WHITE>() - eval_pieces<BISHOP, BLACK>();
-  result     += eval_pieces<  ROOK, WHITE>() - eval_pieces<  ROOK, BLACK>();
-  result     += eval_pieces< QUEEN, WHITE>() - eval_pieces< QUEEN, BLACK>();
-  result     += eval_king<          WHITE>() - eval_king<          BLACK>();
+  result += eval_pieces<KNIGHT, WHITE>() - eval_pieces<KNIGHT, BLACK>();
+  result += eval_pieces<BISHOP, WHITE>() - eval_pieces<BISHOP, BLACK>();
+  result += eval_pieces<ROOK, WHITE>() - eval_pieces<ROOK, BLACK>();
+  result += eval_pieces<QUEEN, WHITE>() - eval_pieces<QUEEN, BLACK>();
+  result += eval_king<WHITE>() - eval_king<BLACK>();
 
   // Pass 2.
   result += eval_passed_pawns<WHITE>() - eval_passed_pawns<BLACK>();
@@ -155,7 +163,8 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta) {
 
 template<bool Tuning>
 template<PieceType Pt, Color Us>
-void Evaluate<Tuning>::set_attacks(const Bitboard attacks) {
+void Evaluate<Tuning>::set_attacks(const Bitboard attacks)
+{
   constexpr auto Them = ~Us;
   piece_attacks[Us][ALL_PIECE_TYPES] |= attacks;
   piece_attacks[Us][Pt] |= attacks;
@@ -171,13 +180,14 @@ void Evaluate<Tuning>::set_attacks(const Bitboard attacks) {
 
 template<bool Tuning>
 template<Color C, typename... PieceTypes>
-Bitboard Evaluate<Tuning>::attacked_by(PieceTypes... piece_types) const noexcept {
+Bitboard Evaluate<Tuning>::attacked_by(PieceTypes... piece_types) const noexcept
+{
   return (... | piece_attacks[C][piece_types]);
 }
 
 template<bool Tuning>
-Score Evaluate<Tuning>::eval_pawns_both_sides() {
-
+Score Evaluate<Tuning>::eval_pawns_both_sides()
+{
   auto result = ZeroScore;
 
   if (b->material().pawn_count() == 0)
@@ -195,7 +205,7 @@ Score Evaluate<Tuning>::eval_pawns_both_sides() {
 
     const auto w_result = eval_pawns<WHITE>();
     const auto b_result = eval_pawns<BLACK>();
-    result   = w_result - b_result;
+    result              = w_result - b_result;
 
     if constexpr (!Tuning)
       pawnp = Pawn::insert(b, result, passed_pawns);
@@ -207,8 +217,8 @@ Score Evaluate<Tuning>::eval_pawns_both_sides() {
 
 template<bool Tuning>
 template<Color Us>
-void Evaluate<Tuning>::eval_material() {
-
+void Evaluate<Tuning>::eval_material()
+{
   posistion_value[Us] = b->material().material_value[Us];
   auto add            = false;
 
@@ -216,7 +226,7 @@ void Evaluate<Tuning>::eval_material() {
   {
     auto bishops = b->pieces(BISHOP, Us);
     add          = is_opposite_colors(pop_lsb(&bishops), pop_lsb(&bishops));
-  } else if (bishop_count > 2)// edge case with more than two bishops
+  } else if (bishop_count > 2)   // edge case with more than two bishops
   {
     auto bishops = b->pieces(BISHOP, Us);
     std::array<bool, COL_NB> cols{};
@@ -235,7 +245,8 @@ void Evaluate<Tuning>::eval_material() {
 
 template<bool Tuning>
 template<PieceType Pt, Color Us>
-Score Evaluate<Tuning>::eval_pieces() {
+Score Evaluate<Tuning>::eval_pieces()
+{
   static_assert(Pt != PAWN && Pt != KING && Pt != NO_PT);
 
   constexpr auto Them   = ~Us;
@@ -323,7 +334,8 @@ Score Evaluate<Tuning>::eval_pieces() {
 
 template<bool Tuning>
 template<Color Us>
-Score Evaluate<Tuning>::eval_pawns() {
+Score Evaluate<Tuning>::eval_pawns()
+{
   constexpr auto Them = ~Us;
   auto result         = ZeroScore;
   auto pawns          = b->pieces(PAWN, Us);
@@ -354,7 +366,8 @@ Score Evaluate<Tuning>::eval_pawns() {
 
 template<bool Tuning>
 template<Color Us>
-Score Evaluate<Tuning>::eval_king() {
+Score Evaluate<Tuning>::eval_king()
+{
   constexpr auto Up        = Us == WHITE ? NORTH : SOUTH;
   constexpr auto NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
   constexpr auto NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
@@ -375,7 +388,8 @@ Score Evaluate<Tuning>::eval_king() {
 
 template<bool Tuning>
 template<Color Us>
-Score Evaluate<Tuning>::eval_passed_pawns() const {
+Score Evaluate<Tuning>::eval_passed_pawns() const
+{
   constexpr auto Them = ~Us;
   auto result         = ZeroScore;
 
@@ -402,15 +416,16 @@ Score Evaluate<Tuning>::eval_passed_pawns() const {
 
 template<bool Tuning>
 template<Color Us>
-void Evaluate<Tuning>::eval_king_attack() {
+void Evaluate<Tuning>::eval_king_attack()
+{
   if (attack_count[Us] > 1)
     poseval[Us] += attack_counter[Us] * (attack_count[Us] - 1);
 }
 
 template<bool Tuning>
 template<Color Us>
-void Evaluate<Tuning>::init_evaluate() {
-
+void Evaluate<Tuning>::init_evaluate()
+{
   constexpr auto Them      = ~Us;
   constexpr auto NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
   constexpr auto NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
@@ -432,18 +447,19 @@ void Evaluate<Tuning>::init_evaluate() {
   king_area[Us] = attacks | ksq;
 }
 
-namespace Eval {
+namespace Eval
+{
 
-int evaluate(Board *b, const std::size_t pool_index, const int alpha, const int beta) {
-  return b->side_to_move() == WHITE
-                            ? Evaluate<false>(b, pool_index).evaluate<WHITE>(alpha, beta)
-                            : Evaluate<false>(b, pool_index).evaluate<BLACK>(alpha, beta);
+int evaluate(Board *b, const std::size_t pool_index, const int alpha, const int beta)
+{
+  return b->side_to_move() == WHITE ? Evaluate<false>(b, pool_index).evaluate<WHITE>(alpha, beta)
+                                    : Evaluate<false>(b, pool_index).evaluate<BLACK>(alpha, beta);
 }
 
-int tune(Board *b, const std::size_t pool_index, const int alpha, const int beta) {
-  return b->side_to_move() == WHITE
-                            ? Evaluate<true>(b, pool_index).evaluate<WHITE>(alpha, beta)
-                            : Evaluate<true>(b, pool_index).evaluate<BLACK>(alpha, beta);
+int tune(Board *b, const std::size_t pool_index, const int alpha, const int beta)
+{
+  return b->side_to_move() == WHITE ? Evaluate<true>(b, pool_index).evaluate<WHITE>(alpha, beta)
+                                    : Evaluate<true>(b, pool_index).evaluate<BLACK>(alpha, beta);
 }
 
-}// namespace Eval
+}   // namespace Eval
