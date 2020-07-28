@@ -91,7 +91,6 @@ constexpr T from_char(const char c)
 template<typename T>
 constexpr T to_integral(std::string_view str)
 {
-
   static_assert(std::is_integral_v<T>, "Only integrals allowed.");
 
   auto sv_val = [&str]() {

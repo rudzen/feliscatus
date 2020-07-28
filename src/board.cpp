@@ -174,7 +174,6 @@ Board::Board() : pos(position_list.data())
 
 void Board::init()
 {
-
   PRNG<Key> rng(zobrist::seed);
 
   zobrist::zobrist_side   = rng();
@@ -211,7 +210,6 @@ void Board::clear()
 
 void Board::perform_move(const Move m)
 {
-
   const auto from = move_from(m);
   const auto to   = move_to(m);
   const auto mt   = type_of(m);
@@ -253,7 +251,6 @@ void Board::perform_move(const Move m)
 
 void Board::unperform_move(const Move m)
 {
-
   const auto from = move_from(m);
   const auto to   = move_to(m);
   const auto pc   = move_piece(m);
@@ -682,7 +679,6 @@ std::string Board::fen() const
 
 void Board::setup_castling(const std::string_view s)
 {
-
   castle_rights_mask.fill(NO_CASTLING);
 
   [[likely]]
@@ -725,7 +721,6 @@ void Board::setup_castling(const std::string_view s)
 
 std::string Board::move_to_string(const Move m) const
 {
-
   const auto mt = type_of(m);
 
   // shredder fen
@@ -749,7 +744,6 @@ void Board::print_moves()
 
 void Board::update_position(Position *p) const
 {
-
   p->checkers   = attackers_to(king_sq(p->side_to_move)) & pieces(~p->side_to_move);
   p->in_check   = is_attacked(king_sq(p->side_to_move), ~p->side_to_move);
   auto key      = zobrist::zero;
@@ -796,7 +790,6 @@ Bitboard Board::attackers_to(const Square s) const
 template<Color Us>
 void Board::add_short_castle_rights(std::optional<File> rook_file)
 {
-
   constexpr auto CastleRights = make_castling<Us, KING_SIDE>();
   constexpr auto Rank_1       = relative_rank(Us, RANK_1);
   const auto ksq              = king_sq(Us);
@@ -820,7 +813,6 @@ void Board::add_short_castle_rights(std::optional<File> rook_file)
 template<Color Us>
 void Board::add_long_castle_rights(std::optional<File> rook_file)
 {
-
   constexpr auto CastleRights = make_castling<Us, QUEEN_SIDE>();
   constexpr auto Rank_1       = relative_rank(Us, RANK_1);
   const auto ksq              = king_sq(Us);
@@ -843,7 +835,6 @@ void Board::add_long_castle_rights(std::optional<File> rook_file)
 
 bool Board::is_castleling_impeeded(const Square s, const Color us) const
 {
-
   // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
   // The following comments were taken from that source.
 

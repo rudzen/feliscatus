@@ -117,7 +117,6 @@ template<bool Tuning>
 template<Color Us>
 int Evaluate<Tuning>::evaluate(const int alpha, const int beta)
 {
-
   init_evaluate<WHITE>();
   init_evaluate<BLACK>();
 
@@ -189,7 +188,6 @@ Bitboard Evaluate<Tuning>::attacked_by(PieceTypes... piece_types) const noexcept
 template<bool Tuning>
 Score Evaluate<Tuning>::eval_pawns_both_sides()
 {
-
   auto result = ZeroScore;
 
   if (b->material().pawn_count() == 0)
@@ -221,7 +219,6 @@ template<bool Tuning>
 template<Color Us>
 void Evaluate<Tuning>::eval_material()
 {
-
   posistion_value[Us] = b->material().material_value[Us];
   auto add            = false;
 
@@ -429,7 +426,6 @@ template<bool Tuning>
 template<Color Us>
 void Evaluate<Tuning>::init_evaluate()
 {
-
   constexpr auto Them      = ~Us;
   constexpr auto NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
   constexpr auto NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;

@@ -35,7 +35,6 @@ constexpr double DEFAULT_OVERFLOW_VALUE = std::numeric_limits<double>::min();
 
 CpuLoad::CpuLoad() : self(GetCurrentProcess())
 {
-
   SYSTEM_INFO sys_info{};
   FILETIME ftime{};
   FILETIME fsys{};
@@ -56,7 +55,6 @@ CpuLoad::CpuLoad() : self(GetCurrentProcess())
 
 CpuLoad::CpuLoad()
 {
-
   struct tms time_sample
   {
   };

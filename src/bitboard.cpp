@@ -96,7 +96,6 @@ std::array<Bitboard, 97264> lookupTable;
 template<PieceType Pt>
 void initialize_magics(const std::array<MagicInit, 64> &magicInit, MagicTable &magic)
 {
-
   static_assert(Pt != ROOK || Pt != BISHOP);
 
   constexpr std::array<std::array<Direction, 2>, 4> BishopDirections{
@@ -187,7 +186,6 @@ namespace bitboard
 
 std::string print_bitboard(Bitboard bb, std::string_view title)
 {
-
   fmt::memory_buffer buffer;
 
   constexpr std::string_view line = "+---+---+---+---+---+---+---+---+";
@@ -211,7 +209,6 @@ std::string print_bitboard(Bitboard bb, std::string_view title)
 
 void init()
 {
-
   static constexpr std::array<PieceType, 2> MinorSliders{BISHOP, ROOK};
   static constexpr std::array<MagicInit, SQ_NB> BishopInit{
     {{0x007bfeffbfeffbff, 16530}, {0x003effbfeffbfe08, 9162},  {0x0000401020200000, 9674},
