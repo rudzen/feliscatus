@@ -68,16 +68,9 @@ struct Material
   static constexpr int max_value               = max_value_without_pawns + 2 * 8 * piece_values[PAWN];
 
 private:
-  enum KeyUpdateType
-  {
-    Add,
-    Remove
-  };
-
   using Keys = std::array<std::uint32_t, COL_NB>;
 
-  template<KeyUpdateType Type>
-  void update_key(Color c, PieceType pt);
+  void update_key(Color c, PieceType pt, int delta);
 
   [[nodiscard]]
   int pawn_count(Color c);

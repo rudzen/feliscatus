@@ -60,7 +60,7 @@ void Material::remove(const Piece pc)
 {
   const auto c  = color_of(pc);
   const auto pt = type_of(pc);
-  update_key<Remove>(c, pt);
+  update_key(c, pt, -1);
   material_value[c] -= piece_values[pt];
 }
 
@@ -68,8 +68,17 @@ void Material::add(const Piece pc)
 {
   const auto c  = color_of(pc);
   const auto pt = type_of(pc);
-  update_key<Add>(c, pt);
+  update_key(c, pt, 1);
   material_value[c] += piece_values[pt];
+}
+
+void Material::update_key(const Color c, const PieceType pt, const int delta)
+{
+  if (pt == KING)
+    return;
+  const auto x = count(c, pt) + delta;
+  key[c] &= ~(15 << piece_bit_shift[pt]);
+  key[c] |= x << piece_bit_shift[pt];
 }
 
 int Material::count(const Color c, const PieceType pt)
@@ -82,7 +91,7 @@ void Material::make_move(const Move m)
   if (is_capture(m))
     remove(move_captured(m));
 
-  [[unlikely]] if (is_promotion(m))
+  if (is_promotion(m))
   {
     remove(move_piece(m));
     add(move_promoted(m));
@@ -191,18 +200,6 @@ int Material::evaluate(int &flags, const int eval, const Board *b)
 
 template int Material::evaluate<WHITE>(int &, int, const Board *);
 template int Material::evaluate<BLACK>(int &, int, const Board *);
-
-template<Material::KeyUpdateType Type>
-void Material::update_key(const Color c, const PieceType pt)
-{
-  [[unlikely]]
-  if (pt == KING)
-    return;
-
-  const auto x = count(c, pt) + Type == Add ? 1 : -1;
-  key[c] &= ~(15 << piece_bit_shift[pt]);
-  key[c] |= x << piece_bit_shift[pt];
-}
 
 int Material::KQBKX(const int eval, const std::uint32_t key2)
 {
@@ -334,13 +331,13 @@ int Material::KBNK(const int eval, const Color c1) const
 {
   const auto loosing_kingsq = board->king_sq(~c1);
 
-  constexpr auto winning_squares = [](const bool dark) {
+  constexpr auto get_winning_squares = [](const bool dark) {
     return dark ? std::make_pair(A1, H8) : std::make_pair(A8, H1);
   };
 
   const auto dark = is_dark(lsb(board->pieces(BISHOP, c1)));
 
-  const auto [first_corner, second_corner] = winning_squares(dark);
+  const auto [first_corner, second_corner] = get_winning_squares(dark);
 
   return eval + 175
          - (25 * std::min<int>(distance(first_corner, loosing_kingsq), distance(second_corner, loosing_kingsq)));
@@ -348,8 +345,8 @@ int Material::KBNK(const int eval, const Color c1) const
 
 int Material::KBKX(
   const int eval,
-  const std::uint32_t key1,
-  const std::uint32_t key2,
+  const uint32_t key1,
+  const uint32_t key2,
   const int pc1,
   const int pc2,
   const Color c1,
@@ -386,7 +383,7 @@ int Material::KBKX(
   default:
     break;
   }
-  return std::min<int>(0, eval);
+  return std::min(0, eval);
 }
 
 int Material::KNKX(
