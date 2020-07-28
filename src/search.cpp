@@ -188,7 +188,7 @@ private:
 
   void unmake_move();
 
-  void check_sometimes(uint64_t nodes) const;
+  void check_sometimes(std::uint64_t nodes) const;
 
   void check_time() const;
 
@@ -644,7 +644,7 @@ void Search<SearcherType>::unmake_move()
 }
 
 template<Searcher SearcherType>
-void Search<SearcherType>::check_sometimes(const uint64_t nodes) const
+void Search<SearcherType>::check_sometimes(const std::uint64_t nodes) const
 {
   if (nodes >= 16383)
     check_time();

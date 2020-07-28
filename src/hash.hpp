@@ -31,7 +31,7 @@ struct Table
   [[nodiscard]]
   Entry *operator[](const Key key) noexcept
   {
-    return &table_[static_cast<uint32_t>(key) & (N - 1)];
+    return &table_[static_cast<std::uint32_t>(key) & (N - 1)];
   }
 
 private:

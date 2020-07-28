@@ -29,7 +29,7 @@
 namespace
 {
 
-uint64_t p(Board *b, const int depth)
+std::uint64_t p(Board *b, const int depth)
 {
   if (depth == 0)
     return 1;
@@ -40,7 +40,7 @@ uint64_t p(Board *b, const int depth)
   if (depth == 1)
     return ml.size();
 
-  uint64_t nodes{};
+  std::uint64_t nodes{};
 
   for (const auto m : ml)
   {
@@ -61,9 +61,9 @@ struct Perft final
   explicit Perft(Board *board);
   explicit Perft(Board *board, int flags);
 
-  uint64_t perft(int depth) const;
+  std::uint64_t perft(int depth) const;
 
-  uint64_t perft_divide(int depth) const;
+  std::uint64_t perft_divide(int depth) const;
 
 private:
   Board *b{};
@@ -76,11 +76,11 @@ Perft::Perft(Board *board, const int flags) : b(board), perft_flags(flags)
 Perft::Perft(Board *board) : Perft(board, LEGALMOVES)
 { }
 
-uint64_t Perft::perft(const int depth) const
+std::uint64_t Perft::perft(const int depth) const
 {
   std::size_t nps{};
 
-  uint64_t total_nodes{};
+  std::uint64_t total_nodes{};
 
   for (auto i = 1; i <= depth; i++)
   {
@@ -95,11 +95,11 @@ uint64_t Perft::perft(const int depth) const
   return total_nodes;
 }
 
-uint64_t Perft::perft_divide(const int depth) const
+std::uint64_t Perft::perft_divide(const int depth) const
 {
   fmt::print("depth: {}\n", depth);
 
-  uint64_t nodes{};
+  std::uint64_t nodes{};
   TimeUnit time{};
 
   auto ml = MoveList<LEGALMOVES>(b);
@@ -125,12 +125,12 @@ uint64_t Perft::perft_divide(const int depth) const
   return nodes;
 }
 
-uint64_t perft::perft(Board *b, const int depth, const int flags)
+std::uint64_t perft::perft(Board *b, const int depth, const int flags)
 {
   return Perft(b, flags).perft(depth);
 }
 
-uint64_t perft::divide(Board *b, const int depth, const int flags)
+std::uint64_t perft::divide(Board *b, const int depth, const int flags)
 {
   return Perft(b, flags).perft_divide(depth);
 }

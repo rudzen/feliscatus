@@ -43,7 +43,7 @@ std::unique_ptr<Board> new_board()
   return board;
 }
 
-constexpr uint64_t nps(const uint64_t nodes, const TimeUnit time)
+constexpr std::uint64_t nps(const std::uint64_t nodes, const TimeUnit time)
 {
   return nodes * 1000 / time;
 }

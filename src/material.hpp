@@ -25,7 +25,7 @@
 #include "types.hpp"
 
 struct Board;
-enum Move : uint32_t;
+enum Move : std::uint32_t;
 
 struct Material
 {
@@ -74,7 +74,7 @@ private:
     Remove
   };
 
-  using Keys = std::array<uint32_t, COL_NB>;
+  using Keys = std::array<std::uint32_t, COL_NB>;
 
   template<KeyUpdateType Type>
   void update_key(Color c, PieceType pt);
@@ -89,46 +89,46 @@ private:
   int balance();
 
   [[nodiscard]]
-  int KQBKX(int eval, uint32_t key2);
+  int KQBKX(int eval, std::uint32_t key2);
 
   [[nodiscard]]
-  int KQNKX(int eval, uint32_t key2);
+  int KQNKX(int eval, std::uint32_t key2);
 
   [[nodiscard]]
-  int KRBKX(int eval, uint32_t key2);
+  int KRBKX(int eval, std::uint32_t key2);
 
   [[nodiscard]]
-  int KRNKX(int eval, uint32_t key2);
+  int KRNKX(int eval, std::uint32_t key2);
 
   [[nodiscard]]
-  int KRKX(int eval, uint32_t key2);
+  int KRKX(int eval, std::uint32_t key2);
 
   [[nodiscard]]
-  int KBBKX(int eval, uint32_t key2);
+  int KBBKX(int eval, std::uint32_t key2);
 
   [[nodiscard]]
-  int KBNKX(int eval, uint32_t key2, int pc1, int pc2, Color c1);
+  int KBNKX(int eval, std::uint32_t key2, int pc1, int pc2, Color c1);
 
   [[nodiscard]]
   int KBNK(int eval, Color c1) const;
 
   [[nodiscard]]
-  int KBKX(int eval, uint32_t key1, uint32_t key2, int pc1, int pc2, Color c1, Color c2, Color c);
+  int KBKX(int eval, std::uint32_t key1, std::uint32_t key2, int pc1, int pc2, Color c1, Color c2, Color c);
 
   [[nodiscard]]
-  int KNKX(int eval, uint32_t key2, int pc1, int pc2, Color c1, Color c2, Color c);
+  int KNKX(int eval, std::uint32_t key2, int pc1, int pc2, Color c1, Color c2, Color c);
 
   [[nodiscard]]
-  int KNNKX(int eval, uint32_t key2, int pc1);
+  int KNNKX(int eval, std::uint32_t key2, int pc1);
 
   [[nodiscard]]
   int KKx(int eval, int pc1, int pc2, Color c1);
 
   [[nodiscard]]
-  int KBxKX(int eval, uint32_t key1, uint32_t key2, Color c1);
+  int KBxKX(int eval, std::uint32_t key1, std::uint32_t key2, Color c1);
 
   [[nodiscard]]
-  int KBxKx(int eval, uint32_t key1, uint32_t key2, Color c1);
+  int KBxKx(int eval, std::uint32_t key1, std::uint32_t key2, Color c1);
 
   // fen 8/6k1/8/8/3K4/5B1P/8/8 w - - 0 1
   [[nodiscard]]

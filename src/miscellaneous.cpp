@@ -198,7 +198,7 @@ std::string print_engine_info()
   date >> m >> d >> y;
 
   const auto month    = (1 + all_months.find(m) / 4);
-  const auto day      = util::to_integral<uint32_t>(d);
+  const auto day      = util::to_integral<std::uint32_t>(d);
   const auto year     = y.substr(y.size() - 2);
   const auto compiler = compiler_info();
 

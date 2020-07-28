@@ -31,7 +31,7 @@
 namespace
 {
 
-constexpr uint32_t key32(const Key key)
+constexpr std::uint32_t key32(const Key key)
 {
   return key >> 32;
 }
@@ -43,7 +43,7 @@ HashTable::~HashTable()
   std::free(mem_);
 }
 
-void HashTable::init(const uint64_t new_size_mb)
+void HashTable::init(const std::uint64_t new_size_mb)
 {
   if (size_mb_ == new_size_mb)
     return;
@@ -114,12 +114,13 @@ HashEntry *
 
   if (transp->k != k32 || m != MOVE_NONE)
     transp->m = m;
+
   transp->k = k32;
-  transp->s = static_cast<int16_t>(score);
-  transp->d = static_cast<uint8_t>(depth);
+  transp->s = static_cast<std::int16_t>(score);
+  transp->d = static_cast<std::uint8_t>(depth);
   transp->f = nt;
-  transp->a = static_cast<uint16_t>(age_);
-  transp->e = static_cast<int16_t>(eval);
+  transp->a = static_cast<std::uint16_t>(age_);
+  transp->e = static_cast<std::int16_t>(eval);
   return transp;
 }
 

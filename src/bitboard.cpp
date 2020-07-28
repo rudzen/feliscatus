@@ -73,7 +73,7 @@ constexpr std::array<Bitboard, SQ_NB> king_attacks = make_king_attacks();
 struct MagicInit final
 {
   Bitboard magic{};
-  int32_t index{};
+  std::int32_t index{};
 };
 
 /// set_bit() set a bit at specific location

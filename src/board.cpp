@@ -488,7 +488,7 @@ bool Board::make_null_move()
   return true;
 }
 
-uint64_t Board::calculate_key() const
+std::uint64_t Board::calculate_key() const
 {
   auto key = zobrist::zero;
 
@@ -534,7 +534,7 @@ bool Board::is_repetition() const
   return false;
 }
 
-int64_t Board::half_move_count() const
+std::int64_t Board::half_move_count() const
 {
   // TODO : fix implementation defined behaviour
   return pos - position_list.data();

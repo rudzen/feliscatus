@@ -36,7 +36,7 @@
 #include "../src/types.hpp"
 #include "../src/util.hpp"
 
-enum Token : uint8_t
+enum Token : std::uint8_t
 {
   Symbol, Integer, String, NAG,
   Asterisk, Period, LParen, RParen,

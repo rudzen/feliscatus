@@ -24,7 +24,7 @@
 
 struct PVEntry final
 {
-  uint64_t key;
+  Key key;
   int depth;
   int score;
   int previous_score;

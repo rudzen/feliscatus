@@ -83,10 +83,10 @@ requires PRNGCompatible<T> struct PRNG final
   }
 
 private:
-  uint64_t s;
+  std::uint64_t s;
 
   [[nodiscard]]
-  constexpr uint64_t rand64()
+  constexpr std::uint64_t rand64()
   {
     s ^= s >> 12, s ^= s << 25, s ^= s >> 27;
     return s * 2685821657736338717LL;

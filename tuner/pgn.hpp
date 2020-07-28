@@ -25,9 +25,9 @@
 #include "../src/types.hpp"
 
 struct PGNFile;
-enum Token : uint8_t;
+enum Token : std::uint8_t;
 
-enum Result : uint8_t
+enum Result : std::uint8_t
 {
   WhiteWin,
   Draw,

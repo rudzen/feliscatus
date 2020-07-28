@@ -186,10 +186,10 @@ void thread_pool::clear_data()
     w->clear_data();
 }
 
-uint64_t thread_pool::node_count() const
+std::uint64_t thread_pool::node_count() const
 {
 #if defined(linux)
-  const auto accumulator = [](const uint64_t r, const std::unique_ptr<thread> &d) {
+  const auto accumulator = [](const std::uint64_t r, const std::unique_ptr<thread> &d) {
     return r + d->node_count.load(std::memory_order_relaxed);
   };
   return std::accumulate(cbegin(), cend(), 0ull, accumulator);
@@ -199,15 +199,15 @@ uint64_t thread_pool::node_count() const
 }
 
 #if !defined(linux)
-uint64_t thread_pool::node_count_seq() const
+std::uint64_t thread_pool::node_count_seq() const
 {
-  const auto accumulator = [](const uint64_t r, const std::unique_ptr<thread> &d) {
+  const auto accumulator = [](const std::uint64_t r, const std::unique_ptr<thread> &d) {
     return r + d->node_count.load(std::memory_order_relaxed);
   };
   return std::accumulate(cbegin(), cend(), 0ull, accumulator);
 }
 
-uint64_t thread_pool::node_count_par() const
+std::uint64_t thread_pool::node_count_par() const
 {
   const auto accumulator = [](const std::unique_ptr<thread> &d) {
     return d->node_count.load(std::memory_order_relaxed);

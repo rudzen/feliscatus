@@ -121,7 +121,7 @@ struct thread_pool : std::vector<std::unique_ptr<thread>>
   void clear_data();
 
   [[nodiscard]]
-  uint64_t node_count() const;
+  std::uint64_t node_count() const;
 
   SearchLimits limits{};
   std::atomic_bool stop;
@@ -129,13 +129,13 @@ struct thread_pool : std::vector<std::unique_ptr<thread>>
 #if !defined(linux)
 private:
   [[nodiscard]]
-  uint64_t node_count_par() const;
+  std::uint64_t node_count_par() const;
 
   [[nodiscard]]
-  uint64_t node_count_seq() const;
+  std::uint64_t node_count_seq() const;
 
   bool parallel{};
-  const std::array<std::function<uint64_t()>, 2> node_counters;
+  const std::array<std::function<std::uint64_t()>, 2> node_counters;
 #endif
 };
 

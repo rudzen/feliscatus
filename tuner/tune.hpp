@@ -64,7 +64,7 @@ public:
 
 private:
   std::vector<Node> current_game_nodes_;
-  int64_t all_nodes_count_{};
+  std::int64_t all_nodes_count_{};
 };
 
 class Tune final {

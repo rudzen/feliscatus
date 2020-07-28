@@ -29,7 +29,7 @@
 #include "position.hpp"
 #include "tpool.hpp"
 
-enum Move : uint32_t;
+enum Move : std::uint32_t;
 
 struct Board
 {
@@ -50,13 +50,13 @@ struct Board
   bool make_null_move();
 
   [[nodiscard]]
-  uint64_t calculate_key() const;
+  std::uint64_t calculate_key() const;
 
   [[nodiscard]]
   bool is_repetition() const;
 
   [[nodiscard]]
-  int64_t half_move_count() const;
+  std::int64_t half_move_count() const;
 
   void new_game(thread *t);
 

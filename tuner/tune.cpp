@@ -87,7 +87,7 @@ auto console    = spdlog::stdout_color_mt("tuner");
 auto err_logger = spdlog::stderr_color_mt("stderr");
 std::shared_ptr<spdlog::logger> file_logger;
 
-enum SelectedParams : uint64_t
+enum SelectedParams : std::uint64_t
 {
   none          = 0,
   psqt          = 1,

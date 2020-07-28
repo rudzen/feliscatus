@@ -71,9 +71,9 @@ struct Score final
   constexpr int eg() const noexcept
   {
     const union {
-      uint16_t u;
-      int16_t s;
-    } eg = {static_cast<uint16_t>((static_cast<unsigned>(value + 0x8000) >> 16))};
+      std::uint16_t u;
+      std::int16_t s;
+    } eg = {static_cast<std::uint16_t>((static_cast<unsigned>(value + 0x8000) >> 16))};
     return static_cast<int>(eg.s);
   }
 
@@ -81,9 +81,9 @@ struct Score final
   constexpr int mg() const noexcept
   {
     const union {
-      uint16_t u;
-      int16_t s;
-    } mg = {static_cast<uint16_t>((static_cast<unsigned>(value)))};
+      std::uint16_t u;
+      std::int16_t s;
+    } mg = {static_cast<std::uint16_t>((static_cast<unsigned>(value)))};
     return static_cast<int>(mg.s);
   }
 

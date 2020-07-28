@@ -31,22 +31,22 @@ namespace
 
 constexpr std::array<int, 7> piece_bit_shift{0, 4, 8, 12, 16, 20};
 
-constexpr uint32_t k   = 0x00000;
-constexpr uint32_t kp  = 0x00001;
-constexpr uint32_t kn  = 0x00010;
-constexpr uint32_t kb  = 0x00100;
-constexpr uint32_t kr  = 0x01000;
-constexpr uint32_t kq  = 0x10000;
-constexpr uint32_t krr = 0x02000;
-constexpr uint32_t kbb = 0x00200;
-constexpr uint32_t kbn = 0x00110;
-constexpr uint32_t knn = 0x00020;
-constexpr uint32_t krn = 0x01010;
-constexpr uint32_t krb = 0x01100;
-constexpr uint32_t kqb = 0x10100;
-constexpr uint32_t kqn = 0x10010;
+constexpr std::uint32_t k   = 0x00000;
+constexpr std::uint32_t kp  = 0x00001;
+constexpr std::uint32_t kn  = 0x00010;
+constexpr std::uint32_t kb  = 0x00100;
+constexpr std::uint32_t kr  = 0x01000;
+constexpr std::uint32_t kq  = 0x10000;
+constexpr std::uint32_t krr = 0x02000;
+constexpr std::uint32_t kbb = 0x00200;
+constexpr std::uint32_t kbn = 0x00110;
+constexpr std::uint32_t knn = 0x00020;
+constexpr std::uint32_t krn = 0x01010;
+constexpr std::uint32_t krb = 0x01100;
+constexpr std::uint32_t kqb = 0x10100;
+constexpr std::uint32_t kqn = 0x10010;
 
-constexpr uint32_t all_pawns = 0xf;
+constexpr std::uint32_t all_pawns = 0xf;
 
 }   // namespace
 
@@ -102,8 +102,8 @@ int Material::evaluate(int &flags, const int eval, const Board *b)
   this->board         = b;
   drawish = material_flags = 0;
 
-  uint32_t strong_key;
-  uint32_t weak_key;
+  std::uint32_t strong_key;
+  std::uint32_t weak_key;
   int score;
   Color strong_side;
 
@@ -204,7 +204,7 @@ void Material::update_key(const Color c, const PieceType pt)
   key[c] |= x << piece_bit_shift[pt];
 }
 
-int Material::KQBKX(const int eval, const uint32_t key2)
+int Material::KQBKX(const int eval, const std::uint32_t key2)
 {
   switch (key2 & ~all_pawns)
   {
@@ -218,7 +218,7 @@ int Material::KQBKX(const int eval, const uint32_t key2)
   return eval;
 }
 
-int Material::KQNKX(const int eval, const uint32_t key2)
+int Material::KQNKX(const int eval, const std::uint32_t key2)
 {
   switch (key2 & ~all_pawns)
   {
@@ -232,7 +232,7 @@ int Material::KQNKX(const int eval, const uint32_t key2)
   return eval;
 }
 
-int Material::KRBKX(const int eval, const uint32_t key2)
+int Material::KRBKX(const int eval, const std::uint32_t key2)
 {
   switch (key2 & ~all_pawns)
   {
@@ -252,7 +252,7 @@ int Material::KRBKX(const int eval, const uint32_t key2)
   return eval;
 }
 
-int Material::KRNKX(const int eval, const uint32_t key2)
+int Material::KRNKX(const int eval, const std::uint32_t key2)
 {
   switch (key2 & ~all_pawns)
   {
@@ -272,7 +272,7 @@ int Material::KRNKX(const int eval, const uint32_t key2)
   return eval;
 }
 
-int Material::KRKX(const int eval, const uint32_t key2)
+int Material::KRKX(const int eval, const std::uint32_t key2)
 {
   switch (key2 & ~all_pawns)
   {
@@ -293,7 +293,7 @@ int Material::KRKX(const int eval, const uint32_t key2)
   return eval;
 }
 
-int Material::KBBKX(const int eval, const uint32_t key2)
+int Material::KBBKX(const int eval, const std::uint32_t key2)
 {
   switch (key2 & ~all_pawns)
   {
@@ -307,7 +307,7 @@ int Material::KBBKX(const int eval, const uint32_t key2)
   return eval;
 }
 
-int Material::KBNKX(const int eval, const uint32_t key2, const int pc1, const int pc2, const Color c1)
+int Material::KBNKX(const int eval, const std::uint32_t key2, const int pc1, const int pc2, const Color c1)
 {
   switch (key2 & ~all_pawns)
   {
@@ -348,8 +348,8 @@ int Material::KBNK(const int eval, const Color c1) const
 
 int Material::KBKX(
   const int eval,
-  const uint32_t key1,
-  const uint32_t key2,
+  const std::uint32_t key1,
+  const std::uint32_t key2,
   const int pc1,
   const int pc2,
   const Color c1,
@@ -390,7 +390,7 @@ int Material::KBKX(
 }
 
 int Material::KNKX(
-  const int eval, const uint32_t key2, const int pc1, const int pc2, const Color c1, const Color c2, const Color c)
+  const int eval, const std::uint32_t key2, const int pc1, const int pc2, const Color c1, const Color c2, const Color c)
 {
   switch (key2 & ~all_pawns)
   {
@@ -420,7 +420,7 @@ int Material::KNKX(
   return pc1 == 0 ? std::min<int>(0, eval) : eval;
 }
 
-int Material::KNNKX(const int eval, const uint32_t key2, const int pc1)
+int Material::KNNKX(const int eval, const std::uint32_t key2, const int pc1)
 {
   switch (key2 & ~all_pawns)
   {
@@ -440,7 +440,7 @@ int Material::KKx(const int eval, const int pc1, const int pc2, const Color c1)
   return pc1 + pc2 == 0 ? draw_score() : pc2 > 0 ? KxKx(eval, pc1, pc2, c1) : eval;
 }
 
-int Material::KBxKX(const int eval, const uint32_t key1, const uint32_t key2, const Color c1)
+int Material::KBxKX(const int eval, const std::uint32_t key1, const std::uint32_t key2, const Color c1)
 {
   switch (key2 & ~all_pawns)
   {
@@ -461,7 +461,7 @@ int Material::KBxKX(const int eval, const uint32_t key1, const uint32_t key2, co
   return eval;
 }
 
-int Material::KBxKx(const int eval, const uint32_t key1, const uint32_t key2, const Color c1)
+int Material::KBxKx(const int eval, const std::uint32_t key1, const std::uint32_t key2, const Color c1)
 {
   return (key1 & all_pawns) == 1 && (key2 & all_pawns) == 0 ? KBpK(eval, c1) : eval;
 }

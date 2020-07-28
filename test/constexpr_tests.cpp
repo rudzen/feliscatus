@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <catch2/catch.hpp>
 
-constexpr uint64_t Factorial(const uint64_t number)
+constexpr std::uint64_t Factorial(const std::uint64_t number)
 {
   return number <= 1 ? number : Factorial(number - 1) * number;
 }

@@ -47,7 +47,7 @@ struct alignas(16) HashEntry final
   }
 
   [[nodiscard]]
-  uint8_t depth() const noexcept
+  std::uint8_t depth() const noexcept
   {
     return d;
   }
@@ -59,13 +59,13 @@ struct alignas(16) HashEntry final
   }
 
   [[nodiscard]]
-  int16_t score() const noexcept
+  std::int16_t score() const noexcept
   {
     return s;
   }
 
   [[nodiscard]]
-  int16_t eval() const noexcept
+  std::int16_t eval() const noexcept
   {
     return e;
   }
@@ -77,13 +77,13 @@ struct alignas(16) HashEntry final
   }
 
 private:
-  uint32_t k;   // key
-  uint16_t a;   // age, 7 bits left
-  uint8_t d;    // depth
+  std::uint32_t k;   // key
+  std::uint16_t a;   // age, 7 bits left
+  std::uint8_t d;    // depth
   NodeType f;   // flags, 5 bits left
-  int16_t s;    // score
+  std::int16_t s;    // score
   Move m;       // move
-  int16_t e;    // eval
+  std::int16_t e;    // eval
 
   friend class HashTable;
 };
@@ -113,7 +113,7 @@ public:
   HashTable &operator=(const HashTable &) = delete;
   HashTable &operator=(HashTable &&other) = delete;
 
-  void init(uint64_t new_size_mb);
+  void init(std::uint64_t new_size_mb);
 
   void clear();
 
@@ -153,9 +153,9 @@ private:
 
   std::size_t bucket_count_{};
   std::size_t fullness_element_{};
-  uint64_t occupied_{};
-  uint64_t size_mb_{};
-  uint64_t size_{};
+  std::uint64_t occupied_{};
+  std::uint64_t size_mb_{};
+  std::uint64_t size_{};
   int age_{};
 };
 
