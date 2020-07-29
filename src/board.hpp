@@ -33,7 +33,7 @@ enum Move : std::uint32_t;
 
 struct Board
 {
-  using PositionList = std::array<Position, MAXDEPTH * 2>;
+  using PositionList = std::array<Position, 4096>;
 
   Board();
 
