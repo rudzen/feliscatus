@@ -25,11 +25,12 @@
 #include "types.hpp"
 #include "hash.hpp"
 #include "score.hpp"
+#include "miscellaneous.hpp"
 
 struct Board;
 
 #pragma pack(1)
-struct alignas(16) PawnHashEntry final
+struct alignas(CacheLineSize / 2) PawnHashEntry final
 {
   Key zkey{};
   Score eval{};

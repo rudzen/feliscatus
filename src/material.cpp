@@ -23,30 +23,30 @@
 
 #include "material.hpp"
 #include "board.hpp"
-#include "bitboard.hpp"
-#include "types.hpp"
 
 namespace
 {
 
 constexpr std::array<int, 7> piece_bit_shift{0, 4, 8, 12, 16, 20};
 
-constexpr std::uint32_t k   = 0x00000;
-constexpr std::uint32_t kp  = 0x00001;
-constexpr std::uint32_t kn  = 0x00010;
-constexpr std::uint32_t kb  = 0x00100;
-constexpr std::uint32_t kr  = 0x01000;
-constexpr std::uint32_t kq  = 0x10000;
-constexpr std::uint32_t krr = 0x02000;
-constexpr std::uint32_t kbb = 0x00200;
-constexpr std::uint32_t kbn = 0x00110;
-constexpr std::uint32_t knn = 0x00020;
-constexpr std::uint32_t krn = 0x01010;
-constexpr std::uint32_t krb = 0x01100;
-constexpr std::uint32_t kqb = 0x10100;
-constexpr std::uint32_t kqn = 0x10010;
-
-constexpr std::uint32_t all_pawns = 0xf;
+enum material_key_t
+{
+    k   = 0x00000,
+    kp  = 0x00001,
+    kn  = 0x00010,
+    kb  = 0x00100,
+    kr  = 0x01000,
+    kq  = 0x10000,
+    krr = 0x02000,
+    kbb = 0x00200,
+    kbn = 0x00110,
+    knn = 0x00020,
+    krn = 0x01010,
+    krb = 0x01100,
+    kqb = 0x10100,
+    kqn = 0x10010,
+    all_pawns = 0xf,
+};
 
 }   // namespace
 

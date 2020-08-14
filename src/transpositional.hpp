@@ -26,7 +26,7 @@
 #include "miscellaneous.hpp"
 
 #pragma pack(1)
-struct alignas(16) HashEntry final
+struct alignas(CacheLineSize / 4) HashEntry final
 {
   [[nodiscard]]
   bool is_exact() const noexcept
@@ -94,7 +94,6 @@ struct HashTable final
 private:
   friend struct HashEntry;
 
-  static constexpr int CacheLineSize      = 64;
   static constexpr std::size_t BucketSize = 4;
 
   using BucketArray = std::array<HashEntry, BucketSize>;

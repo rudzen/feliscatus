@@ -315,15 +315,24 @@ template<bool Tuning>
 template<Color Us>
 void Moves<Tuning>::add_moves(const PieceType pt, const Square from, const Bitboard attacks)
 {
+  constexpr auto Them = ~Us;
+
   const auto pc = make_piece(pt, Us);
 
-  for (auto bb = attacks; bb;)
+  auto bb = attacks & b->pieces(Them);
+
+  while (bb)
   {
     const auto to = pop_lsb(&bb);
-    if (b->piece(to) == NO_PIECE)
-      add_move<Us, NORMAL>(pc, from, to);
-    else
-      add_move<Us, CAPTURE>(pc, from, to);
+    add_move<Us, CAPTURE>(pc, from, to);
+  }
+
+  bb = attacks & ~b->pieces();
+
+  while (bb)
+  {
+    const auto to = pop_lsb(&bb);
+    add_move<Us, NORMAL>(pc, from, to);
   }
 }
 

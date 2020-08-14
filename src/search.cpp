@@ -227,10 +227,10 @@ int Search<SearcherType>::go()
 
   while (!pool.stop && b->search_depth < MAXDEPTH)
   {
+    b->search_depth++;
+
     try
     {
-      b->search_depth++;
-
       do
       {
         t->pv_length[0] = 0;

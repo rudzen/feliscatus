@@ -22,7 +22,7 @@
 
 #include "material.hpp"
 
-class HashEntry;
+struct HashEntry;
 
 using KillerMoves = std::array<Move, 4>;
 

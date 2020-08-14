@@ -30,6 +30,8 @@ constexpr std::string_view start_position{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RN
 constexpr std::string_view piece_index{"pnbrqk"};
 constexpr std::string_view piece_letter{"PNBRQK. pnbrqk. "};
 
+constexpr int CacheLineSize = 64;
+
 #if defined(NO_PREFETCH)
 
 inline void prefetch(void *)
