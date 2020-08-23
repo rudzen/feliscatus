@@ -97,7 +97,7 @@ struct main_thread final : thread
   Time time{};
 };
 
-struct thread_pool : std::vector<std::unique_ptr<thread>>
+struct thread_pool final : std::vector<std::unique_ptr<thread>>
 {
   thread_pool();
   ~thread_pool()                        = default;
