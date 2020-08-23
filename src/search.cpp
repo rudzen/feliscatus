@@ -382,9 +382,6 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta)
           update_pv<EXACT>(best_move, best_score, depth);
           alpha = best_score;
         }
-        //          else if (pv) {
-        //            updatePV(move_data->move, best_score, depth, ALPHA);
-        //          }
       }
     }
   }
@@ -563,9 +560,9 @@ int Search<SearcherType>::search_quiesce(int alpha, const int beta, const int qs
       if (move_data->score < 0)
         break;
 
-      if (pos->eval_score + piece_value(move_captured(move_data->move)) + 150 < alpha)
+      if (const auto delta = pos->eval_score + piece_value(move_captured(move_data->move)) + 150; delta < alpha)
       {
-        best_score = std::max<int>(best_score, pos->eval_score + piece_value(move_captured(move_data->move)) + 150);
+        best_score = std::max<int>(best_score, delta);
         continue;
       }
     }

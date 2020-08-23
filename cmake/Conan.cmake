@@ -22,7 +22,7 @@ macro(run_conan)
             catch2/2.13.0
             fmt/7.0.3
             spdlog/1.7.0
-            nlohmann_json/3.8.0
+            nlohmann_json/3.9.1
             OPTIONS
             ${CONAN_EXTRA_OPTIONS}
             BASIC_SETUP
