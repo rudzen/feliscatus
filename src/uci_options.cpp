@@ -24,7 +24,6 @@
 
 #include "uci.hpp"
 #include "transpositional.hpp"
-#include "util.hpp"
 #include "tpool.hpp"
 
 using std::string;
@@ -77,40 +76,40 @@ void init(OptionsMap &o)
 
 /// Option class constructors and conversion operators
 
-Option::Option(const char *v, const on_change f) : default_value_(v), current_value_(v), type_("string"), on_change_(f)
+Option::Option(const char *v, const on_change f) : default_value_(v), current_value_(v), type_(OptionType::String), on_change_(f)
 { }
 
 Option::Option(const bool v, const on_change f)
-  : default_value_(bool_string[v]), current_value_(default_value_), type_("check"), on_change_(f)
+  : default_value_(bool_string[v]), current_value_(default_value_), type_(OptionType::Check), on_change_(f)
 { }
 
-Option::Option(const on_change f) : type_("button"), on_change_(f)
+Option::Option(const on_change f) : type_(OptionType::Button), on_change_(f)
 { }
 
 Option::Option(const int v, const int minv, const int maxv, const on_change f)
-  : default_value_(fmt::format("{}", v)), current_value_(default_value_), type_("spin"), min_(minv), max_(maxv),
+  : default_value_(fmt::format("{}", v)), current_value_(default_value_), type_(OptionType::Spin), min_(minv), max_(maxv),
     on_change_(f)
 { }
 
 Option::Option(const char *v, const char *cur, const on_change f)
-  : default_value_(v), current_value_(cur), type_("combo"), on_change_(f)
+  : default_value_(v), current_value_(cur), type_(OptionType::Combo), on_change_(f)
 { }
 
 Option::operator int() const
 {
-  assert(type_ == "check" || type_ == "spin");
-  return (type_ == "spin" ? util::to_integral<int>(current_value_) : current_value_ == bool_string[true]);
+  assert(type_ == OptionType::Check || type_ == OptionType::Spin);
+  return (type_ == OptionType::Spin ? util::to_integral<int>(current_value_) : current_value_ == bool_string[true]);
 }
 
 Option::operator std::string_view() const
 {
-  assert(type_ == "string");
+  assert(type_ == OptionType::String);
   return current_value_;
 }
 
 bool Option::operator==(const char *s) const
 {
-  assert(type_ == "combo");
+  assert(type_ == OptionType::Combo);
   return !CaseInsensitiveLess()(current_value_, s) && !CaseInsensitiveLess()(s, current_value_);
 }
 
@@ -126,14 +125,14 @@ void Option::operator<<(const Option &o)
 
 Option &Option::operator=(const string &v) noexcept
 {
-  assert(!type_.empty());
+  const auto is_button = type_ == OptionType::Button;
 
   if (
-    (type_ != "button" && v.empty()) || (type_ == "check" && v != "true" && v != "false")
-    || (type_ == "spin" && (!util::in_between(util::to_integral<int>(v), min_, max_))))
+    (!is_button && v.empty()) || (type_ == OptionType::Check && v != "true" && v != "false")
+    || (type_ == OptionType::Spin && (!util::in_between(util::to_integral<int>(v), min_, max_))))
     return *this;
 
-  if (type_ != "button")
+  if (!is_button)
     current_value_ = v;
 
   if (on_change_)
@@ -157,7 +156,7 @@ std::string_view Option::current_value() const noexcept
   return current_value_;
 }
 
-std::string_view Option::type() const noexcept
+OptionType Option::type() const noexcept
 {
   return type_;
 }

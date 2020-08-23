@@ -34,7 +34,6 @@
 #include "search_limits.hpp"
 #include "cpu.hpp"
 
-struct Felis;
 struct Board;
 
 namespace uci
@@ -68,6 +67,13 @@ template<UciOptions Option>
 }
 
 class Option;
+
+enum class OptionType
+{
+  String, Check, Button, Spin, Combo
+};
+
+using option_type_t = std::underlying_type_t<OptionType>;
 
 /// Custom comparator because UCI options should be case insensitive
 struct CaseInsensitiveLess final
@@ -123,7 +129,7 @@ public:
   std::string_view current_value() const noexcept;
 
   [[nodiscard]]
-  std::string_view type() const noexcept;
+  OptionType type() const noexcept;
 
   [[nodiscard]]
   int max() const noexcept;
@@ -134,7 +140,7 @@ public:
 private:
   std::string default_value_{};
   std::string current_value_{};
-  std::string type_{};
+  OptionType type_{};
   int min_{};
   int max_{};
   std::size_t idx_{};
@@ -173,6 +179,7 @@ struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view>
   template<typename FormatContext>
   auto format(const uci::OptionsMap om, FormatContext &ctx)
   {
+    static constexpr std::array<std::string_view, 5> Types { "string", "check", "button", "spin", "combo" };
     fmt::memory_buffer buffer;
 
     for (std::size_t idx = 0; idx < om.size(); ++idx)
@@ -185,12 +192,12 @@ struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view>
         const auto type          = o.type();
         const auto default_value = o.default_value();
 
-        fmt::format_to(buffer, "\noption name {} type {}", it.first, type);
+        fmt::format_to(buffer, "\noption name {} type {}", it.first, Types[static_cast<uci::option_type_t>(type)]);
 
-        if (type != "button")
+        if (type != uci::OptionType::Button)
           fmt::format_to(buffer, " default {}", default_value);
 
-        if (type == "spin")
+        if (type == uci::OptionType::Spin)
           fmt::format_to(buffer, " min {} max {}", o.min(), o.max());
 
         break;

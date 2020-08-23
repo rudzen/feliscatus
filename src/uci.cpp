@@ -23,9 +23,7 @@
 
 #include "uci.hpp"
 #include "board.hpp"
-#include "tpool.hpp"
 #include "transpositional.hpp"
-#include "miscellaneous.hpp"
 #include "perft.hpp"
 #include "moves.hpp"
 
@@ -238,6 +236,7 @@ void uci::run(const int argc, char *argv[])
 
   do
   {
+    [[unlikely]]
     if (argc == 1 && !std::getline(std::cin, command))
       command = "quit";
 
@@ -246,6 +245,7 @@ void uci::run(const int argc, char *argv[])
     token.clear();
     input >> std::skipws >> token;
 
+    [[unlikely]]
     if (token == "quit" || token == "stop")
       pool.stop = true;
     else if (token == "ponder")
