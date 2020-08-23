@@ -103,10 +103,12 @@ constexpr T to_integral(std::string_view str)
     return x;
   };
 
+  // In case T is signed, make sure the string is correctly converted
   if constexpr (std::is_signed_v<T>)
   {
     return str.front() == '-' ? str.remove_prefix(1), -sv_val() : sv_val();
   } else
+  // discard string prefix if its a - sign, as target type is unsigned
   {
     if (str.front() == '-')
       str.remove_prefix(1);
