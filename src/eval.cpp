@@ -97,6 +97,7 @@ private:
   void eval_king_attack();
   template<Color Us>
   void init_evaluate();
+  void init();
 
   Board *b{};
   std::size_t pool_index_;
@@ -110,13 +111,14 @@ private:
   Bitboard piece_attacks[COL_NB][PIECETYPE_NB]{};
   std::array<Bitboard, COL_NB> king_area{};
   std::array<Bitboard, COL_NB> half_open_files{};
-  Bitboard open_files{};
+  std::array<Bitboard, COL_NB> open_files{};
 };
 
 template<bool Tuning>
 template<Color Us>
 int Evaluate<Tuning>::evaluate(const int alpha, const int beta)
 {
+  init();
   init_evaluate<WHITE>();
   init_evaluate<BLACK>();
 
@@ -302,7 +304,7 @@ Score Evaluate<Tuning>::eval_pieces()
       result += rook_pst[flip_s];
       result += rook_mob[mob];
 
-      if (open_files & s)
+      if (open_files[Us] & s)
         score_pos += rook_open_file;
 
       if (attacked_by<Them>(PAWN, KNIGHT, BISHOP) & s)
@@ -380,7 +382,7 @@ Score Evaluate<Tuning>::eval_king()
 
   const auto east_west = bb | shift_bb<WEST>(bb) | shift_bb<EAST>(bb);
 
-  result += king_on_open[std::popcount(open_files & east_west)];
+  result += king_on_open[std::popcount(open_files[Us] & east_west)];
   result += king_on_half_open[std::popcount(half_open_files[Us] & east_west)];
 
   return result;
@@ -393,6 +395,7 @@ Score Evaluate<Tuning>::eval_passed_pawns() const
   constexpr auto Them = ~Us;
   auto result         = ZeroScore;
 
+  // Return if no pawns are on the board
   if (pawnp == nullptr)
     return result;
 
@@ -429,7 +432,6 @@ void Evaluate<Tuning>::init_evaluate()
   constexpr auto Them      = ~Us;
   constexpr auto NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
   constexpr auto NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
-  b->flags()               = 0;
   posistion_value[Us]      = 0;
   attack_count[Us]         = 0;
   attack_counter[Us]       = 0;
@@ -437,14 +439,21 @@ void Evaluate<Tuning>::init_evaluate()
   const auto attacks       = all_attacks<KING>(ksq);
   const auto our_pawns     = b->pieces(PAWN, Us);
   const auto their_pawns   = b->pieces(PAWN, Them);
-  open_files               = ~(pawn_fill[Us](pawn_fill[Them](our_pawns)) | pawn_fill[Us](pawn_fill[Them](their_pawns)));
-  half_open_files[Us]      = ~fill<NORTH>(fill<SOUTH>(our_pawns)) & ~open_files;
-
-  poseval.fill(ZeroScore);
+  open_files[Us]           = ~(pawn_fill[Us](pawn_fill[Them](our_pawns)) | pawn_fill[Us](pawn_fill[Them](their_pawns)));
+  half_open_files[Us]      = ~fill<NORTH>(fill<SOUTH>(our_pawns)) & ~open_files[Us];
 
   set_attacks<PAWN, Us>(shift_bb<NorthEast>(our_pawns) | shift_bb<NorthWest>(our_pawns));
   set_attacks<KING, Us>(attacks);
   king_area[Us] = attacks | ksq;
+}
+
+template<bool Tuning>
+void Evaluate<Tuning>::init()
+{
+
+  b->flags() = 0;
+  poseval.fill(ZeroScore);
+
 }
 
 namespace Eval
