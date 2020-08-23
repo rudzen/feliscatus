@@ -758,7 +758,8 @@ bool Search<SearcherType>::move_is_easy() const
     if (b->search_depth > 9 && Moves(b).move_count() == 1)
       return true;
 
-    [[unlikely]] if (
+    [[unlikely]]
+    if (
       (pool.main()->time.is_fixed_depth() && pool.main()->time.depth() == b->search_depth)
       || (t->pv[0][0].score == MAXSCORE - 1))
     {

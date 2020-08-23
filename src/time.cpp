@@ -22,7 +22,6 @@
 #include <chrono>
 
 #include "time.hpp"
-#include "util.hpp"
 
 namespace
 {
@@ -50,6 +49,7 @@ void Time::init(const Color c, SearchLimits &search_limits)
     const auto time_left  = limits.time[c];
     const auto time_inc   = limits.inc[c];
 
+    [[unlikely]]
     if (time_inc == 0 && time_left < 1000)
     {
       search_time = time_left / (moves_left * 2);

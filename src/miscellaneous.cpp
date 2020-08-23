@@ -185,8 +185,8 @@ namespace misc
 template<bool AsUci>
 std::string print_engine_info()
 {
-  constexpr std::string_view title_short{"FelisCatus"};
-  constexpr std::string_view all_months{"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec"};
+  static constexpr std::string_view title_short{"FelisCatus"};
+  static constexpr std::string_view all_months{"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec"};
   std::string m, d, y, uci;
   fmt::memory_buffer ver_info;
   fmt::memory_buffer buffer;

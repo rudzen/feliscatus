@@ -98,15 +98,15 @@ void initialize_magics(const std::array<MagicInit, 64> &magicInit, MagicTable &m
 {
   static_assert(Pt != ROOK || Pt != BISHOP);
 
-  constexpr std::array<std::array<Direction, 2>, 4> BishopDirections{
+  static constexpr std::array<std::array<Direction, 2>, 4> BishopDirections{
     {{SOUTH_WEST, SOUTH_SOUTH_WEST},
      {SOUTH_EAST, SOUTH_SOUTH_EAST},
      {NORTH_WEST, NORTH_NORTH_WEST},
      {NORTH_EAST, NORTH_NORTH_EAST}}};
-  constexpr std::array<std::array<Direction, 2>, 4> RookDirections{
+  static constexpr std::array<std::array<Direction, 2>, 4> RookDirections{
     {{SOUTH, SOUTH * 2}, {WEST, WEST}, {EAST, EAST}, {NORTH, NORTH * 2}}};
 
-  constexpr auto rook_mask = [](const Square sq) {
+  static constexpr auto rook_mask = [](const Square sq) {
     auto result   = ZeroBB;
     const auto rk = rank_of(sq);
     const auto fl = file_of(sq);
@@ -121,7 +121,7 @@ void initialize_magics(const std::array<MagicInit, 64> &magicInit, MagicTable &m
     return result;
   };
 
-  constexpr auto bishop_mask = [](const Square sq) {
+  static constexpr auto bishop_mask = [](const Square sq) {
     auto result   = ZeroBB;
     const auto rk = rank_of(sq);
     const auto fl = file_of(sq);

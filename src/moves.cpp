@@ -34,7 +34,7 @@ void score_move(MoveData &md, Board *b)
   constexpr int PROMOTIONMOVESCORE = 50000;
 
   const auto capture_value = [&b](const Move m) {
-    constexpr std::array<int, 3> values{300000, 160000, -100000};
+    static constexpr std::array<int, 3> values{300000, 160000, -100000};
     const auto value_captured = piece_value(move_captured(m));
     auto value_piece          = piece_value(move_piece(m));
     if (!value_piece)

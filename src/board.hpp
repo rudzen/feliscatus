@@ -254,7 +254,9 @@ inline void Board::add_piece(const Piece pc, const Square s)
   occupied_by_type[ALL_PIECE_TYPES] |= s;
   board[s] = pc;
 
-  [[unlikely]] if (type_of(pc) == KING) king_square[color_of(pc)] = s;
+  [[unlikely]]
+  if (type_of(pc) == KING)
+    king_square[color_of(pc)] = s;
 }
 
 inline void Board::remove_piece(const Square s)
