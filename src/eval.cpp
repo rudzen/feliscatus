@@ -77,8 +77,6 @@ private:
   template<Color C, typename... PieceTypes>
   [[nodiscard]]
   Bitboard attacked_by(PieceTypes... piece_types) const noexcept;
-  [[nodiscard]]
-  Score eval_pawns_both_sides();
   template<Color Us>
   void eval_material();
   template<PieceType Pt, Color Us>
@@ -86,13 +84,10 @@ private:
   Score eval_pieces();
   template<Color Us>
   [[nodiscard]]
-  Score eval_pawns();
-  template<Color Us>
-  [[nodiscard]]
   Score eval_king();
   template<Color Us>
   [[nodiscard]]
-  Score eval_passed_pawns() const;
+  Score eval_passed_pawns(const PawnHashEntry *entry) const;
   template<Color Us>
   void eval_king_attack();
   template<Color Us>
@@ -101,11 +96,9 @@ private:
 
   Board *b{};
   std::size_t pool_index_;
-  PawnHashEntry *pawnp{};
 
   std::array<Score, COL_NB> poseval{};
   std::array<int, COL_NB> posistion_value{};
-  std::array<Bitboard, COL_NB> passed_pawns{};
   std::array<int, COL_NB> attack_counter{};
   std::array<int, COL_NB> attack_count{};
   Bitboard piece_attacks[COL_NB][PIECETYPE_NB]{};
@@ -135,8 +128,11 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta)
 
 #endif
 
+  auto result = ZeroScore;
+
   // Pass 1.
-  auto result = eval_pawns_both_sides();
+  const auto *pawnp = Pawn::at<Tuning>(b);
+  result += pawnp->eval();
   result += eval_pieces<KNIGHT, WHITE>() - eval_pieces<KNIGHT, BLACK>();
   result += eval_pieces<BISHOP, WHITE>() - eval_pieces<BISHOP, BLACK>();
   result += eval_pieces<ROOK, WHITE>() - eval_pieces<ROOK, BLACK>();
@@ -144,7 +140,7 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta)
   result += eval_king<WHITE>() - eval_king<BLACK>();
 
   // Pass 2.
-  result += eval_passed_pawns<WHITE>() - eval_passed_pawns<BLACK>();
+  result += eval_passed_pawns<WHITE>(pawnp) - eval_passed_pawns<BLACK>(pawnp);
 
   eval_king_attack<WHITE>();
   eval_king_attack<BLACK>();
@@ -185,36 +181,6 @@ template<Color C, typename... PieceTypes>
 Bitboard Evaluate<Tuning>::attacked_by(PieceTypes... piece_types) const noexcept
 {
   return (... | piece_attacks[C][piece_types]);
-}
-
-template<bool Tuning>
-Score Evaluate<Tuning>::eval_pawns_both_sides()
-{
-  auto result = ZeroScore;
-
-  if (b->material().pawn_count() == 0)
-  {
-    pawnp = nullptr;
-    return result;
-  }
-
-  const auto pawn_key = b->pos->pawn_structure_key;
-  pawnp               = Pawn::find(b);
-
-  if (pawnp->zkey == 0 || pawnp->zkey != pawn_key)
-  {
-    passed_pawns.fill(0);
-
-    const auto w_result = eval_pawns<WHITE>();
-    const auto b_result = eval_pawns<BLACK>();
-    result              = w_result - b_result;
-
-    if constexpr (!Tuning)
-      pawnp = Pawn::insert(b, result, passed_pawns);
-  } else
-    result = pawnp->eval;
-
-  return result;
 }
 
 template<bool Tuning>
@@ -336,38 +302,6 @@ Score Evaluate<Tuning>::eval_pieces()
 
 template<bool Tuning>
 template<Color Us>
-Score Evaluate<Tuning>::eval_pawns()
-{
-  constexpr auto Them = ~Us;
-  auto result         = ZeroScore;
-  auto pawns          = b->pieces(PAWN, Us);
-
-  while (pawns)
-  {
-    const auto s      = pop_lsb(&pawns);
-    const auto f      = file_of(s);
-    const auto flip_s = relative_square(Them, s);
-
-    result += pawn_pst[flip_s];
-
-    if (b->is_pawn_passed(s, Us))
-      passed_pawns[Us] |= s;
-
-    const auto open_file = !b->is_piece_on_file(PAWN, s, Them);
-
-    if (b->is_pawn_isolated(s, Us))
-      result += pawn_isolated[open_file];
-    else if (b->is_pawn_behind(s, Us))
-      result += pawn_behind[open_file];
-
-    if (pawns & f)
-      result += pawn_doubled[open_file];
-  }
-  return result;
-}
-
-template<bool Tuning>
-template<Color Us>
 Score Evaluate<Tuning>::eval_king()
 {
   constexpr auto Up        = Us == WHITE ? NORTH : SOUTH;
@@ -390,16 +324,11 @@ Score Evaluate<Tuning>::eval_king()
 
 template<bool Tuning>
 template<Color Us>
-Score Evaluate<Tuning>::eval_passed_pawns() const
+Score Evaluate<Tuning>::eval_passed_pawns(const PawnHashEntry *entry) const
 {
   constexpr auto Them = ~Us;
   auto result         = ZeroScore;
-
-  // Return if no pawns are on the board
-  if (pawnp == nullptr)
-    return result;
-
-  auto pp = pawnp->passed_pawns[Us];
+  auto pp             = entry->passed_pawns[Us];
 
   while (pp)
   {

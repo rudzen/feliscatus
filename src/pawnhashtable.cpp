@@ -22,24 +22,70 @@
 
 #include "pawnhashtable.hpp"
 #include "board.hpp"
+#include "parameters.hpp"
 
 namespace Pawn
 {
 
-PawnHashEntry *find(Board *b)
+template<Color Us>
+[[nodiscard]]
+Score eval_pawns(Board *b, PawnHashEntry *phe)
 {
-  return b->my_thread()->pawn_hash[b->pawn_key()];
+  constexpr auto Them   = ~Us;
+  auto result           = ZeroScore;
+  auto pawns            = b->pieces(PAWN, Us);
+  phe->passed_pawns[Us] = 0;
+
+  while (pawns)
+  {
+    const auto s      = pop_lsb(&pawns);
+    const auto f      = file_of(s);
+    const auto flip_s = relative_square(Them, s);
+
+    result += pawn_pst[flip_s];
+
+    if (b->is_pawn_passed(s, Us))
+      phe->passed_pawns[Us] |= s;
+
+    const auto open_file = !b->is_piece_on_file(PAWN, s, Them);
+
+    if (b->is_pawn_isolated(s, Us))
+      result += pawn_isolated[open_file];
+    else if (b->is_pawn_behind(s, Us))
+      result += pawn_behind[open_file];
+
+    if (pawns & f)
+      result += pawn_doubled[open_file];
+  }
+  return result;
 }
 
-PawnHashEntry *insert(Board *b, const Score s, const std::array<Bitboard, 2> &passed_pawns)
+template<>
+PawnHashEntry *at<true>(Board *b)
 {
-  static_assert(sizeof(PawnHashEntry) == 32);
-  const auto key = b->pawn_key();
-  auto *pawnp    = b->my_thread()->pawn_hash[key];
-  pawnp->zkey    = key;
-  pawnp->eval    = s;
-  std::copy(passed_pawns.begin(), passed_pawns.end(), pawnp->passed_pawns.begin());
-  return pawnp;
+  const auto pawn_key = b->pawn_key();
+  auto *entry = b->my_thread()->pawn_hash[pawn_key];
+
+  entry->scores[WHITE] = eval_pawns<WHITE>(b, entry);
+  entry->scores[BLACK] = eval_pawns<BLACK>(b, entry);
+  entry->zkey = pawn_key;
+  return entry;
+}
+
+template<>
+PawnHashEntry *at<false>(Board *b)
+{
+  const auto pawn_key = b->pawn_key();
+  auto *entry = b->my_thread()->pawn_hash[pawn_key];
+
+  if (entry->zkey == 0)
+  {
+    entry->scores[WHITE] = eval_pawns<WHITE>(b, entry);
+    entry->scores[BLACK] = eval_pawns<BLACK>(b, entry);
+    entry->zkey = pawn_key;
+  }
+
+  return entry;
 }
 
 }   // namespace Pawn
