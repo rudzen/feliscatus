@@ -57,7 +57,7 @@ void thread::clear_data()
 void thread::idle_loop()
 {
   // NUMA fix
-  if (Options[uci::uci_name<uci::UciOptions::THREADS>()] > 8)
+  if (Options.at(uci::uci_name<uci::UciOptions::THREADS>()) > 8)
     WinProcGroup::bind_this_thread(idx);
 
   do
@@ -128,9 +128,9 @@ void thread_pool::set(const std::size_t v)
 
     clear_data();
 
-    auto tt_size = static_cast<std::size_t>(Options[uci::uci_name<uci::UciOptions::HASH>()]);
+    auto tt_size = static_cast<std::size_t>(Options.at(uci::uci_name<uci::UciOptions::HASH>()));
 
-    if (Options[uci::uci_name<uci::UciOptions::HASH_X_THREADS>()])
+    if (Options.at(uci::uci_name<uci::UciOptions::HASH_X_THREADS>()))
       tt_size *= size();
 
     TT.init(tt_size);

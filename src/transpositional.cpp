@@ -72,7 +72,7 @@ void HashTable::clear()
 {
   // Original code from SF
 
-  const auto thread_count = static_cast<std::size_t>(Options[uci::uci_name<uci::UciOptions::THREADS>()]);
+  const auto thread_count = static_cast<std::size_t>(Options.at(uci::uci_name<uci::UciOptions::THREADS>()));
   std::vector<std::jthread> threads(thread_count);
 
   for (std::size_t idx = 0; idx < thread_count; idx++)
