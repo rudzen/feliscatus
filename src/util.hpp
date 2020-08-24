@@ -35,17 +35,20 @@
 #include <emmintrin.h>
 #endif
 
-namespace util {
+namespace util
+{
 
 template<typename T>
-constexpr T abs(const T v) {
+constexpr T abs(const T v)
+{
   static_assert(std::is_integral_v<T>);
   constexpr auto mask_shift = (sizeof(int) * CHAR_BIT - 1);
-  const auto mask = static_cast<int>(v) >> mask_shift;
+  const auto mask           = static_cast<int>(v) >> mask_shift;
   return (v ^ mask) - mask;
 }
 
-constexpr void sleep(const std::integral auto ms) {
+constexpr void sleep(const std::integral auto ms)
+{
 #if defined(__linux__)
   std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 #else
@@ -53,34 +56,41 @@ constexpr void sleep(const std::integral auto ms) {
 #endif
 }
 
-constexpr double sigmoid(const double x, const double k) {
+constexpr double sigmoid(const double x, const double k)
+{
   return 1 / (1 + std::pow(10, -k * x / 400));
 }
 
 template<typename T>
-constexpr bool in_between(const T v, const T min, const T max) {
+constexpr bool in_between(const T v, const T min, const T max)
+{
   static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "invalid type.");
-  return static_cast<unsigned int>(v) - static_cast<unsigned int>(min) <= static_cast<unsigned int>(max) - static_cast<unsigned int>(min);
+  return static_cast<unsigned int>(v) - static_cast<unsigned int>(min)
+         <= static_cast<unsigned int>(max) - static_cast<unsigned int>(min);
 }
 
 template<int Min, int Max>
-constexpr bool in_between(const int v) {
-  return static_cast<unsigned int>(v) - static_cast<unsigned int>(Min) <= static_cast<unsigned int>(Max) - static_cast<unsigned int>(Min);
+constexpr bool in_between(const int v)
+{
+  return static_cast<unsigned int>(v) - static_cast<unsigned int>(Min)
+         <= static_cast<unsigned int>(Max) - static_cast<unsigned int>(Min);
 }
 
 template<typename Integral>
-constexpr char to_char(const Integral v) {
+constexpr char to_char(const Integral v)
+{
   return static_cast<char>(v + '0');
 }
 
 template<typename T>
-constexpr T from_char(const char c) {
+constexpr T from_char(const char c)
+{
   return static_cast<T>(c - '0');
 }
 
 template<typename T>
-constexpr T to_integral(std::string_view str) {
-
+constexpr T to_integral(std::string_view str)
+{
   static_assert(std::is_integral_v<T>, "Only integrals allowed.");
 
   auto sv_val = [&str]() {
@@ -93,35 +103,34 @@ constexpr T to_integral(std::string_view str) {
     return x;
   };
 
+  // In case T is signed, make sure the string is correctly converted
   if constexpr (std::is_signed_v<T>)
   {
-    return str.front() == '-'
-         ? str.remove_prefix(1), -sv_val()
-         : sv_val();
+    return str.front() == '-' ? str.remove_prefix(1), -sv_val() : sv_val();
   } else
+  // discard string prefix if its a - sign, as target type is unsigned
   {
     if (str.front() == '-')
       str.remove_prefix(1);
     return sv_val();
   }
-
 }
 
 template<typename ToCheck, std::size_t ExpectedSize, std::size_t RealSize = sizeof(ToCheck)>
-void check_size() {
+void check_size()
+{
   static_assert(ExpectedSize == RealSize, "Size is off!");
 }
 
-/**
- * Round to the nearest integer (based on idea from OpenCV)
- * @param value The value to round
- * @return Nearest integer
- */
 template<typename T, typename T2>
-constexpr T round(T2 value) {
+constexpr T round(T2 value)
+{
   static_assert(std::is_integral<T>::value || std::is_trivial<T>::value, "round only returns integral.");
   static_assert(std::is_floating_point<T2>::value, "round is only possible for floating points.");
-#if ((defined(_MSC_VER) && defined(_M_X64)) || (defined(__GNUC__) && defined(__x86_64__) && defined(__SSE2__) && !defined(__APPLE__)) || defined(CV_SSE2)) && !defined(__CUDACC__)
+#if (                                                                                                                  \
+  (defined(_MSC_VER) && defined(_M_X64))                                                                               \
+  || (defined(__GNUC__) && defined(__x86_64__) && defined(__SSE2__) && !defined(__APPLE__)) || defined(CV_SSE2))       \
+  && !defined(__CUDACC__)
   const __m128d t = _mm_set_sd(value);
   return static_cast<T>(_mm_cvtsd_si32(t));
 #elif defined(_MSC_VER) && defined(_M_IX86)
@@ -132,7 +141,8 @@ constexpr T round(T2 value) {
       fistp t;
   }
   return static_cast<T>(t);
-#elif ((defined(_MSC_VER) && defined(_M_ARM)) || defined(CV_ICC) || defined(__GNUC__)) && defined(HAVE_TEGRA_OPTIMIZATION)
+#elif ((defined(_MSC_VER) && defined(_M_ARM)) || defined(CV_ICC) || defined(__GNUC__))                                 \
+  && defined(HAVE_TEGRA_OPTIMIZATION)
   TEGRA_ROUND_DBL(value);
 #elif defined(CV_ICC) || defined(__GNUC__)
 #if defined(ARM_ROUND_DBL)
@@ -152,7 +162,9 @@ constexpr T round(T2 value) {
 #endif
 }
 
-inline void find_and_replace(std::string &source, const std::string_view &find, const std::string_view &replace, const bool only_once = true) {
+inline void find_and_replace(
+  std::string &source, const std::string_view &find, const std::string_view &replace, const bool only_once = true)
+{
   for (std::string::size_type i = 0; (i = source.find(find, i)) != std::string::npos;)
   {
     source.replace(i, find.length(), replace);
@@ -162,4 +174,4 @@ inline void find_and_replace(std::string &source, const std::string_view &find, 
   }
 }
 
-}
+}   // namespace util

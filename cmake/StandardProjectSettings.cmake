@@ -29,9 +29,9 @@ find_package(Threads REQUIRED)
 option(ENFORCE_NATIVE_ARC "Force march=native for compiler" ON)
 if (ENFORCE_NATIVE_ARC)
     add_definitions("-march=native")
-else()
-    add_definitions("-mavx2")
 endif()
+
+add_definitions("-mavx2")
 
 add_definitions("-funroll-loops")
 if (WIN32)

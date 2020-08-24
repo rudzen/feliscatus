@@ -5,7 +5,8 @@
 #include "../src/util.hpp"
 #include "../src/types.hpp"
 
-TEST_CASE("Abs test", "[abs]") {
+TEST_CASE("Abs test", "[abs]")
+{
 
   constexpr auto expected = 42;
 
@@ -18,10 +19,11 @@ TEST_CASE("Abs test", "[abs]") {
   REQUIRE(actial_negative == expected);
 }
 
-TEST_CASE("in_between positive test", "[in_between_positive]") {
+TEST_CASE("in_between positive test", "[in_between_positive]")
+{
 
   constexpr auto expected = true;
-  constexpr auto pt = KNIGHT;
+  constexpr auto pt       = KNIGHT;
 
   constexpr auto min_boundry = KNIGHT;
   constexpr auto max_boundry = ROOK;
@@ -31,10 +33,11 @@ TEST_CASE("in_between positive test", "[in_between_positive]") {
   REQUIRE(actual == expected);
 }
 
-TEST_CASE("in_between negative test", "[in_between_negative]") {
+TEST_CASE("in_between negative test", "[in_between_negative]")
+{
 
   constexpr auto expected = false;
-  constexpr auto pt = KNIGHT;
+  constexpr auto pt       = KNIGHT;
 
   constexpr auto min_boundry = BISHOP;
   constexpr auto max_boundry = QUEEN;

@@ -25,24 +25,32 @@
 #include "types.hpp"
 #include "hash.hpp"
 #include "score.hpp"
+#include "miscellaneous.hpp"
 
 struct Board;
 
 #pragma pack(1)
-struct alignas(16) PawnHashEntry final {
+struct alignas(CacheLineSize / 2) PawnHashEntry final
+{
   Key zkey{};
-  Score eval{};
+  std::array<Score, COL_NB> scores{};
   std::array<Bitboard, COL_NB> passed_pawns{};
-  [[no_unique_address]] int unused{};
+
+  // TODO : Move more pawn-related only things here
+
+  Score eval() const noexcept
+  {
+    return scores[WHITE] - scores[BLACK];
+  }
+
 };
 #pragma pack()
 
 using PawnHashTable = Table<PawnHashEntry, 131072>;
 
-namespace Pawn {
-  [[nodiscard]]
-  PawnHashEntry *find(Board *b);
+namespace Pawn
+{
+template<bool Tuning>
+[[nodiscard]] PawnHashEntry *at(Board *b);
 
-  [[nodiscard]]
-  PawnHashEntry *insert(Board *b, Score s, const std::array<Bitboard, 2> &passed_pawns);
-}
+}   // namespace Pawn

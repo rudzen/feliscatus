@@ -22,29 +22,34 @@
 #include <chrono>
 
 #include "time.hpp"
-#include "util.hpp"
 
-namespace {
+namespace
+{
 
-constexpr TimeUnit time_reserve         = 72;
+constexpr TimeUnit time_reserve = 72;
 constexpr std::chrono::milliseconds curr_move_post_limit(5000);
 constexpr std::chrono::milliseconds last_post_info_span(1000);
-}
 
-void Time::init(const Color c, SearchLimits &search_limits) {
+}   // namespace
 
-  limits = search_limits;
-  last_curr_post = last_post_info = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+void Time::init(const Color c, SearchLimits &search_limits)
+{
+
+  limits         = search_limits;
+  last_curr_post = last_post_info =
+    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
 
   start_time.start();
+  [[unlikely]]
   if (limits.fixed_movetime)
     search_time = 950 * limits.movetime / 1000;
   else
   {
     const auto moves_left = util::in_between<1, 30>(limits.movestogo) ? limits.movestogo : 30;
-    const auto time_left = limits.time[c];
-    const auto time_inc  = limits.inc[c];
+    const auto time_left  = limits.time[c];
+    const auto time_inc   = limits.inc[c];
 
+    [[unlikely]]
     if (time_inc == 0 && time_left < 1000)
     {
       search_time = time_left / (moves_left * 2);
@@ -58,32 +63,40 @@ void Time::init(const Color c, SearchLimits &search_limits) {
   }
 }
 
-bool Time::time_up() const noexcept {
+bool Time::time_up() const noexcept
+{
   return start_time.elapsed_milliseconds() > search_time;
 }
 
-bool Time::plenty_time() const noexcept {
+bool Time::plenty_time() const noexcept
+{
   return search_time < start_time.elapsed_milliseconds() * n_;
 }
 
-void Time::ponder_hit() noexcept {
+void Time::ponder_hit() noexcept
+{
   search_time += start_time.elapsed_milliseconds();
 }
 
-TimeUnit Time::elapsed() const noexcept {
+TimeUnit Time::elapsed() const noexcept
+{
   return start_time.elapsed_milliseconds();
 }
 
-bool Time::should_post_curr_move() noexcept {
-  const auto now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+bool Time::should_post_curr_move() noexcept
+{
+  const auto now =
+    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
   const auto can_post = now - last_curr_post > curr_move_post_limit;
   if (can_post)
     last_curr_post = now;
   return can_post;
 }
 
-bool Time::should_post_info() noexcept {
-  const auto now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+bool Time::should_post_info() noexcept
+{
+  const auto now =
+    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
   const auto can_post = now - last_post_info > last_post_info_span;
   if (can_post)
     last_post_info = now;

@@ -36,13 +36,15 @@
 struct Board;
 struct FileResolver;
 
-namespace eval {
+namespace eval
+{
 
 struct Node;
 struct Param;
 struct ParamIndexRecord;
 
-class PGNPlayer : public pgn::PGNPlayer {
+class PGNPlayer : public pgn::PGNPlayer
+{
 public:
   PGNPlayer();
 
@@ -62,20 +64,22 @@ public:
 
 private:
   std::vector<Node> current_game_nodes_;
-  int64_t all_nodes_count_{};
+  std::int64_t all_nodes_count_{};
 };
 
 class Tune final {
 public:
   explicit Tune(std::unique_ptr<Board> board, const ParserSettings *settings);
 
-  double e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index, double K);
+  double
+    e(const std::vector<Node> &nodes, const std::vector<Param> &params,
+      const std::vector<ParamIndexRecord> &params_index, double K);
 
   void make_quiet(std::vector<Node> &nodes);
 
-  int get_score(Color c) const;
+  int score(Color c) const;
 
-  int get_quiesce_score(int alpha, int beta, bool store_pv, int ply) const;
+  int quiesce_score(int alpha, int beta, bool store_pv, int ply) const;
 
   bool make_move(Move m, int ply) const;
 
@@ -90,4 +94,4 @@ private:
   bool score_static_;
 };
 
-}// namespace eval
+}   // namespace eval

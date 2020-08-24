@@ -1,11 +1,13 @@
 #include <cstdint>
 #include <catch2/catch.hpp>
 
-constexpr uint64_t Factorial(const uint64_t number) {
+constexpr std::uint64_t Factorial(const std::uint64_t number)
+{
   return number <= 1 ? number : Factorial(number - 1) * number;
 }
 
-TEST_CASE("Factorials are computed with constexpr", "[factorial]") {
+TEST_CASE("Factorials are computed with constexpr", "[factorial]")
+{
   constexpr auto expected_1  = 1;
   constexpr auto expected_2  = 2;
   constexpr auto expected_3  = 6;

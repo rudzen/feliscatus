@@ -25,7 +25,7 @@
 
 #include "types.hpp"
 
-template <class T>
+template<class T>
 concept PRNGCompatible = std::is_convertible_v<T, Key>;
 
 /// xorshift64star Pseudo-Random Number Generator
@@ -43,38 +43,51 @@ concept PRNGCompatible = std::is_convertible_v<T, Key>;
 /// For further analysis see
 ///   <http://vigna.di.unimi.it/ftp/papers/xorshift.pdf>
 
-template<typename T> requires PRNGCompatible<T>
-struct PRNG final {
-
+template<typename T>
+requires PRNGCompatible<T> struct PRNG final
+{
   PRNG() = delete;
-  constexpr explicit PRNG(const T seed) : s(seed) {
+  constexpr explicit PRNG(const T seed) : s(seed)
+  {
     assert(seed);
   }
-  ~PRNG()                       = default;
-  PRNG(const PRNG &other)       = delete;
-  PRNG(PRNG &&other)            = delete;
+
+  ~PRNG()                 = default;
+  PRNG(const PRNG &other) = delete;
+  PRNG(PRNG &&other)      = delete;
   PRNG &operator=(const PRNG &) = delete;
   PRNG &operator=(PRNG &&other) = delete;
 
   [[nodiscard]]
-  constexpr T operator()() noexcept { return T(rand64()); }
+  constexpr T operator()() noexcept
+  {
+    return T(rand64());
+  }
 
-  template<typename T2> requires PRNGCompatible<T>
+  template<typename T2>
+  requires PRNGCompatible<T>
   [[nodiscard]]
-  constexpr T rand() noexcept { return T2(rand64()); }
+  constexpr T rand() noexcept
+  {
+    return T2(rand64());
+  }
 
   /// Special generator used to fast init magic numbers.
   /// Output values only have 1/8th of their bits set on average.
-  template<typename T2> requires PRNGCompatible<T>
+  template<typename T2>
+  requires PRNGCompatible<T>
   [[nodiscard]]
-  constexpr T sparse_rand() { return T2(rand64() & rand64() & rand64()); }
+  constexpr T sparse_rand()
+  {
+    return T2(rand64() & rand64() & rand64());
+  }
 
- private:
-  uint64_t s;
+private:
+  std::uint64_t s;
 
   [[nodiscard]]
-  constexpr uint64_t rand64() {
-
+  constexpr std::uint64_t rand64()
+  {
     s ^= s >> 12, s ^= s << 25, s ^= s >> 27;
     return s * 2685821657736338717LL;
   }

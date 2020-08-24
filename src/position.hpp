@@ -22,11 +22,12 @@
 
 #include "material.hpp"
 
-class HashEntry;
+struct HashEntry;
 
 using KillerMoves = std::array<Move, 4>;
 
-struct Position final {
+struct Position final
+{
   void clear();
 
   int reversible_half_move_count{};

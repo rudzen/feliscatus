@@ -34,14 +34,15 @@
 #include "search_limits.hpp"
 #include "cpu.hpp"
 
-struct Felis;
 struct Board;
 
-namespace uci {
+namespace uci
+{
 
-inline Cpu CpuLoad;
+inline CpuLoad Cpu;
 
-enum class UciOptions {
+enum class UciOptions
+{
   THREADS,
   HASH,
   HASH_X_THREADS,
@@ -55,28 +56,28 @@ enum class UciOptions {
 
 using uci_t = std::underlying_type_t<UciOptions>;
 
-constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB)> UciStrings
-{
-  "Threads",
-  "Hash",
-  "Hash * Threads",
-  "Clear Hash",
-  "Clear hash on new game",
-  "Ponder",
-  "UCI_Chess960",
-  "Show CPU usage"
-};
-
 template<UciOptions Option>
-[[nodiscard]]
-constexpr std::string_view get_uci_name() {
+[[nodiscard]] constexpr std::string_view uci_name()
+{
+  constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB)> UciStrings{
+    "Threads", "Hash",         "Hash * Threads", "Clear Hash", "Clear hash on new game",
+    "Ponder",  "UCI_Chess960", "Show CPU usage"};
+
   return UciStrings[static_cast<uci_t>(Option)];
 }
 
 class Option;
 
+enum class OptionType
+{
+  String, Check, Button, Spin, Combo
+};
+
+using option_type_t = std::underlying_type_t<OptionType>;
+
 /// Custom comparator because UCI options should be case insensitive
-struct CaseInsensitiveLess final {
+struct CaseInsensitiveLess final
+{
   bool operator()(std::string_view, std::string_view) const noexcept;
 };
 
@@ -84,7 +85,8 @@ struct CaseInsensitiveLess final {
 using OptionsMap = std::map<std::string_view, Option, CaseInsensitiveLess>;
 
 /// Option class implements an option as defined by UCI protocol
-class [[nodiscard]] Option final {
+class [[nodiscard]] Option final
+{
 
   typedef void (*on_change)(const Option &);
 
@@ -127,7 +129,7 @@ public:
   std::string_view current_value() const noexcept;
 
   [[nodiscard]]
-  std::string_view type() const noexcept;
+  OptionType type() const noexcept;
 
   [[nodiscard]]
   int max() const noexcept;
@@ -138,7 +140,7 @@ public:
 private:
   std::string default_value_{};
   std::string current_value_{};
-  std::string type_{};
+  OptionType type_{};
   int min_{};
   int max_{};
   std::size_t idx_{};
@@ -163,7 +165,7 @@ std::string info(std::string_view info_string);
 
 void run(int argc, char *argv[]);
 
-}// namespace uci
+}   // namespace uci
 
 inline uci::OptionsMap Options;
 
@@ -171,10 +173,13 @@ inline uci::OptionsMap Options;
 /// Options formatter
 ///
 template<>
-struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view> {
+struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view>
+{
   // parse is inherited from formatter<string_view>.
   template<typename FormatContext>
-  auto format(const uci::OptionsMap om, FormatContext &ctx) {
+  auto format(const uci::OptionsMap om, FormatContext &ctx)
+  {
+    static constexpr std::array<std::string_view, 5> Types { "string", "check", "button", "spin", "combo" };
     fmt::memory_buffer buffer;
 
     for (std::size_t idx = 0; idx < om.size(); ++idx)
@@ -183,16 +188,16 @@ struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view> {
         if (it.second.index() != idx)
           continue;
 
-        const auto &o = it.second;
-        const auto type = o.type();
+        const auto &o            = it.second;
+        const auto type          = o.type();
         const auto default_value = o.default_value();
 
-        fmt::format_to(buffer, "\noption name {} type {}", it.first, type);
+        fmt::format_to(buffer, "\noption name {} type {}", it.first, Types[static_cast<uci::option_type_t>(type)]);
 
-        if (type != "button")
+        if (type != uci::OptionType::Button)
           fmt::format_to(buffer, " default {}", default_value);
 
-        if (type == "spin")
+        if (type == uci::OptionType::Spin)
           fmt::format_to(buffer, " min {} max {}", o.min(), o.max());
 
         break;
@@ -202,38 +207,32 @@ struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view> {
   }
 };
 
-///
-/// Move formatter
-///
 template<>
-struct fmt::formatter<Move> : formatter<std::string_view> {
-  // parse is inherited from formatter<string_view>.
+struct fmt::formatter<Move> : formatter<std::string_view>
+{
   template<typename FormatContext>
-  auto format(const Move m, FormatContext &ctx) {
+  auto format(const Move m, FormatContext &ctx)
+  {
     return formatter<std::string_view>::format(uci::display_uci(m), ctx);
   }
 };
 
-///
-/// Square formatter
-///
 template<>
-struct fmt::formatter<Square> : formatter<std::string_view> {
-  // parse is inherited from formatter<string_view>.
+struct fmt::formatter<Square> : formatter<std::string_view>
+{
   template<typename FormatContext>
-  auto format(const Square s, FormatContext &ctx) {
+  auto format(const Square s, FormatContext &ctx)
+  {
     return formatter<std::string_view>::format(SquareString[s], ctx);
   }
 };
 
-///
-/// File formatter
-///
 template<>
-struct fmt::formatter<File> : formatter<std::string_view> {
-  // parse is inherited from formatter<string_view>.
+struct fmt::formatter<File> : formatter<std::string_view>
+{
   template<typename FormatContext>
-  auto format(const File f, FormatContext &ctx) {
+  auto format(const File f, FormatContext &ctx)
+  {
     return formatter<std::string_view>::format('a' + static_cast<char>(f), ctx);
   }
 };

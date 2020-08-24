@@ -26,17 +26,28 @@
 
 #include "types.hpp"
 
-struct MoveData {
+struct MoveData final
+{
   Move move{};
   int score{};
-  constexpr operator Move() const { return move; }
-  void operator=(const Move m) { move = m; }
-  constexpr auto operator<=> (const MoveData &rhs) { return score <=> rhs.score; }
+  constexpr operator Move() const
+  {
+    return move;
+  }
+  void operator=(const Move m)
+  {
+    move = m;
+  }
+  constexpr auto operator<=>(const MoveData &rhs)
+  {
+    return score <=> rhs.score;
+  }
 };
 
 struct Board;
 
-enum MoveStage {
+enum MoveStage
+{
   TT_STAGE,
   CAPTURE_STAGE,
   QUIET_STAGE,
@@ -44,9 +55,11 @@ enum MoveStage {
 };
 
 template<bool Tuning = false>
-struct Moves final {
+struct Moves final
+{
 
-  explicit Moves(Board *board) : b(board) { }
+  explicit Moves(Board *board) : b(board)
+  { }
 
   void generate_moves(Move tt_move = MOVE_NONE, int flags = 0);
 
@@ -57,9 +70,11 @@ struct Moves final {
 
   void generate_pawn_moves(bool capture, Bitboard to_squares, Color c);
 
-  [[nodiscard]] const MoveData *next_move();
+  [[nodiscard]]
+  const MoveData *next_move();
 
-  [[nodiscard]] int move_count() const;
+  [[nodiscard]]
+  int move_count() const;
 
 private:
   void reset(Move m, int flags);
@@ -72,8 +87,8 @@ private:
   template<Color Us>
   void generate_quiet_moves();
 
-  template<Color Us>
-  void add_move(Piece pc, Square from, Square to, MoveType mt, Piece promoted = NO_PIECE);
+  template<Color Us, MoveType Type>
+  void add_move(Piece pc, Square from, Square to, Piece promoted = NO_PIECE);
 
   template<Color Us, PieceType Pt>
   void add_piece_moves(Bitboard to_squares);
@@ -90,8 +105,8 @@ private:
   template<Color Us>
   void add_pawn_capture_moves(Bitboard to_squares);
 
-  template<Color Us>
-  void add_pawn_moves(Bitboard to_squares, Direction d, MoveType mt);
+  template<Color Us, MoveType Type>
+  void add_pawn_moves(Bitboard to_squares, Direction d);
 
   template<Color Us>
   void add_castle_move(Square from, Square to);
@@ -100,10 +115,12 @@ private:
   [[nodiscard]] const MoveData *next_move();
 
   template<Color Us>
-  [[nodiscard]] bool can_castle_short() const;
+  [[nodiscard]]
+  bool can_castle_short() const;
 
   template<Color Us>
-  [[nodiscard]] bool can_castle_long() const;
+  [[nodiscard]]
+  bool can_castle_long() const;
 
   std::array<MoveData, 256> move_list{};
   int iteration_{};
@@ -116,11 +133,13 @@ private:
 };
 
 template<bool Tuning>
-int Moves<Tuning>::move_count() const {
+int Moves<Tuning>::move_count() const
+{
   return number_moves_;
 }
 
-namespace MoveGen {
+namespace MoveGen
+{
 
 template<MoveGenFlags Flags>
 MoveData *generate(Board *b, MoveData *md);
@@ -130,12 +149,35 @@ MoveData *generate(Board *b, MoveData *md);
 // A simple array wrapper for storing the generated moves
 
 template<MoveGenFlags Flags>
-struct MoveList final : std::array<MoveData, 256> {
-  [[nodiscard]] explicit MoveList(Board *b) : std::array<MoveData, 256>({}), last_move(MoveGen::generate<Flags>(b, begin())){};
-  [[nodiscard]] const_iterator end() const { return last_move; }
-  [[nodiscard]] std::size_t size() const { return std::distance(begin(), end()); }
-  [[nodiscard]] bool empty() const { return size() == 0; }
-  [[nodiscard]] bool contains(const Move move) const { return std::find(begin(), end(), move) != end(); }
+struct MoveList final : std::array<MoveData, 256>
+{
+  [[nodiscard]]
+  explicit MoveList(Board *b)
+    : std::array<MoveData, 256>({}), last_move(MoveGen::generate<Flags>(b, begin())){};
+
+  [[nodiscard]]
+  const_iterator end() const
+  {
+    return last_move;
+  }
+
+  [[nodiscard]]
+  std::size_t size() const
+  {
+    return std::distance(begin(), end());
+  }
+
+  [[nodiscard]]
+  bool empty() const
+  {
+    return size() == 0;
+  }
+
+  [[nodiscard]]
+  bool contains(const Move move) const
+  {
+    return std::find(begin(), end(), move) != end();
+  }
 
 private:
   const_iterator last_move;
