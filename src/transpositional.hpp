@@ -101,7 +101,7 @@ private:
   // Just use a simple array for bucket
   struct Bucket final
   {
-    BucketArray entry{};
+    alignas(CacheLineSize) BucketArray entry{};
   };
 
 public:

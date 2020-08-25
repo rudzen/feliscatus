@@ -30,14 +30,18 @@ constexpr TimeUnit time_reserve = 72;
 constexpr std::chrono::milliseconds curr_move_post_limit(5000);
 constexpr std::chrono::milliseconds last_post_info_span(1000);
 
+inline std::chrono::milliseconds since_epoch()
+{
+  return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+}
+
 }   // namespace
 
 void Time::init(const Color c, SearchLimits &search_limits)
 {
 
   limits         = search_limits;
-  last_curr_post = last_post_info =
-    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+  last_curr_post = last_post_info = since_epoch();
 
   start_time.start();
   [[unlikely]]
@@ -85,8 +89,7 @@ TimeUnit Time::elapsed() const noexcept
 
 bool Time::should_post_curr_move() noexcept
 {
-  const auto now =
-    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+  const auto now = since_epoch();
   const auto can_post = now - last_curr_post > curr_move_post_limit;
   if (can_post)
     last_curr_post = now;
@@ -95,8 +98,7 @@ bool Time::should_post_curr_move() noexcept
 
 bool Time::should_post_info() noexcept
 {
-  const auto now =
-    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+  const auto now = since_epoch();
   const auto can_post = now - last_post_info > last_post_info_span;
   if (can_post)
     last_post_info = now;

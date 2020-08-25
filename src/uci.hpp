@@ -57,7 +57,8 @@ enum class UciOptions
 using uci_t = std::underlying_type_t<UciOptions>;
 
 template<UciOptions Option>
-[[nodiscard]] constexpr std::string_view uci_name()
+[[nodiscard]]
+constexpr std::string_view uci_name()
 {
   constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB)> UciStrings{
     "Threads", "Hash",         "Hash * Threads", "Clear Hash", "Clear hash on new game",
