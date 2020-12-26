@@ -21,20 +21,20 @@ const ParserSettings &CliParser::parse() {
   if constexpr (T == Tuner)
   {
     auto *const file_option = app_.add_option("-f,--file", parser_settings_.file_name, "The PGN file to read as input");
-    auto *const pawn_option   = app_.add_flag("-p, --pawn", "Enables pawn tuning.");
-    auto *const pp_option     = app_.add_flag("--passedpawn", "Enables passed pawn tuning.");
-    auto *const knight_option = app_.add_flag("-n, --knight", "Enables knight tuning.");
-    auto *const bishop_option = app_.add_flag("-b, --bishop", "Enables bishop tuning.");
-    auto *const rook_option   = app_.add_flag("-r, --rook", "Enables rook tuning.");
-    auto *const queen_option  = app_.add_flag("-q, --queen", "Enables queen tuning.");
-    auto *const king_option   = app_.add_flag("-k, --king", "Enables king tuning.");
-    auto *const psqt_option   = app_.add_flag("--psqt", "Enabled piece square value tuning");
-    auto *const coord_option  = app_.add_flag("--coordination", "Enables bishop pair tuning");
-    auto *const str_option    = app_.add_flag("--strength", "Enable attack strength evaluation tuning");
-    auto *const weak_option   = app_.add_flag("--weakness", "Enable weakness evaluation tuning");
-    auto *const mob_option    = app_.add_flag("--mobility", "Enables piece mobility tuning");
-    auto *const tempo_option  = app_.add_flag("--tempo", "Enables tempo evaluation tuning");
-    auto *const lazy_option   = app_.add_flag("--lazy_margin", "Enables lazy_margin cut-off tuning");
+    auto *const pawn_option   = app_.add_flag("-p, --pawn", parser_settings_.pawn, "Enables pawn tuning.");
+    auto *const pp_option     = app_.add_flag("--passedpawn", parser_settings_.passed_pawn, "Enables passed pawn tuning.");
+    auto *const knight_option = app_.add_flag("-n, --knight", parser_settings_.knight, "Enables knight tuning.");
+    auto *const bishop_option = app_.add_flag("-b, --bishop", parser_settings_.bishop, "Enables bishop tuning.");
+    auto *const rook_option   = app_.add_flag("-r, --rook", parser_settings_.rook, "Enables rook tuning.");
+    auto *const queen_option  = app_.add_flag("-q, --queen", parser_settings_.queen, "Enables queen tuning.");
+    auto *const king_option   = app_.add_flag("-k, --king", parser_settings_.king, "Enables king tuning.");
+    auto *const psqt_option   = app_.add_flag("--psqt", parser_settings_.psqt, "Enabled piece square value tuning");
+    auto *const coord_option  = app_.add_flag("--coordination", parser_settings_.coordination, "Enables bishop pair tuning");
+    auto *const str_option    = app_.add_flag("--strength", parser_settings_.strength, "Enable attack strength evaluation tuning");
+    auto *const weak_option   = app_.add_flag("--weakness", parser_settings_.weakness, "Enable weakness evaluation tuning");
+    auto *const mob_option    = app_.add_flag("--mobility", parser_settings_.mobility, "Enables piece mobility tuning");
+    auto *const tempo_option  = app_.add_flag("--tempo", parser_settings_.tempo, "Enables tempo evaluation tuning");
+    auto *const lazy_option   = app_.add_flag("--lazy_margin", parser_settings_.lazy_margin, "Enables lazy_margin cut-off tuning");
 
     file_option->required();
     pp_option->needs(pawn_option);
