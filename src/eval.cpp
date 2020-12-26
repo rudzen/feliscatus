@@ -28,10 +28,6 @@
 #include "types.hpp"
 #include "board.hpp"
 #include "parameters.hpp"
-#include "bitboard.hpp"
-#include "position.hpp"
-#include "pawnhashtable.hpp"
-#include "score.hpp"
 
 namespace
 {

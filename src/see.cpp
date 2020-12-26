@@ -21,8 +21,6 @@
 #include <optional>
 
 #include "board.hpp"
-#include "bitboard.hpp"
-#include "types.hpp"
 
 namespace
 {

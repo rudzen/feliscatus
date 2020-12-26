@@ -24,7 +24,6 @@
 #include "../src/board.hpp"
 #include "../src/uci.hpp"
 #include "../src/transpositional.hpp"
-#include "../src/miscellaneous.hpp"
 
 int main(const int argc, char *argv[])
 {

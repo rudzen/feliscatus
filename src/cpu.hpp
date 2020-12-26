@@ -49,18 +49,18 @@ struct CpuLoad final
 private:
 #if defined(WIN32)
 
-  ULARGE_INTEGER lastCPU{};
-  ULARGE_INTEGER lastSysCPU{};
-  ULARGE_INTEGER lastUserCPU{};
-  DWORD numProcessors{};
+  ULARGE_INTEGER last_cpu{};
+  ULARGE_INTEGER last_sys_cpu{};
+  ULARGE_INTEGER last_user_cpu{};
+  DWORD num_processors{};
   HANDLE self{};
 
 #else
 
-  clock_t lastCPU{};
-  clock_t lastSysCPU{};
-  clock_t lastUserCPU{};
-  int numProcessors{};
+  clock_t last_cpu{};
+  clock_t last_sys_cpu{};
+  clock_t last_user_cpu{};
+  int num_processors{};
 
 #endif
 };
