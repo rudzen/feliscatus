@@ -70,21 +70,25 @@ Square ep_square(std::string_view s)
 
   s.remove_prefix(1);
 
-  return !util::in_between<'3', '6'>(s.front()) ? NO_SQ : static_cast<Square>(first - 'a' + (s.front() - '1') * 8);
+  return !util::in_between<'3', '6'>(s.front())
+         ? NO_SQ
+         : static_cast<Square>(first - 'a' + (s.front() - '1') * 8);
 }
 
-Square find_rook_square(Board *b, const Color us, const bool king_side)
+template<Color Us, CastlingRight Side>
+[[nodiscard]]
+Square find_rook_square(const Board *b)
 {
-  const auto rook     = make_piece(ROOK, us);
-  const auto relative = [&us](const Square s) {
-    return relative_square(us, s);
+  constexpr auto Rook     = make_piece(ROOK, Us);
+  constexpr auto Relative = [&](const Square s) {
+    return relative_square(Us, s);
   };
-  const auto is_rook_on_square = [&b, &rook](const Square sq) {
-    return b->piece(sq) == rook;
+  const auto is_rook_on_square = [&b](const Square sq) {
+    return b->piece(sq) == Rook;
   };
-  const auto filter = std::views::transform(relative) | std::views::filter(is_rook_on_square);
+  const auto filter = std::views::transform(Relative) | std::views::filter(is_rook_on_square);
 
-  if (king_side)
+  if constexpr (Side == KING_SIDE)
   {
     auto res = CastlelingSquaresKing | filter;
     return *std::ranges::begin(res);
@@ -796,7 +800,7 @@ void Board::add_short_castle_rights(std::optional<File> rook_file)
   Square rook_square;
 
   if (!rook_file.has_value())
-    rook_square = find_rook_square(this, Us, true);
+    rook_square = find_rook_square<Us, KING_SIDE>(this);
   else
     rook_square = make_square(rook_file.value(), Rank_1);
 
@@ -819,7 +823,7 @@ void Board::add_long_castle_rights(std::optional<File> rook_file)
   Square rook_square;
 
   if (!rook_file.has_value())
-    rook_square = find_rook_square(this, Us, false);
+    rook_square = find_rook_square<Us, QUEEN_SIDE>(this);
   else
     rook_square = make_square(rook_file.value(), Rank_1);
 
