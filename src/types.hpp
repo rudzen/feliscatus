@@ -251,7 +251,13 @@ template<Color C, CastlingRight S>
 constexpr CastlingRight make_castling()
 {
   return C == WHITE ? S == QUEEN_SIDE ? WHITE_OOO : WHITE_OO : S == QUEEN_SIDE ? BLACK_OOO : BLACK_OO;
-};
+}
+
+template<CastlingRight S>
+constexpr CastlingRight make_castling(const Color c)
+{
+  return c == WHITE ? S == QUEEN_SIDE ? WHITE_OOO : WHITE_OO : S == QUEEN_SIDE ? BLACK_OOO : BLACK_OO;
+}
 
 constexpr CastlingRight operator&(const Color c, const CastlingRight cr)
 {
