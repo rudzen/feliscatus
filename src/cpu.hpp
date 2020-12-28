@@ -44,6 +44,7 @@ struct CpuLoad final
   CpuLoad &operator=(const CpuLoad &) = delete;
   CpuLoad &operator=(CpuLoad &&other) = delete;
 
+  [[nodiscard]]
   int usage();
 
 private:

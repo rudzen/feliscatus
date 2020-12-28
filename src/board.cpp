@@ -629,6 +629,7 @@ std::string Board::fen() const
       const auto sq = make_square(f, r);
       const auto pc = piece(sq);
 
+      [[unlikely]]
       if (pc != NO_PIECE)
       {
         if (empty)
@@ -644,6 +645,7 @@ std::string Board::fen() const
     if (empty)
       format_to(s, "{}", util::to_char(empty));
 
+    [[likely]]
     if (r > 0)
       format_to(s, "/");
   }

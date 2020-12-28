@@ -256,14 +256,14 @@ MoveData *generate_quiet_moves(Board *b, MoveData *md)
   md = add_pawn_moves<Flags, Us, DOUBLEPUSH, Up * 2>(b, shift_bb<Up>(pushed & Rank3) & empty_squares, md);
   md = add_moves<Flags, Us>(b, empty_squares, md);
 
-  if (!b->in_check())
-  {
-    if (can_castle_short<Us>(b))
-      md = add_castle_move<Flags, Us>(b, oo_king_from[Us], oo_king_to[Us], md);
+  if (b->in_check())
+    return md;
 
-    if (can_castle_long<Us>(b))
-      md = add_castle_move<Flags, Us>(b, ooo_king_from[Us], ooo_king_to[Us], md);
-  }
+  if (can_castle_short<Us>(b))
+    md = add_castle_move<Flags, Us>(b, oo_king_from[Us], oo_king_to[Us], md);
+
+  if (can_castle_long<Us>(b))
+    md = add_castle_move<Flags, Us>(b, ooo_king_from[Us], ooo_king_to[Us], md);
 
   return md;
 }

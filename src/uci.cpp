@@ -32,6 +32,7 @@ namespace
 
 constexpr TimeUnit time_safety_margin = 1;
 
+[[nodiscard]]
 std::unique_ptr<Board> new_board()
 {
   const auto num_threads = static_cast<std::size_t>(Options[uci::uci_name<uci::UciOptions::THREADS>()]);
@@ -41,17 +42,20 @@ std::unique_ptr<Board> new_board()
   return board;
 }
 
+[[nodiscard]]
 constexpr std::uint64_t nps(const std::uint64_t nodes, const TimeUnit time)
 {
   return nodes * 1000 / time;
 }
 
+[[nodiscard]]
 auto node_info(const TimeUnit time)
 {
   const auto nodes = pool.node_count();
   return std::make_pair(nodes, nps(nodes, time));
 }
 
+[[nodiscard]]
 Move string_to_move(Board *b, const std::string_view m)
 {
   auto mg = Moves(b);

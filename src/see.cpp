@@ -36,17 +36,20 @@ struct SeeData final
 
 constexpr int SEE_INVALID_SCORE = -5000;
 
+[[nodiscard]]
 constexpr auto material_change(const Move m)
 {
   return (is_capture(m) ? piece_value(move_captured(m)) : 0)
          + (is_promotion(m) ? (piece_value(move_promoted(m)) - piece_value(PAWN)) : 0);
 }
 
+[[nodiscard]]
 constexpr auto next_to_capture(const Move m)
 {
   return is_promotion(m) ? move_promoted(m) : move_piece(m);
 }
 
+[[nodiscard]]
 auto from_sq(const Bitboard bb, SeeData &data, const Color c)
 {
   const auto from = lsb(bb);
@@ -56,7 +59,7 @@ auto from_sq(const Bitboard bb, SeeData &data, const Color c)
 
 
 /// "Best" == "Lowest piece value"
-
+[[nodiscard]]
 std::optional<Square> lookup_best_attacker(SeeData &data, const Square to, const Color c, const Board *b)
 {
   const auto occupied = b->pieces();

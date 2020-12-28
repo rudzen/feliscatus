@@ -85,7 +85,7 @@ constexpr void set_bit(Bitboard &bb, const int b)
 
 
 /// test_bit() tests if a bit is set
-
+[[nodiscard]]
 constexpr bool test_bit(const Bitboard bb, const int b)
 {
   return (bb & square_bb[static_cast<std::size_t>(b)]) != 0;
@@ -184,6 +184,7 @@ void initialize_magics(const std::array<MagicInit, 64> &magicInit, MagicTable &m
 namespace bitboard
 {
 
+[[nodiscard]]
 std::string print_bitboard(Bitboard bb, std::string_view title)
 {
   fmt::memory_buffer buffer;
