@@ -217,7 +217,7 @@ void Moves<Tuning>::generate_captures_and_promotions()
   const auto opponent_pieces  = b->pieces(Them);
   const auto pawns            = b->pieces(PAWN, Us);
 
-  add_pawn_moves<Us, NORMAL>(pawn_push(Us, pawns & Rank_7) & ~b->pieces(), Up);
+  add_pawn_moves<Us, NORMAL>(shift_bb<Up>(pawns & Rank_7) & ~b->pieces(), Up);
   add_pawn_moves<Us, CAPTURE>(WestAttacks(pawns) & opponent_pieces, WestDistance);
   add_pawn_moves<Us, CAPTURE>(EastAttacks(pawns) & opponent_pieces, EastDistance);
   add_moves<Us>(opponent_pieces);
@@ -341,11 +341,12 @@ template<Color Us>
 void Moves<Tuning>::add_pawn_quiet_moves(const Bitboard to_squares)
 {
   constexpr auto Rank_3    = relative_rank(Us, RANK_3);
+  const auto Up            = pawn_push(Us);
   const auto empty_squares = ~b->pieces();
-  const auto pushed        = pawn_push(Us, b->pieces(PAWN, Us)) & empty_squares;
+  const auto pushed        = shift_bb<Up>(b->pieces(PAWN, Us)) & empty_squares;
 
-  add_pawn_moves<Us, NORMAL>(pushed & to_squares, pawn_push(Us));
-  add_pawn_moves<Us, DOUBLEPUSH>(pawn_push(Us, pushed & Rank_3) & empty_squares & to_squares, pawn_push(Us) * 2);
+  add_pawn_moves<Us, NORMAL>(pushed & to_squares, Up);
+  add_pawn_moves<Us, DOUBLEPUSH>(shift_bb<Up>(pushed & Rank_3) & empty_squares & to_squares, Up * 2);
 }
 
 template<bool Tuning>

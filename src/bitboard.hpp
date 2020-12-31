@@ -51,7 +51,6 @@ using MagicTable = std::array<Magic, SQ_NB>;
 inline std::array<MagicTable, 2> MagicTables;
 
 constexpr static Bitboard AllSquares  = ~Bitboard(0);
-constexpr static Bitboard DarkSquares = 0xAA55AA55AA55AA55ULL;
 constexpr static Bitboard ZeroBB      = ~AllSquares;
 constexpr static Bitboard OneBB       = 0x1ULL;
 
@@ -104,8 +103,6 @@ constexpr std::array<Bitboard, RANK_NB> RankBB{Rank1BB, Rank2BB, Rank3BB, Rank4B
 constexpr std::array<Bitboard, FILE_NB> FileBB{FileABB, FileBBB, FileCBB, FileDBB, FileEBB, FileFBB, FileGBB, FileHBB};
 constexpr std::array<Bitboard, COL_NB> rank_3{Rank3BB, Rank6BB};
 constexpr std::array<Bitboard, COL_NB> rank_7{Rank7BB, Rank2BB};
-constexpr std::array<Bitboard, COL_NB> rank_6_and_7{Rank6BB | Rank7BB, Rank2BB | Rank3BB};
-constexpr std::array<Bitboard, COL_NB> rank_7_and_8{Rank7BB | Rank8BB, Rank1BB | Rank2BB};
 constexpr std::array<Direction, COL_NB> pawn_west_attack_dist{NORTH_EAST, SOUTH_EAST};
 constexpr std::array<Direction, COL_NB> pawn_east_attack_dist{NORTH_WEST, SOUTH_WEST};
 
@@ -194,16 +191,14 @@ constexpr Bitboard bb_rank(const Rank r)
   return RankBB[r];
 }
 
+template<typename T>
 [[nodiscard]]
-constexpr Bitboard bb_file(const File f)
-{
-  return FileBB[f];
-}
-
-[[nodiscard]]
-constexpr Bitboard bb_file(const Square s)
-{
-  return bb_file(file_of(s));
+constexpr Bitboard bb_file(const T t) {
+  static_assert(std::is_same_v<T, File> || std::is_same_v<T, Square>, "Wrong type.");
+  if constexpr (std::is_same_v<T, File>)
+    return FileBB[t];
+  else
+    return FileBB[file_of(t)];
 }
 
 //------------------------------------------------
@@ -349,12 +344,6 @@ constexpr Bitboard (*pawn_east_attacks[COL_NB])(Bitboard) = {shift_bb<NORTH_WEST
 constexpr Bitboard (*pawn_west_attacks[COL_NB])(Bitboard) = {shift_bb<NORTH_EAST>, shift_bb<SOUTH_EAST>};
 constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard)         = {fill<NORTH>, fill<SOUTH>};
 
-[[nodiscard]]
-constexpr Bitboard pawn_push(const Color c, const Bitboard bb)
-{
-  return c == WHITE ? shift_bb<NORTH>(bb) : shift_bb<SOUTH>(bb);
-}
-
 template<PieceType Pt>
 [[nodiscard]]
 Bitboard all_attacks(const Square s)
@@ -412,20 +401,12 @@ inline Bitboard pawn_attacks_bb(const Color c, const Square s)
   return pawn_captures[c][s];
 }
 
+template<PieceType Pt>
 [[nodiscard]]
-inline Bitboard xray_rook_attacks(const Bitboard occ, Bitboard blockers, const Square sq)
-{
-  const auto attacks = piece_attacks_bb<ROOK>(sq, occ);
+Bitboard xray_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
+  const auto attacks{piece_attacks_bb<Pt>(sq, occ)};
   blockers &= attacks;
-  return attacks ^ piece_attacks_bb<ROOK>(sq, occ ^ blockers);
-}
-
-[[nodiscard]]
-inline Bitboard xray_bishop_attacks(const Bitboard occ, Bitboard blockers, const Square sq)
-{
-  const auto attacks = piece_attacks_bb<BISHOP>(sq, occ);
-  blockers &= attacks;
-  return attacks ^ piece_attacks_bb<BISHOP>(sq, occ ^ blockers);
+  return attacks ^ piece_attacks_bb<Pt>(sq, occ ^ blockers);
 }
 
 constexpr void reset_lsb(Bitboard &bb)
@@ -442,8 +423,8 @@ constexpr Square lsb(const Bitboard bb)
 [[nodiscard]]
 constexpr Square pop_lsb(Bitboard *bb)
 {
-  const auto s = lsb(*bb);
-  *bb &= *bb - 1;
+  const auto s{lsb(*bb)};
+  reset_lsb(*bb);
   return s;
 }
 

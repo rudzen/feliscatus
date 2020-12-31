@@ -296,13 +296,13 @@ Bitboard Board::pinned_pieces(const Color c, const Square s) const
   const auto them        = ~c;
   const auto all_pieces  = pieces();
   const auto side_pieces = pieces(c);
-  auto pinners           = xray_bishop_attacks(all_pieces, side_pieces, s) & pieces(BISHOP, QUEEN, them);
+  auto pinners           = xray_attacks<BISHOP>(all_pieces, side_pieces, s) & pieces(BISHOP, QUEEN, them);
   auto pinned_pieces     = ZeroBB;
 
   while (pinners)
     pinned_pieces |= between(pop_lsb(&pinners), s) & side_pieces;
 
-  pinners = xray_rook_attacks(all_pieces, side_pieces, s) & pieces(ROOK, QUEEN, them);
+  pinners = xray_attacks<ROOK>(all_pieces, side_pieces, s) & pieces(ROOK, QUEEN, them);
 
   while (pinners)
     pinned_pieces |= between(pop_lsb(&pinners), s) & side_pieces;

@@ -51,7 +51,6 @@ MoveData *add_move(
   Board *b, const Piece pc, const Square from, const Square to, const MoveType mt, MoveData *md,
   const PieceType promo_pt = NO_PT)
 {
-
   const auto captured = [&mt, &b, &to]() {
     if (mt & CAPTURE)
       return b->piece(to);
@@ -154,7 +153,6 @@ template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]
 MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets)
 {
-
   constexpr auto pc   = make_piece(PAWN, Us);
   constexpr auto Them = ~Us;
   constexpr auto Up   = pawn_push(Us);
@@ -203,7 +201,6 @@ MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets)
       constexpr auto NorthEast = pawn_east_attack_dist[Us];
       constexpr auto NorthWest = pawn_west_attack_dist[Us];
 
-      not_occupied       = ~b->pieces();
       auto pawns_up_east = shift_bb<NorthEast>(promotion_pawns) & opponents;
       auto pawns_up_west = shift_bb<NorthWest>(promotion_pawns) & opponents;
 
@@ -226,6 +223,7 @@ MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets)
       }
     } else if constexpr (Flags == QUIET)
     {
+      not_occupied  = ~b->pieces();
       auto pawns_up = shift_bb<Up>(promotion_pawns) & not_occupied;
       while (pawns_up)
       {
@@ -282,7 +280,7 @@ MoveData *generate_captures_and_promotions(Board *b, MoveData *md)
   const auto opponent_pieces  = b->pieces(Them);
   const auto pawns            = b->pieces(PAWN, Us);
 
-  md = add_pawn_moves<Flags, Us, NORMAL, Up>(b, pawn_push(Us, pawns & Rank_7) & ~b->pieces(), md);
+  md = add_pawn_moves<Flags, Us, NORMAL, Up>(b, shift_bb<Up>(pawns & Rank_7) & ~b->pieces(), md);
   md = add_pawn_moves<Flags, Us, CAPTURE, WestDistance>(b, WestAttacks(pawns) & opponent_pieces, md);
   md = add_pawn_moves<Flags, Us, CAPTURE, EastDistance>(b, EastAttacks(pawns) & opponent_pieces, md);
 
