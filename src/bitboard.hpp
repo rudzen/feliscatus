@@ -103,8 +103,6 @@ constexpr std::array<Bitboard, RANK_NB> RankBB{Rank1BB, Rank2BB, Rank3BB, Rank4B
 constexpr std::array<Bitboard, FILE_NB> FileBB{FileABB, FileBBB, FileCBB, FileDBB, FileEBB, FileFBB, FileGBB, FileHBB};
 constexpr std::array<Bitboard, COL_NB> rank_3{Rank3BB, Rank6BB};
 constexpr std::array<Bitboard, COL_NB> rank_7{Rank7BB, Rank2BB};
-constexpr std::array<Direction, COL_NB> pawn_west_attack_dist{NORTH_EAST, SOUTH_EAST};
-constexpr std::array<Direction, COL_NB> pawn_east_attack_dist{NORTH_WEST, SOUTH_WEST};
 
 template<typename T1 = Square>
 [[nodiscard]]
@@ -340,9 +338,7 @@ inline bool aligned(const Square s1, const Square s2, const Square s3)
   return line(s1, s2) & s3;
 }
 
-constexpr Bitboard (*pawn_east_attacks[COL_NB])(Bitboard) = {shift_bb<NORTH_WEST>, shift_bb<SOUTH_WEST>};
-constexpr Bitboard (*pawn_west_attacks[COL_NB])(Bitboard) = {shift_bb<NORTH_EAST>, shift_bb<SOUTH_EAST>};
-constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard)         = {fill<NORTH>, fill<SOUTH>};
+constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard) = {fill<NORTH>, fill<SOUTH>};
 
 template<PieceType Pt>
 [[nodiscard]]
@@ -384,10 +380,10 @@ inline Bitboard piece_attacks_bb(const PieceType pt, const Square sq, const Bitb
     return piece_attacks_bb<QUEEN>(sq, occupied);
 
   case KING:
-    return all_attacks<KING>(sq);
+    return AllAttacks[KING][sq];
 
   case KNIGHT:
-    return all_attacks<KNIGHT>(sq);
+    return AllAttacks[KNIGHT][sq];
 
   default:
     break;   // error

@@ -827,7 +827,7 @@ bool Board::is_castleling_impeeded(const Square s, const Color us) const
   auto bb = bb_castle_pieces | between(ksq, rook_from) | between(rook_from, rook_to) | bit(rook_to, s);
 
   if ((bb & pieces()) != bb_castle_pieces)
-    return false;
+    return true;
 
   // Check that no square between the king's initial and final squares (including the initial and final
   // squares) may be under attack by an enemy piece. (Initial square was already checked a this point.)
@@ -839,9 +839,9 @@ bool Board::is_castleling_impeeded(const Square s, const Color us) const
   while (bb)
     [[unlikely]]
     if (is_attacked(pop_lsb(&bb), them))
-      return false;
+      return true;
 
-  return true;
+  return false;
 }
 
 bool Board::gives_check(const Move m)
