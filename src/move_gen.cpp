@@ -30,14 +30,14 @@ template<Color Us>
 [[nodiscard]]
 bool can_castle_short(Board *b)
 {
-  return b->can_castle(make_castling<Us, KING_SIDE>()) && b->is_castleling_impeeded(oo_king_to[Us], Us);
+  return b->can_castle(make_castling<Us, KING_SIDE>()) && !b->is_castleling_impeeded(oo_king_to[Us], Us);
 }
 
 template<Color Us>
 [[nodiscard]]
 bool can_castle_long(Board *b)
 {
-  return b->can_castle(make_castling<Us, QUEEN_SIDE>()) && b->is_castleling_impeeded(ooo_king_to[Us], Us);
+  return b->can_castle(make_castling<Us, QUEEN_SIDE>()) && !b->is_castleling_impeeded(ooo_king_to[Us], Us);
 }
 
 }   // namespace
@@ -51,7 +51,6 @@ MoveData *add_move(
   Board *b, const Piece pc, const Square from, const Square to, const MoveType mt, MoveData *md,
   const PieceType promo_pt = NO_PT)
 {
-
   const auto captured = [&mt, &b, &to]() {
     if (mt & CAPTURE)
       return b->piece(to);
@@ -154,7 +153,6 @@ template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]
 MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets)
 {
-
   constexpr auto pc   = make_piece(PAWN, Us);
   constexpr auto Them = ~Us;
   constexpr auto Up   = pawn_push(Us);
@@ -200,10 +198,9 @@ MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets)
     // handle captures
     if constexpr (Flags == CAPTURES)
     {
-      constexpr auto NorthEast = pawn_east_attack_dist[Us];
-      constexpr auto NorthWest = pawn_west_attack_dist[Us];
+      constexpr auto NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
+      constexpr auto NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
 
-      not_occupied       = ~b->pieces();
       auto pawns_up_east = shift_bb<NorthEast>(promotion_pawns) & opponents;
       auto pawns_up_west = shift_bb<NorthWest>(promotion_pawns) & opponents;
 
@@ -226,6 +223,7 @@ MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets)
       }
     } else if constexpr (Flags == QUIET)
     {
+      not_occupied  = ~b->pieces();
       auto pawns_up = shift_bb<Up>(promotion_pawns) & not_occupied;
       while (pawns_up)
       {
@@ -256,14 +254,14 @@ MoveData *generate_quiet_moves(Board *b, MoveData *md)
   md = add_pawn_moves<Flags, Us, DOUBLEPUSH, Up * 2>(b, shift_bb<Up>(pushed & Rank3) & empty_squares, md);
   md = add_moves<Flags, Us>(b, empty_squares, md);
 
-  if (!b->in_check())
-  {
-    if (can_castle_short<Us>(b))
-      md = add_castle_move<Flags, Us>(b, oo_king_from[Us], oo_king_to[Us], md);
+  if (b->in_check())
+    return md;
 
-    if (can_castle_long<Us>(b))
-      md = add_castle_move<Flags, Us>(b, ooo_king_from[Us], ooo_king_to[Us], md);
-  }
+  if (can_castle_short<Us>(b))
+    md = add_castle_move<Flags, Us>(b, oo_king_from[Us], oo_king_to[Us], md);
+
+  if (can_castle_long<Us>(b))
+    md = add_castle_move<Flags, Us>(b, ooo_king_from[Us], ooo_king_to[Us], md);
 
   return md;
 }
@@ -273,24 +271,22 @@ template<MoveGenFlags Flags, Color Us>
 MoveData *generate_captures_and_promotions(Board *b, MoveData *md)
 {
   constexpr auto Them         = ~Us;
-  constexpr auto WestAttacks  = pawn_west_attacks[Us];
-  constexpr auto EastAttacks  = pawn_east_attacks[Us];
-  constexpr auto WestDistance = pawn_west_attack_dist[Us];
-  constexpr auto EastDistance = pawn_east_attack_dist[Us];
+  constexpr auto NorthWest    = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
+  constexpr auto NorthEast    = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
   constexpr auto Rank_7       = rank_7[Us];
   constexpr auto Up           = pawn_push(Us);
   const auto opponent_pieces  = b->pieces(Them);
   const auto pawns            = b->pieces(PAWN, Us);
 
-  md = add_pawn_moves<Flags, Us, NORMAL, Up>(b, pawn_push(Us, pawns & Rank_7) & ~b->pieces(), md);
-  md = add_pawn_moves<Flags, Us, CAPTURE, WestDistance>(b, WestAttacks(pawns) & opponent_pieces, md);
-  md = add_pawn_moves<Flags, Us, CAPTURE, EastDistance>(b, EastAttacks(pawns) & opponent_pieces, md);
+  md = add_pawn_moves<Flags, Us, NORMAL, Up>(b, shift_bb<Up>(pawns & Rank_7) & ~b->pieces(), md);
+  md = add_pawn_moves<Flags, Us, CAPTURE, NorthWest>(b, shift_bb<NorthWest>(pawns) & opponent_pieces, md);
+  md = add_pawn_moves<Flags, Us, CAPTURE, NorthEast>(b, shift_bb<NorthEast>(pawns) & opponent_pieces, md);
 
   [[unlikely]]
   if (b->en_passant_square() != NO_SQ)
   {
-    md = add_pawn_moves<Flags, Us, EPCAPTURE, WestDistance>(b, WestAttacks(pawns) & b->en_passant_square(), md);
-    md = add_pawn_moves<Flags, Us, EPCAPTURE, EastDistance>(b, EastAttacks(pawns) & b->en_passant_square(), md);
+    md = add_pawn_moves<Flags, Us, EPCAPTURE, NorthWest>(b, shift_bb<NorthWest>(pawns) & b->en_passant_square(), md);
+    md = add_pawn_moves<Flags, Us, EPCAPTURE, NorthEast>(b, shift_bb<NorthEast>(pawns) & b->en_passant_square(), md);
   }
 
   return add_moves<Flags, Us>(b, opponent_pieces, md);

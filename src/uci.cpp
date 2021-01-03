@@ -32,26 +32,30 @@ namespace
 
 constexpr TimeUnit time_safety_margin = 1;
 
+[[nodiscard]]
 std::unique_ptr<Board> new_board()
 {
-  const auto num_threads = static_cast<std::size_t>(Options.at(uci::uci_name<uci::UciOptions::THREADS>()));
+  const auto num_threads = static_cast<std::size_t>(Options[uci::uci_name<uci::UciOptions::THREADS>()]);
   pool.set(num_threads);
   auto board = std::make_unique<Board>();
   board->set_fen(start_position, pool.main());
   return board;
 }
 
+[[nodiscard]]
 constexpr std::uint64_t nps(const std::uint64_t nodes, const TimeUnit time)
 {
   return nodes * 1000 / time;
 }
 
+[[nodiscard]]
 auto node_info(const TimeUnit time)
 {
   const auto nodes = pool.node_count();
   return std::make_pair(nodes, nps(nodes, time));
 }
 
+[[nodiscard]]
 Move string_to_move(Board *b, const std::string_view m)
 {
   auto mg = Moves(b);
@@ -170,7 +174,7 @@ void uci::post_info(const int d, const int selective_depth)
 {
   const auto time                           = pool.main()->time.elapsed() + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
-  if (!Options.at(uci_name<UciOptions::SHOW_CPU>()))
+  if (!Options[uci_name<UciOptions::SHOW_CPU>()])
     fmt::print(
       "info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, TT.load(), node_count,
       nodes_per_second, time);
@@ -256,7 +260,7 @@ void uci::run(const int argc, char *argv[])
       fmt::print("readyok\n");
     else if (token == "ucinewgame")
     {
-      if (Options.at(uci::uci_name<UciOptions::CLEAR_HASH_NEW_GAME>()))
+      if (Options[uci::uci_name<UciOptions::CLEAR_HASH_NEW_GAME>()])
         TT.clear();
       board = new_board();
       fmt::print("readyok\n");

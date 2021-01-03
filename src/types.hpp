@@ -58,6 +58,7 @@ constexpr std::array<std::string_view, SQ_NB> SquareString{
   "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5", "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
   "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7", "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8"};
 
+[[nodiscard]]
 constexpr std::string_view square_to_string(const Square s)
 {
   return SquareString[s];
@@ -120,6 +121,7 @@ constexpr std::array<Rank, 8> Ranks{RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK
 
 constexpr std::ranges::reverse_view ReverseRanks{Ranks};
 
+[[nodiscard]]
 constexpr Rank relative_rank(const Color c, const Rank r)
 {
   return static_cast<Rank>(r ^ (c * 7));
@@ -144,6 +146,7 @@ enum Direction : int
   NO_DIRECTION = 0
 };
 
+[[nodiscard]]
 constexpr Direction pawn_push(const Color c)
 {
   return c == WHITE ? NORTH : SOUTH;
@@ -180,26 +183,31 @@ constexpr std::array<int, 6> piece_values{100, 400, 400, 600, 1200, 0};
 
 constexpr std::array<std::string_view, 6> piece_notation{" ", "n", "b", "r", "q", "k"};
 
+[[nodiscard]]
 constexpr std::string_view piece_to_string(const PieceType pt)
 {
   return piece_notation[pt];
 }
 
+[[nodiscard]]
 constexpr PieceType type_of(const Piece pc)
 {
   return static_cast<PieceType>(pc & 7);
 }
 
+[[nodiscard]]
 constexpr Piece make_piece(const PieceType pt, const Color c)
 {
   return static_cast<Piece>(pt | (c << 3));
 }
 
+[[nodiscard]]
 constexpr int piece_value(const PieceType pt)
 {
   return piece_values[pt];
 }
 
+[[nodiscard]]
 constexpr int piece_value(const Piece pc)
 {
   return piece_values[type_of(pc)];
@@ -248,11 +256,20 @@ constexpr std::array<Square, 2> oo_king_to{G1, G8};
 constexpr std::array<Square, 2> ooo_king_to{C1, C8};
 
 template<Color C, CastlingRight S>
+[[nodiscard]]
 constexpr CastlingRight make_castling()
 {
   return C == WHITE ? S == QUEEN_SIDE ? WHITE_OOO : WHITE_OO : S == QUEEN_SIDE ? BLACK_OOO : BLACK_OO;
-};
+}
 
+template<CastlingRight S>
+[[nodiscard]]
+constexpr CastlingRight make_castling(const Color c)
+{
+  return c == WHITE ? S == QUEEN_SIDE ? WHITE_OOO : WHITE_OO : S == QUEEN_SIDE ? BLACK_OOO : BLACK_OO;
+}
+
+[[nodiscard]]
 constexpr CastlingRight operator&(const Color c, const CastlingRight cr)
 {
   return static_cast<CastlingRight>((c == WHITE ? WHITE_ANY : BLACK_ANY) & cr);
@@ -270,6 +287,7 @@ enum MoveGenFlags
 /// color_of() determin color of a square or a piece
 
 template<typename T>
+[[nodiscard]]
 constexpr Color color_of(const T t)
 {
   static_assert(std::is_same_v<T, Piece> || std::is_same_v<T, Square>, "Wrong type.");
@@ -350,16 +368,19 @@ ENABLE_INCR_OPERATORS_ON(PieceType)
 #undef ENABLE_INCR_OPERATORS_ON
 #undef ENABLE_BASE_OPERATORS_ON
 
+[[nodiscard]]
 constexpr MoveType operator|(const MoveType mt, const int v) noexcept
 {
   return static_cast<MoveType>(static_cast<int>(mt) + v);
 }
 
+[[nodiscard]]
 constexpr Square operator+(const Square s, const Direction d) noexcept
 {
   return static_cast<Square>(static_cast<int>(s) + static_cast<int>(d));
 }
 
+[[nodiscard]]
 constexpr Square operator-(const Square s, const Direction d) noexcept
 {
   return static_cast<Square>(static_cast<int>(s) - static_cast<int>(d));
@@ -369,120 +390,154 @@ constexpr Square &operator+=(Square &s, const Direction d) noexcept
 {
   return s = s + d;
 }
+
+[[nodiscard]]
 constexpr Square &operator-=(Square &s, const Direction d) noexcept
 {
   return s = s - d;
 }
 
+[[nodiscard]]
 constexpr Rank rank_of(const Square s)
 {
   return static_cast<Rank>(s >> 3);
 }
 
+[[nodiscard]]
 constexpr File file_of(const Square s)
 {
   return static_cast<File>(s & 7);
 }
 
+[[nodiscard]]
 constexpr bool is_dark(const Square s)
 {
   return ((9 * s) & 8) == 0;
 }
 
+[[nodiscard]]
 constexpr bool same_color(const Square s1, const Square s2)
 {
   return is_dark(s1) == is_dark(s2);
 }
 
+[[nodiscard]]
 constexpr Square make_square(const File f, const Rank r)
 {
   return static_cast<Square>((r << 3) + f);
 }
 
+[[nodiscard]]
 constexpr Square relative_square(const Color c, const Square s)
 {
   return static_cast<Square>(s ^ (c * 56));
 }
 
+[[nodiscard]]
 constexpr Rank relative_rank(const Color c, const Square s)
 {
   return relative_rank(c, rank_of(s));
 }
 
+[[nodiscard]]
 constexpr Piece move_piece(const Move m)
 {
   return static_cast<Piece>(m >> 26 & 15);
 }
 
+[[nodiscard]]
 constexpr Piece move_captured(const Move m)
 {
   return static_cast<Piece>(m >> 22 & 15);
 }
 
+[[nodiscard]]
 constexpr Piece move_promoted(const Move m)
 {
   return static_cast<Piece>(m >> 18 & 15);
 }
 
+[[nodiscard]]
 constexpr MoveType type_of(const Move m)
 {
   return static_cast<MoveType>(m >> 12 & 63);
 }
 
+[[nodiscard]]
 constexpr Square move_from(const Move m)
 {
   return static_cast<Square>(m >> 6 & 63);
 }
 
+[[nodiscard]]
 constexpr Square move_to(const Move m)
 {
   return static_cast<Square>(m & 63);
 }
 
+[[nodiscard]]
 constexpr PieceType move_piece_type(const Move m)
 {
   return type_of(move_piece(m));
 }
 
+[[nodiscard]]
 constexpr Color move_side(const Move m)
 {
   return static_cast<Color>(m >> 29 & 1);
 }
 
+[[nodiscard]]
 constexpr bool is_capture(const Move m)
 {
   return type_of(m) & (CAPTURE | EPCAPTURE);
 }
 
+[[nodiscard]]
 constexpr bool is_ep_capture(const Move m)
 {
   return type_of(m) & EPCAPTURE;
 }
 
+[[nodiscard]]
 constexpr bool is_castle_move(const Move m)
 {
   return type_of(m) & CASTLE;
 }
 
+[[nodiscard]]
 constexpr bool is_promotion(const Move m)
 {
   return type_of(m) & PROMOTION;
 }
 
+[[nodiscard]]
 constexpr bool is_queen_promotion(const Move m)
 {
   return is_promotion(m) && type_of(move_promoted(m)) == QUEEN;
 }
 
 template<MoveType Mt>
-constexpr Move init_move(const Piece pc, const Piece cap, const Square from, const Square to, const Piece promoted)
+[[nodiscard]]
+constexpr Move init_move(
+  const Piece pc,
+  const Piece cap,
+  const Square from,
+  const Square to,
+  const Piece promoted)
 {
   return static_cast<Move>(
     (pc << 26) | (cap << 22) | (promoted << 18) | (Mt << 12) | (from << 6) | static_cast<int>(to));
 }
 
+[[nodiscard]]
 constexpr Move init_move(
-  const Piece pc, const Piece captured, const Square from, const Square to, const MoveType mt, const Piece promoted)
+  const Piece pc,
+  const Piece captured,
+  const Square from,
+  const Square to,
+  const MoveType mt,
+  const Piece promoted)
 {
   return static_cast<Move>(
     (pc << 26) | (captured << 22) | (promoted << 18) | (mt << 12) | (from << 6) | static_cast<int>(to));
@@ -491,6 +546,7 @@ constexpr Move init_move(
 /// Checks if Piece, PieceType, Square or Move is ok
 
 template<typename T>
+[[nodiscard]]
 constexpr bool is_ok(const T t)
 {
   static_assert(

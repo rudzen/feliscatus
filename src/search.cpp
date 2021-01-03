@@ -22,7 +22,6 @@
 #include <cassert>
 #include <algorithm>
 #include <optional>
-#include <functional>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>

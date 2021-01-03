@@ -45,6 +45,7 @@ inline void prefetch(void *addr)
 }
 #endif
 
+[[nodiscard]]
 inline std::uint64_t mul_hi64(const std::uint64_t a, const std::uint64_t b)
 {
 #if defined(__GNUC__)
@@ -76,5 +77,6 @@ void bind_this_thread(std::size_t idx);
 namespace misc
 {
 template<bool AsUci>
+[[nodiscard]]
 std::string print_engine_info();
 }

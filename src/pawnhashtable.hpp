@@ -37,7 +37,7 @@ struct alignas(CacheLineSize / 2) PawnHashEntry final
   std::array<Bitboard, COL_NB> passed_pawns{};
 
   // TODO : Move more pawn-related only things here
-
+  [[nodiscard]]
   Score eval() const noexcept
   {
     return scores[WHITE] - scores[BLACK];
@@ -51,6 +51,7 @@ using PawnHashTable = Table<PawnHashEntry, 131072>;
 namespace Pawn
 {
 template<bool Tuning>
-[[nodiscard]] PawnHashEntry *at(Board *b);
+[[nodiscard]]
+PawnHashEntry *at(Board *b);
 
 }   // namespace Pawn

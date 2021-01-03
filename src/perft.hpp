@@ -29,8 +29,10 @@ struct Board;
 namespace perft
 {
 
+[[nodiscard]]
 std::uint64_t perft(Board *b, int depth = 6, int flags = LEGALMOVES);
 
+[[nodiscard]]
 std::uint64_t divide(Board *b, int depth = 6, int flags = LEGALMOVES);
 
 }   // namespace perft

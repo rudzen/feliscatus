@@ -208,24 +208,22 @@ template<Color Us>
 void Moves<Tuning>::generate_captures_and_promotions()
 {
   constexpr auto Them         = ~Us;
-  constexpr auto WestAttacks  = pawn_west_attacks[Us];
-  constexpr auto EastAttacks  = pawn_east_attacks[Us];
-  constexpr auto WestDistance = pawn_west_attack_dist[Us];
-  constexpr auto EastDistance = pawn_east_attack_dist[Us];
+  constexpr auto NorthWest    = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
+  constexpr auto NorthEast    = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
   constexpr auto Rank_7       = rank_7[Us];
   constexpr auto Up           = pawn_push(Us);
   const auto opponent_pieces  = b->pieces(Them);
   const auto pawns            = b->pieces(PAWN, Us);
 
-  add_pawn_moves<Us, NORMAL>(pawn_push(Us, pawns & Rank_7) & ~b->pieces(), Up);
-  add_pawn_moves<Us, CAPTURE>(WestAttacks(pawns) & opponent_pieces, WestDistance);
-  add_pawn_moves<Us, CAPTURE>(EastAttacks(pawns) & opponent_pieces, EastDistance);
+  add_pawn_moves<Us, NORMAL>(shift_bb<Up>(pawns & Rank_7) & ~b->pieces(), Up);
+  add_pawn_moves<Us, CAPTURE>(shift_bb<NorthWest>(pawns) & opponent_pieces, NorthWest);
+  add_pawn_moves<Us, CAPTURE>(shift_bb<NorthEast>(pawns) & opponent_pieces, NorthEast);
   add_moves<Us>(opponent_pieces);
   [[unlikely]]
   if (b->en_passant_square() != NO_SQ)
   {
-    add_pawn_moves<Us, EPCAPTURE>(WestAttacks(pawns) & b->en_passant_square(), WestDistance);
-    add_pawn_moves<Us, EPCAPTURE>(EastAttacks(pawns) & b->en_passant_square(), EastDistance);
+    add_pawn_moves<Us, EPCAPTURE>(shift_bb<NorthWest>(pawns) & b->en_passant_square(), NorthWest);
+    add_pawn_moves<Us, EPCAPTURE>(shift_bb<NorthEast>(pawns) & b->en_passant_square(), NorthEast);
   }
   ++stage_;
 }
@@ -341,11 +339,12 @@ template<Color Us>
 void Moves<Tuning>::add_pawn_quiet_moves(const Bitboard to_squares)
 {
   constexpr auto Rank_3    = relative_rank(Us, RANK_3);
+  const auto Up            = pawn_push(Us);
   const auto empty_squares = ~b->pieces();
-  const auto pushed        = pawn_push(Us, b->pieces(PAWN, Us)) & empty_squares;
+  const auto pushed        = shift_bb<Up>(b->pieces(PAWN, Us)) & empty_squares;
 
-  add_pawn_moves<Us, NORMAL>(pushed & to_squares, pawn_push(Us));
-  add_pawn_moves<Us, DOUBLEPUSH>(pawn_push(Us, pushed & Rank_3) & empty_squares & to_squares, pawn_push(Us) * 2);
+  add_pawn_moves<Us, NORMAL>(pushed & to_squares, Up);
+  add_pawn_moves<Us, DOUBLEPUSH>(shift_bb<Up>(pushed & Rank_3) & empty_squares & to_squares, Up * 2);
 }
 
 template<bool Tuning>
@@ -353,20 +352,18 @@ template<Color Us>
 void Moves<Tuning>::add_pawn_capture_moves(const Bitboard to_squares)
 {
   constexpr auto Them         = ~Us;
-  constexpr auto WestAttacks  = pawn_west_attacks[Us];
-  constexpr auto EastAttacks  = pawn_east_attacks[Us];
-  constexpr auto WestDistance = pawn_west_attack_dist[Us];
-  constexpr auto EastDistance = pawn_east_attack_dist[Us];
+  constexpr auto NorthWest    = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
+  constexpr auto NorthEast    = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
   const auto opponent_pieces  = b->pieces(Them);
   const auto pawns            = b->pieces(PAWN, Us);
-
-  add_pawn_moves<Us, CAPTURE>(WestAttacks(pawns) & opponent_pieces & to_squares, WestDistance);
-  add_pawn_moves<Us, CAPTURE>(EastAttacks(pawns) & opponent_pieces & to_squares, EastDistance);
+  
+  add_pawn_moves<Us, CAPTURE>(shift_bb<NorthWest>(pawns) & opponent_pieces & to_squares, NorthWest);
+  add_pawn_moves<Us, CAPTURE>(shift_bb<NorthEast>(pawns) & opponent_pieces & to_squares, NorthEast);
   [[unlikely]]
   if (b->en_passant_square() != NO_SQ)
   {
-    add_pawn_moves<Us, EPCAPTURE>(WestAttacks(pawns) & to_squares & b->en_passant_square(), WestDistance);
-    add_pawn_moves<Us, EPCAPTURE>(EastAttacks(pawns) & to_squares & b->en_passant_square(), EastDistance);
+    add_pawn_moves<Us, EPCAPTURE>(shift_bb<NorthWest>(pawns) & to_squares & b->en_passant_square(), NorthWest);
+    add_pawn_moves<Us, EPCAPTURE>(shift_bb<NorthEast>(pawns) & to_squares & b->en_passant_square(), NorthEast);
   }
 }
 
@@ -469,12 +466,12 @@ template<bool Tuning>
 template<Color Us>
 bool Moves<Tuning>::can_castle_short() const
 {
-  return b->can_castle(make_castling<Us, KING_SIDE>()) && b->is_castleling_impeeded(oo_king_to[Us], Us);
+  return b->can_castle(make_castling<Us, KING_SIDE>()) && !b->is_castleling_impeeded(oo_king_to[Us], Us);
 }
 
 template<bool Tuning>
 template<Color Us>
 bool Moves<Tuning>::can_castle_long() const
 {
-  return b->can_castle(make_castling<Us, QUEEN_SIDE>()) && b->is_castleling_impeeded(ooo_king_to[Us], Us);
+  return b->can_castle(make_castling<Us, QUEEN_SIDE>()) && !b->is_castleling_impeeded(ooo_king_to[Us], Us);
 }

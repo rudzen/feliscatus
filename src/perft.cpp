@@ -23,7 +23,6 @@
 #include "perft.hpp"
 #include "stopwatch.hpp"
 #include "board.hpp"
-#include "position.hpp"
 #include "moves.hpp"
 
 namespace

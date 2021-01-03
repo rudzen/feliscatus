@@ -41,15 +41,15 @@ CpuLoad::CpuLoad() : self(GetCurrentProcess())
   FILETIME fuser{};
 
   GetSystemInfo(&sys_info);
-  numProcessors = sys_info.dwNumberOfProcessors;
+  num_processors = sys_info.dwNumberOfProcessors;
 
   GetSystemTimeAsFileTime(&ftime);
 
-  std::memcpy(&lastCPU, &ftime, sizeof(FILETIME));
+  std::memcpy(&last_cpu, &ftime, sizeof(FILETIME));
 
   GetProcessTimes(self, &ftime, &ftime, &fsys, &fuser);
-  std::memcpy(&lastSysCPU, &fsys, sizeof(FILETIME));
-  std::memcpy(&lastUserCPU, &fuser, sizeof(FILETIME));
+  std::memcpy(&last_sys_cpu, &fsys, sizeof(FILETIME));
+  std::memcpy(&last_user_cpu, &fuser, sizeof(FILETIME));
 }
 #else
 
@@ -60,15 +60,15 @@ CpuLoad::CpuLoad()
   };
   std::array<char, 128> line{};
 
-  lastCPU     = times(&time_sample);
-  lastSysCPU  = time_sample.tms_stime;
-  lastUserCPU = time_sample.tms_utime;
+  last_cpu      = times(&time_sample);
+  last_sys_cpu  = time_sample.tms_stime;
+  last_user_cpu = time_sample.tms_utime;
 
   FILE *file = fopen("/proc/cpuinfo", "r");
   while (fgets(line.data(), 128, file) != nullptr)
   {
     if (std::strncmp(line.data(), "processor", 9) == 0)
-      numProcessors++;
+      num_processors++;
   }
   fclose(file);
 }
@@ -94,12 +94,12 @@ int CpuLoad::usage()
   GetProcessTimes(self, &ftime, &ftime, &fsys, &fuser);
   std::memcpy(&sys, &fsys, sizeof(FILETIME));
   std::memcpy(&user, &fuser, sizeof(FILETIME));
-  percent = static_cast<double>((sys.QuadPart - lastSysCPU.QuadPart) + (user.QuadPart - lastUserCPU.QuadPart));
-  percent /= static_cast<double>(now.QuadPart - lastCPU.QuadPart);
-  percent /= numProcessors;
-  lastCPU     = now;
-  lastUserCPU = user;
-  lastSysCPU  = sys;
+  percent = static_cast<double>((sys.QuadPart - last_sys_cpu.QuadPart) + (user.QuadPart - last_user_cpu.QuadPart));
+  percent /= static_cast<double>(now.QuadPart - last_cpu.QuadPart);
+  percent /= num_processors;
+  last_cpu      = now;
+  last_user_cpu = user;
+  last_sys_cpu  = sys;
 
 #else
   struct tms time_sample
@@ -107,19 +107,19 @@ int CpuLoad::usage()
   };
   const clock_t now = times(&time_sample);
 
-  if (now <= lastCPU || time_sample.tms_stime < lastSysCPU || time_sample.tms_utime < lastUserCPU)
+  if (now <= last_cpu || time_sample.tms_stime < last_sys_cpu || time_sample.tms_utime < last_user_cpu)
   {
     // Overflow detection. Just skip this value.
     percent = DEFAULT_OVERFLOW_VALUE;
   } else
   {
-    percent = (time_sample.tms_stime - lastSysCPU) + (time_sample.tms_utime - lastUserCPU);
-    percent /= (now - lastCPU);
-    percent /= numProcessors;
+    percent = (time_sample.tms_stime - last_sys_cpu) + (time_sample.tms_utime - last_user_cpu);
+    percent /= (now - last_cpu);
+    percent /= num_processors;
   }
-  lastCPU     = now;
-  lastSysCPU  = time_sample.tms_stime;
-  lastUserCPU = time_sample.tms_utime;
+  last_cpu      = now;
+  last_sys_cpu  = time_sample.tms_stime;
+  last_user_cpu = time_sample.tms_utime;
 
 #endif
 

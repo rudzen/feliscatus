@@ -25,8 +25,10 @@ struct Board;
 namespace Eval
 {
 
+[[nodiscard]]
 int evaluate(Board *b, std::size_t pool_index, int alpha, int beta);
 
+[[nodiscard]]
 int tune(Board *b, std::size_t pool_index, int alpha, int beta);
 
 }   // namespace Eval
