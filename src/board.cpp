@@ -32,18 +32,7 @@
 #include "miscellaneous.hpp"
 #include "prng.hpp"
 #include "moves.hpp"
-
-namespace zobrist
-{
-
-constexpr Key seed = 1070372;
-constexpr Key zero = 0;
-Key zobrist_pst[PIECE_NB][SQ_NB]{};
-std::array<Key, CASTLING_RIGHT_NB> zobrist_castling{};
-std::array<Key, FILE_NB> zobrist_ep_file{};
-Key zobrist_side, zobrist_nopawn{};
-
-}   // namespace zobrist
+#include "zobrist.hpp"
 
 namespace
 {
@@ -109,14 +98,14 @@ void update_key(Position *pos, const Move m)
   auto pawn_key = pos->pawn_structure_key;
   auto key      = pos->key ^ pawn_key;
 
-  pawn_key ^= zobrist::zobrist_side;
+  pawn_key ^= zobrist.side();
   const auto *prev = pos->previous;   // (pos - 1);
 
   if (prev->en_passant_square != NO_SQ)
-    key ^= zobrist::zobrist_ep_file[file_of(prev->en_passant_square)];
+    key ^= zobrist.ep(file_of(prev->en_passant_square));
 
   if (pos->en_passant_square != NO_SQ)
-    key ^= zobrist::zobrist_ep_file[file_of(pos->en_passant_square)];
+    key ^= zobrist.ep(file_of(pos->en_passant_square));
 
   if (!m)
   {
@@ -134,40 +123,40 @@ void update_key(Position *pos, const Move m)
 
   // from and to for moving piece
   if (is_pawn)
-    pawn_key ^= zobrist::zobrist_pst[piece][from];
+    pawn_key ^= zobrist.pst(piece, from);
   else
-    key ^= zobrist::zobrist_pst[piece][from];
+    key ^= zobrist.pst(piece, from);
 
   if (mt & PROMOTION)
-    key ^= zobrist::zobrist_pst[move_promoted(m)][to];
+    key ^= zobrist.pst(move_promoted(m), to);
   else
   {
     if (is_pawn)
-      pawn_key ^= zobrist::zobrist_pst[piece][to];
+      pawn_key ^= zobrist.pst(piece, to);
     else
-      key ^= zobrist::zobrist_pst[piece][to];
+      key ^= zobrist.pst(piece, to);
   }
 
   // remove captured piece
   if (mt & EPCAPTURE)
-    pawn_key ^= zobrist::zobrist_pst[move_captured(m)][to + pawn_push(pos->side_to_move)];
+    pawn_key ^= zobrist.pst(move_captured(m), to + pawn_push(pos->side_to_move));
   else if (mt & CAPTURE)
   {
     if (is_pawn)
-      pawn_key ^= zobrist::zobrist_pst[move_captured(m)][to];
+      pawn_key ^= zobrist.pst(move_captured(m), to);
     else
-      key ^= zobrist::zobrist_pst[move_captured(m)][to];
+      key ^= zobrist.pst(move_captured(m), to);
   }
 
   // castling rights
   if (prev->castle_rights != pos->castle_rights)
-    key ^= zobrist::zobrist_castling[prev->castle_rights] ^ zobrist::zobrist_castling[pos->castle_rights];
+    key ^= zobrist.castle(prev->castle_rights) ^ zobrist.castle(pos->castle_rights);
 
   // rook move in castle
   if (mt & CASTLE)
   {
     const auto rook = make_piece(ROOK, move_side(m));
-    key ^= zobrist::zobrist_pst[rook][rook_castles_from[to]] ^ zobrist::zobrist_pst[rook][rook_castles_to[to]];
+    key ^= zobrist.pst(rook, rook_castles_from[to]) ^ zobrist.pst(rook, rook_castles_to[to]);
   }
   key ^= pawn_key;
   pos->key                = key;
@@ -181,23 +170,6 @@ Board::Board() : pos(position_list.data())
 
 void Board::init()
 {
-  PRNG<Key> rng(zobrist::seed);
-
-  zobrist::zobrist_side   = rng();
-  zobrist::zobrist_nopawn = rng();
-
-  for (auto &z : zobrist::zobrist_pst)
-    for (auto &z_pst : z)
-      z_pst = rng();
-
-  for (auto &z : zobrist::zobrist_castling)
-    z = rng();
-
-  for (auto &z : zobrist::zobrist_ep_file)
-    z = rng();
-
-  // initialize other data
-
   for (const auto side : Colors)
   {
     const auto rank1                            = relative_rank(side, RANK_1);
@@ -501,7 +473,7 @@ bool Board::make_null_move()
 
 std::uint64_t Board::calculate_key() const
 {
-  auto key = zobrist::zero;
+  auto key = Zobrist::zero;
 
   for (const auto pt : PieceTypes)
   {
@@ -512,19 +484,19 @@ std::uint64_t Board::calculate_key() const
       {
         const auto sq = pop_lsb(&bb);
         const auto pc = piece(sq);
-        key ^= zobrist::zobrist_pst[pc][sq];
+        key ^= zobrist.pst(pc, sq);
       }
     }
   }
 
-  key ^= zobrist::zobrist_castling[pos->castle_rights];
+  key ^= zobrist.castle(pos->castle_rights);
 
   [[unlikely]]
   if (pos->en_passant_square != NO_SQ)
-    key ^= zobrist::zobrist_ep_file[file_of(pos->en_passant_square)];
+    key ^= zobrist.ep(file_of(pos->en_passant_square));
 
   if (pos->side_to_move == BLACK)
-    key ^= zobrist::zobrist_side;
+    key ^= zobrist.side();
 
   return key;
 }
@@ -747,30 +719,30 @@ void Board::update_position(Position *p) const
 {
   p->checkers   = attackers_to(king_sq(p->side_to_move)) & pieces(~p->side_to_move);
   p->in_check   = is_attacked(king_sq(p->side_to_move), ~p->side_to_move);
-  auto key      = zobrist::zero;
-  auto pawn_key = zobrist::zobrist_nopawn;
+  auto key      = Zobrist::zero;
+  auto pawn_key = zobrist.no_pawn();
   auto b        = pieces();
 
   while (b)
   {
     const auto sq = pop_lsb(&b);
     const auto pc = piece(sq);
-    key ^= zobrist::zobrist_pst[pc][sq];
+    key ^= zobrist.pst(pc, sq);
     [[likely]]
     if (type_of(pc) == PAWN)
-      pawn_key ^= zobrist::zobrist_pst[pc][sq];
+      pawn_key ^= zobrist.pst(pc, sq);
 
     p->material.add(pc);
   }
 
   [[unlikely]]
   if (p->en_passant_square != NO_SQ)
-    key ^= zobrist::zobrist_ep_file[file_of(p->en_passant_square)];
+    key ^= zobrist.ep(file_of(p->en_passant_square));
 
   if (p->side_to_move != WHITE)
-    key ^= zobrist::zobrist_side;
+    key ^= zobrist.side();
 
-  key ^= zobrist::zobrist_castling[p->castle_rights];
+  key ^= zobrist.castle(p->castle_rights);
 
   p->key                = key;
   p->pawn_structure_key = pawn_key;
