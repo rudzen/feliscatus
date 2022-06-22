@@ -29,7 +29,7 @@ namespace Pawn
 
 template<Color Us>
 [[nodiscard]]
-Score eval_pawns(Board *b, PawnHashEntry *phe)
+Score eval_pawns(const Board *b, PawnHashEntry *phe)
 {
   constexpr auto Them   = ~Us;
   auto result           = ZeroScore;
@@ -61,7 +61,7 @@ Score eval_pawns(Board *b, PawnHashEntry *phe)
 }
 
 template<>
-PawnHashEntry *at<true>(Board *b)
+PawnHashEntry *at<true>(const Board *b)
 {
   const auto pawn_key = b->pawn_key();
   auto *entry = b->my_thread()->pawn_hash[pawn_key];
@@ -73,7 +73,7 @@ PawnHashEntry *at<true>(Board *b)
 }
 
 template<>
-PawnHashEntry *at<false>(Board *b)
+PawnHashEntry *at<false>(const Board *b)
 {
   const auto pawn_key = b->pawn_key();
   auto *entry = b->my_thread()->pawn_hash[pawn_key];

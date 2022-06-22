@@ -27,7 +27,7 @@
 struct Board;
 enum Move : std::uint32_t;
 
-struct Material
+struct Material final
 {
   void clear();
 

@@ -61,7 +61,7 @@ struct Evaluate
   Evaluate(Evaluate &&other)      = delete;
   Evaluate &operator=(const Evaluate &) = delete;
   Evaluate &operator=(Evaluate &&other) = delete;
-  Evaluate(Board *board, const std::size_t pool_index) : b(board), pool_index_(pool_index)
+  Evaluate(const Board *board, const std::size_t pool_index) : b(board), pool_index_(pool_index)
   { }
 
   template<Color Us>
@@ -90,7 +90,7 @@ private:
   void init_evaluate();
   void init();
 
-  Board *b{};
+  const Board *b{};
   std::size_t pool_index_;
 
   std::array<Score, COL_NB> poseval{};
@@ -369,7 +369,9 @@ void Evaluate<Tuning>::init_evaluate()
 
   set_attacks<PAWN, Us>(shift_bb<NorthEast>(our_pawns) | shift_bb<NorthWest>(our_pawns));
   set_attacks<KING, Us>(attacks);
-  king_area[Us] = attacks | ksq;
+
+  const auto s{make_square(std::clamp(file_of(ksq), FILE_B, FILE_G), std::clamp(rank_of(ksq), RANK_2, RANK_7))};
+  king_area[Us] = attacks | s;
 }
 
 template<bool Tuning>

@@ -52,6 +52,6 @@ namespace Pawn
 {
 template<bool Tuning>
 [[nodiscard]]
-PawnHashEntry *at(Board *b);
+PawnHashEntry *at(const Board *b);
 
 }   // namespace Pawn

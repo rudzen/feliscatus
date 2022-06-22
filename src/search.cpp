@@ -121,7 +121,7 @@ void update_quiet_history(thread *t, Position *pos, const Move best_move, const 
   {
     // Rotate the killer moves, index 3 become 2, index 2 becomes 1 and index 1 becomes 0 which is replaced with new
     // move This is the same as std::copy_backward(km.begin(), std::prev(km.end(), 1), std::next(km.begin(), 1));
-    std::rotate(pos->killer_moves.begin(), std::prev(pos->killer_moves.end(), 1), pos->killer_moves.end());
+    std::ranges::rotate(pos->killer_moves.begin(), std::prev(pos->killer_moves.end(), 1), pos->killer_moves.end());
     pos->killer_moves[0] = best_move;
   }
 
@@ -145,7 +145,7 @@ void update_quiet_history(thread *t, Position *pos, const Move best_move, const 
 template<Searcher SearcherType>
 struct Search final
 {
-  Search(Board *t_board) : b(t_board), t(t_board->my_thread())
+  explicit Search(Board *t_board) : b(t_board), t(t_board->my_thread())
   { }
   ~Search()                   = default;
   Search()                    = delete;
@@ -487,9 +487,7 @@ std::optional<int> Search<SearcherType>::next_depth_not_pv(
   if (b->in_check() && b->see_last_move(m) >= 0)
     return std::make_optional(depth);
 
-  constexpr auto move_count_limit = PV ? 5 : 3;
-
-  if (
+  if (constexpr auto move_count_limit = PV ? 5 : 3;
     move_count >= move_count_limit && !is_queen_promotion(m) && !is_capture(m)
     && !is_killer_move(m, pos->previous->killer_moves))
   {
@@ -498,10 +496,8 @@ std::optional<int> Search<SearcherType>::next_depth_not_pv(
     if constexpr (NT == BETA)
       next_depth -= 2;
 
-    constexpr auto depth_limit = 3;
-
     // futility
-    if (next_depth <= depth_limit)
+    if (constexpr auto depth_limit = 3; next_depth <= depth_limit)
     {
       const auto score = -pos->eval_score + futility_margin[std::clamp(next_depth, 0, 3)];
 
@@ -784,6 +780,7 @@ void main_thread::search()
 
   while (!pool.stop && (ponder || pool.limits.infinite))
   {
+    // "wait" until stopped
   }
 
   pool.stop = true;
