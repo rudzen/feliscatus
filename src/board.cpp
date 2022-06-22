@@ -59,7 +59,7 @@ std::shared_ptr<spdlog::logger> logger =
   spdlog::rotating_logger_mt("castleling_logger", "logs/castleling.txt", max_log_file_size, max_log_files);
 
 [[nodiscard]]
-Square ep_square(std::string_view s)
+Square ep_square(std::string_view s, const Color stm)
 {
   if (s.empty() || s.length() == 1 || s.front() == '-')
     return NO_SQ;
@@ -71,7 +71,9 @@ Square ep_square(std::string_view s)
 
   s.remove_prefix(1);
 
-  return !util::in_between<'3', '6'>(s.front())
+  const auto target_row = stm == WHITE ? '6' : '3';
+
+  return s.front() != target_row
          ? NO_SQ
          : static_cast<Square>(first - 'a' + (s.front() - '1') * 8);
 }
@@ -369,19 +371,19 @@ void Board::print() const
 {
   fmt::memory_buffer s;
 
-  format_to(s, "\n");
+  fmt::format_to(s, "\n");
 
   for (const Rank rank : ReverseRanks)
   {
-    format_to(s, "{}  ", rank + 1);
+    fmt::format_to(s, "{}  ", rank + 1);
 
     for (const auto file : Files)
     {
       const auto sq = make_square(file, rank);
       const auto pc = piece(sq);
-      format_to(s, "{} ", piece_letter[pc]);
+      fmt::format_to(s, "{} ", piece_letter[pc]);
     }
-    format_to(s, "\n");
+    fmt::format_to(s, "\n");
   }
 
   fmt::print("{}   a b c d e f g h\n", fmt::to_string(s));
@@ -420,32 +422,36 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
 
   const auto mt = type_of(m);
 
-  if (check_legal && !(mt & CASTLE))
+  if (check_legal
+  && !(mt & CASTLE)
+  && is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move))
   {
-    if (is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move))
-    {
-      unperform_move(m);
-      return false;
-    }
+    unperform_move(m);
+    return false;
   }
 
   const auto from = move_from(m);
   const auto to   = move_to(m);
 
   auto *const prev       = pos++;
+
   pos->previous          = prev;
   pos->side_to_move      = ~prev->side_to_move;
   pos->material          = prev->material;
   pos->last_move         = m;
   pos->castle_rights     = prev->castle_rights;
   pos->null_moves_in_row = 0;
+
   pos->reversible_half_move_count =
     mt & (CAPTURE | EPCAPTURE) || type_of(move_piece(m)) == PAWN ? 0 : prev->reversible_half_move_count + 1;
+
   pos->en_passant_square  = type_of(m) & DOUBLEPUSH ? to + pawn_push(pos->side_to_move) : NO_SQ;
   pos->key                = prev->key;
   pos->pawn_structure_key = prev->pawn_structure_key;
+
   if (calculate_in_check)
     pos->in_check = is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move);
+
   if (pos->in_check)
     pos->checkers = attackers_to(king_sq(pos->side_to_move));
 
@@ -605,7 +611,7 @@ void Board::set_fen(std::string_view fen, thread *t)
   // En-passant
   space++;
   current                = update_current();
-  pos->en_passant_square = ep_square(current);
+  pos->en_passant_square = ep_square(current, pos->side_to_move);
 
   // TODO : Parse the rest
 
@@ -804,9 +810,14 @@ void Board::add_castle_rights(const Color us, std::optional<File> rook_file)
   else
     ooo_king_from[us] = ksq;
 
+  if (file_of(ksq) != FILE_E) {
+    chess960 = true;
+    return;
+  }
+
   constexpr auto far_file    = Side == KING_SIDE ? FILE_H : FILE_A;
 
-  if (file_of(ksq) != FILE_E || file_of(rook_square) != far_file)
+  if (file_of(rook_square) != far_file)
     chess960 = true;
 }
 

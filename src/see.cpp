@@ -40,7 +40,7 @@ constexpr int SEE_INVALID_SCORE = -5000;
 constexpr auto material_change(const Move m)
 {
   return (is_capture(m) ? piece_value(move_captured(m)) : 0)
-         + (is_promotion(m) ? (piece_value(move_promoted(m)) - piece_value(PAWN)) : 0);
+         + (is_promotion(m) ? (piece_value(move_promoted(m)) - piece_value<PAWN>()) : 0);
 }
 
 [[nodiscard]]

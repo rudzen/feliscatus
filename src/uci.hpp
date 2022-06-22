@@ -162,7 +162,7 @@ void post_pv(int d, int max_ply, int score, const std::span<PVEntry> &pv_line, N
 std::string display_uci(Move m);
 
 [[nodiscard]]
-std::string info(std::string_view info_string);
+std::string info(const std::string &info_string);
 
 void run(int argc, char *argv[]);
 

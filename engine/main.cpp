@@ -29,7 +29,9 @@ int main(const int argc, char *argv[])
 {
   util::check_size<PawnHashEntry, 32>();
 
-  fmt::print(misc::print_engine_info<false>());
+  const auto info = misc::print_engine_info<false>();
+
+  fmt::print(info);
 
   bitboard::init();
   Board::init();

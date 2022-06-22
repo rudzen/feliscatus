@@ -61,12 +61,10 @@ void score_move(MoveData &md, Board *b)
       md.score = KILLERMOVESCORE + 18;
     else if (md == b->pos->killer_moves[3])
       md.score = KILLERMOVESCORE + 17;
-    else if (
-      b->pos->last_move
-      && b->my_thread()->counter_moves[move_piece(b->pos->last_move)][move_to(b->pos->last_move)] == md)
+    else if (b->pos->last_move && b->counter_move(b->pos->last_move) == md)
       md.score = 60000;
     else
-      md.score = b->my_thread()->history_scores[move_piece(md)][move_to(md)];
+      md.score = b->history_score(md);
   } else
   {
     if (is_queen_promotion(md))
@@ -356,7 +354,7 @@ void Moves<Tuning>::add_pawn_capture_moves(const Bitboard to_squares)
   constexpr auto NorthEast    = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
   const auto opponent_pieces  = b->pieces(Them);
   const auto pawns            = b->pieces(PAWN, Us);
-  
+
   add_pawn_moves<Us, CAPTURE>(shift_bb<NorthWest>(pawns) & opponent_pieces & to_squares, NorthWest);
   add_pawn_moves<Us, CAPTURE>(shift_bb<NorthEast>(pawns) & opponent_pieces & to_squares, NorthEast);
   [[unlikely]]
@@ -421,18 +419,15 @@ const MoveData *Moves<Tuning>::next_move()
   {
     switch (stage_)
     {
-    case TT_STAGE: {
+    case TT_STAGE:
       generate_hash_move();
       break;
-    }
-    case CAPTURE_STAGE: {
+    case CAPTURE_STAGE:
       generate_captures_and_promotions<Us>();
       break;
-    }
-    case QUIET_STAGE: {
+    case QUIET_STAGE:
       generate_quiet_moves<Us>();
       break;
-    }
 
     default:   // error
       return nullptr;

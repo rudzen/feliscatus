@@ -189,6 +189,12 @@ struct Board
   thread *my_thread() const;
 
   [[nodiscard]]
+  Move counter_move(Move m) const;
+
+  [[nodiscard]]
+  int history_score(Move m) const;
+
+  [[nodiscard]]
   bool gives_check(Move m);
 
   [[nodiscard]]
@@ -429,4 +435,12 @@ inline Bitboard Board::pinned() const
 inline thread *Board::my_thread() const
 {
   return my_t;
+}
+
+inline Move Board::counter_move(const Move m) const {
+  return my_t->counter_moves[move_piece(m)][move_to(m)];
+}
+
+inline int Board::history_score(const Move m) const {
+  return my_t->history_scores[move_piece(m)][move_to(m)];
 }

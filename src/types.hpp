@@ -213,6 +213,12 @@ constexpr int piece_value(const Piece pc)
   return piece_values[type_of(pc)];
 }
 
+template<PieceType Pt>
+[[nodiscard]]
+constexpr int piece_value() {
+  return piece_values[Pt];
+}
+
 enum Move : std::uint32_t
 {
   MOVE_NONE = 0
@@ -259,14 +265,18 @@ template<Color C, CastlingRight S>
 [[nodiscard]]
 constexpr CastlingRight make_castling()
 {
-  return C == WHITE ? S == QUEEN_SIDE ? WHITE_OOO : WHITE_OO : S == QUEEN_SIDE ? BLACK_OOO : BLACK_OO;
+  constexpr auto WHITE_CR = S == QUEEN_SIDE ? WHITE_OOO : WHITE_OO;
+  constexpr auto BLACK_CR = S == QUEEN_SIDE ? BLACK_OOO : BLACK_OO;
+  return C == WHITE ? WHITE_CR : BLACK_CR;
 }
 
 template<CastlingRight S>
 [[nodiscard]]
 constexpr CastlingRight make_castling(const Color c)
 {
-  return c == WHITE ? S == QUEEN_SIDE ? WHITE_OOO : WHITE_OO : S == QUEEN_SIDE ? BLACK_OOO : BLACK_OO;
+  constexpr auto WHITE_CR = S == QUEEN_SIDE ? WHITE_OOO : WHITE_OO;
+  constexpr auto BLACK_CR = S == QUEEN_SIDE ? BLACK_OOO : BLACK_OO;
+  return c == WHITE ? WHITE_CR : BLACK_CR;
 }
 
 [[nodiscard]]

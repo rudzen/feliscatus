@@ -10,19 +10,20 @@ macro(run_conan)
 
     include(${CMAKE_BINARY_DIR}/conan.cmake)
 
-    conan_add_remote(NAME bincrafters URL
-            https://api.bintray.com/conan/bincrafters/public-conan)
+    conan_add_remote(NAME default URL
+        https://center.conan.io)
 
             #blaze/3.7
             #docopt.cpp/0.6.2
+            #cli11/2.2.0
 
     conan_cmake_run(
             REQUIRES
             ${CONAN_EXTRA_REQUIRES}
-            catch2/2.13.3
-            fmt/7.1.3
+            catch2/2.13.8
+            fmt/7.1.2
             spdlog/1.8.2
-            nlohmann_json/3.9.1
+            nlohmann_json/3.10.5
             OPTIONS
             ${CONAN_EXTRA_OPTIONS}
             BASIC_SETUP

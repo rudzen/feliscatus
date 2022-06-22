@@ -221,7 +221,7 @@ std::string uci::display_uci(const Move m)
                           : fmt::format("{}{}{}", move_from(m), move_to(m), piece_index[type_of(move_promoted(m))]);
 }
 
-std::string uci::info(const std::string_view info_string)
+std::string uci::info(const std::string &info_string)
 {
   return fmt::format("info string {}", info_string);
 }
@@ -269,9 +269,8 @@ void uci::run(const int argc, char *argv[])
     else if (token == "position")
       position(board.get(), input);
     else if (token == "go")
-    {
       go(input, board->fen());
-    } else if (token == "perft")
+    else if (token == "perft")
     {
       const auto total = perft::perft(board.get(), 6);
       fmt::print("Total nodes: {}\n", total);

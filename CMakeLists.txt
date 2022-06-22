@@ -77,7 +77,7 @@ if(ENABLE_FUZZING)
 endif()
 
 # cli lib wrapper
-add_subdirectory(cli)
+#add_subdirectory(cli)
 
 # main lib
 add_subdirectory(src)
