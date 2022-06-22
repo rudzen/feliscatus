@@ -41,7 +41,7 @@ namespace
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
 
-std::shared_ptr<spdlog::logger> search_logger =
+const std::shared_ptr<spdlog::logger> search_logger =
   spdlog::rotating_logger_mt("search_logger", "logs/search.txt", max_log_file_size, max_log_files);
 
 constexpr int MAXSCORE = 32767;

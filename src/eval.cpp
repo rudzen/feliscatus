@@ -39,7 +39,7 @@ constexpr Bitboard CenterBB      = make_bitboard(D4, E4, D5, E5);
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
 
-std::shared_ptr<spdlog::logger> eval_logger =
+const std::shared_ptr<spdlog::logger> eval_logger =
   spdlog::rotating_logger_mt("eval_logger", "logs/eval.txt", max_log_file_size, max_log_files);
 
 [[nodiscard]]

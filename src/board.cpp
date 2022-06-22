@@ -55,7 +55,7 @@ std::array<Square, SQ_NB> rook_castles_from{NO_SQ};
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
 
-std::shared_ptr<spdlog::logger> logger =
+const std::shared_ptr<spdlog::logger> logger =
   spdlog::rotating_logger_mt("castleling_logger", "logs/castleling.txt", max_log_file_size, max_log_files);
 
 [[nodiscard]]

@@ -96,14 +96,19 @@ HashEntry *HashTable::find(const Key key) const
 {
   auto *bucket     = find_bucket(key);
   const auto k32   = key32(key);
-  const auto found = std::find_if(bucket->entry.begin(), bucket->entry.end(), [&k32](const HashEntry &e) {
+  const auto found = std::ranges::find_if(bucket->entry.begin(), bucket->entry.end(), [&k32](const HashEntry &e) {
     return e.k == k32 && e.f;
   });
   return found != bucket->entry.end() ? found : nullptr;
 }
 
-HashEntry *
-  HashTable::insert(const Key key, const int depth, const int score, const NodeType nt, const Move m, const int eval)
+HashEntry *HashTable::insert(
+  const Key key,
+  const int depth,
+  const int score,
+  const NodeType nt,
+  const Move m,
+  const int eval)
 {
   auto *transp = get_entry_to_replace(key, depth);
 
@@ -124,7 +129,9 @@ HashEntry *
   return transp;
 }
 
-HashEntry *HashTable::get_entry_to_replace(const Key key, [[maybe_unused]] const int depth) const
+HashEntry *HashTable::get_entry_to_replace(
+  const Key key,
+  [[maybe_unused]] const int depth) const
 {
   auto *bucket   = find_bucket(key);
   const auto k32 = key32(key);
@@ -137,7 +144,7 @@ HashEntry *HashTable::get_entry_to_replace(const Key key, [[maybe_unused]] const
   constexpr auto replacement_score = [](const HashEntry *e) {
     return (e->a << 9) + e->d;
   };
-  auto match = [&k32](HashEntry *e) {
+  auto match = [&k32](const HashEntry *e) {
     return e->f == NO_NT || e->k == k32;
   };
   auto *replace      = entry;
