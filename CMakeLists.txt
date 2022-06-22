@@ -29,8 +29,8 @@ include(cmake/CompilerWarnings.cmake)
 set_project_warnings(project_warnings)
 
 # sanitizer options if supported by compiler
-# include(cmake/Sanitizers.cmake)
-# enable_sanitizers(project_options)
+include(cmake/Sanitizers.cmake)
+enable_sanitizers(project_options)
 
 # enable doxygen
 include(cmake/Doxygen.cmake)
@@ -77,7 +77,7 @@ if(ENABLE_FUZZING)
 endif()
 
 # cli lib wrapper
-#add_subdirectory(cli)
+add_subdirectory(cli)
 
 # main lib
 add_subdirectory(src)

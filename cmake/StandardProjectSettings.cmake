@@ -38,6 +38,8 @@ if (WIN32)
     add_definitions("-fno-rtti")
 endif()
 
+add_definitions("-fimplicit-constexpr")
+
 option(ENABLE_FPERMISSIVE "Set -fpermissive" OFF)
 if (ENABLE_FPERMISSIVE)
     add_definitions("-fpermissive")

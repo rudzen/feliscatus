@@ -15,7 +15,6 @@ macro(run_conan)
 
             #blaze/3.7
             #docopt.cpp/0.6.2
-            #cli11/2.2.0
 
     conan_cmake_run(
             REQUIRES
@@ -24,6 +23,7 @@ macro(run_conan)
             fmt/7.1.2
             spdlog/1.8.2
             nlohmann_json/3.10.5
+            cli11/2.2.0
             OPTIONS
             ${CONAN_EXTRA_OPTIONS}
             BASIC_SETUP
