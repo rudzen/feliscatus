@@ -122,12 +122,15 @@ constexpr int distance<Rank>(const Square x, const Square y)
   return util::abs(rank_of(x) - rank_of(y));
 }
 
+inline std::array<Square, 2> oo_king_from{NO_SQ, NO_SQ};
+inline std::array<Square, 2> ooo_king_from{NO_SQ, NO_SQ};
+
 inline Bitboard passed_pawn_front_span[COL_NB][SQ_NB];
+
 inline Bitboard pawn_front_span[COL_NB][SQ_NB];
-inline Bitboard pawn_captures[COL_NB][SQ_NB];
-inline std::array<Square, 2> oo_king_from{};
-inline std::array<Square, 2> ooo_king_from{};
+
 inline std::array<std::array<Bitboard, SQ_NB>, PIECETYPE_NB> AllAttacks;
+
 inline std::array<std::array<Bitboard, SQ_NB>, SQ_NB> Lines;
 
 consteval std::array<std::array<int, SQ_NB>, SQ_NB> make_distance()
@@ -391,12 +394,6 @@ inline Bitboard piece_attacks_bb(const PieceType pt, const Square sq, const Bitb
   return 0;
 }
 
-[[nodiscard]]
-inline Bitboard pawn_attacks_bb(const Color c, const Square s)
-{
-  return pawn_captures[c][s];
-}
-
 template<PieceType Pt>
 [[nodiscard]]
 Bitboard xray_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
@@ -434,4 +431,26 @@ constexpr bool more_than_one(const Bitboard bb)
 constexpr bool is_opposite_colors(const Square s1, const Square s2)
 {
   return (static_cast<int>(s1) + static_cast<int>(rank_of(s1)) + s2 + rank_of(s2)) & 1;
+}
+
+consteval std::array<std::array<Bitboard, SQ_NB>, COL_NB> make_pawn_captures()
+{
+  std::array<std::array<Bitboard, SQ_NB>, COL_NB> result{};
+
+  for (auto sq = A1; sq <= H8; ++sq)
+  {
+    const auto bb = square_bb[sq];
+    result[WHITE][sq] = shift_bb<NORTH_EAST>(bb) | shift_bb<NORTH_WEST>(bb);
+    result[BLACK][sq] = shift_bb<SOUTH_EAST>(bb) | shift_bb<SOUTH_WEST>(bb);
+  }
+
+  return result;
+}
+
+constexpr std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_captures = make_pawn_captures();
+
+[[nodiscard]]
+constexpr Bitboard pawn_attacks_bb(const Color c, const Square s)
+{
+  return pawn_captures[c][s];
 }

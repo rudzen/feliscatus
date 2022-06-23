@@ -296,8 +296,6 @@ void init()
     passed_pawn_front_span[WHITE][s] = pawn_east_attack_span[WHITE][s] | pawn_front_span[WHITE][s] | pawn_west_attack_span[WHITE][s];
     passed_pawn_front_span[BLACK][s] = pawn_east_attack_span[BLACK][s] | pawn_front_span[BLACK][s] | pawn_west_attack_span[BLACK][s];
 
-    pawn_captures[WHITE][s] = shift_bb<NORTH_EAST>(bb) | shift_bb<NORTH_WEST>(bb);
-    pawn_captures[BLACK][s] = shift_bb<SOUTH_EAST>(bb) | shift_bb<SOUTH_WEST>(bb);
   }
 }
 
