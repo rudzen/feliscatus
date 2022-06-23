@@ -125,10 +125,6 @@ constexpr int distance<Rank>(const Square x, const Square y)
 inline std::array<Square, 2> oo_king_from{NO_SQ, NO_SQ};
 inline std::array<Square, 2> ooo_king_from{NO_SQ, NO_SQ};
 
-inline Bitboard passed_pawn_front_span[COL_NB][SQ_NB];
-
-inline Bitboard pawn_front_span[COL_NB][SQ_NB];
-
 inline std::array<std::array<Bitboard, SQ_NB>, PIECETYPE_NB> AllAttacks;
 
 inline std::array<std::array<Bitboard, SQ_NB>, SQ_NB> Lines;
@@ -439,7 +435,7 @@ consteval std::array<std::array<Bitboard, SQ_NB>, COL_NB> make_pawn_captures()
 
   for (auto sq = A1; sq <= H8; ++sq)
   {
-    const auto bb = square_bb[sq];
+    const auto bb     = square_bb[sq];
     result[WHITE][sq] = shift_bb<NORTH_EAST>(bb) | shift_bb<NORTH_WEST>(bb);
     result[BLACK][sq] = shift_bb<SOUTH_EAST>(bb) | shift_bb<SOUTH_WEST>(bb);
   }
@@ -454,3 +450,43 @@ constexpr Bitboard pawn_attacks_bb(const Color c, const Square s)
 {
   return pawn_captures[c][s];
 }
+
+consteval std::array<std::array<Bitboard, SQ_NB>, COL_NB> make_pawn_front_span()
+{
+  std::array<std::array<Bitboard, SQ_NB>, COL_NB> result{};
+
+  for (const auto s : Squares)
+  {
+    const auto bb    = square_bb[s];
+    result[WHITE][s] = fill<NORTH>(shift_bb<NORTH>(bb));
+    result[BLACK][s] = fill<SOUTH>(shift_bb<SOUTH>(bb));
+  }
+
+  return result;
+}
+
+constexpr std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_front_span = make_pawn_front_span();
+
+consteval std::array<std::array<Bitboard, SQ_NB>, COL_NB> make_passed_pawn_front_span()
+{
+  std::array<std::array<Bitboard, SQ_NB>, COL_NB> result{};
+
+  std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_east_attack_span{};
+  std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_west_attack_span{};
+
+  for (const auto s : Squares)
+  {
+    const auto bb = square_bb[s];
+
+    pawn_east_attack_span[WHITE][s] = fill<NORTH>(shift_bb<NORTH_WEST>(bb));
+    pawn_east_attack_span[BLACK][s] = fill<SOUTH>(shift_bb<SOUTH_EAST>(bb));
+    pawn_west_attack_span[WHITE][s] = fill<NORTH>(shift_bb<NORTH_WEST>(bb));
+    pawn_west_attack_span[BLACK][s] = fill<SOUTH>(shift_bb<WEST>(bb));
+    result[WHITE][s] = pawn_east_attack_span[WHITE][s] | pawn_front_span[WHITE][s] | pawn_west_attack_span[WHITE][s];
+    result[BLACK][s] = pawn_east_attack_span[BLACK][s] | pawn_front_span[BLACK][s] | pawn_west_attack_span[BLACK][s];
+  }
+
+  return result;
+}
+
+constexpr std::array<std::array<Bitboard, SQ_NB>, COL_NB> passed_pawn_front_span = make_passed_pawn_front_span();

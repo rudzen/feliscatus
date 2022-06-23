@@ -279,24 +279,6 @@ void init()
         Lines[s1][s2] = (piece_attacks_bb(pt, s1, 0) & piece_attacks_bb(pt, s2, 0)) | s1 | s2;
       }
   }
-
-  std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_east_attack_span{};
-  std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_west_attack_span{};
-
-  for (const auto s : Squares)
-  {
-    const auto bb = square_bb[s];
-
-    pawn_front_span[WHITE][s]        = fill<NORTH>(shift_bb<NORTH>(bb));
-    pawn_front_span[BLACK][s]        = fill<SOUTH>(shift_bb<SOUTH>(bb));
-    pawn_east_attack_span[WHITE][s]  = fill<NORTH>(shift_bb<NORTH_WEST>(bb));
-    pawn_east_attack_span[BLACK][s]  = fill<SOUTH>(shift_bb<SOUTH_EAST>(bb));
-    pawn_west_attack_span[WHITE][s]  = fill<NORTH>(shift_bb<NORTH_WEST>(bb));
-    pawn_west_attack_span[BLACK][s]  = fill<SOUTH>(shift_bb<WEST>(bb));
-    passed_pawn_front_span[WHITE][s] = pawn_east_attack_span[WHITE][s] | pawn_front_span[WHITE][s] | pawn_west_attack_span[WHITE][s];
-    passed_pawn_front_span[BLACK][s] = pawn_east_attack_span[BLACK][s] | pawn_front_span[BLACK][s] | pawn_west_attack_span[BLACK][s];
-
-  }
 }
 
 }   // namespace bitboard
