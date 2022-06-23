@@ -473,7 +473,7 @@ bool Board::make_null_move()
 
 std::uint64_t Board::calculate_key() const
 {
-  auto key = Zobrist::zero;
+  auto key = zobrist.zero();
 
   for (const auto pt : PieceTypes)
   {
@@ -719,7 +719,7 @@ void Board::update_position(Position *p) const
 {
   p->checkers   = attackers_to(king_sq(p->side_to_move)) & pieces(~p->side_to_move);
   p->in_check   = is_attacked(king_sq(p->side_to_move), ~p->side_to_move);
-  auto key      = Zobrist::zero;
+  auto key      = zobrist.zero();
   auto pawn_key = zobrist.no_pawn();
   auto b        = pieces();
 
