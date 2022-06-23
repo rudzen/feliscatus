@@ -165,8 +165,10 @@ void update_key(Position *pos, const Move m)
 
 }   // namespace
 
-Board::Board() : pos(position_list.data())
-{ }
+Board::Board() : position_list({})
+{
+  pos = position_list.data();
+}
 
 void Board::init()
 {

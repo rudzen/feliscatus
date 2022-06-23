@@ -246,7 +246,7 @@ private:
   std::array<Bitboard, COL_NB> occupied_by_side{};
   std::array<Bitboard, PIECETYPE_NB> occupied_by_type{};
   std::array<Square, COL_NB> king_square{};
-  PositionList position_list{};
+  PositionList position_list;
   thread *my_t{};
 };
 

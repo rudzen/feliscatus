@@ -427,7 +427,7 @@ constexpr Square pop_lsb(Bitboard *bb)
 [[nodiscard]]
 constexpr bool more_than_one(const Bitboard bb)
 {
-  return bb & (bb - 1);
+  return !std::has_single_bit(bb);
 }
 
 [[nodiscard]]
