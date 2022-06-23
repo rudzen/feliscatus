@@ -27,6 +27,15 @@
 namespace
 {
 
+template<Direction D>
+struct MakePawnFromTo final {
+  constexpr std::pair<Square, Square> operator()(Bitboard *b) const {
+    const auto to   = pop_lsb(b);
+    const auto from = to - D;
+    return {to, from};
+  }
+};
+
 template<bool Tuning>
 void score_move(MoveData &md, Board *b)
 {

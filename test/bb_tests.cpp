@@ -18,27 +18,23 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <cstdint>
-#include <iterator>
-#include <utility>
-#include <fmt/format.h>
+#define CATCH_CONFIG_MAIN
 
-[[nodiscard]]
-auto sum_values(const std::uint8_t *data, const size_t size)
+#include <catch2/catch.hpp>
+
+#include "../src/types.hpp"
+#include "../src/bitboard.hpp"
+
+TEST_CASE("single bit detection mto()", "[sing_bit_detection_mto]")
 {
-  constexpr auto scale = 1000;
+  constexpr auto sq = make_square(FILE_A, RANK_2);
+  constexpr auto sq2 = make_square(FILE_B, RANK_7);
 
-  auto value = 0;
-  for (std::size_t offset = 0; offset < size; ++offset)
-    value += static_cast<int>(*std::next(data, static_cast<long>(offset))) * scale;
+  constexpr auto one = bit(sq) | bit(sq2);
 
-  return value;
-}
+  constexpr auto expectedCount = more_than_one(one);
 
-// Fuzzer that attempts to invoke undefined behavior for signed integer overflow
-// cppcheck-suppress unusedFunction symbolName=LLVMFuzzerTestOneInput
-extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t *Data, size_t Size)
-{
-  fmt::print("Value sum: {}, len{}\n", sum_values(Data,Size), Size);
-  return 0;
+  REQUIRE(expectedCount == true);
+
+  REQUIRE(std::has_single_bit(one) != true);
 }

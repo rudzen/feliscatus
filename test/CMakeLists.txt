@@ -37,6 +37,22 @@ catch_discover_tests(
   --reporter=xml
   --out=tests.xml)
 
+add_executable(bb_tests bb_tests.cpp)
+target_link_libraries(bb_tests PRIVATE logic project_warnings project_options CONAN_PKG::catch2 CONAN_PKG::fmt CONAN_PKG::spdlog Threads::Threads catch_main)
+
+# automatically discover tests that are defined in catch based test files you can modify the unittests. TEST_PREFIX to
+# whatever you want, or use different for different binaries
+catch_discover_tests(
+  bb_tests
+  TEST_PREFIX
+  "unittests."
+  EXTRA_ARGS
+  -s
+  --reporter=xml
+  --out=tests.xml)
+
+
+
 # Add a file containing a set of constexpr tests
 add_executable(constexpr_tests constexpr_tests.cpp)
 target_link_libraries(constexpr_tests PRIVATE project_options project_warnings catch_main)
