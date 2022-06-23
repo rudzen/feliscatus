@@ -19,7 +19,7 @@
 */
 
 #include <cstdint>
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 
 constexpr std::uint64_t Factorial(const std::uint64_t number)
 {

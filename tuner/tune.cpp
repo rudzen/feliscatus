@@ -126,29 +126,29 @@ std::string emit_code(const std::vector<eval::Param> &params0)
     const auto n = params2.second.size();
 
     if (n > 1)
-      format_to(s, "inline std::array<int, {}> {} {{", n, params2.first);
+      format_to(std::back_inserter(s), "inline std::array<int, {}> {} {{", n, params2.first);
     else
-      format_to(s, "inline int {} = ", params2.first);
+      format_to(std::back_inserter(s), "inline int {} = ", params2.first);
 
     for (size_t i = 0; i < n; ++i)
     {
       if (Hr && n == 64)
       {
         if (i % 8 == 0)
-          format_to(s, "\n ");
+          format_to(std::back_inserter(s), "\n ");
 
-        format_to(s, "{}", params2.second[i].value_);
+        format_to(std::back_inserter(s), "{}", params2.second[i].value_);
       } else
-        format_to(s, "{}", params2.second[i].value_);
+        format_to(std::back_inserter(s), "{}", params2.second[i].value_);
 
       if (n > 1 && i < n - 1)
-        format_to(s, ", ");
+        format_to(std::back_inserter(s), ", ");
     }
 
     if (n > 1)
-      format_to(s, " }}");
+      format_to(std::back_inserter(s), " }}");
 
-    format_to(s, ";\n");
+    format_to(std::back_inserter(s), ";\n");
   }
 
   return fmt::to_string(s);
@@ -561,16 +561,13 @@ double Tune::e(
 
   fmt::memory_buffer s;
 
-  // fmt::print("x:{}", x);
-  format_to(s, "x:{:.{}f}", x, 12);
+  format_to(std::back_inserter(s), "x:{:.{}f}", x, 12);
 
   for (std::size_t i = 0; i < params_index.size(); ++i)
     if (params[params_index[i].idx_].step_)
-      format_to(s, " prm[{}]:{}\n", i, params[params_index[i].idx_].value_);
+      format_to(std::back_inserter(s), " prm[{}]:{}\n", i, params[params_index[i].idx_].value_);
 
-  format_to(s, "\n");
-
-  console->info("{}\n", fmt::to_string(s));
+  console->info("{}\n\n", fmt::to_string(s));
 
   return x;
 }

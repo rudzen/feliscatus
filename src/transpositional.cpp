@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <vector>
+#include <algorithm>
 
 #include <fmt/format.h>
 

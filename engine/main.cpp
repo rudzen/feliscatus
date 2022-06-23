@@ -31,7 +31,7 @@ int main(const int argc, char *argv[])
 
   const auto info = misc::print_engine_info<false>();
 
-  fmt::print(info);
+  fmt::print("{}", info);
 
   bitboard::init();
   Board::init();

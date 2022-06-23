@@ -86,7 +86,7 @@ void position(Board *b, std::istringstream &input)
   {
     fmt::memory_buffer fen;
     while (input >> token && token != "moves")
-      fmt::format_to(fen, "{} ", token);
+      fmt::format_to(std::back_inserter(fen), "{} ", token);
     b->set_fen(fmt::to_string(fen), pool.main());
   }
   else return;
@@ -117,11 +117,12 @@ void set_option(std::istringstream &input)
   if (Options.contains(option_name))
   {
     Options[option_name] = option_value;
-    output               = "Option {} = {}\n";
+    output               = fmt::format("Option {} = {}\n", option_name, option_value);
   }
-  else output = "Uknown option {} = {}\n";
+  else output = fmt::format("Uknown option {} = {}\n", option_name, option_value);
 
-  fmt::print(uci::info(fmt::format(output, option_name, option_value)));
+  const auto uci_info = uci::info(output);
+  fmt::print("{}", uci_info);
 }
 
 void go(std::istringstream &input, std::string_view fen)
@@ -161,11 +162,11 @@ void uci::post_moves(const Move m, const Move ponder_move)
 {
   fmt::memory_buffer buffer;
 
-  fmt::format_to(buffer, "bestmove {}", display_uci(m));
+  fmt::format_to(std::back_inserter(buffer), "bestmove {}", display_uci(m));
 
   [[likely]]
   if (ponder_move)
-    fmt::format_to(buffer, " ponder {}", display_uci(ponder_move));
+    fmt::format_to(std::back_inserter(buffer), " ponder {}", display_uci(ponder_move));
 
   fmt::print("{}\n", fmt::to_string(buffer));
 }
@@ -192,20 +193,20 @@ void uci::post_curr_move(const Move m, const int m_number)
 void uci::post_pv(const int d, const int max_ply, const int score, const std::span<PVEntry> &pv_line, const NodeType nt)
 {
   fmt::memory_buffer buffer;
-  fmt::format_to(buffer, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
+  fmt::format_to(std::back_inserter(buffer), "info depth {} seldepth {} score cp {} ", d, max_ply, score);
 
   if (nt == ALPHA)
-    fmt::format_to(buffer, "upperbound ");
+    fmt::format_to(std::back_inserter(buffer), "upperbound ");
   else if (nt == BETA)
-    fmt::format_to(buffer, "lowerbound ");
+    fmt::format_to(std::back_inserter(buffer), "lowerbound ");
 
   const auto time                           = pool.main()->time.elapsed() + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
 
-  fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", TT.load(), node_count, nodes_per_second, time);
+  fmt::format_to(std::back_inserter(buffer), "hashfull {} nodes {} nps {} time {} pv ", TT.load(), node_count, nodes_per_second, time);
 
   for (auto &pv : pv_line)
-    fmt::format_to(buffer, "{} ", pv.move);
+    fmt::format_to(std::back_inserter(buffer), "{} ", pv.move);
 
   fmt::print("{}\n", fmt::to_string(buffer));
 }

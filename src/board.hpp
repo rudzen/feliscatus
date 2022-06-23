@@ -286,7 +286,7 @@ inline PieceType Board::piece_type(const Square s) const
 
 inline bool Board::is_occupied(const Square s) const
 {
-  return pieces() & s;
+  return piece(s) != NO_PIECE;
 }
 
 inline bool Board::is_attacked(const Square s, const Color c) const

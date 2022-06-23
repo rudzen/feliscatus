@@ -34,7 +34,7 @@ struct FileResolver final
   explicit FileResolver(const std::string_view f, const std::string_view post_name)
   {
     fmt::memory_buffer b;
-    fmt::format_to(b, "{}{}", post_name, f);
+    fmt::format_to(std::back_inserter(b), "{}{}", post_name, f);
     file_ = std::filesystem::path(fmt::to_string(b));
   }
 

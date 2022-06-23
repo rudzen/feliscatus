@@ -193,13 +193,13 @@ struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view>
         const auto type          = o.type();
         const auto default_value = o.default_value();
 
-        fmt::format_to(buffer, "\noption name {} type {}", it.first, Types[static_cast<uci::option_type_t>(type)]);
+        fmt::format_to(std::back_inserter(buffer), "\noption name {} type {}", it.first, Types[static_cast<uci::option_type_t>(type)]);
 
         if (type != uci::OptionType::Button)
-          fmt::format_to(buffer, " default {}", default_value);
+          fmt::format_to(std::back_inserter(buffer), " default {}", default_value);
 
         if (type == uci::OptionType::Spin)
-          fmt::format_to(buffer, " min {} max {}", o.min(), o.max());
+          fmt::format_to(std::back_inserter(buffer), " min {} max {}", o.min(), o.max());
 
         break;
       }
