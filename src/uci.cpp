@@ -222,7 +222,7 @@ std::string uci::display_uci(const Move m)
                           : fmt::format("{}{}{}", move_from(m), move_to(m), piece_index[type_of(move_promoted(m))]);
 }
 
-std::string uci::info(const std::string &info_string)
+std::string uci::info(const std::string_view info_string)
 {
   return fmt::format("info string {}", info_string);
 }

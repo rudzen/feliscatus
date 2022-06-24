@@ -81,7 +81,7 @@ void bind_this_thread(std::size_t)
 
 /// best_group() retrieves logical processor information using Windows specific
 /// API and returns the best group id for the thread with index idx. Original
-/// code from Texel by Peter �sterlund.
+/// code from Texel by Peter Österlund.
 
 std::optional<int> best_group(const std::size_t idx)
 {
@@ -158,7 +158,9 @@ void bind_this_thread(const std::size_t idx)
   // Use only local variables to be thread-safe
   const auto group = best_group(idx);
 
-  [[unlikely]] if (!group) return;
+  [[unlikely]]
+  if (!group)
+    return;
 
   // Early exit if the needed API are not available at runtime
   auto *const k32 = GetModuleHandle("Kernel32.dll");
@@ -205,20 +207,19 @@ std::string print_engine_info()
   if constexpr (AsUci)
   {
     constexpr std::string_view authors{"Gunnar Harms, FireFather, Rudy Alex Kohn"};
-    fmt::format_to(
-      ver_info, "id name {} {:02}-{:02}-{} {}\nid author {}", title_short, month, day, year, compiler, authors);
+    fmt::format_to(std::back_inserter(ver_info), "id name {} {:02}-{:02}-{} {}\nid author {}", title_short, month, day, year, compiler, authors);
   } else
-    fmt::format_to(ver_info, "{} {:02}-{:02}-{} {}", title_short, month, day, year, compiler);
+    fmt::format_to(std::back_inserter(ver_info), "{} {:02}-{:02}-{} {}", title_short, month, day, year, compiler);
 
 #if defined(NO_LAZY_EVAL_THRESHOLD)
 
-  fmt::format_to(ver_info, " - NO LAZYEVAL");
+  fmt::format_to(std::back_inserter(ver_info), " - NO LAZYEVAL");
 
 #endif
 
 #if defined(NO_PREFETCH)
 
-  fmt::format_to(ver_info, " - NO PREFETCH")
+  fmt::format_to(std::back_inserter(ver_info), " - NO PREFETCH")
 
 #endif
 
