@@ -123,7 +123,8 @@
         "__tree": "cpp",
         "__tuple": "cpp",
         "queue": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "charconv": "cpp"
     },
     "git.ignoreLimitWarning": true,
     "sonarlint.pathToCompileCommands": "${workspaceFolder}\\build\\compile_commands.json"

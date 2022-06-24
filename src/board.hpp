@@ -374,7 +374,7 @@ inline bool Board::is_piece_on_file(const PieceType pt, const Square s, const Co
 
 inline bool Board::is_draw() const
 {
-  return flags() & Material::recognize_draw();
+  return pos->flags & Material::recognize_draw();
 }
 
 inline bool Board::can_castle() const

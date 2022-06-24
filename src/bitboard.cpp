@@ -192,18 +192,18 @@ std::string print_bitboard(Bitboard bb, std::string_view title)
   constexpr std::string_view line = "+---+---+---+---+---+---+---+---+";
 
   if (!title.empty())
-    fmt::format_to(buffer, "{}\n", title);
+    fmt::format_to(std::back_inserter(buffer), "{}\n", title);
 
-  fmt::format_to(buffer, "{}\n", line);
+  fmt::format_to(std::back_inserter(buffer), "{}\n", line);
 
   for (const auto r : ReverseRanks)
   {
     for (const auto f : Files)
-      fmt::format_to(buffer, "| {} ", bb & make_square(f, r) ? "X" : " ");
+      fmt::format_to(std::back_inserter(buffer), "| {} ", bb & make_square(f, r) ? "X" : " ");
 
-    fmt::format_to(buffer, "| {}\n{}\n", std::to_string(1 + r), line);
+    fmt::format_to(std::back_inserter(buffer), "| {}\n{}\n", std::to_string(1 + r), line);
   }
-  fmt::format_to(buffer, "  a   b   c   d   e   f   g   h\n");
+  fmt::format_to(std::back_inserter(buffer), "  a   b   c   d   e   f   g   h\n");
 
   return fmt::to_string(buffer);
 }

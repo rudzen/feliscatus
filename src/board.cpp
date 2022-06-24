@@ -50,11 +50,13 @@ const std::shared_ptr<spdlog::logger> logger =
 [[nodiscard]]
 Square ep_square(std::string_view s, const Color stm)
 {
+  [[likely]]
   if (s.empty() || s.length() == 1 || s.front() == '-')
     return NO_SQ;
 
   const auto first = s.front();
 
+  [[unlikely]]
   if (!util::in_between<'a', 'h'>(first))
     return NO_SQ;
 
@@ -101,12 +103,15 @@ void update_key(Position *pos, const Move m)
   pawn_key ^= zobrist.side();
   const auto *prev = pos->previous;   // (pos - 1);
 
+  [[unlikely]]
   if (prev->en_passant_square != NO_SQ)
     key ^= zobrist.ep(file_of(prev->en_passant_square));
 
+  [[unlikely]]
   if (pos->en_passant_square != NO_SQ)
     key ^= zobrist.ep(file_of(pos->en_passant_square));
 
+  [[unlikely]]
   if (!m)
   {
     key ^= pawn_key;
@@ -122,15 +127,18 @@ void update_key(Position *pos, const Move m)
   const auto mt      = type_of(m);
 
   // from and to for moving piece
+  [[likely]]
   if (is_pawn)
     pawn_key ^= zobrist.pst(piece, from);
   else
     key ^= zobrist.pst(piece, from);
 
+  [[unlikely]]
   if (mt & PROMOTION)
     key ^= zobrist.pst(move_promoted(m), to);
   else
   {
+    [[likely]]
     if (is_pawn)
       pawn_key ^= zobrist.pst(piece, to);
     else
@@ -138,10 +146,12 @@ void update_key(Position *pos, const Move m)
   }
 
   // remove captured piece
+  [[unlikely]]
   if (mt & EPCAPTURE)
     pawn_key ^= zobrist.pst(move_captured(m), to + pawn_push(pos->side_to_move));
   else if (mt & CAPTURE)
   {
+    [[likely]]
     if (is_pawn)
       pawn_key ^= zobrist.pst(move_captured(m), to);
     else
@@ -149,10 +159,12 @@ void update_key(Position *pos, const Move m)
   }
 
   // castling rights
+  [[unlikely]]
   if (prev->castle_rights != pos->castle_rights)
     key ^= zobrist.castle(prev->castle_rights) ^ zobrist.castle(pos->castle_rights);
 
   // rook move in castle
+  [[unlikely]]
   if (mt & CASTLE)
   {
     const auto rook = make_piece(ROOK, move_side(m));
@@ -345,19 +357,19 @@ void Board::print() const
 {
   fmt::memory_buffer s;
 
-  fmt::format_to(s, "\n");
+  fmt::format_to(std::back_inserter(s), "\n");
 
   for (const Rank rank : ReverseRanks)
   {
-    fmt::format_to(s, "{}  ", rank + 1);
+    fmt::format_to(std::back_inserter(s), "{}  ", rank + 1);
 
     for (const auto file : Files)
     {
       const auto sq = make_square(file, rank);
       const auto pc = piece(sq);
-      fmt::format_to(s, "{} ", piece_letter[pc]);
+      fmt::format_to(std::back_inserter(s), "{} ", piece_letter[pc]);
     }
-    fmt::format_to(s, "\n");
+    fmt::format_to(std::back_inserter(s), "\n");
   }
 
   fmt::print("{}   a b c d e f g h\n", fmt::to_string(s));
@@ -426,6 +438,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
   if (calculate_in_check)
     pos->in_check = is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move);
 
+  [[unlikely]]
   if (pos->in_check)
     pos->checkers = attackers_to(king_sq(pos->side_to_move));
 
@@ -534,6 +547,7 @@ void Board::set_fen(std::string_view fen, thread *t)
 {
   pos = position_list.data();
   pos->clear();
+
   clear();
 
   constexpr auto splitter = ' ';
@@ -567,7 +581,9 @@ void Board::set_fen(std::string_view fen, thread *t)
       sq += SOUTH * 2;
     else if (const auto pc_idx = piece_index.find_first_of(tolower(token)); pc_idx != std::string_view::npos)
     {
-      add_piece(make_piece(static_cast<PieceType>(pc_idx), (islower(token) ? BLACK : WHITE)), sq);
+      const auto c  = islower(token) ? BLACK : WHITE;
+      const auto pc = make_piece(static_cast<PieceType>(pc_idx), c);
+      add_piece(pc, sq);
       ++sq;
     }
   }
@@ -612,54 +628,56 @@ std::string Board::fen() const
       [[unlikely]]
       if (pc != NO_PIECE)
       {
+        [[likely]]
         if (empty)
         {
-          format_to(s, "{}", util::to_char(empty));
+          format_to(std::back_inserter(s), "{}", util::to_char(empty));
           empty = 0;
         }
-        format_to(s, "{}", piece_letter[pc]);
+        format_to(std::back_inserter(s), "{}", piece_letter[pc]);
       } else
         empty++;
     }
 
+    [[likely]]
     if (empty)
-      format_to(s, "{}", util::to_char(empty));
+      format_to(std::back_inserter(s), "{}", util::to_char(empty));
 
     [[likely]]
     if (r > 0)
-      format_to(s, "/");
+      format_to(std::back_inserter(s), "/");
   }
 
-  format_to(s, " {} ", pos->side_to_move == WHITE ? 'w' : 'b');
+  format_to(std::back_inserter(s), " {} ", pos->side_to_move == WHITE ? 'w' : 'b');
 
   [[unlikely]]
   if (can_castle())
   {
     [[unlikely]]
     if (can_castle(WHITE_OO))
-      format_to(s, "K");
+      format_to(std::back_inserter(s), "K");
 
     [[unlikely]]
     if (can_castle(WHITE_OOO))
-      format_to(s, "Q");
+      format_to(std::back_inserter(s), "Q");
 
     [[unlikely]]
     if (can_castle(BLACK_OO))
-      format_to(s, "k");
+      format_to(std::back_inserter(s), "k");
 
     [[unlikely]]
     if (can_castle(BLACK_OOO))
-      format_to(s, "q");
+      format_to(std::back_inserter(s), "q");
   } else
-    format_to(s, "-");
+    format_to(std::back_inserter(s), "-");
 
   [[unlikely]]
   if (const auto en_pessant_sq = en_passant_square(); en_pessant_sq != NO_SQ)
-    format_to(s, " {} ", square_to_string(en_pessant_sq));
+    format_to(std::back_inserter(s), " {} ", square_to_string(en_pessant_sq));
   else
-    format_to(s, " - ");
+    format_to(std::back_inserter(s), " - ");
 
-  format_to(s, "{} {}", pos->reversible_half_move_count, static_cast<int>((pos - position_list.data()) / 2 + 1));
+  format_to(std::back_inserter(s), "{} {}", pos->reversible_half_move_count, static_cast<int>((pos - position_list.data()) / 2 + 1));
 
   return fmt::to_string(s);
 }
@@ -674,7 +692,7 @@ void Board::setup_castling(const std::string_view s)
 
   for (const auto c : s)
   {
-    const Color us   = static_cast<Color>(!std::isupper(c));
+    const auto us    = static_cast<Color>(!std::isupper(c));
     const auto token = std::tolower(c);
 
     if (token == 'k')
@@ -784,6 +802,7 @@ void Board::add_castle_rights(const Color us, std::optional<File> rook_file)
   else
     ooo_king_from[us] = ksq;
 
+  [[unlikely]]
   if (file_of(ksq) != FILE_E) {
     chess960 = true;
     return;

@@ -61,7 +61,7 @@ constexpr int null_move_reduction(const int d)
   return 4 + d / 4;
 }
 
-void store_pv(const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length)
+void store_pv(const std::span<PVEntry> pv, const int pv_length)
 {
   assert(pv_length > 0);
   std::for_each(pv.begin(), std::next(pv.begin(), pv_length), [&](const PVEntry &entry) {
@@ -120,7 +120,7 @@ void update_quiet_history(thread *t, Position *pos, const Move best_move, const 
   if (pos->killer_moves.front() != best_move)
   {
     // Rotate the killer moves, index 3 become 2, index 2 becomes 1 and index 1 becomes 0 which is replaced with new
-    // move This is the same as std::copy_backward(km.begin(), std::prev(km.end(), 1), std::next(km.begin(), 1));
+    // move. This is the same as std::copy_backward(km.begin(), std::prev(km.end(), 1), std::next(km.begin(), 1));
     std::ranges::rotate(pos->killer_moves.begin(), std::prev(pos->killer_moves.end(), 1), pos->killer_moves.end());
     pos->killer_moves[0] = best_move;
   }
@@ -394,13 +394,12 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta)
   if (pos->reversible_half_move_count >= 100)
     return draw_score();
 
-  if (best_move)
-  {
-    if (!is_capture(best_move) && !is_promotion(best_move))
-      update_quiet_history(t, pos, best_move, depth);
-  }
+  if (best_move && !is_capture(best_move) && !is_promotion(best_move))
+    update_quiet_history(t, pos, best_move, depth);
 
-  return store_search_node_score(best_score, depth, node_type(best_score, beta, best_move), best_move);
+  const auto search_node_type = node_type(best_score, beta, best_move);
+
+  return store_search_node_score(best_score, depth, search_node_type, best_move);
 }
 
 template<Searcher SearcherType>
@@ -623,7 +622,9 @@ bool Search<SearcherType>::make_move_and_evaluate(const Move m, const int alpha,
 
   hash_and_evaluate(pos, b, t->index(), -beta, -alpha, b->plies);
 
-  b->max_ply = std::max<int>(b->max_ply, b->plies);
+  if (b->plies > b->max_ply)
+    b->max_ply = b->plies;
+
   return true;
 }
 

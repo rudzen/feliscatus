@@ -166,7 +166,7 @@ void Evaluate<Tuning>::set_attacks(const Bitboard attacks)
   {
     if (const auto attacks_king = attacks & king_area[Them]; attacks_king)
     {
-      attack_counter[Us] += std::popcount(attacks_king) * attacks_on_king[Pt];
+      attack_counter[Us] += popcount(attacks_king) * attacks_on_king[Pt];
       ++attack_count[Us];
     }
   }
@@ -237,8 +237,8 @@ Score Evaluate<Tuning>::eval_pieces()
     set_attacks<Pt, Us>(attacks);
 
     const auto free_squares          = attacks & ~b->pieces(Us);
-    const auto mob                   = std::popcount(free_squares);
-    const auto not_defended_by_pawns = std::popcount(free_squares & ~attacked_by<Them>(PAWN));
+    const auto mob                   = popcount(free_squares);
+    const auto not_defended_by_pawns = popcount(free_squares & ~attacked_by<Them>(PAWN));
 
     if constexpr (Pt == KNIGHT)
     {
@@ -308,12 +308,12 @@ Score Evaluate<Tuning>::eval_king()
   const auto flip_ksq      = relative_square(~Us, ksq);
   auto result              = king_pst[flip_ksq];
 
-  result += king_pawn_shelter[std::popcount((shift_bb<Up>(bb) | shift_bb<NorthEast>(bb) | shift_bb<NorthWest>(bb)) & b->pieces(PAWN, Us))];
+  result += king_pawn_shelter[popcount((shift_bb<Up>(bb) | shift_bb<NorthEast>(bb) | shift_bb<NorthWest>(bb)) & b->pieces(PAWN, Us))];
 
   const auto east_west = bb | shift_bb<WEST>(bb) | shift_bb<EAST>(bb);
 
-  result += king_on_open[std::popcount(open_files[Us] & east_west)];
-  result += king_on_half_open[std::popcount(half_open_files[Us] & east_west)];
+  result += king_on_open[popcount(open_files[Us] & east_west)];
+  result += king_on_half_open[popcount(half_open_files[Us] & east_west)];
 
   return result;
 }
