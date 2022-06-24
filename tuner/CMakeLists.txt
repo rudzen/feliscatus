@@ -3,6 +3,8 @@ file(GLOB files
         "*.hpp"
         )
 
+add_definitions("-DTUNER")
+
 list(REMOVE_ITEM files "main.cpp")
 
 add_library(tune STATIC ${files})

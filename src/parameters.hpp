@@ -27,82 +27,213 @@
 
 // clang-format off
 
+#if defined(TUNER)
 inline int lazy_margin = 500;
+#else
+constexpr int lazy_margin = 500;
+#endif
 
+#if defined(TUNER)
 inline int tempo = 10;
+#else
+constexpr int tempo = 10;
+#endif
 
+#if defined(TUNER)
 inline std::array<int, PIECETYPE_NB> attacks_on_king
+#else
+constexpr std::array<int, PIECETYPE_NB> attacks_on_king
+#endif
 {
       0,      3,      5,   11,    39,    0
 // Pawn  Knight  Bishop  Rook  Queen  King
 };
 
+#if defined(TUNER)
 inline std::array<int, PIECETYPE_NB> piece_in_danger
+#else
+constexpr std::array<int, PIECETYPE_NB> piece_in_danger
+#endif
 {
       0,     41,     56,   34,    38,    0
 // Pawn  Knight  Bishop  Rook  Queen  King
 };
 
-inline std::array<Score, 14> bishop_mob2 {
+#if defined(TUNER)
+inline std::array<Score, 14> bishop_mob2
+#else
+constexpr std::array<Score, 14> bishop_mob2
+#endif
+{
   Score(-27, -60), Score(-14, -27), Score(-6, -20), Score(-1, -10), Score( 3, -8), Score( 7, -2), Score( 5, 2),
   Score(  7,   3), Score( 11,   4), Score(15,   1), Score(10,   6), Score(18, 10), Score(12, 16), Score(29, 3)
 };
 
-inline std::array<Score, 14> bishop_mob {
+#if defined(TUNER)
+inline std::array<Score, 14> bishop_mob
+#else
+constexpr std::array<Score, 14> bishop_mob
+#endif
+{
   Score(-23, -35), Score(-17, -20), Score(-13, -29), Score(-13, -20), Score(-6, -13), Score(  0, -6), Score( 5, -4),
   Score(  5,   0), Score( 10,   5), Score(  3,   8), Score(  2,  -1), Score( 6,   5), Score(-14,  7), Score(16,  2)
 };
 
+#if defined(TUNER)
 inline Score bishop_pair         = Score(29, 57);
 inline Score bishop_diagonal     = Score(45,  0);
 inline Score king_obstructs_rook = Score(49, 9);
+#else
+constexpr Score bishop_pair         = Score(29, 57);
+constexpr Score bishop_diagonal     = Score(45,  0);
+constexpr Score king_obstructs_rook = Score(49, 9);
+#endif
 
-inline std::array<Score, 4> king_on_half_open{Score( 12, 0), Score( -9, 0), Score(-55, 0), Score( -97, 0)};
-inline std::array<Score, 4> king_on_open     {Score( 29, 0), Score(-13, 0), Score(-63, 0), Score(-221, 0)};
-inline std::array<Score, 4> king_pawn_shelter{Score(-20, 0), Score(  1, 0), Score(  6, 0), Score(  -7, 0)};
+#if defined(TUNER)
+inline std::array<Score, 4> king_on_half_open
+{ Score( 12, 0), Score( -9, 0), Score(-55, 0), Score( -97, 0) };
+#else
+constexpr std::array<Score, 4> king_on_half_open
+{ Score( 12, 0), Score( -9, 0), Score(-55, 0), Score( -97, 0) };
+#endif
 
-inline std::array<Score, 9> knight_mob2 {
+#if defined(TUNER)
+inline std::array<Score, 4> king_on_open
+#else
+constexpr std::array<Score, 4> king_on_open
+#endif
+{ Score( 29, 0), Score(-13, 0), Score(-63, 0), Score(-221, 0) };
+
+#if defined(TUNER)
+inline std::array<Score, 4> king_pawn_shelter
+#else
+constexpr std::array<Score, 4> king_pawn_shelter
+#endif
+{ Score(-20, 0), Score(  1, 0), Score(  6, 0), Score(  -7, 0) };
+
+#if defined(TUNER)
+inline std::array<Score, 9> knight_mob2
+#else
+constexpr std::array<Score, 9> knight_mob2
+#endif
+{
   Score(-59, -137), Score(-41, -56), Score(-21, -38),
   Score(-10,  -17), Score(  1,  -7), Score(  8,   0),
   Score( 14,    0), Score( 22,  -5), Score( 24, -15)
 };
 
-inline std::array<Score, 9> knight_mob {
+#if defined(TUNER)
+inline std::array<Score, 9> knight_mob
+#else
+constexpr std::array<Score, 9> knight_mob
+#endif
+{
   Score(76, -40), Score( 23,   8), Score(  5, 14),
   Score( 3,   0), Score(  3,  -5), Score( -2, -9),
   Score(-6, -10), Score(-14, -15), Score(-16, -8)
 };
 
-inline std::array<Score, 8> passed_pawn {
+#if defined(TUNER)
+inline std::array<Score, 8> passed_pawn
+#else
+constexpr std::array<Score, 8> passed_pawn
+#endif
+{
   Score(0, 0), Score(-16, -16), Score(-16, -7), Score(-12, 2), Score(23, 12), Score(68, 13), Score(95, -115), Score(0, 0),
 };
 
-inline std::array<Score, RANK_NB> passed_pawn_king_dist_them { Score(0, 0), Score(0, -66), Score(0, -24), Score(0,  5), Score(0,  22), Score(0,  33), Score(0,  39), Score(0,  21)};
-inline std::array<Score, RANK_NB> passed_pawn_king_dist_us   { Score(0, 0), Score(0,  23), Score(0,  24), Score(0,  0), Score(0, -10), Score(0, -11), Score(0,   0), Score(0, -17)};
-inline std::array<Score, RANK_NB> passed_pawn_no_attacks     { Score(0, 0), Score(0,   3), Score(0,   3), Score(0, 13), Score(0,  24), Score(0,  48), Score(0,  85), Score(0,   0)};
-inline std::array<Score, RANK_NB> passed_pawn_no_them        { Score(0, 0), Score(0,   2), Score(0,   6), Score(0, 22), Score(0,  36), Score(0,  64), Score(0, 129), Score(0,   0)};
-inline std::array<Score, RANK_NB> passed_pawn_no_us          { Score(0, 0), Score(0,   0), Score(0,  -1), Score(0,  3), Score(0,  17), Score(0,  32), Score(0, 121), Score(0,   0)};
+#if defined(TUNER)
+inline std::array<Score, RANK_NB> passed_pawn_king_dist_them
+#else
+constexpr std::array<Score, RANK_NB> passed_pawn_king_dist_them
+#endif
+{ Score(0, 0), Score(0, -66), Score(0, -24), Score(0,  5), Score(0,  22), Score(0,  33), Score(0,  39), Score(0,  21)};
 
-inline std::array<Score, 2> pawn_behind   { Score( -4,   4), Score(-28,  -8)};
-inline std::array<Score, 2> pawn_doubled  { Score(-15, -20), Score(  1, -15)};
-inline std::array<Score, 2> pawn_isolated { Score(-13,  -7), Score(-28, -32)};
+#if defined(TUNER)
+inline std::array<Score, RANK_NB> passed_pawn_king_dist_us
+#else
+constexpr std::array<Score, RANK_NB> passed_pawn_king_dist_us
+#endif
+{ Score(0, 0), Score(0,  23), Score(0,  24), Score(0,  0), Score(0, -10), Score(0, -11), Score(0,   0), Score(0, -17)};
 
-inline std::array<Score, 28> queen_mob {
+#if defined(TUNER)
+inline std::array<Score, RANK_NB> passed_pawn_no_attacks
+#else
+constexpr std::array<Score, RANK_NB> passed_pawn_no_attacks
+#endif
+{ Score(0, 0), Score(0,   3), Score(0,   3), Score(0, 13), Score(0,  24), Score(0,  48), Score(0,  85), Score(0,   0)};
+
+#if defined(TUNER)
+inline std::array<Score, RANK_NB> passed_pawn_no_them
+#else
+constexpr std::array<Score, RANK_NB> passed_pawn_no_them
+#endif
+{ Score(0, 0), Score(0,   2), Score(0,   6), Score(0, 22), Score(0,  36), Score(0,  64), Score(0, 129), Score(0,   0)};
+
+#if defined(TUNER)
+inline std::array<Score, RANK_NB> passed_pawn_no_us
+#else
+constexpr std::array<Score, RANK_NB> passed_pawn_no_us
+#endif
+{ Score(0, 0), Score(0,   0), Score(0,  -1), Score(0,  3), Score(0,  17), Score(0,  32), Score(0, 121), Score(0,   0)};
+
+
+#if defined(TUNER)
+inline std::array<Score, 2> pawn_behind
+#else
+constexpr std::array<Score, 2> pawn_behind
+#endif
+{ Score( -4,   4), Score(-28,  -8)};
+
+#if defined(TUNER)
+inline std::array<Score, 2> pawn_doubled
+#else
+constexpr std::array<Score, 2> pawn_doubled
+#endif
+{ Score(-15, -20), Score(  1, -15)};
+
+#if defined(TUNER)
+inline std::array<Score, 2> pawn_isolated
+#else
+constexpr std::array<Score, 2> pawn_isolated
+#endif
+{ Score(-13,  -7), Score(-28, -32)};
+
+#if defined(TUNER)
+inline std::array<Score, 28> queen_mob
+#else
+constexpr std::array<Score, 28> queen_mob
+#endif
+{
   Score(-19,  -3), Score(-34, -30), Score(-15, -17), Score(-15, -27), Score(-13, -36), Score(-10, -37), Score(-10, -30),
   Score(-11, -24), Score( -6, -27), Score( -1, -21), Score(  2, -17), Score( -1, -11), Score( -3,  -1), Score(  2,   4),
   Score(  3,   2), Score(  5,   5), Score(  7,   2), Score(  3,   6), Score(  9,   3), Score( 13,   1), Score( 25, -15),
   Score( 34, -16), Score( 33, -15), Score( 58, -34), Score( 44, -34), Score( 41, -28), Score( 14, -12), Score( 19, -16)
 };
 
-inline std::array<Score, 15> rook_mob {
+#if defined(TUNER)
+inline std::array<Score, 15> rook_mob
+#else
+constexpr std::array<Score, 15> rook_mob
+#endif
+{
   Score(-28, -46), Score(-20, -28), Score(-13, -24), Score(-16, -9), Score(-17, -5),
   Score(-10,  -2), Score( -9,   5), Score( -3,   9), Score( -1, 14), Score(  2, 19),
   Score(  4,  21), Score(  1,  27), Score(  6,  27), Score( 20, 15), Score( 28,  3)
 };
 
+#if defined(TUNER)
 inline int rook_open_file    = 13;
+#else
+constexpr int rook_open_file = 13;
+#endif
 
-inline std::array<Score, 64> bishop_pst {
+#if defined(TUNER)
+inline std::array<Score, 64> bishop_pst
+#else
+constexpr std::array<Score, 64> bishop_pst
+#endif
+{
   Score(-65,   7), Score(-58,  13), Score(-27,  12), Score(-41,  10), Score(-46,  24), Score(-70,  -5), Score( 15, -19), Score(-35, -14),
   Score(-40,   2), Score(-26,   9), Score(-43,   3), Score(-25,  16), Score(-39,  -1), Score(-10,  -7), Score(-46,  -5), Score(-59, -21),
   Score( -5,  -8), Score( -3,   7), Score(  2,   4), Score( 13, -17), Score( 22,  12), Score( 64,  -5), Score( 29,   1), Score(  4, -19),
@@ -124,7 +255,13 @@ inline std::array<Score, 64> king_pst {
   Score(-52,  -44), Score( 16, -35), Score(  0, -16), Score(-73,   2), Score(-34, -20), Score(-50, -8), Score( 32, -38), Score(  7,  -66)
 };
 
-inline std::array<Score, 64> knight_pst {
+
+#if defined(TUNER)
+inline std::array<Score, 64> knight_pst
+#else
+constexpr std::array<Score, 64> knight_pst
+#endif
+{
   Score(-221,  -33), Score(-103, -12), Score(-59,   0), Score(-11, -25), Score( 38, -30), Score(-31, -18), Score(-103, -14), Score(-255, -54),
   Score( -66,  -31), Score( -40, -16), Score(  5, -15), Score( 23, -14), Score( 37,  -3), Score( 35, -40), Score( -11, -21), Score( -32, -22),
   Score( -22,  -37), Score(  -3, -17), Score( 42,  -3), Score( 39,   3), Score( 75, -12), Score(115, -13), Score(  10, -22), Score( -33, -28),
@@ -135,7 +272,12 @@ inline std::array<Score, 64> knight_pst {
   Score(-104, -159), Score( -44, -75), Score(-54, -46), Score(-53, -30), Score(-22, -46), Score(-24, -52), Score( -59, -67), Score(  -2, -37)
 };
 
-inline std::array<Score, 64> pawn_pst {
+#if defined(TUNER)
+inline std::array<Score, 64> pawn_pst
+#else
+constexpr std::array<Score, 64> pawn_pst
+#endif
+{
   Score(  0,  0), Score(  0,  0), Score(  0,  0), Score(  0,  0), Score(  0,  0), Score( 0,  0), Score( 0,  0), Score(  0,  0),
   Score(206,  0), Score(124, 24), Score( 96, 49), Score(113, 29), Score( 98, 34), Score(36, 54), Score( 9, 74), Score( 13, 26),
   Score( 19, 33), Score( 25, 39), Score( 43, 28), Score( 36, 15), Score( 58, 21), Score(77, 13), Score(64, 20), Score( 30,  6),
@@ -146,7 +288,13 @@ inline std::array<Score, 64> pawn_pst {
   Score(  0,  0), Score(  0,  0), Score(  0,  0), Score(  0,  0), Score(  0,  0), Score( 0,  0), Score( 0,  0), Score(  0,  0)
 };
 
-inline std::array<Score, 64> queen_pst {
+
+#if defined(TUNER)
+inline std::array<Score, 64> queen_pst
+#else
+constexpr std::array<Score, 64> queen_pst
+#endif
+{
   Score(-10,   5), Score(  4,  14), Score( 10,  10), Score( 13,  23), Score( 14,  20), Score( 86,   2), Score( 64,    9), Score( 57,    8),
   Score(-36,   5), Score(-60,  40), Score(-31,  40), Score(-10,  38), Score(-10,  49), Score( 43,  25), Score( 5,    25), Score( 39,   10),
   Score( -9, -22), Score(-17,   7), Score(-14,  38), Score( -4,  37), Score( 36,  40), Score( 63,  20), Score( 69,    2), Score( 16,   12),
@@ -157,7 +305,12 @@ inline std::array<Score, 64> queen_pst {
   Score(  8, -89), Score( -8, -85), Score( -5, -67), Score(  4, -61), Score(  5, -84), Score(-18, -96), Score(-58, -123), Score( -9, -110)
 };
 
-inline std::array<Score, 64> rook_pst {
+#if defined(TUNER)
+inline std::array<Score, 64> rook_pst
+#else
+constexpr std::array<Score, 64> rook_pst
+#endif
+{
   Score(  1,  46), Score(  3,  47), Score( 25,  33), Score( 31,  28), Score( 24,  36), Score( 24,  42), Score(35,  37), Score( 54,  29),
   Score(  3,  44), Score( -8,  41), Score( 28,  28), Score( 40,  23), Score( 39,  20), Score( 56,  22), Score(45,  20), Score( 39,  16),
   Score(-18,  49), Score(  8,  27), Score( 14,  28), Score( 31,  10), Score( 59,  12), Score( 67,  21), Score(51,  13), Score( 11,  32),
