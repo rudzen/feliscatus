@@ -57,11 +57,11 @@ namespace
 std::string compiler_info()
 {
 #if defined(__clang__)
-  return fmt::format("[Clang/LLVM v{}{}{}]", std::string(__clang_major__), __clang_minor__, __clang_patchlevel__);
+  return fmt::format("[Clang/LLVM {}{}{}]", std::string(__clang_major__), __clang_minor__, __clang_patchlevel__);
 #elif defined(__GNUC__) || defined(__GNUG__)
-  return fmt::format("[GNU GCC v{}]", std::string(__VERSION__));
+  return fmt::format("[GNU GCC {}]", std::string(__VERSION__));
 #elif defined(_MSC_VER)
-  return fmt::format("[MS Visual Studio v{}]", _MSC_VER);
+  return fmt::format("[MS Visual Studio {}]", _MSC_VER);
 #else
   return std::string("Unknown compiler");
 #endif
@@ -192,8 +192,6 @@ std::string print_engine_info()
   std::string m, d, y, uci;
   fmt::memory_buffer ver_info;
   fmt::memory_buffer buffer;
-
-  // TODO : parse with chrono?
 
   std::stringstream date(std::string(__DATE__));
 

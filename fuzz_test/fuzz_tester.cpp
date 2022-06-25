@@ -21,10 +21,10 @@
 #include <cstdint>
 #include <iterator>
 #include <utility>
-#include <fmt/format.h>
+#include <iostream>
 
 [[nodiscard]]
-auto sum_values(const std::uint8_t *data, const size_t size)
+auto sum_values(const std::uint8_t *data, const std::size_t size)
 {
   constexpr auto scale = 1000;
 
@@ -37,8 +37,8 @@ auto sum_values(const std::uint8_t *data, const size_t size)
 
 // Fuzzer that attempts to invoke undefined behavior for signed integer overflow
 // cppcheck-suppress unusedFunction symbolName=LLVMFuzzerTestOneInput
-extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t *Data, size_t Size)
+extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t *Data, std::size_t Size)
 {
-  fmt::print("Value sum: {}, len{}\n", sum_values(Data,Size), Size);
+  std::cout << "Value sum: " << sum_values(Data,Size) << ", len:" << Size;
   return 0;
 }

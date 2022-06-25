@@ -430,7 +430,7 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
   PGNPlayer pgn;
   pgn.read(settings->file_name);
 
-  // Tuning as described in https://chessprogramming.wikispaces.com/Texel%27s+Tuning+Method
+  // Tuning as described in https://www.chessprogramming.org/Texel%27s_Tuning_Method
 
   score_static_ = true;
 

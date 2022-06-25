@@ -322,9 +322,12 @@ template<bool Tuning>
 template<Color Us>
 Score Evaluate<Tuning>::eval_passed_pawns(const PawnHashEntry *entry) const
 {
-  constexpr auto Them = ~Us;
-  auto result         = ZeroScore;
-  auto pp             = entry->passed_pawns[Us];
+  constexpr auto Them      = ~Us;
+  auto result              = ZeroScore;
+  auto pp                  = entry->passed_pawns[Us];
+  const auto enemy_attacks = attacked_by<Them>(ALL_PIECE_TYPES);
+  const auto ksq           = b->king_sq(Us);
+  const auto theirKsq      = b->king_sq(Them);
 
   while (pp)
   {
@@ -334,9 +337,9 @@ Score Evaluate<Tuning>::eval_passed_pawns(const PawnHashEntry *entry) const
     result += passed_pawn[r];
     result += passed_pawn_no_us[r] * !(front_span & b->pieces(Us));
     result += passed_pawn_no_them[r] * !(front_span & b->pieces(Them));
-    result += passed_pawn_no_attacks[r] * !(front_span & attacked_by<Them>(ALL_PIECE_TYPES));
-    result += passed_pawn_king_dist_them[distance(s, b->king_sq(Them))];
-    result += passed_pawn_king_dist_us[distance(s, b->king_sq(Us))];
+    result += passed_pawn_no_attacks[r] * !(front_span & enemy_attacks);
+    result += passed_pawn_king_dist_them[distance(s, theirKsq)];
+    result += passed_pawn_king_dist_us[distance(s, ksq)];
   }
 
   return result;
