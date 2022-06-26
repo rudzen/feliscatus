@@ -27,14 +27,21 @@
 
 TEST_CASE("single bit detection mto()", "[sing_bit_detection_mto]")
 {
-  constexpr auto sq = make_square(FILE_A, RANK_2);
-  constexpr auto sq2 = make_square(FILE_B, RANK_7);
-
-  constexpr auto one = bit(sq) | bit(sq2);
-
+  constexpr auto sq            = make_square(FILE_A, RANK_2);
+  constexpr auto sq2           = make_square(FILE_B, RANK_7);
+  constexpr auto one           = bit(sq) | bit(sq2);
   constexpr auto expectedCount = more_than_one(one);
 
   REQUIRE(expectedCount == true);
-
   REQUIRE(std::has_single_bit(one) != true);
+}
+
+TEST_CASE("does msb yield correct square", "[msb]")
+{
+  constexpr auto expected  = make_square(FILE_B, RANK_5);
+  constexpr auto secondary = make_square(FILE_A, RANK_1);
+  constexpr auto bb        = bit(expected) | bit(secondary);
+  constexpr auto actual    = msb(bb);
+
+  REQUIRE(expected == actual);
 }

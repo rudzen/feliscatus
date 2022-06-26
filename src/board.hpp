@@ -39,8 +39,6 @@ struct Board
 
   static void init();
 
-  void clear();
-
   bool make_move(Move m, bool check_legal, bool calculate_in_check);
 
   bool make_move(Move m, bool check_legal);
@@ -48,9 +46,6 @@ struct Board
   void unmake_move();
 
   bool make_null_move();
-
-  [[nodiscard]]
-  std::uint64_t calculate_key() const;
 
   [[nodiscard]]
   bool is_repetition() const;
@@ -177,9 +172,6 @@ struct Board
   Color side_to_move() const;
 
   [[nodiscard]]
-  Bitboard checkers() const;
-
-  [[nodiscard]]
   bool in_check() const;
 
   [[nodiscard]]
@@ -195,9 +187,6 @@ struct Board
   int history_score(Move m) const;
 
   [[nodiscard]]
-  bool gives_check(Move m);
-
-  [[nodiscard]]
   bool is_legal(Move m, Piece pc, Square from, MoveType mt);
 
   Position *pos;
@@ -208,6 +197,18 @@ struct Board
   bool chess960{};
 
 private:
+
+  void clear();
+
+  [[nodiscard]]
+  std::uint64_t calculate_key() const;
+
+  [[nodiscard]]
+  Bitboard checkers() const;
+
+  [[nodiscard]]
+  bool gives_check(Move m);
+
   void remove_piece(Square s);
 
   [[nodiscard]]
@@ -281,7 +282,7 @@ inline Piece Board::piece(const Square s) const
 
 inline PieceType Board::piece_type(const Square s) const
 {
-  return type_of(board[s]);
+  return type_of(piece(s));
 }
 
 inline bool Board::is_occupied(const Square s) const

@@ -182,10 +182,11 @@ template const MoveData *Moves<false>::next_move();
 template<bool Tuning>
 void Moves<Tuning>::reset(const Move m, const int flags)
 {
-  transp_move_ = m;
-  move_flags_  = flags;
-  iteration_ = number_moves_ = 0;
-  stage_                     = TT_STAGE;
+  transp_move_  = m;
+  move_flags_   = flags;
+  iteration_    = 0;
+  number_moves_ = 0;
+  stage_        = TT_STAGE;
 
   [[likely]]
   if (m)

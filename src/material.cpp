@@ -29,7 +29,7 @@ namespace
 
 constexpr std::array<int, 7> piece_bit_shift{0, 4, 8, 12, 16, 20};
 
-enum material_key_t
+enum material_key_t : std::uint32_t
 {
     k   = 0x00000,
     kp  = 0x00001,
@@ -109,7 +109,8 @@ int Material::evaluate(int &flags, const int eval, const Board *b)
 {
   constexpr auto Them = ~Us;
   this->board         = b;
-  drawish = material_flags = 0;
+  drawish             = 0;
+  material_flags      = 0;
 
   std::uint32_t strong_key;
   std::uint32_t weak_key;
@@ -366,7 +367,7 @@ int Material::KBKX(
       if (c1 == c || !board->is_attacked(lsb(board->pieces(BISHOP, c1)), c2))
       {
         if (const auto bishopbb = board->pieces(BISHOP, c1);
-            pawn_front_span[c2][lsb(board->pieces(PAWN, c2))]
+            pawn_front_spanBB(c2, lsb(board->pieces(PAWN, c2)))
             & (piece_attacks_bb<BISHOP>(lsb(bishopbb), board->pieces()) | bishopbb))
           return draw_score();
       }
@@ -400,7 +401,7 @@ int Material::KNKX(
       if (c1 == c || !board->is_attacked(lsb(board->pieces(KNIGHT, c1)), c2))
       {
         if (const auto knightbb = board->pieces(KNIGHT, c1);
-            pawn_front_span[c2][lsb(board->pieces(PAWN, c2))] & (piece_attacks_bb<KNIGHT>(lsb(knightbb)) | knightbb))
+            pawn_front_spanBB(c2, lsb(board->pieces(PAWN, c2))) & (piece_attacks_bb<KNIGHT>(lsb(knightbb)) | knightbb))
           return draw_score();
       }
     }

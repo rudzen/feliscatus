@@ -29,7 +29,7 @@
 #include "../src/miscellaneous.hpp"
 #include "../src/tpool.hpp"
 
-TEST_CASE("Perft basic at depth 6", "[perft_basic]")
+TEST_CASE("Perft basic", "[perft_basic]")
 {
   TT.init(1);
   bitboard::init();
@@ -40,7 +40,28 @@ TEST_CASE("Perft basic at depth 6", "[perft_basic]")
   Board b{};
   b.set_fen(start_position, pool.main());
 
-  auto result = perft::perft(&b, 6);
+  std::uint64_t result = 0;
 
-  REQUIRE(result == 124132536);
+  SECTION("Perft depth=1")
+  {
+    result = perft::perft(&b, 1);
+    REQUIRE(result == 20);
+  }
+
+  SECTION("Perf depth=2")
+  {
+    result = perft::perft(&b, 2);
+    REQUIRE(result == 20 + 400);
+  }
+
+  SECTION("Perf depth=3")
+  {
+    result = perft::perft(&b, 3);
+    REQUIRE(result == 20 + 400 + 8902);
+  }
+
+
+
+
+//  REQUIRE(result == 124132536);
 }

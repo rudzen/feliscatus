@@ -410,6 +410,12 @@ constexpr Square lsb(const Bitboard bb)
 }
 
 [[nodiscard]]
+constexpr Square msb(const Bitboard bb)
+{
+  return static_cast<Square>(63 ^ std::countl_zero(bb));
+}
+
+[[nodiscard]]
 constexpr Square pop_lsb(Bitboard *bb)
 {
   const auto s{lsb(*bb)};
@@ -472,6 +478,11 @@ consteval std::array<std::array<Bitboard, SQ_NB>, COL_NB> make_pawn_front_span()
 }
 
 constexpr std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_front_span = make_pawn_front_span();
+
+[[nodiscard]]
+constexpr Bitboard pawn_front_spanBB(const Color c, const Square sq) {
+  return pawn_front_span[c][sq];
+}
 
 consteval std::array<std::array<Bitboard, SQ_NB>, COL_NB> make_passed_pawn_front_span()
 {

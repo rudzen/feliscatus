@@ -49,6 +49,18 @@ auto stages(Material &mat)
   return std::make_pair(stage, 1 - stage);
 }
 
+constexpr bool is_bishop_squares_colors_disparate(Bitboard bishops)
+{
+  std::array<bool, COL_NB> cols{};
+  while (bishops)
+  {
+    const auto sq      = pop_lsb(&bishops);
+    cols[color_of(sq)] = true;
+  }
+
+  return cols[WHITE] & cols[BLACK];
+}
+
 }   // namespace
 
 template<bool Tuning>
@@ -144,7 +156,8 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta)
   // finally add the remaining poseval scores
   result += poseval[WHITE] - poseval[BLACK];
 
-  posistion_value[Us] += tempo;
+  if constexpr (Us == WHITE)
+    posistion_value[Us] += tempo;
 
   const auto [stage_mg, stage_eg] = stages(b->material());
   const auto pos_eval_mg          = static_cast<int>(result.mg() * stage_mg);
@@ -189,18 +202,11 @@ void Evaluate<Tuning>::eval_material()
   if (const auto bishop_count = b->piece_count(Us, BISHOP); bishop_count == 2)
   {
     auto bishops = b->pieces(BISHOP, Us);
-    add          = is_opposite_colors(pop_lsb(&bishops), pop_lsb(&bishops));
+    add          = is_opposite_colors(lsb(bishops), msb(bishops));
   } else if (bishop_count > 2)   // edge case with more than two bishops
   {
-    auto bishops = b->pieces(BISHOP, Us);
-    std::array<bool, COL_NB> cols{};
-    while (bishops)
-    {
-      const auto sq      = pop_lsb(&bishops);
-      cols[color_of(sq)] = true;
-    }
-
-    add = cols[WHITE] & cols[BLACK];
+    const auto bishops = b->pieces(BISHOP, Us);
+    add = is_bishop_squares_colors_disparate(bishops);
   }
 
   if (add)
@@ -332,7 +338,7 @@ Score Evaluate<Tuning>::eval_passed_pawns(const PawnHashEntry *entry) const
   while (pp)
   {
     const auto s          = pop_lsb(&pp);
-    const auto front_span = pawn_front_span[Us][s];
+    const auto front_span = pawn_front_spanBB(Us, s);
     const auto r          = relative_rank(Us, s);
     result += passed_pawn[r];
     result += passed_pawn_no_us[r] * !(front_span & b->pieces(Us));

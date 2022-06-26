@@ -442,7 +442,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
   if (pos->in_check)
     pos->checkers = attackers_to(king_sq(pos->side_to_move));
 
-  if (pos->castle_rights && (castle_rights_mask[from] | castle_rights_mask[to]))
+  if (can_castle() && (castle_rights_mask[from] | castle_rights_mask[to]))
     pos->castle_rights &= ~(castle_rights_mask[from] | castle_rights_mask[to]);
 
   update_key(pos, m);
