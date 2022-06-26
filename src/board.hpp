@@ -438,10 +438,12 @@ inline thread *Board::my_thread() const
   return my_t;
 }
 
-inline Move Board::counter_move(const Move m) const {
+inline Move Board::counter_move(const Move m) const
+{
   return my_t->counter_moves[move_piece(m)][move_to(m)];
 }
 
-inline int Board::history_score(const Move m) const {
+inline int Board::history_score(const Move m) const
+{
   return my_t->history_scores[move_piece(m)][move_to(m)];
 }

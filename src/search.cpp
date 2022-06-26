@@ -391,7 +391,7 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta)
   if (move_count == 0)
     return b->in_check() ? -MAXSCORE + b->plies : draw_score();
 
-  if (pos->reversible_half_move_count >= 100)
+  if (pos->rule50 >= 100)
     return draw_score();
 
   if (best_move && !is_capture(best_move) && !is_promotion(best_move))

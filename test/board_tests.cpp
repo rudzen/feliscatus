@@ -18,22 +18,34 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "position.hpp"
-#include "bitboard.hpp"
+#define CATCH_CONFIG_MAIN
 
-void Position::clear()
+#include <catch2/catch_all.hpp>
+#include <algorithm>
+
+#include "../src/board.hpp"
+#include "../src/miscellaneous.hpp"
+
+TEST_CASE("FEN set->generate", "[fen]")
 {
-  castle_rights      = 0;
-  rule50             = 0;
-  pawn_structure_key = 0;
-  key                = 0;
-  last_move          = MOVE_NONE;
-  null_moves_in_row  = 0;
-  transposition      = nullptr;
-  last_move          = MOVE_NONE;
-  checkers           = ZeroBB;
-  in_check           = false;
-  previous           = nullptr;
-  material.clear();
-  killer_moves.fill(MOVE_NONE);
+  bitboard::init();
+
+  pool.set(1);
+
+  Board b{};
+  b.set_fen(start_position, pool.main());
+
+  const auto fen = b.fen();
+
+  REQUIRE(fen.size() == start_position.size());
+
+  const auto equals = std::equal(
+    fen.begin(), fen.end(),
+    start_position.begin(), start_position.end(),
+    [](const char c1, const char c2) {
+        return c1 == c2;
+    });
+
+  REQUIRE(equals);
+
 }

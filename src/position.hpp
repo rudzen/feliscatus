@@ -30,7 +30,7 @@ struct Position final
 {
   void clear();
 
-  int reversible_half_move_count{};
+  int rule50{};
   Key pawn_structure_key{};
   Key key{};
   Material material{};

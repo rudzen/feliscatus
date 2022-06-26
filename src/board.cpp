@@ -428,8 +428,8 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
   pos->castle_rights     = prev->castle_rights;
   pos->null_moves_in_row = 0;
 
-  pos->reversible_half_move_count =
-    mt & (CAPTURE | EPCAPTURE) || type_of(move_piece(m)) == PAWN ? 0 : prev->reversible_half_move_count + 1;
+  pos->rule50 =
+    mt & (CAPTURE | EPCAPTURE) || type_of(move_piece(m)) == PAWN ? 0 : prev->rule50 + 1;
 
   pos->en_passant_square  = type_of(m) & DOUBLEPUSH ? to + pawn_push(pos->side_to_move) : NO_SQ;
   pos->key                = prev->key;
@@ -478,7 +478,7 @@ bool Board::make_null_move()
   pos->in_check                   = false;
   pos->castle_rights              = prev->castle_rights;
   pos->null_moves_in_row          = prev->null_moves_in_row + 1;
-  pos->reversible_half_move_count = 0;
+  pos->rule50 = 0;
   pos->en_passant_square          = NO_SQ;
   pos->key                        = prev->key;
   pos->pawn_structure_key         = prev->pawn_structure_key;
@@ -518,7 +518,7 @@ std::uint64_t Board::calculate_key() const
 
 bool Board::is_repetition() const
 {
-  auto num_moves = pos->reversible_half_move_count;
+  auto num_moves = pos->rule50;
   auto *prev     = pos;
 
   while ((num_moves = num_moves - 2) >= 0 && prev - position_list.data() > 1)
@@ -603,9 +603,16 @@ void Board::set_fen(std::string_view fen, thread *t)
   current                = update_current();
   pos->en_passant_square = ep_square(current, pos->side_to_move);
 
-  // TODO : Parse the rest
+  space++;
+  current = update_current();
 
-  pos->reversible_half_move_count = 0;
+  pos->rule50 = util::to_integral<int>(current);
+
+  space++;
+  current = update_current();
+
+  plies = util::to_integral<int>(current);
+  plies = std::max(2 * (plies - 1), 0) + (pos->side_to_move == BLACK);
 
   update_position(pos);
 
@@ -614,7 +621,8 @@ void Board::set_fen(std::string_view fen, thread *t)
 
 std::string Board::fen() const
 {
-  fmt::memory_buffer s;
+  fmt::memory_buffer buf;
+  const auto s = std::back_inserter(buf);
 
   for (const Rank r : ReverseRanks)
   {
@@ -631,55 +639,55 @@ std::string Board::fen() const
         [[likely]]
         if (empty)
         {
-          format_to(std::back_inserter(s), "{}", util::to_char(empty));
+          format_to(s, "{}", util::to_char(empty));
           empty = 0;
         }
-        format_to(std::back_inserter(s), "{}", piece_letter[pc]);
+        format_to(s, "{}", piece_letter[pc]);
       } else
         empty++;
     }
 
     [[likely]]
     if (empty)
-      format_to(std::back_inserter(s), "{}", util::to_char(empty));
+      format_to(s, "{}", util::to_char(empty));
 
     [[likely]]
     if (r > 0)
-      format_to(std::back_inserter(s), "/");
+      format_to(s, "/");
   }
 
-  format_to(std::back_inserter(s), " {} ", pos->side_to_move == WHITE ? 'w' : 'b');
+  format_to(s, " {} ", pos->side_to_move == WHITE ? 'w' : 'b');
 
   [[unlikely]]
   if (can_castle())
   {
     [[unlikely]]
     if (can_castle(WHITE_OO))
-      format_to(std::back_inserter(s), "K");
+      format_to(s, "K");
 
     [[unlikely]]
     if (can_castle(WHITE_OOO))
-      format_to(std::back_inserter(s), "Q");
+      format_to(s, "Q");
 
     [[unlikely]]
     if (can_castle(BLACK_OO))
-      format_to(std::back_inserter(s), "k");
+      format_to(s, "k");
 
     [[unlikely]]
     if (can_castle(BLACK_OOO))
-      format_to(std::back_inserter(s), "q");
+      format_to(s, "q");
   } else
-    format_to(std::back_inserter(s), "-");
+    format_to(s, "-");
 
   [[unlikely]]
   if (const auto en_pessant_sq = en_passant_square(); en_pessant_sq != NO_SQ)
-    format_to(std::back_inserter(s), " {} ", square_to_string(en_pessant_sq));
+    format_to(s, " {} ", square_to_string(en_pessant_sq));
   else
-    format_to(std::back_inserter(s), " - ");
+    format_to(s, " - ");
 
-  format_to(std::back_inserter(s), "{} {}", pos->reversible_half_move_count, static_cast<int>((pos - position_list.data()) / 2 + 1));
+  format_to(s, "{} {}", pos->rule50, 1 + (plies - (pos->side_to_move == BLACK)) / 2);
 
-  return fmt::to_string(s);
+  return fmt::to_string(buf);
 }
 
 void Board::setup_castling(const std::string_view s)
@@ -718,8 +726,8 @@ std::string Board::move_to_string(const Move m) const
 
   // shredder fen
   [[unlikely]]
-  if (mt & CASTLE && chess960)
-    return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(rook_castles_from[move_to(m)]));
+  if (chess960 && mt & CASTLE)
+    return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(rook_castles_from(move_to(m))));
 
   [[unlikely]]
   if (mt & PROMOTION)
