@@ -35,7 +35,6 @@ namespace
 constexpr auto actual_eval = [](const std::array<int, COL_NB> &e) {
   return e[WHITE] - e[BLACK];
 };
-constexpr Bitboard CenterBB      = make_bitboard(D4, E4, D5, E5);
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
 

@@ -85,6 +85,7 @@ constexpr Bitboard corner_a1 = make_bitboard(A1, B1, A2, B2);
 constexpr Bitboard corner_a8 = make_bitboard(A8, B8, A7, B7);
 constexpr Bitboard corner_h1 = make_bitboard(H1, G1, H2, G2);
 constexpr Bitboard corner_h8 = make_bitboard(H8, G8, H7, G7);
+constexpr Bitboard CenterBB  = make_bitboard(D4, E4, D5, E5);
 
 constexpr std::array<Bitboard, SQ_NB> square_bb{
   make_bitboard(A1), make_bitboard(B1), make_bitboard(C1), make_bitboard(D1), make_bitboard(E1), make_bitboard(F1),

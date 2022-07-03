@@ -46,5 +46,6 @@ struct SearchLimits final
     movetime  = 0;
     movestogo = depth = 0;
     ponder = infinite = fixed_movetime = fixed_depth = false;
+    search_moves.clear();
   }
 };
