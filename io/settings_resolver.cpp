@@ -18,12 +18,34 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include <fstream>
+#include <filesystem>
 
-#include <vector>
-#include <string_view>
-#include <string>
+#include <nlohmann/json.hpp>
+#include <fmt/format.h>
 
-namespace directory_resolver {
-    std::vector<std::string> get_book_list(std::string_view directory);
+#include "settings_resolver.hpp"
+
+namespace
+{
+constexpr std::string_view settings_file = "Feliscatus.json";
+}
+
+EngineSettings::EngineSettings()
+{
+  namespace fs = std::filesystem;
+
+  auto p = fs::exists(settings_file);
+
+  if (!p)
+  {
+    fmt::print("info string Unable to locate {}, no books will be enabled\n", fs::path(settings_file).string());
+    return;
+  }
+
+  std::ifstream i(settings_file.data());
+  nlohmann::json j;
+  i >> j;
+  nlohmann::json j_string = j["book"]["directory"];
+  books_directory_        = j_string.get<std::string>();
 }

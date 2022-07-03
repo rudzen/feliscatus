@@ -20,10 +20,24 @@
 
 #pragma once
 
-#include <vector>
-#include <string_view>
 #include <string>
+#include <string_view>
 
-namespace directory_resolver {
-    std::vector<std::string> get_book_list(std::string_view directory);
+struct EngineSettings final
+{
+  EngineSettings();
+  std::string_view books_directory() const;
+
+  private:
+  std::string books_directory_{};
+};
+
+inline std::string_view EngineSettings::books_directory() const
+{
+    return books_directory_;
+}
+
+namespace Settings
+{
+inline EngineSettings settings;
 }

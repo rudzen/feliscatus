@@ -37,15 +37,20 @@ const std::shared_ptr<spdlog::logger> logger =
 
 constexpr std::string_view extension = ".bin";
 
-}
+}   // namespace
 
-std::vector<std::string> directory_resolver::get_book_list()
+std::vector<std::string> directory_resolver::get_book_list(const std::string_view directory)
 {
+  if (directory.empty())
+    return {};
+
   namespace fs = std::filesystem;
 
-  auto cwd = fs::current_path().append("polybooks");
+  const auto path = fs::absolute(directory);
+  const auto cwd  = !fs::exists(path) ? fs::current_path().append(directory) : path;
 
-  if (!fs::is_directory(cwd)) {
+  if (!fs::is_directory(cwd))
+  {
     logger->info("Unable to proceed, unknown path. path={}", cwd.string());
     return {};
   }
@@ -56,10 +61,8 @@ std::vector<std::string> directory_resolver::get_book_list()
   {
     if (entry.is_regular_file())
     {
-      if (const auto s = fs::absolute(entry.path()).string(); s.ends_with(extension)) {
-        fmt::print("entry: {}\n", s);
+      if (const auto s = fs::absolute(entry.path()).string(); s.ends_with(extension))
         file_names.emplace_back(s);
-      }
     }
   }
 

@@ -27,6 +27,7 @@
 #include "../src/transpositional.hpp"
 #include "../src/polyglot.hpp"
 #include "../io/directory_resolver.hpp"
+#include "../io/settings_resolver.hpp"
 
 int main(const int argc, char *argv[])
 {
@@ -38,17 +39,13 @@ int main(const int argc, char *argv[])
 
   fmt::print("{}", info);
 
-  fmt::print("{}", book.size());
-
   bitboard::init();
   Board::init();
 
-  auto f = directory_resolver::get_book_list();
+  auto f = directory_resolver::get_book_list(Settings::settings.books_directory());
 
-  if (f.empty())
-    fmt::print("No book(s) detected\n");
-  else
-    fmt::print("Detected {} books\n", f.size());
+  if (!f.empty())
+    fmt::print("info string Detected {} books\n", f.size());
 
   uci::init(Options, f);
 
