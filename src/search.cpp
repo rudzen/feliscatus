@@ -34,6 +34,7 @@
 #include "uci.hpp"
 #include "board.hpp"
 #include "moves.hpp"
+#include "polyglot.hpp"
 
 namespace
 {
@@ -776,6 +777,21 @@ void main_thread::search()
   time.init(root_board->side_to_move(), pool.limits);
   TT.init_search();
 
+  //
+  // If book is enabled and we succesfully can probe for a move, perform the move
+  //
+  if (Options[uci::uci_name<uci::UciOptions::USE_BOOK>()])
+  {
+      if (const auto book_file = Options[uci::uci_name<uci::UciOptions::BOOKS>()]; !book.empty())
+      {
+        if (const auto book_move = book.probe(root_board.get()); book_move)
+        {
+          uci::post_moves(book_move, MOVE_NONE);
+          return;
+        }
+      }
+  }
+
   pool.start_searching();   // start workers
   Search<Searcher::Master>(root_board.get()).go();
 
@@ -792,7 +808,7 @@ void main_thread::search()
   [[likely]]
   if (root_board->pos->pv_length)
   {
-    const auto [m, p_move] = std::make_pair(pv[0][0].move, root_board->pos->pv_length > 1 ? pv[0][1].move : MOVE_NONE);
-    uci::post_moves(m, p_move);
+    const auto ponder_move = root_board->pos->pv_length > 1 ? pv[0][1].move : MOVE_NONE;
+    uci::post_moves(pv[0][0].move, ponder_move);
   }
 }

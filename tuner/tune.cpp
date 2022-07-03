@@ -30,7 +30,9 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 
 #include "tune.hpp"
-#include "file_resolver.hpp"
+
+#include "../io/file_resolver.hpp"
+
 #include "../src/board.hpp"
 #include "../src/eval.hpp"
 #include "../src/parameters.hpp"

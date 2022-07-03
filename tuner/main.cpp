@@ -27,7 +27,6 @@
 #include <fmt/format.h>
 
 #include "tune.hpp"
-#include "file_resolver.hpp"
 #include "../src/board.hpp"
 #include "../src/bitboard.hpp"
 #include "../src/transpositional.hpp"

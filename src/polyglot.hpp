@@ -18,41 +18,51 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <fmt/format.h>
-#include <spdlog/spdlog.h>
+#pragma once
 
-#include "../src/bitboard.hpp"
-#include "../src/board.hpp"
-#include "../src/uci.hpp"
-#include "../src/transpositional.hpp"
-#include "../src/polyglot.hpp"
-#include "../io/directory_resolver.hpp"
+#include <vector>
+#include <string_view>
 
-int main(const int argc, char *argv[])
+#include "types.hpp"
+
+struct Board;
+
+struct PolyBook
 {
-  util::check_size<PawnHashEntry, 32>();
+  PolyBook() = default;
 
-  spdlog::flush_every(std::chrono::seconds(3));
+  void open(std::string_view path);
 
-  const auto info = misc::print_engine_info<false>();
+  Move probe(Board *board) const;
 
-  fmt::print("{}", info);
+  std::size_t size() const;
 
-  fmt::print("{}", book.size());
+  bool empty() const;
 
-  bitboard::init();
-  Board::init();
+private:
+  struct BookEntry
+  {
+    std::uint64_t key{};
+    std::uint16_t move{};
+    std::uint16_t weight{};
+    std::uint32_t learn{};
+  };
 
-  auto f = directory_resolver::get_book_list();
+  auto lower_entry(std::uint64_t key) const;
+  auto upper_entry(std::uint64_t key) const;
 
-  if (f.empty())
-    fmt::print("No book(s) detected\n");
-  else
-    fmt::print("Detected {} books\n", f.size());
+  std::string_view current_book_;
+  std::vector<BookEntry> entries_;
+};
 
-  uci::init(Options, f);
-
-  TT.init(1);
-
-  uci::run(argc, argv);
+inline std::size_t PolyBook::size() const
+{
+  return entries_.size();
 }
+
+inline bool PolyBook::empty() const
+{
+  return entries_.empty();
+}
+
+inline PolyBook book;

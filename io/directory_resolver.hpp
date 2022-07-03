@@ -18,41 +18,12 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <fmt/format.h>
-#include <spdlog/spdlog.h>
+#pragma once
 
-#include "../src/bitboard.hpp"
-#include "../src/board.hpp"
-#include "../src/uci.hpp"
-#include "../src/transpositional.hpp"
-#include "../src/polyglot.hpp"
-#include "../io/directory_resolver.hpp"
+#include <vector>
+#include <string_view>
+#include <string>
 
-int main(const int argc, char *argv[])
-{
-  util::check_size<PawnHashEntry, 32>();
-
-  spdlog::flush_every(std::chrono::seconds(3));
-
-  const auto info = misc::print_engine_info<false>();
-
-  fmt::print("{}", info);
-
-  fmt::print("{}", book.size());
-
-  bitboard::init();
-  Board::init();
-
-  auto f = directory_resolver::get_book_list();
-
-  if (f.empty())
-    fmt::print("No book(s) detected\n");
-  else
-    fmt::print("Detected {} books\n", f.size());
-
-  uci::init(Options, f);
-
-  TT.init(1);
-
-  uci::run(argc, argv);
+namespace directory_resolver {
+    std::vector<std::string> get_book_list();
 }

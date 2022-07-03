@@ -20,10 +20,12 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
+#include <filesystem>
 #include <iostream>
-#include <string>
 #include <map>
+#include <string>
 #include <span>
 
 #include <fmt/format.h>
@@ -51,7 +53,9 @@ enum class UciOptions
   PONDER,
   UCI_Chess960,
   SHOW_CPU,
-  UCI_OPT_NB = 8
+  USE_BOOK,
+  BOOKS,
+  UCI_OPT_NB = 10
 };
 
 using uci_t = std::underlying_type_t<UciOptions>;
@@ -62,7 +66,7 @@ constexpr std::string_view uci_name()
 {
   constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB)> UciStrings{
     "Threads", "Hash",         "Hash * Threads", "Clear Hash", "Clear hash on new game",
-    "Ponder",  "UCI_Chess960", "Show CPU usage"};
+    "Ponder",  "UCI_Chess960", "Show CPU usage", "Use book",   "Books"};
 
   return UciStrings[static_cast<uci_t>(Option)];
 }
@@ -71,7 +75,11 @@ class Option;
 
 enum class OptionType
 {
-  String, Check, Button, Spin, Combo
+  String,
+  Check,
+  Button,
+  Spin,
+  Combo
 };
 
 using option_type_t = std::underlying_type_t<OptionType>;
@@ -105,7 +113,7 @@ public:
   Option(int v, int minv, int maxv, on_change = nullptr);
 
   [[nodiscard]]
-  Option(const char *v, const char *cur, on_change = nullptr);
+  Option(std::span<std::string> variants, const char *cur, on_change = nullptr);
 
   Option &operator=(const std::string &) noexcept;
 
@@ -124,6 +132,9 @@ public:
   std::size_t index() const noexcept;
 
   [[nodiscard]]
+  std::span<std::string> variants() const noexcept;
+
+  [[nodiscard]]
   std::string_view default_value() const noexcept;
 
   [[nodiscard]]
@@ -139,6 +150,7 @@ public:
   int min() const noexcept;
 
 private:
+  std::span<std::string> variants_;
   std::string default_value_{};
   std::string current_value_{};
   OptionType type_{};
@@ -148,7 +160,7 @@ private:
   on_change on_change_{};
 };
 
-void init(OptionsMap &);
+void init(OptionsMap &, std::span<std::string>);
 
 void post_moves(Move m, Move ponder_move);
 
@@ -168,7 +180,7 @@ void run(int argc, char *argv[]);
 
 }   // namespace uci
 
-inline uci::OptionsMap Options;
+constinit inline uci::OptionsMap Options;
 
 ///
 /// Options formatter
@@ -180,8 +192,9 @@ struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view>
   template<typename FormatContext>
   auto format(const uci::OptionsMap om, FormatContext &ctx)
   {
-    static constexpr std::array<std::string_view, 5> Types { "string", "check", "button", "spin", "combo" };
+    static constexpr std::array<std::string_view, 5> Types{"string", "check", "button", "spin", "combo"};
     fmt::memory_buffer buffer;
+    auto inserter = std::back_inserter(buffer);
 
     for (std::size_t idx = 0; idx < om.size(); ++idx)
       for (const auto &it : om)
@@ -193,13 +206,24 @@ struct fmt::formatter<uci::OptionsMap> : formatter<std::string_view>
         const auto type          = o.type();
         const auto default_value = o.default_value();
 
-        fmt::format_to(std::back_inserter(buffer), "\noption name {} type {}", it.first, Types[static_cast<uci::option_type_t>(type)]);
+        fmt::format_to(inserter, "\noption name {} type {} ", it.first, Types[static_cast<uci::option_type_t>(type)]);
 
-        if (type != uci::OptionType::Button)
-          fmt::format_to(std::back_inserter(buffer), " default {}", default_value);
+        if (type != uci::OptionType::Button && type != uci::OptionType::Combo)
+          fmt::format_to(inserter, "default {}", default_value);
 
         if (type == uci::OptionType::Spin)
-          fmt::format_to(std::back_inserter(buffer), " min {} max {}", o.min(), o.max());
+          fmt::format_to(inserter, "min {} max {}", o.min(), o.max());
+
+        if (type == uci::OptionType::Combo)
+        {
+          namespace fs = std::filesystem;
+
+          fmt::format_to(inserter, "default {}", fs::path(o.current_value()).filename().string());
+
+          std::for_each(o.variants().begin(), o.variants().end(), [&inserter](const auto v) {
+            fmt::format_to(inserter, " var {}", fs::path(v).filename().string());
+          });
+        }
 
         break;
       }

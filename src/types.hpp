@@ -47,6 +47,9 @@ enum Square
   SQ_NB = 64
 };
 
+template<typename T>
+concept SquareT = std::is_convertible_v<T, Square>;
+
 constexpr std::array<Square, SQ_NB> Squares{A1, B1, C1, D1, E1, F1, G1, H1, A2, B2, C2, D2, E2, F2, G2, H2,
                                             A3, B3, C3, D3, E3, F3, G3, H3, A4, B4, C4, D4, E4, F4, G4, H4,
                                             A5, B5, C5, D5, E5, F5, G5, H5, A6, B6, C6, D6, E6, F6, G6, H6,
@@ -71,8 +74,12 @@ enum Color : std::uint8_t
   COL_NB
 };
 
+template<typename T>
+concept ColorT = std::is_convertible_v<T, Color>;
+
 // Toggle color
-constexpr Color operator~(const Color c) noexcept
+template<ColorT C>
+constexpr Color operator~(const C c) noexcept
 {
   return static_cast<Color>(c ^ BLACK);
 }
@@ -100,6 +107,9 @@ enum File : int
   FILE_NB
 };
 
+template<typename T>
+concept FileT = std::is_convertible_v<T, File>;
+
 constexpr std::array<File, 8> Files{FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H};
 
 constexpr std::ranges::reverse_view ReverseFiles{Files};
@@ -117,12 +127,16 @@ enum Rank : int
   RANK_NB
 };
 
+template<typename T>
+concept RankT = std::is_convertible_v<T, Rank>;
+
 constexpr std::array<Rank, 8> Ranks{RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8};
 
 constexpr std::ranges::reverse_view ReverseRanks{Ranks};
 
+template<ColorT C, RankT R>
 [[nodiscard]]
-constexpr Rank relative_rank(const Color c, const Rank r)
+constexpr Rank relative_rank(const C c, const R r)
 {
   return static_cast<Rank>(r ^ (c * 7));
 }
@@ -146,8 +160,12 @@ enum Direction : int
   NO_DIRECTION = 0
 };
 
+template<typename T>
+concept DirectionT = std::is_convertible_v<T, Direction>;
+
+template<ColorT C>
 [[nodiscard]]
-constexpr Direction pawn_push(const Color c)
+constexpr Direction pawn_push(const C c)
 {
   return c == WHITE ? NORTH : SOUTH;
 }
@@ -165,6 +183,9 @@ enum PieceType
   PIECETYPE_NB    = 8
 };
 
+template<typename T>
+concept PieceTypeT = std::is_convertible_v<T, PieceType>;
+
 constexpr std::array<PieceType, 6> PieceTypes{PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
 
 enum Piece
@@ -173,6 +194,9 @@ enum Piece
   B_PAWN   = 8, B_KNIGHT =  9, B_BISHOP = 10, B_ROOK = 11, B_QUEEN = 12, B_KING = 13,
   NO_PIECE = 6, PIECE_NB = 16
 };
+
+template<typename T>
+concept PieceT = std::is_convertible_v<T, Piece>;
 
 constexpr std::array<Piece, PieceTypes.size() * 2> Pieces{W_PAWN, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
                                                           B_PAWN, B_KNIGHT, B_BISHOP, B_ROOK, B_QUEEN, B_KING};
@@ -195,8 +219,9 @@ constexpr PieceType type_of(const Piece pc)
   return static_cast<PieceType>(pc & 7);
 }
 
+template<ColorT C>
 [[nodiscard]]
-constexpr Piece make_piece(const PieceType pt, const Color c)
+constexpr Piece make_piece(const PieceType pt, const C c)
 {
   return static_cast<Piece>(pt | (c << 3));
 }
@@ -223,6 +248,9 @@ enum Move : std::uint32_t
 {
   MOVE_NONE = 0
 };
+
+template<typename T>
+concept MoveT = std::is_convertible_v<T, Move>;
 
 enum MoveType : std::uint8_t
 {
@@ -270,17 +298,18 @@ constexpr CastlingRight make_castling()
   return C == WHITE ? WHITE_CR : BLACK_CR;
 }
 
-template<CastlingRight S>
+template<CastlingRight S, ColorT C>
 [[nodiscard]]
-constexpr CastlingRight make_castling(const Color c)
+constexpr CastlingRight make_castling(const C c)
 {
   constexpr auto WHITE_CR = S == QUEEN_SIDE ? WHITE_OOO : WHITE_OO;
   constexpr auto BLACK_CR = S == QUEEN_SIDE ? BLACK_OOO : BLACK_OO;
   return c == WHITE ? WHITE_CR : BLACK_CR;
 }
 
+template<ColorT C>
 [[nodiscard]]
-constexpr CastlingRight operator&(const Color c, const CastlingRight cr)
+constexpr CastlingRight operator&(const C c, const CastlingRight cr)
 {
   return static_cast<CastlingRight>((c == WHITE ? WHITE_ANY : BLACK_ANY) & cr);
 }
@@ -294,13 +323,22 @@ enum MoveGenFlags
   QUIET      = 1 << 3
 };
 
-/// color_of() determin color of a square or a piece
+template<typename T>
+concept Okayable = PieceT<T>
+                  || SquareT<T>
+                  || PieceTypeT<T>
+                  || MoveT<T>;
 
 template<typename T>
+concept Colorable = PieceT<T> || SquareT<T>;
+
+
+/// color_of() determin color of a square or a piece
+
+template<Colorable T>
 [[nodiscard]]
 constexpr Color color_of(const T t)
 {
-  static_assert(std::is_same_v<T, Piece> || std::is_same_v<T, Square>, "Wrong type.");
   if constexpr (std::is_same_v<T, Piece>)
     return static_cast<Color>(t >> 3);
   else if constexpr (std::is_same_v<T, Square>)
@@ -407,147 +445,168 @@ constexpr Square &operator-=(Square &s, const Direction d) noexcept
   return s = s - d;
 }
 
+template<SquareT S>
 [[nodiscard]]
-constexpr Rank rank_of(const Square s)
+constexpr Rank rank_of(const S s)
 {
   return static_cast<Rank>(s >> 3);
 }
 
+template<SquareT S>
 [[nodiscard]]
-constexpr File file_of(const Square s)
+constexpr File file_of(const S s)
 {
   return static_cast<File>(s & 7);
 }
 
+template<SquareT S>
 [[nodiscard]]
-constexpr bool is_dark(const Square s)
+constexpr bool is_dark(const S s)
 {
   return ((9 * s) & 8) == 0;
 }
 
+template<SquareT S>
 [[nodiscard]]
-constexpr bool same_color(const Square s1, const Square s2)
+constexpr bool same_color(const S s1, const S s2)
 {
   return is_dark(s1) == is_dark(s2);
 }
 
+template<FileT F, RankT R>
 [[nodiscard]]
-constexpr Square make_square(const File f, const Rank r)
+constexpr Square make_square(const F f, const R r)
 {
   return static_cast<Square>((r << 3) + f);
 }
 
+template<ColorT C, SquareT S>
 [[nodiscard]]
-constexpr Square relative_square(const Color c, const Square s)
+constexpr Square relative_square(const C c, const S s)
 {
   return static_cast<Square>(s ^ (c * 56));
 }
 
+template<ColorT C, SquareT S>
 [[nodiscard]]
-constexpr Rank relative_rank(const Color c, const Square s)
+constexpr Rank relative_rank(const C c, const S s)
 {
   return relative_rank(c, rank_of(s));
 }
 
+template<MoveT M>
 [[nodiscard]]
-constexpr Piece move_piece(const Move m)
+constexpr Piece move_piece(const M m)
 {
   return static_cast<Piece>(m >> 26 & 15);
 }
 
+template<MoveT M>
 [[nodiscard]]
-constexpr Piece move_captured(const Move m)
+constexpr Piece move_captured(const M m)
 {
   return static_cast<Piece>(m >> 22 & 15);
 }
 
+template<MoveT M>
 [[nodiscard]]
-constexpr Piece move_promoted(const Move m)
+constexpr Piece move_promoted(const M m)
 {
   return static_cast<Piece>(m >> 18 & 15);
 }
 
+template<MoveT M>
 [[nodiscard]]
-constexpr MoveType type_of(const Move m)
+constexpr MoveType type_of(const M m)
 {
   return static_cast<MoveType>(m >> 12 & 63);
 }
 
+template<MoveT M>
 [[nodiscard]]
-constexpr Square move_from(const Move m)
+constexpr Square move_from(const M m)
 {
   return static_cast<Square>(m >> 6 & 63);
 }
 
+template<MoveT M>
 [[nodiscard]]
-constexpr Square move_to(const Move m)
+constexpr Square move_to(const M m)
 {
   return static_cast<Square>(m & 63);
 }
 
+template<MoveT M>
 [[nodiscard]]
-constexpr PieceType move_piece_type(const Move m)
+constexpr PieceType move_piece_type(const M m)
 {
   return type_of(move_piece(m));
 }
 
+template<MoveT M>
 [[nodiscard]]
-constexpr Color move_side(const Move m)
+constexpr Color move_side(const M m)
 {
   return static_cast<Color>(m >> 29 & 1);
 }
 
+template<MoveT M>
 [[nodiscard]]
-constexpr bool is_capture(const Move m)
+constexpr bool is_capture(const M m)
 {
   return type_of(m) & (CAPTURE | EPCAPTURE);
 }
 
+template<MoveT M>
 [[nodiscard]]
-constexpr bool is_ep_capture(const Move m)
+constexpr bool is_ep_capture(const M m)
 {
   return type_of(m) & EPCAPTURE;
 }
 
+template<MoveT M>
 [[nodiscard]]
-constexpr bool is_castle_move(const Move m)
+constexpr bool is_castle_move(const M m)
 {
   return type_of(m) & CASTLE;
 }
 
+template<MoveT M>
 [[nodiscard]]
-constexpr bool is_promotion(const Move m)
+constexpr bool is_promotion(const M m)
 {
   return type_of(m) & PROMOTION;
 }
 
+template<MoveT M>
 [[nodiscard]]
-constexpr bool is_queen_promotion(const Move m)
+constexpr bool is_queen_promotion(const M m)
 {
   return is_promotion(m) && type_of(move_promoted(m)) == QUEEN;
 }
 
-template<MoveType Mt>
+template<MoveType Mt, PieceT P, SquareT S>
 [[nodiscard]]
 constexpr Move init_move(
-  const Piece pc,
-  const Piece cap,
-  const Square from,
-  const Square to,
-  const Piece promoted)
+  const P pc,
+  const P cap,
+  const S from,
+  const S to,
+  const P promoted)
 {
   return static_cast<Move>(
     (pc << 26) | (cap << 22) | (promoted << 18) | (Mt << 12) | (from << 6) | static_cast<int>(to));
 }
 
+template<PieceT P, SquareT S>
 [[nodiscard]]
 constexpr Move init_move(
-  const Piece pc,
-  const Piece captured,
-  const Square from,
-  const Square to,
+  const P pc,
+  const P captured,
+  const S from,
+  const S to,
   const MoveType mt,
-  const Piece promoted)
+  const P promoted)
 {
   return static_cast<Move>(
     (pc << 26) | (captured << 22) | (promoted << 18) | (mt << 12) | (from << 6) | static_cast<int>(to));
@@ -555,13 +614,10 @@ constexpr Move init_move(
 
 /// Checks if Piece, PieceType, Square or Move is ok
 
-template<typename T>
+template<Okayable T>
 [[nodiscard]]
 constexpr bool is_ok(const T t)
 {
-  static_assert(
-    std::is_same_v<T, Piece> || std::is_same_v<T, Square> || std::is_same_v<T, PieceType> || std::is_same_v<T, Move>,
-    "Wrong type.");
   if constexpr (std::is_same_v<T, Piece>)
     return is_ok(type_of(t));
   else if constexpr (std::is_same_v<T, Square>)

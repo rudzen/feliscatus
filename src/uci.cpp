@@ -193,20 +193,22 @@ void uci::post_curr_move(const Move m, const int m_number)
 void uci::post_pv(const int d, const int max_ply, const int score, const std::span<PVEntry> &pv_line, const NodeType nt)
 {
   fmt::memory_buffer buffer;
-  fmt::format_to(std::back_inserter(buffer), "info depth {} seldepth {} score cp {} ", d, max_ply, score);
+  auto inserter = std::back_inserter(buffer);
+
+  fmt::format_to(inserter, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
 
   if (nt == ALPHA)
-    fmt::format_to(std::back_inserter(buffer), "upperbound ");
+    fmt::format_to(inserter, "upperbound ");
   else if (nt == BETA)
-    fmt::format_to(std::back_inserter(buffer), "lowerbound ");
+    fmt::format_to(inserter, "lowerbound ");
 
   const auto time                           = pool.main()->time.elapsed() + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
 
-  fmt::format_to(std::back_inserter(buffer), "hashfull {} nodes {} nps {} time {} pv ", TT.load(), node_count, nodes_per_second, time);
+  fmt::format_to(inserter, "hashfull {} nodes {} nps {} time {} pv ", TT.load(), node_count, nodes_per_second, time);
 
   for (auto &pv : pv_line)
-    fmt::format_to(std::back_inserter(buffer), "{} ", pv.move);
+    fmt::format_to(inserter, "{} ", pv.move);
 
   fmt::print("{}\n", fmt::to_string(buffer));
 }

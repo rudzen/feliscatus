@@ -73,13 +73,16 @@ template<CastlingRight Side>
 [[nodiscard]]
 Square find_rook_square(const Color us, const Board *b)
 {
-  const auto rook     = make_piece(ROOK, us);
+  const auto rook = make_piece(ROOK, us);
+
   const auto Relative = [&us](const Square s) {
     return relative_square(us, s);
   };
+
   const auto is_rook_on_square = [&b, &rook](const Square sq) {
     return b->piece(sq) == rook;
   };
+
   const auto filter = std::views::transform(Relative) | std::views::filter(is_rook_on_square);
 
   if constexpr (Side == KING_SIDE)
@@ -91,8 +94,6 @@ Square find_rook_square(const Color us, const Board *b)
     auto res = CastlelingSquaresQueen | filter;
     return *std::ranges::begin(res);
   }
-
-  return NO_SQ;
 }
 
 void update_key(Position *pos, const Move m)
@@ -534,8 +535,9 @@ bool Board::is_repetition() const
 
 std::int64_t Board::half_move_count() const
 {
+  return pos->rule50;
   // TODO : fix implementation defined behaviour
-  return pos - position_list.data();
+  //return pos - position_list.data();
 }
 
 void Board::new_game(thread *t)
@@ -727,7 +729,7 @@ std::string Board::move_to_string(const Move m) const
   // shredder fen
   [[unlikely]]
   if (chess960 && mt & CASTLE)
-    return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(rook_castles_from(move_to(m))));
+    return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(rook_castles_from[move_to(m)]));
 
   [[unlikely]]
   if (mt & PROMOTION)
@@ -739,8 +741,8 @@ std::string Board::move_to_string(const Move m) const
 void Board::print_moves()
 {
   auto ml = MoveList<LEGALMOVES>(this);
-  for (auto i = 0; const auto m : ml)
-    fmt::print("{}. {}   {}\n", i++ + 1, move_to_string(m.move), m.score);
+  for (auto i = 1; const auto m : ml)
+    fmt::print("{}. {}   {}\n", i++, move_to_string(m.move), m.score);
 }
 
 void Board::update_position(Position *p) const
@@ -811,15 +813,15 @@ void Board::add_castle_rights(const Color us, std::optional<File> rook_file)
     ooo_king_from[us] = ksq;
 
   [[unlikely]]
-  if (file_of(ksq) != FILE_E) {
+  if (file_of(ksq) != FILE_E)
     chess960 = true;
-    return;
+  else
+  {
+    constexpr auto far_file = Side == KING_SIDE ? FILE_H : FILE_A;
+
+    if (file_of(rook_square) != far_file)
+      chess960 = true;
   }
-
-  constexpr auto far_file    = Side == KING_SIDE ? FILE_H : FILE_A;
-
-  if (file_of(rook_square) != far_file)
-    chess960 = true;
 }
 
 bool Board::is_castleling_impeeded(const Square s, const Color us) const
