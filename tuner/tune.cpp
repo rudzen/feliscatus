@@ -122,35 +122,36 @@ std::string emit_code(const std::vector<eval::Param> &params0)
     params1[param.name_].emplace_back(param);
 
   fmt::memory_buffer s;
+  auto inserter = std::back_inserter(s);
 
   for (auto &params2 : params1)
   {
     const auto n = params2.second.size();
 
     if (n > 1)
-      format_to(std::back_inserter(s), "inline std::array<int, {}> {} {{", n, params2.first);
+      format_to(inserter, "inline std::array<int, {}> {} {{", n, params2.first);
     else
-      format_to(std::back_inserter(s), "inline int {} = ", params2.first);
+      format_to(inserter, "inline int {} = ", params2.first);
 
     for (size_t i = 0; i < n; ++i)
     {
       if (Hr && n == 64)
       {
         if (i % 8 == 0)
-          format_to(std::back_inserter(s), "\n ");
+          format_to(inserter, "\n ");
 
-        format_to(std::back_inserter(s), "{}", params2.second[i].value_);
+        format_to(inserter, "{}", params2.second[i].value_);
       } else
-        format_to(std::back_inserter(s), "{}", params2.second[i].value_);
+        format_to(inserter, "{}", params2.second[i].value_);
 
       if (n > 1 && i < n - 1)
-        format_to(std::back_inserter(s), ", ");
+        format_to(inserter, ", ");
     }
 
     if (n > 1)
-      format_to(std::back_inserter(s), " }}");
+      format_to(inserter, " }}");
 
-    format_to(std::back_inserter(s), ";\n");
+    format_to(inserter, ";\n");
   }
 
   return fmt::to_string(s);
@@ -562,12 +563,13 @@ double Tune::e(
   x /= nodes.empty() ? 1.0 : static_cast<double>(nodes.size());
 
   fmt::memory_buffer s;
+  auto inserter = std::back_inserter(s);
 
-  format_to(std::back_inserter(s), "x:{:.{}f}", x, 12);
+  format_to(inserter, "x:{:.{}f}", x, 12);
 
   for (std::size_t i = 0; i < params_index.size(); ++i)
     if (params[params_index[i].idx_].step_)
-      format_to(std::back_inserter(s), " prm[{}]:{}\n", i, params[params_index[i].idx_].value_);
+      format_to(inserter, " prm[{}]:{}\n", i, params[params_index[i].idx_].value_);
 
   console->info("{}\n\n", fmt::to_string(s));
 

@@ -85,8 +85,9 @@ void position(Board *b, std::istringstream &input)
   else if (token == "fen")
   {
     fmt::memory_buffer fen;
+    auto inserter = std::back_inserter(fen);
     while (input >> token && token != "moves")
-      fmt::format_to(std::back_inserter(fen), "{} ", token);
+      fmt::format_to(inserter, "{} ", token);
     b->set_fen(fmt::to_string(fen), pool.main());
   }
   else return;
@@ -161,12 +162,13 @@ void go(std::istringstream &input, std::string_view fen)
 void uci::post_moves(const Move m, const Move ponder_move)
 {
   fmt::memory_buffer buffer;
+  auto inserter = std::back_inserter(buffer);
 
-  fmt::format_to(std::back_inserter(buffer), "bestmove {}", display_uci(m));
+  fmt::format_to(inserter, "bestmove {}", display_uci(m));
 
   [[likely]]
   if (ponder_move)
-    fmt::format_to(std::back_inserter(buffer), " ponder {}", display_uci(ponder_move));
+    fmt::format_to(inserter, " ponder {}", display_uci(ponder_move));
 
   fmt::print("{}\n", fmt::to_string(buffer));
 }

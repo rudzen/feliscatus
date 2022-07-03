@@ -191,7 +191,7 @@ std::string print_engine_info()
   static constexpr std::string_view all_months{"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec"};
   std::string m, d, y, uci;
   fmt::memory_buffer ver_info;
-  fmt::memory_buffer buffer;
+  auto inserter = std::back_inserter(ver_info);
 
   std::stringstream date(std::string(__DATE__));
 
@@ -205,19 +205,19 @@ std::string print_engine_info()
   if constexpr (AsUci)
   {
     constexpr std::string_view authors{"Gunnar Harms, FireFather, Rudy Alex Kohn"};
-    fmt::format_to(std::back_inserter(ver_info), "id name {} {:02}-{:02}-{} {}\nid author {}", title_short, month, day, year, compiler, authors);
+    fmt::format_to(inserter, "id name {} {:02}-{:02}-{} {}\nid author {}", title_short, month, day, year, compiler, authors);
   } else
-    fmt::format_to(std::back_inserter(ver_info), "{} {:02}-{:02}-{} {}", title_short, month, day, year, compiler);
+    fmt::format_to(inserter, "{} {:02}-{:02}-{} {}", title_short, month, day, year, compiler);
 
 #if defined(NO_LAZY_EVAL_THRESHOLD)
 
-  fmt::format_to(std::back_inserter(ver_info), " - NO LAZYEVAL");
+  fmt::format_to(inserter, " - NO LAZYEVAL");
 
 #endif
 
 #if defined(NO_PREFETCH)
 
-  fmt::format_to(std::back_inserter(ver_info), " - NO PREFETCH")
+  fmt::format_to(inserter, " - NO PREFETCH")
 
 #endif
 

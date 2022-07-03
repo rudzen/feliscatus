@@ -357,20 +357,21 @@ bool Board::is_pseudo_legal(const Move m) const
 void Board::print() const
 {
   fmt::memory_buffer s;
+  auto inserter = std::back_inserter(s);
 
-  fmt::format_to(std::back_inserter(s), "\n");
+  fmt::format_to(inserter, "\n");
 
   for (const Rank rank : ReverseRanks)
   {
-    fmt::format_to(std::back_inserter(s), "{}  ", rank + 1);
+    fmt::format_to(inserter, "{}  ", rank + 1);
 
     for (const auto file : Files)
     {
       const auto sq = make_square(file, rank);
       const auto pc = piece(sq);
-      fmt::format_to(std::back_inserter(s), "{} ", piece_letter[pc]);
+      fmt::format_to(inserter, "{} ", piece_letter[pc]);
     }
-    fmt::format_to(std::back_inserter(s), "\n");
+    fmt::format_to(inserter, "\n");
   }
 
   fmt::print("{}   a b c d e f g h\n", fmt::to_string(s));
