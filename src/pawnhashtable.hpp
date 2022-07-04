@@ -32,9 +32,6 @@ struct Board;
 #pragma pack(1)
 struct alignas(CacheLineSize / 2) PawnHashEntry final
 {
-  Key zkey{};
-  std::array<Score, COL_NB> scores{};
-  std::array<Bitboard, COL_NB> passed_pawns{};
 
   // TODO : Move more pawn-related only things here
   [[nodiscard]]
@@ -43,6 +40,12 @@ struct alignas(CacheLineSize / 2) PawnHashEntry final
     return scores[WHITE] - scores[BLACK];
   }
 
+  Key zkey{};
+  std::array<Score, COL_NB> scores{};
+  std::array<Bitboard, COL_NB> pawn_attacks{};
+  std::array<Bitboard, COL_NB> passed_pawns{};
+  std::array<Bitboard, COL_NB> half_open_files{};
+  std::array<Bitboard, COL_NB> open_files{};
 };
 #pragma pack()
 

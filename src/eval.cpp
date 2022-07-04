@@ -32,9 +32,6 @@
 namespace
 {
 
-constexpr auto actual_eval = [](const std::array<int, COL_NB> &e) {
-  return e[WHITE] - e[BLACK];
-};
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
 
@@ -94,14 +91,18 @@ private:
   Score eval_king();
   template<Color Us>
   [[nodiscard]]
-  Score eval_passed_pawns(const PawnHashEntry *entry) const;
+  Score eval_passed_pawns() const;
   template<Color Us>
   void eval_king_attack();
   template<Color Us>
   void init_evaluate();
   void init();
+  int actual_eval() const {
+    return posistion_value[WHITE] - posistion_value[BLACK];
+  };
 
   const Board *b{};
+  PawnHashEntry *phe;
   std::size_t pool_index_;
 
   std::array<Score, COL_NB> poseval{};
@@ -110,8 +111,7 @@ private:
   std::array<int, COL_NB> attack_count{};
   Bitboard piece_attacks[COL_NB][PIECETYPE_NB]{};
   std::array<Bitboard, COL_NB> king_area{};
-  std::array<Bitboard, COL_NB> half_open_files{};
-  std::array<Bitboard, COL_NB> open_files{};
+
 };
 
 template<bool Tuning>
@@ -119,6 +119,7 @@ template<Color Us>
 int Evaluate<Tuning>::evaluate(const int alpha, const int beta)
 {
   init();
+
   init_evaluate<WHITE>();
   init_evaluate<BLACK>();
 
@@ -127,7 +128,7 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta)
 
 #if !defined(NO_EVAL_LAZY_THRESHOLD)
 
-  const auto mat_eval = actual_eval(posistion_value);
+  const auto mat_eval = actual_eval();
 
   if (const auto lazy_eval = Us == WHITE ? mat_eval : -mat_eval;
       lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
@@ -138,8 +139,7 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta)
   auto result = ZeroScore;
 
   // Pass 1.
-  const auto *pawnp = Pawn::at<Tuning>(b);
-  result += pawnp->eval();
+  result += phe->eval();
   result += eval_pieces<KNIGHT, WHITE>() - eval_pieces<KNIGHT, BLACK>();
   result += eval_pieces<BISHOP, WHITE>() - eval_pieces<BISHOP, BLACK>();
   result += eval_pieces<ROOK, WHITE>() - eval_pieces<ROOK, BLACK>();
@@ -147,7 +147,7 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta)
   result += eval_king<WHITE>() - eval_king<BLACK>();
 
   // Pass 2.
-  result += eval_passed_pawns<WHITE>(pawnp) - eval_passed_pawns<BLACK>(pawnp);
+  result += eval_passed_pawns<WHITE>() - eval_passed_pawns<BLACK>();
 
   eval_king_attack<WHITE>();
   eval_king_attack<BLACK>();
@@ -161,7 +161,7 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta)
   const auto [stage_mg, stage_eg] = stages(b->material());
   const auto pos_eval_mg          = static_cast<int>(result.mg() * stage_mg);
   const auto pos_eval_eg          = static_cast<int>(result.eg() * stage_eg);
-  const auto pos_eval             = pos_eval_mg + pos_eval_eg + actual_eval(posistion_value);
+  const auto pos_eval             = pos_eval_mg + pos_eval_eg + actual_eval();
   const auto eval                 = b->material().evaluate<Us>(b->flags(), Us == WHITE ? pos_eval : -pos_eval, b);
 
   return eval;
@@ -271,7 +271,7 @@ Score Evaluate<Tuning>::eval_pieces()
       result += rook_pst[flip_s];
       result += rook_mob[mob];
 
-      if (open_files[Us] & s)
+      if (phe->open_files[Us] & s)
         score_pos += rook_open_file;
 
       if (attacked_by<Them>(PAWN, KNIGHT, BISHOP) & s)
@@ -317,19 +317,19 @@ Score Evaluate<Tuning>::eval_king()
 
   const auto east_west = bb | shift_bb<WEST>(bb) | shift_bb<EAST>(bb);
 
-  result += king_on_open[popcount(open_files[Us] & east_west)];
-  result += king_on_half_open[popcount(half_open_files[Us] & east_west)];
+  result += king_on_open[popcount(phe->open_files[Us] & east_west)];
+  result += king_on_half_open[popcount(phe->half_open_files[Us] & east_west)];
 
   return result;
 }
 
 template<bool Tuning>
 template<Color Us>
-Score Evaluate<Tuning>::eval_passed_pawns(const PawnHashEntry *entry) const
+Score Evaluate<Tuning>::eval_passed_pawns() const
 {
   constexpr auto Them      = ~Us;
   auto result              = ZeroScore;
-  auto pp                  = entry->passed_pawns[Us];
+  auto pp                  = phe->passed_pawns[Us];
   const auto enemy_attacks = attacked_by<Them>(ALL_PIECE_TYPES);
   const auto ksq           = b->king_sq(Us);
   const auto theirKsq      = b->king_sq(Them);
@@ -362,20 +362,13 @@ template<bool Tuning>
 template<Color Us>
 void Evaluate<Tuning>::init_evaluate()
 {
-  constexpr auto Them      = ~Us;
-  constexpr auto NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
-  constexpr auto NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
   posistion_value[Us]      = 0;
   attack_count[Us]         = 0;
   attack_counter[Us]       = 0;
   const auto ksq           = b->king_sq(Us);
   const auto attacks       = all_attacks<KING>(ksq);
-  const auto our_pawns     = b->pieces(PAWN, Us);
-  const auto their_pawns   = b->pieces(PAWN, Them);
-  open_files[Us]           = ~(pawn_fill[Us](pawn_fill[Them](our_pawns)) | pawn_fill[Us](pawn_fill[Them](their_pawns)));
-  half_open_files[Us]      = ~fill<NORTH>(fill<SOUTH>(our_pawns)) & ~open_files[Us];
 
-  set_attacks<PAWN, Us>(shift_bb<NorthEast>(our_pawns) | shift_bb<NorthWest>(our_pawns));
+  set_attacks<PAWN, Us>(phe->pawn_attacks[Us]);
   set_attacks<KING, Us>(attacks);
 
   const auto s{make_square(std::clamp(file_of(ksq), FILE_B, FILE_G), std::clamp(rank_of(ksq), RANK_2, RANK_7))};
@@ -388,6 +381,7 @@ void Evaluate<Tuning>::init()
 
   b->flags() = 0;
   poseval.fill(ZeroScore);
+  phe = Pawn::at<Tuning>(b);
 
 }
 

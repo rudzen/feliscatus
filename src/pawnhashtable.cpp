@@ -31,10 +31,13 @@ template<Color Us>
 [[nodiscard]]
 Score eval_pawns(const Board *b, PawnHashEntry *phe)
 {
-  constexpr auto Them   = ~Us;
-  auto result           = ZeroScore;
-  auto pawns            = b->pieces(PAWN, Us);
-  phe->passed_pawns[Us] = 0;
+  constexpr auto Them      = ~Us;
+  auto result              = ZeroScore;
+  auto pawns               = b->pieces(PAWN, Us);
+  phe->passed_pawns[Us]    = 0;
+  phe->pawn_attacks[Us]    = pawn_attacks_bb<Us>(pawns);
+  phe->open_files[Us]      = ~(pawn_fill[Us](pawn_fill[Them](pawns)) | pawn_fill[Us](pawn_fill[Them](b->pieces(PAWN, Them))));
+  phe->half_open_files[Us] = ~fill<NORTH>(fill<SOUTH>(pawns)) & ~phe->open_files[Us];
 
   while (pawns)
   {

@@ -24,6 +24,7 @@ macro(run_conan)
             spdlog/1.10.0
             nlohmann_json/3.10.5
             cli11/2.2.0
+            robin-hood-hashing/3.11.5
             OPTIONS
             ${CONAN_EXTRA_OPTIONS}
             BASIC_SETUP

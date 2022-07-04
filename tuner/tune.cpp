@@ -28,6 +28,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/rotating_file_sink.h>
+#include <robin_hood.h>
 
 #include "tune.hpp"
 
@@ -116,7 +117,7 @@ enum SelectedParams : std::uint64_t
 template<bool Hr>
 std::string emit_code(const std::vector<eval::Param> &params0)
 {
-  std::unordered_map<std::string, std::vector<eval::Param>> params1;
+  robin_hood::unordered_map<std::string, std::vector<eval::Param>> params1;
 
   for (const auto &param : params0)
     params1[param.name_].emplace_back(param);

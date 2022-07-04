@@ -81,11 +81,14 @@ constexpr Bitboard Rank6BB = Rank1BB << (8 * 5);
 constexpr Bitboard Rank7BB = Rank1BB << (8 * 6);
 constexpr Bitboard Rank8BB = Rank1BB << (8 * 7);
 
-constexpr Bitboard corner_a1 = make_bitboard(A1, B1, A2, B2);
-constexpr Bitboard corner_a8 = make_bitboard(A8, B8, A7, B7);
-constexpr Bitboard corner_h1 = make_bitboard(H1, G1, H2, G2);
-constexpr Bitboard corner_h8 = make_bitboard(H8, G8, H7, G7);
-constexpr Bitboard CenterBB  = make_bitboard(D4, E4, D5, E5);
+constexpr Bitboard corner_a1   = make_bitboard(A1, B1, A2, B2);
+constexpr Bitboard corner_a8   = make_bitboard(A8, B8, A7, B7);
+constexpr Bitboard corner_h1   = make_bitboard(H1, G1, H2, G2);
+constexpr Bitboard corner_h8   = make_bitboard(H8, G8, H7, G7);
+constexpr Bitboard CenterBB    = make_bitboard(D4, E4, D5, E5);
+constexpr Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
+constexpr Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
+constexpr Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
 
 constexpr std::array<Bitboard, SQ_NB> square_bb{
   make_bitboard(A1), make_bitboard(B1), make_bitboard(C1), make_bitboard(D1), make_bitboard(E1), make_bitboard(F1),
@@ -336,6 +339,13 @@ inline Bitboard between(const Square s1, const Square s2)
 inline bool aligned(const Square s1, const Square s2, const Square s3)
 {
   return line(s1, s2) & s3;
+}
+
+template<Color C>
+constexpr Bitboard pawn_attacks_bb(const Bitboard b)
+{
+  return C == WHITE ? shift_bb<NORTH_WEST>(b) | shift_bb<NORTH_EAST>(b)
+                    : shift_bb<SOUTH_WEST>(b) | shift_bb<SOUTH_EAST>(b);
 }
 
 constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard) = {fill<NORTH>, fill<SOUTH>};

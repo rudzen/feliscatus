@@ -31,7 +31,7 @@
 
 int main(const int argc, char *argv[])
 {
-  util::check_size<PawnHashEntry, 32>();
+  util::check_size<PawnHashEntry, 96>();
 
   spdlog::flush_every(std::chrono::seconds(3));
 

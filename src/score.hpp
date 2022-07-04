@@ -38,6 +38,11 @@ struct Score final
   constexpr Score(const int mg, const int eg)
     : value(static_cast<int>(static_cast<unsigned int>(eg) << 16) + mg)
   { }
+
+  constexpr Score(const std::array<int, 2> &arr)
+    : Score(arr[0], arr[1])
+  {}
+
   [[nodiscard]]
   constexpr Score(const int v) : value(v)
   { }
@@ -99,13 +104,23 @@ struct Score final
     return mg() - eg();
   }
 
+  [[nodiscard]]
+  constexpr std::array<int, 2> array() const
+  {
+    return { mg(), eg() };
+  }
+
+  [[nodiscard]]
+  constexpr std::pair<int, int> pair() const
+  {
+    return std::make_pair(mg(), eg());
+  }
+
 private:
   int value{};
 };
 
 constexpr Score ZeroScore = Score(0);
-
-// TODO : Move some operators inside Score
 
 constexpr Score operator+(const Score d1, const int d2) noexcept
 {

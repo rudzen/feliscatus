@@ -89,6 +89,25 @@ void score_move(MoveData &md, Board *b)
 
 }   // namespace
 
+namespace sort
+{
+
+void partial_limit_sort(MoveData *begin, MoveData *end, const int limit)
+{
+  for (MoveData *sortedEnd = begin, *p = begin + 1; p < end; ++p)
+    if (p->score >= limit)
+    {
+      MoveData tmp = *p, *q;
+      *p           = *++sortedEnd;
+      for (q = sortedEnd; q != begin && *(q - 1) < tmp; --q)
+        *q = *(q - 1);
+      *q = tmp;
+    }
+}
+
+}   // namespace sort
+
+
 template<bool Tuning>
 void Moves<Tuning>::generate_moves(const Move tt_move, const int flags)
 {
@@ -451,16 +470,15 @@ const MoveData *Moves<Tuning>::next_move()
   {
     const auto first_md = &move_list[iteration_];
     const auto end_md   = &move_list[number_moves_];
-    const auto best     = std::max_element(first_md, end_md);
 
-    if (max_stage_ > QUIET_STAGE && stage_ == QUIET_STAGE && best->score < 0)
+    sort::partial_limit_sort(first_md, end_md, 1800);
+
+    if (max_stage_ > QUIET_STAGE && stage_ == QUIET_STAGE && first_md->score < 0)
     {
       generate_quiet_moves<Us>();
       continue;
     }
 
-    // set the "best" move as the current iteration move
-    std::swap(*first_md, *best);
     ++iteration_;
     return first_md;
 
