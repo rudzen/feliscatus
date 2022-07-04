@@ -323,6 +323,14 @@ enum MoveGenFlags
   QUIET      = 1 << 3
 };
 
+enum MoveStage
+{
+  TT_STAGE,
+  CAPTURE_STAGE,
+  QUIET_STAGE,
+  END_STAGE
+};
+
 template<typename T>
 concept Okayable = PieceT<T>
                   || SquareT<T>
@@ -411,6 +419,7 @@ ENABLE_INCR_OPERATORS_ON(Square)
 ENABLE_INCR_OPERATORS_ON(File)
 ENABLE_INCR_OPERATORS_ON(Rank)
 ENABLE_INCR_OPERATORS_ON(PieceType)
+ENABLE_INCR_OPERATORS_ON(MoveStage)
 
 #undef ENABLE_FULL_OPERATORS_ON
 #undef ENABLE_INCR_OPERATORS_ON

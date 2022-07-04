@@ -46,14 +46,6 @@ struct MoveData final
 
 struct Board;
 
-enum MoveStage
-{
-  TT_STAGE,
-  CAPTURE_STAGE,
-  QUIET_STAGE,
-  END_STAGE
-};
-
 template<bool Tuning = false>
 struct Moves final
 {
@@ -124,8 +116,8 @@ private:
 
   std::array<MoveData, 256> move_list{};
   int iteration_{};
-  int stage_{};
-  int max_stage_{};
+  MoveStage stage_{};
+  MoveStage max_stage_{};
   int number_moves_{};
   Move transp_move_{};
   int move_flags_{};
