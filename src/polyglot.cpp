@@ -106,6 +106,25 @@ std::uint64_t poly_key(Board *board)
        ^ hash_enpassant(board->en_passant_square());
 }
 
+///
+/// "move" is a bit field with the following meaning
+/// (bit 0 is the least significant bit)
+/// bits                meaning
+/// ===================================
+/// 0,1,2               to file
+/// 3,4,5               to row
+/// 6,7,8               from file
+/// 9,10,11             from row
+/// 12,13,14            promotion piece
+/// "promotion piece" is encoded as follows
+/// none       0
+/// knight     1
+/// bishop     2
+/// rook       3
+/// queen      4
+///
+/// If the move is "0" (a1a1) then it should simply be ignored.
+///
 Move decode(Board *board, std::uint16_t move)
 {
   if (!move)
@@ -115,7 +134,7 @@ Move decode(Board *board, std::uint16_t move)
   const auto to_r     = static_cast<Rank>((move & 0x38) >> 3);
   const auto from_f   = static_cast<File>((move & 0x1C0) >> 6);
   const auto from_r   = static_cast<Rank>((move & 0xE00) >> 9);
-  const auto promoted = (move & 0x7000) >> 12;
+  const auto promoted = static_cast<PieceType>((move & 0x7000) >> 12);
   const auto from     = make_square(from_f, from_r);
   const auto to       = make_square(to_f, to_r);
   const auto pc       = board->piece(from);
@@ -150,8 +169,7 @@ Move decode(Board *board, std::uint16_t move)
   {
     const auto mt = type_of(*m);
     if (mt & PROMOTION)
-      return init_move<PROMOTION>(
-        pc, move_captured(*m), from, to, make_piece(static_cast<PieceType>(promoted), board->side_to_move()));
+      return init_move(pc, move_captured(*m), from, to, mt, make_piece(promoted, board->side_to_move()));
     if (mt & EPCAPTURE)
       return init_move<EPCAPTURE>(pc, make_piece(PAWN, ~color_of(pc)), from, to, NO_PIECE);
     return *m;
