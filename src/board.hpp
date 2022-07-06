@@ -114,11 +114,9 @@ struct Board
   [[nodiscard]]
   int piece_count(Color c, PieceType pt) const;
 
+  template<PieceType Pt>
   [[nodiscard]]
-  Bitboard king(Color c) const;
-
-  [[nodiscard]]
-  Square king_sq(Color c) const;
+  Square square(Color c) const;
 
   [[nodiscard]]
   bool is_passed_pawn_move(Move m) const;
@@ -189,6 +187,14 @@ struct Board
   [[nodiscard]]
   bool is_legal(Move m, Piece pc, Square from, MoveType mt);
 
+  template<CastlingRight Cr, Color C>
+  [[nodiscard]]
+  Square king_from() const;
+
+  template<CastlingRight Cr, Color C>
+  [[nodiscard]]
+  Square king_to() const;
+
   Position *pos;
   int plies{};
   int max_ply{};
@@ -246,9 +252,10 @@ private:
   std::array<Piece, SQ_NB> board{};
   std::array<Bitboard, COL_NB> occupied_by_side{};
   std::array<Bitboard, PIECETYPE_NB> occupied_by_type{};
-  std::array<Square, COL_NB> king_square{};
   PositionList position_list;
   thread *my_t{};
+  std::array<Square, COL_NB> oo_king_from{NO_SQ, NO_SQ};
+  std::array<Square, COL_NB> ooo_king_from{NO_SQ, NO_SQ};
 };
 
 inline void Board::add_piece(const Piece pc, const Square s)
@@ -257,10 +264,6 @@ inline void Board::add_piece(const Piece pc, const Square s)
   occupied_by_type[type_of(pc)] |= s;
   occupied_by_type[ALL_PIECE_TYPES] |= s;
   board[s] = pc;
-
-  [[unlikely]]
-  if (type_of(pc) == KING)
-    king_square[color_of(pc)] = s;
 }
 
 inline void Board::remove_piece(const Square s)
@@ -310,7 +313,7 @@ inline bool Board::is_attacked_by_pawn(const Square s, const Color c) const
 
 inline bool Board::is_attacked_by_king(const Square s, const Color c) const
 {
-  return piece_attacks_bb(KING, s) & king_sq(c);
+  return piece_attacks_bb(KING, s) & square<KING>(c);
 }
 
 inline Bitboard Board::pieces() const
@@ -348,14 +351,11 @@ inline Bitboard Board::pieces(const Color c) const
   return occupied_by_side[c];
 }
 
-inline Bitboard Board::king(const Color c) const
+template<PieceType Pt>
+inline Square Board::square(const Color c) const
 {
-  return bit(king_sq(c));
-}
-
-inline Square Board::king_sq(const Color c) const
-{
-  return king_square[c];
+  assert(piece_count(c, Pt) == 1);
+  return lsb(pieces(Pt, c));
 }
 
 inline bool Board::is_pawn_passed(const Square s, const Color c) const
@@ -446,4 +446,22 @@ inline Move Board::counter_move(const Move m) const
 inline int Board::history_score(const Move m) const
 {
   return my_t->history_scores[move_piece(m)][move_to(m)];
+}
+
+template<CastlingRight Cr, Color C>
+inline Square Board::king_from() const {
+  static_assert(Cr != KING_SIDE || Cr != QUEEN_SIDE);
+  if constexpr (Cr == KING_SIDE)
+    return oo_king_from[C];
+  else
+    return ooo_king_from[C];
+}
+
+template<CastlingRight Cr, Color C>
+inline Square Board::king_to() const {
+  static_assert(Cr != KING_SIDE || Cr != QUEEN_SIDE);
+  if constexpr (Cr == KING_SIDE)
+    return oo_king_to[C];
+  else
+    return ooo_king_to[C];
 }

@@ -198,7 +198,6 @@ void Board::clear()
   occupied_by_side.fill(ZeroBB);
   occupied_by_type.fill(ZeroBB);
   board.fill(NO_PIECE);
-  king_square.fill(NO_SQ);
   max_ply = plies = search_depth = 0;
 }
 
@@ -237,10 +236,6 @@ void Board::perform_move(const Move m)
 
     add_piece(pc, to);
   }
-
-  [[unlikely]]
-  if (type_of(pc) == KING)
-    king_square[move_side(m)] = to;
 }
 
 void Board::unperform_move(const Move m)
@@ -274,10 +269,6 @@ void Board::unperform_move(const Move m)
 
     add_piece(pc, from);
   }
-
-  [[unlikely]]
-  if (type_of(pc) == KING)
-    king_square[move_side(m)] = from;
 }
 
 Bitboard Board::pinned_pieces(const Color c, const Square s) const
@@ -412,7 +403,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
 
   if (check_legal
   && !(mt & CASTLE)
-  && is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move))
+  && is_attacked(square<KING>(pos->side_to_move), ~pos->side_to_move))
   {
     unperform_move(m);
     return false;
@@ -437,12 +428,14 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
   pos->key                = prev->key;
   pos->pawn_structure_key = prev->pawn_structure_key;
 
+  const auto ksq = square<KING>(pos->side_to_move);
+
   if (calculate_in_check)
-    pos->in_check = is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move);
+    pos->in_check = is_attacked(ksq, ~pos->side_to_move);
 
   [[unlikely]]
   if (pos->in_check)
-    pos->checkers = attackers_to(king_sq(pos->side_to_move));
+    pos->checkers = attackers_to(ksq);
 
   if (can_castle() && (castle_rights_mask[from] | castle_rights_mask[to]))
     pos->castle_rights &= ~(castle_rights_mask[from] | castle_rights_mask[to]);
@@ -452,7 +445,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
   prefetch(TT.find_bucket(pos->key));
 
   pos->material.make_move(m);
-  pos->pinned = pinned_pieces(pos->side_to_move, king_sq(pos->side_to_move));
+  pos->pinned = pinned_pieces(pos->side_to_move, ksq);
 
   return true;
 }
@@ -715,7 +708,7 @@ void Board::setup_castling(const std::string_view s)
       chess960             = true;
       const auto rook_file = std::make_optional(static_cast<File>(token - 'a'));
 
-      if (rook_file.value() > file_of(king_sq(us)))
+      if (rook_file.value() > file_of(square<KING>(us)))
         add_castle_rights<KING_SIDE>(us, rook_file);
       else
         add_castle_rights<QUEEN_SIDE>(us, rook_file);
@@ -748,8 +741,8 @@ void Board::print_moves()
 
 void Board::update_position(Position *p) const
 {
-  p->checkers   = attackers_to(king_sq(p->side_to_move)) & pieces(~p->side_to_move);
-  p->in_check   = is_attacked(king_sq(p->side_to_move), ~p->side_to_move);
+  p->checkers   = attackers_to(square<KING>(p->side_to_move)) & pieces(~p->side_to_move);
+  p->in_check   = is_attacked(square<KING>(p->side_to_move), ~p->side_to_move);
   auto key      = zobrist.zero();
   auto pawn_key = zobrist.no_pawn();
   auto b        = pieces();
@@ -796,7 +789,7 @@ void Board::add_castle_rights(const Color us, std::optional<File> rook_file)
 {
   const auto castle_rights   = make_castling<Side>(us);
   const auto rank_one        = relative_rank(us, RANK_1);
-  const auto ksq             = king_sq(us);
+  const auto ksq             = square<KING>(us);
   const auto rook_square     = !rook_file.has_value()
                              ? find_rook_square<Side>(us, this)
                              : make_square(rook_file.value(), rank_one);
@@ -835,7 +828,7 @@ bool Board::is_castleling_impeeded(const Square s, const Color us) const
 
   const auto rook_to          = rook_castles_to[s];
   const auto rook_from        = rook_castles_from[s];
-  const auto ksq              = king_sq(us);
+  const auto ksq              = square<KING>(us);
   const auto bb_castle_pieces = bit(rook_from, ksq);
 
   // castle span
@@ -862,7 +855,7 @@ bool Board::is_castleling_impeeded(const Square s, const Color us) const
 bool Board::gives_check(const Move m)
 {
   perform_move(m);
-  const auto attacked = is_attacked(king_sq(~pos->side_to_move), pos->side_to_move);
+  const auto attacked = is_attacked(square<KING>(~pos->side_to_move), pos->side_to_move);
   unperform_move(m);
   return attacked;
 }
@@ -873,7 +866,7 @@ bool Board::is_legal(const Move m, const Piece pc, const Square from, const Move
     return true;
 
   perform_move(m);
-  const auto attacked = is_attacked(king_sq(pos->side_to_move), ~pos->side_to_move);
+  const auto attacked = is_attacked(square<KING>(pos->side_to_move), ~pos->side_to_move);
   unperform_move(m);
   return !attacked;
 }

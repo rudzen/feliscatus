@@ -127,7 +127,7 @@ int Board::see_move(const Move m)
 
   const auto us    = move_side(m);
   const auto them  = ~us;
-  const auto score = !is_attacked(king_sq(us), them) ? see_rec(material_change(m), next_to_capture(m), move_to(m), them)
+  const auto score = !is_attacked(square<KING>(us), them) ? see_rec(material_change(m), next_to_capture(m), move_to(m), them)
                                                      : SEE_INVALID_SCORE;
 
   unperform_move(m);
@@ -160,7 +160,7 @@ int Board::see_rec(const int mat_change, const Piece next_capture, const Square 
 
     perform_move(m);
 
-    if (!is_attacked(king_sq(c), ~c))
+    if (!is_attacked(square<KING>(c), ~c))
       break;
 
     unperform_move(m);

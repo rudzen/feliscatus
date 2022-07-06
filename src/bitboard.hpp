@@ -126,9 +126,6 @@ constexpr int distance<Rank>(const Square x, const Square y)
   return util::abs(rank_of(x) - rank_of(y));
 }
 
-inline std::array<Square, 2> oo_king_from{NO_SQ, NO_SQ};
-inline std::array<Square, 2> ooo_king_from{NO_SQ, NO_SQ};
-
 inline std::array<std::array<Bitboard, SQ_NB>, PIECETYPE_NB> AllAttacks;
 
 inline std::array<std::array<Bitboard, SQ_NB>, SQ_NB> Lines;

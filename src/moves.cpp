@@ -268,10 +268,10 @@ void Moves<Tuning>::generate_quiet_moves()
   if (!b->in_check())
   {
     if (can_castle_short<Us>())
-      add_castle_move<Us>(oo_king_from[Us], oo_king_to[Us]);
+      add_castle_move<Us>(b->king_from<KING_SIDE, Us>(), b->king_to<KING_SIDE, Us>());
 
     if (can_castle_long<Us>())
-      add_castle_move<Us>(ooo_king_from[Us], ooo_king_to[Us]);
+      add_castle_move<Us>(b->king_from<QUEEN_SIDE, Us>(), b->king_to<QUEEN_SIDE, Us>());
   }
 
   add_pawn_moves<Us, NORMAL>(pushed, Up);

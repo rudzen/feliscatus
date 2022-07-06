@@ -311,7 +311,7 @@ int Material::KBNKX(const int eval, const std::uint32_t key2, const int pc1, con
 
 int Material::KBNK(const int eval, const Color c1) const
 {
-  const auto loosing_kingsq = board->king_sq(~c1);
+  const auto loosing_kingsq = board->square<KING>(~c1);
 
   constexpr auto get_winning_squares = [](const bool dark) {
     return dark ? std::make_pair(A1, H8) : std::make_pair(A8, H1);
@@ -452,7 +452,7 @@ int Material::KBpK(const int eval, const Color c1)
 
   if (!same_color(promosq1, lsb(board->pieces(BISHOP, c1))))
   {
-    if (const auto bbk2 = board->king(~c1); (promosq1 == H8 && bbk2 & corner_h8) || (promosq1 == A8 && bbk2 & corner_a8)
+    if (const auto bbk2 = board->pieces(KING, ~c1); (promosq1 == H8 && bbk2 & corner_h8) || (promosq1 == A8 && bbk2 & corner_a8)
                                             || (promosq1 == H1 && bbk2 & corner_h1)
                                             || (promosq1 == A1 && bbk2 & corner_a1))
       return draw_score();
@@ -469,7 +469,7 @@ int Material::KpK(const int eval, const Color c1)
 {
   const auto pawnsq1  = lsb(board->pieces(PAWN, c1));
   const auto promosq1 = static_cast<Square>(c1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
-  const auto bbk2     = board->king(~c1);
+  const auto bbk2     = board->pieces(KING, ~c1);
 
   return (promosq1 == H8 && bbk2 & corner_h8) || (promosq1 == A8 && bbk2 & corner_a8)
              || (promosq1 == H1 && bbk2 & corner_h1) || (promosq1 == A1 && bbk2 & corner_a1)

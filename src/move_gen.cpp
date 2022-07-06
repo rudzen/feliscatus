@@ -258,10 +258,10 @@ MoveData *generate_quiet_moves(Board *b, MoveData *md)
     return md;
 
   if (can_castle_short<Us>(b))
-    md = add_castle_move<Flags, Us>(b, oo_king_from[Us], oo_king_to[Us], md);
+    md = add_castle_move<Flags, Us>(b, b->king_from<KING_SIDE, Us>(), b->king_to<KING_SIDE, Us>(), md);
 
   if (can_castle_long<Us>(b))
-    md = add_castle_move<Flags, Us>(b, ooo_king_from[Us], ooo_king_to[Us], md);
+    md = add_castle_move<Flags, Us>(b, b->king_from<QUEEN_SIDE, Us>(), b->king_to<QUEEN_SIDE, Us>(), md);
 
   return md;
 }

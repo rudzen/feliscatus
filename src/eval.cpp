@@ -279,7 +279,7 @@ Score Evaluate<Tuning>::eval_pieces()
 
       if (mob <= 3)
       {
-        const auto king_file = file_of(b->king_sq(Us));
+        const auto king_file = file_of(b->square<KING>(Us));
         if ((king_file < FILE_E) == (file_of(s) < king_file))
         {
           const auto modifier = 1 + (Us & !b->can_castle());
@@ -308,10 +308,10 @@ Score Evaluate<Tuning>::eval_king()
   constexpr auto Up        = Us == WHITE ? NORTH : SOUTH;
   constexpr auto NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
   constexpr auto NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
-  const auto ksq           = b->king_sq(Us);
+  const auto ksq           = b->square<KING>(Us);
   const auto bb            = bit(ksq);
   const auto flip_ksq      = relative_square(~Us, ksq);
-  auto result              = king_pst[flip_ksq];
+  auto result              = pst[KING][flip_ksq];
 
   result += king_pawn_shelter[popcount((shift_bb<Up>(bb) | shift_bb<NorthEast>(bb) | shift_bb<NorthWest>(bb)) & b->pieces(PAWN, Us))];
 
@@ -331,8 +331,8 @@ Score Evaluate<Tuning>::eval_passed_pawns() const
   auto result              = ZeroScore;
   auto pp                  = phe->passed_pawns[Us];
   const auto enemy_attacks = attacked_by<Them>(ALL_PIECE_TYPES);
-  const auto ksq           = b->king_sq(Us);
-  const auto theirKsq      = b->king_sq(Them);
+  const auto ksq           = b->square<KING>(Us);
+  const auto theirKsq      = b->square<KING>(Them);
 
   while (pp)
   {
@@ -365,7 +365,7 @@ void Evaluate<Tuning>::init_evaluate()
   posistion_value[Us]      = 0;
   attack_count[Us]         = 0;
   attack_counter[Us]       = 0;
-  const auto ksq           = b->king_sq(Us);
+  const auto ksq           = b->square<KING>(Us);
   const auto attacks       = all_attacks<KING>(ksq);
 
   set_attacks<PAWN, Us>(phe->pawn_attacks[Us]);
