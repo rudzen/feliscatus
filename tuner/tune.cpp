@@ -207,41 +207,41 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
       for (const auto sq : Squares)
       {
         auto istep = sq > 7 && sq < 56 ? step : 0;
-        params.emplace_back("pawn_pst", pawn_pst[sq], 0, istep);
+        params.emplace_back("pawn_pst", params::pst<PAWN>(sq), 0, istep);
       }
     }
 
     if (settings->mobility)
     {
       console->info("Pawn mobility tuning active");
-      for (auto &v : pawn_isolated)
+      for (auto &v : params::pawn_isolated)
         params.emplace_back("pawn_isolated", v, 0, step);
 
-      for (auto &v : pawn_behind)
+      for (auto &v : params::pawn_behind)
         params.emplace_back("pawn_behind", v, 0, step);
 
-      for (auto &v : pawn_doubled)
+      for (auto &v : params::pawn_doubled)
         params.emplace_back("pawn_doubled", v, 0, step);
     }
 
     if (settings->passed_pawn)
     {
-      for (auto &v : passed_pawn)
+      for (auto &v : params::passed_pawn)
         params.emplace_back("passed_pawn", v, 0, step);
 
-      for (auto &v : passed_pawn_no_us)
+      for (auto &v : params::passed_pawn_no_us)
         params.emplace_back("passed_pawn_no_us", v, 0, step);
 
-      for (auto &v : passed_pawn_no_them)
+      for (auto &v : params::passed_pawn_no_them)
         params.emplace_back("passed_pawn_no_them", v, 0, step);
 
-      for (auto &v : passed_pawn_no_attacks)
+      for (auto &v : params::passed_pawn_no_attacks)
         params.emplace_back("passed_pawn_no_attacks", v, 0, step);
 
-      for (auto &v : passed_pawn_king_dist_us)
+      for (auto &v : params::passed_pawn_king_dist_us)
         params.emplace_back("passed_pawn_king_dist_us", v, 0, step);
 
-      for (auto &v : passed_pawn_king_dist_them)
+      for (auto &v : params::passed_pawn_king_dist_them)
         params.emplace_back("passed_pawn_king_dist_them", v, 0, step);
     }
   }
@@ -252,27 +252,27 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     {
       for (const auto sq : Squares)
       {
-        params.emplace_back("knight_pst", knight_pst[sq], 0, step);
+        params.emplace_back("knight_pst", params::pst<KNIGHT>(sq), 0, step);
       }
     }
 
     if (settings->mobility)
     {
-      for (auto &v : knight_mob)
+      for (auto &v : params::knight_mob)
         params.emplace_back("knight_mob", v, 0, step);
 
-      for (auto &v : knight_mob2)
+      for (auto &v : params::knight_mob2)
         params.emplace_back("knight_mob2", v, 0, step);
 
-      for (auto &v : knight_mob2)
+      for (auto &v : params::knight_mob2)
         params.emplace_back("knight_mob2", v, 0, step);
     }
 
     // if (settings->weakness)
-    //   params.emplace_back("knight_in_danger", piece_in_danger[Knight], 0, step);
+    //   params.emplace_back("knight_in_danger", params::piece_in_danger[Knight], 0, step);
 
     // if (settings->strength)
-    //   params.emplace_back("knight_attack_king", attacks_on_king[Knight], 0, step);
+    //   params.emplace_back("knight_attack_king", params::attacks_on_king[Knight], 0, step);
   }
 
   if (settings->bishop)
@@ -280,28 +280,28 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     if (settings->psqt)
     {
       for (const auto sq : Squares)
-        params.emplace_back("bishop_pst", bishop_pst[sq], 0, step);
+        params.emplace_back("bishop_pst", params::pst<BISHOP>(sq), 0, step);
     }
 
     if (settings->mobility)
     {
-      for (auto &v : bishop_mob)
+      for (auto &v : params::bishop_mob)
         params.emplace_back("bishop_mob", v, 0, step);
 
-      for (auto &v : bishop_mob2)
+      for (auto &v : params::bishop_mob2)
         params.emplace_back("bishop_mob2", v, 0, step);
     }
 
     if (settings->coordination)
     {
-      params.emplace_back("bishop_pair", bishop_pair, 0, step);
+      params.emplace_back("bishop_pair", params::bishop_pair, 0, step);
     }
 
     // if (settings->weakness)
-    //   params.emplace_back("bishop_in_danger", piece_in_danger[Bishop], 0, step);
+    //   params.emplace_back("bishop_in_danger", params::piece_in_danger[Bishop], 0, step);
 
     // if (settings->strength)
-    //   params.emplace_back("attacks_on_king[Bishop]", attacks_on_king[Bishop], 0, step);
+    //   params.emplace_back("attacks_on_king[Bishop]", params::attacks_on_king[Bishop], 0, step);
   }
 
   if (settings->rook)
@@ -310,25 +310,25 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     {
       for (const auto sq : Squares)
       {
-        params.emplace_back("rook_pst", rook_pst[sq], 0, step);
+        params.emplace_back("rook_pst", params::pst<ROOK>(sq), 0, step);
       }
     }
 
     if (settings->mobility)
     {
-      for (auto &v : rook_mob)
+      for (auto &v : params::rook_mob)
         params.emplace_back("rook_mob", v, 0, step);
 
-      params.emplace_back("king_obstructs_rook", king_obstructs_rook, 0, step);
+      params.emplace_back("king_obstructs_rook", params::king_obstructs_rook, 0, step);
     }
 
-    // params.emplace_back("rook_open_file", rook_open_file, 0, step);
+    // params.emplace_back("rook_open_file", params::rook_open_file, 0, step);
 
     // if (settings->weakness)
-    //   params.emplace_back("rook_in_danger", piece_in_danger[Rook], 0, step);
+    //   params.emplace_back("rook_in_danger", params::piece_in_danger[Rook], 0, step);
 
     // if (settings->strength)
-    //   params.emplace_back("attacks_on_king[Rook]", attacks_on_king[Rook], 0, step);
+    //   params.emplace_back("attacks_on_king[Rook]", params::attacks_on_king[Rook], 0, step);
   }
 
   if (settings->queen)
@@ -336,20 +336,20 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     if (settings->psqt)
     {
       for (const auto sq : Squares)
-        params.emplace_back("queen_pst", queen_pst[sq], 0, step);
+        params.emplace_back("queen_pst", params::pst<QUEEN>(sq), 0, step);
     }
 
     if (settings->mobility)
     {
-      for (auto &v : queen_mob)
+      for (auto &v : params::queen_mob)
         params.emplace_back("queen_mob", v, 0, step);
     }
 
     // if (settings->weakness)
-    //   params.emplace_back("queen_in_danger", piece_in_danger[Queen], 0, step);
+    //   params.emplace_back("queen_in_danger", params::piece_in_danger[Queen], 0, step);
 
     // if (settings->strength)
-    //   params.emplace_back("attacks_on_king[Queen]", attacks_on_king[Queen], 0, step);
+    //   params.emplace_back("attacks_on_king[Queen]", params::attacks_on_king[Queen], 0, step);
   }
 
   if (settings->king)
@@ -357,24 +357,24 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     if (settings->psqt)
     {
       for (const auto sq : Squares)
-        params.emplace_back("king_pst", king_pst[sq], 0, step);
+        params.emplace_back("king_pst", params::pst<KING>(sq), 0, step);
     }
 
-    for (auto &v : king_pawn_shelter)
+    for (auto &v : params::king_pawn_shelter)
       params.emplace_back("king_pawn_shelter", v, 0, step);
 
-    for (auto &v : king_on_open)
+    for (auto &v : params::king_on_open)
       params.emplace_back("king_on_open", v, 0, step);
 
-    for (auto &v : king_on_half_open)
+    for (auto &v : params::king_on_half_open)
       params.emplace_back("king_on_half_open", v, 0, step);
   }
 
   // if (settings->lazy_margin)
-  //   params.emplace_back("lazy_margin", lazy_margin, 0, step);
+  //   params.emplace_back("lazy_margin", params::lazy_margin, 0, step);
 
   // if (settings->tempo)
-  //   params.emplace_back("tempo", tempo, 0, step);
+  //   params.emplace_back("tempo", params::tempo, 0, step);
 }
 
 }   // namespace

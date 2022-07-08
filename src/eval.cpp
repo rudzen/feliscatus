@@ -131,7 +131,7 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta)
   const auto mat_eval = actual_eval();
 
   if (const auto lazy_eval = Us == WHITE ? mat_eval : -mat_eval;
-      lazy_eval - lazy_margin > beta || lazy_eval + lazy_margin < alpha)
+      lazy_eval - params::lazy_margin > beta || lazy_eval + params::lazy_margin < alpha)
     return b->material().evaluate<Us>(b->flags(), lazy_eval, b);
 
 #endif
@@ -156,7 +156,7 @@ int Evaluate<Tuning>::evaluate(const int alpha, const int beta)
   result += poseval[WHITE] - poseval[BLACK];
 
   if constexpr (Us == WHITE)
-    posistion_value[Us] += tempo;
+    posistion_value[Us] += params::tempo;
 
   const auto [stage_mg, stage_eg] = stages(b->material());
   const auto pos_eval_mg          = static_cast<int>(result.mg() * stage_mg);
@@ -178,7 +178,7 @@ void Evaluate<Tuning>::set_attacks(const Bitboard attacks)
   {
     if (const auto attacks_king = attacks & king_area[Them]; attacks_king)
     {
-      attack_counter[Us] += popcount(attacks_king) * attacks_on_king[Pt];
+      attack_counter[Us] += popcount(attacks_king) * params::attacks_on_king[Pt];
       ++attack_count[Us];
     }
   }
@@ -209,7 +209,7 @@ void Evaluate<Tuning>::eval_material()
   }
 
   if (add)
-    poseval[Us] += bishop_pair;
+    poseval[Us] += params::bishop_pair;
 }
 
 template<bool Tuning>
@@ -245,37 +245,36 @@ Score Evaluate<Tuning>::eval_pieces()
     const auto mob                   = popcount(free_squares);
     const auto not_defended_by_pawns = popcount(free_squares & ~attacked_by<Them>(PAWN));
 
+    result += params::pst<Pt>(flip_s);
+
     if constexpr (Pt == KNIGHT)
     {
-      result += knight_pst[flip_s];
-      result += knight_mob[mob];
-      result += knight_mob2[not_defended_by_pawns];
+      result += params::knight_mob[mob];
+      result += params::knight_mob2[not_defended_by_pawns];
 
       if (attacked_by<Them>(PAWN) & s)
-        score_pos -= piece_in_danger[Pt];
+        score_pos -= params::piece_in_danger[Pt];
 
     } else if constexpr (Pt == BISHOP)
     {
-      result += bishop_pst[flip_s];
-      result += bishop_mob[mob];
-      result += bishop_mob2[not_defended_by_pawns];
+      result += params::bishop_mob[mob];
+      result += params::bishop_mob2[not_defended_by_pawns];
 
       if (more_than_one(piece_attacks_bb<BISHOP>(s, b->pieces(PAWN)) & CenterBB))
-        result += bishop_diagonal;
+        result += params::bishop_diagonal;
 
       if (attacked_by<Them>(PAWN) & s)
-        score_pos -= piece_in_danger[Pt];
+        score_pos -= params::piece_in_danger[Pt];
 
     } else if constexpr (Pt == ROOK)
     {
-      result += rook_pst[flip_s];
-      result += rook_mob[mob];
+      result += params::rook_mob[mob];
 
       if (phe->open_files[Us] & s)
-        score_pos += rook_open_file;
+        score_pos += params::rook_open_file;
 
       if (attacked_by<Them>(PAWN, KNIGHT, BISHOP) & s)
-        score_pos -= piece_in_danger[Pt];
+        score_pos -= params::piece_in_danger[Pt];
 
       if (mob <= 3)
       {
@@ -283,16 +282,15 @@ Score Evaluate<Tuning>::eval_pieces()
         if ((king_file < FILE_E) == (file_of(s) < king_file))
         {
           const auto modifier = 1 + (Us & !b->can_castle());
-          result -= king_obstructs_rook * modifier;
+          result -= params::king_obstructs_rook * modifier;
         }
       }
     } else if constexpr (Pt == QUEEN)
     {
-      result += queen_pst[flip_s];
-      result += queen_mob[mob];
+      result += params::queen_mob[mob];
 
       if (attacked_by<Them>(PAWN, KNIGHT, BISHOP, ROOK) & s)
-        score_pos -= piece_in_danger[Pt];
+        score_pos -= params::piece_in_danger[Pt];
     }
   }
 
@@ -311,14 +309,14 @@ Score Evaluate<Tuning>::eval_king()
   const auto ksq           = b->square<KING>(Us);
   const auto bb            = bit(ksq);
   const auto flip_ksq      = relative_square(~Us, ksq);
-  auto result              = king_pst[flip_ksq];
+  auto result              = params::pst<KING>(flip_ksq);
 
-  result += king_pawn_shelter[popcount((shift_bb<Up>(bb) | shift_bb<NorthEast>(bb) | shift_bb<NorthWest>(bb)) & b->pieces(PAWN, Us))];
+  result += params::king_pawn_shelter[popcount((shift_bb<Up>(bb) | shift_bb<NorthEast>(bb) | shift_bb<NorthWest>(bb)) & b->pieces(PAWN, Us))];
 
   const auto east_west = bb | shift_bb<WEST>(bb) | shift_bb<EAST>(bb);
 
-  result += king_on_open[popcount(phe->open_files[Us] & east_west)];
-  result += king_on_half_open[popcount(phe->half_open_files[Us] & east_west)];
+  result += params::king_on_open[popcount(phe->open_files[Us] & east_west)];
+  result += params::king_on_half_open[popcount(phe->half_open_files[Us] & east_west)];
 
   return result;
 }
@@ -339,12 +337,12 @@ Score Evaluate<Tuning>::eval_passed_pawns() const
     const auto s          = pop_lsb(&pp);
     const auto front_span = pawn_front_spanBB(Us, s);
     const auto r          = relative_rank(Us, s);
-    result += passed_pawn[r];
-    result += passed_pawn_no_us[r] * !(front_span & b->pieces(Us));
-    result += passed_pawn_no_them[r] * !(front_span & b->pieces(Them));
-    result += passed_pawn_no_attacks[r] * !(front_span & enemy_attacks);
-    result += passed_pawn_king_dist_them[distance(s, theirKsq)];
-    result += passed_pawn_king_dist_us[distance(s, ksq)];
+    result += params::passed_pawn[r];
+    result += params::passed_pawn_no_us[r] * !(front_span & b->pieces(Us));
+    result += params::passed_pawn_no_them[r] * !(front_span & b->pieces(Them));
+    result += params::passed_pawn_no_attacks[r] * !(front_span & enemy_attacks);
+    result += params::passed_pawn_king_dist_them[distance(s, theirKsq)];
+    result += params::passed_pawn_king_dist_us[distance(s, ksq)];
   }
 
   return result;

@@ -45,7 +45,7 @@ Score eval_pawns(const Board *b, PawnHashEntry *phe)
     const auto f      = file_of(s);
     const auto flip_s = relative_square(Them, s);
 
-    result += pawn_pst[flip_s];
+    result += params::pst<PAWN>(flip_s);
 
     if (b->is_pawn_passed(s, Us))
       phe->passed_pawns[Us] |= s;
@@ -53,12 +53,12 @@ Score eval_pawns(const Board *b, PawnHashEntry *phe)
     const auto open_file = !b->is_piece_on_file(PAWN, s, Them);
 
     if (b->is_pawn_isolated(s, Us))
-      result += pawn_isolated[open_file];
+      result += params::pawn_isolated[open_file];
     else if (b->is_pawn_behind(s, Us))
-      result += pawn_behind[open_file];
+      result += params::pawn_behind[open_file];
 
     if (pawns & f)
-      result += pawn_doubled[open_file];
+      result += params::pawn_doubled[open_file];
   }
   return result;
 }

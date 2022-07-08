@@ -32,6 +32,7 @@
 #include "../src/transpositional.hpp"
 #include "../src/tpool.hpp"
 #include "../cli/cli_parser.hpp"
+#include "../src/parameters.hpp"
 
 namespace
 {
@@ -55,6 +56,7 @@ int main(const int argc, char **argv)
   const auto cli_parser_settings = cli::make_parser(argc, argv, title, ParserType::Tuner);
 
   TT.init(256);
+  params::init();
 
   bitboard::init();
   Board::init();
