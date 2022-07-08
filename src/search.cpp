@@ -66,7 +66,7 @@ void store_pv(const std::span<PVEntry> pv, const int pv_length)
 {
   assert(pv_length > 0);
   std::for_each(pv.begin(), std::next(pv.begin(), pv_length), [&](const PVEntry &entry) {
-    TT.insert(entry.key, entry.depth, entry.score, entry.node_type, entry.move, entry.eval);
+    TT.insert(entry);
   });
 }
 
@@ -91,15 +91,15 @@ void hash_and_evaluate(
     pos->eval_score  = Eval::evaluate(b, pool_index, alpha, beta);
     pos->transp_type = NO_NT;
     pos->transp_move = MOVE_NONE;
-    return;
+  } else
+  {
+    pos->transp_score = codec_t_table_score(pos->transposition->score(), -plies);
+    pos->eval_score   = codec_t_table_score(pos->transposition->eval(), -plies);
+    pos->transp_depth = pos->transposition->depth();
+    pos->transp_type  = pos->transposition->flags();
+    pos->transp_move  = pos->transposition->move();
+    b->flags()        = 0;
   }
-
-  pos->transp_score = codec_t_table_score(pos->transposition->score(), -plies);
-  pos->eval_score   = codec_t_table_score(pos->transposition->eval(), -plies);
-  pos->transp_depth = pos->transposition->depth();
-  pos->transp_type  = pos->transposition->flags();
-  pos->transp_move  = pos->transposition->move();
-  b->flags()        = 0;
 }
 
 [[nodiscard]]
@@ -650,7 +650,7 @@ void Search<SearcherType>::check_time() const
   if constexpr (verbosity)
   {
     const auto stop =
-      !is_analysing() && !pool.main()->time.is_fixed_depth() && b->search_depth > 1 && pool.main()->time.time_up();
+      !is_analysing() && !pool.is_fixed_depth() && b->search_depth > 1 && pool.main()->time.time_up();
 
     if (stop)
     {
@@ -666,7 +666,7 @@ bool Search<SearcherType>::is_analysing()
   if constexpr (!verbosity)
     return true;
   else
-    return pool.main()->time.is_analysing();
+    return pool.is_analysing();
 }
 
 template<Searcher SearcherType>
@@ -754,13 +754,13 @@ bool Search<SearcherType>::move_is_easy() const
 
     [[unlikely]]
     if (
-      (pool.main()->time.is_fixed_depth() && pool.main()->time.depth() == b->search_depth)
+      (pool.is_fixed_depth() && pool.depth() == b->search_depth)
       || (t->pv[0][0].score == MAXSCORE - 1))
     {
       return true;
     }
 
-    return !is_analysing() && !pool.main()->time.is_fixed_depth() && pool.main()->time.plenty_time();
+    return !is_analysing() && !pool.is_fixed_depth() && pool.main()->time.plenty_time();
   }
 }
 
@@ -774,7 +774,6 @@ void thread::search()
 void main_thread::search()
 {
   // initialize
-  time.init(root_board->side_to_move(), pool.limits);
   TT.init_search();
 
   //
@@ -791,6 +790,8 @@ void main_thread::search()
         }
       }
   }
+
+  time.init(root_board->side_to_move(), pool.limits);
 
   pool.start_searching();   // start workers
   Search<Searcher::Master>(root_board.get()).go();

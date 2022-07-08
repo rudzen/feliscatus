@@ -25,6 +25,8 @@
 #include "types.hpp"
 #include "miscellaneous.hpp"
 
+struct PVEntry;
+
 #pragma pack(1)
 struct alignas(CacheLineSize / 4) HashEntry final
 {
@@ -134,6 +136,8 @@ public:
   HashEntry *find(Key key) const;
 
   HashEntry *insert(Key key, int depth, int score, NodeType nt, Move m, int eval);
+
+  void insert(const PVEntry &pv);
 
   [[nodiscard]]
   HashEntry *get_entry_to_replace(Key key, [[maybe_unused]] int depth) const;

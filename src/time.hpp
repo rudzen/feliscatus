@@ -45,28 +45,9 @@ struct Time final
 
   bool should_post_info() noexcept;
 
-  [[nodiscard]]
-  bool is_analysing() const noexcept
-  {
-    return limits.infinite | limits.ponder;
-  }
-
-  [[nodiscard]]
-  bool is_fixed_depth() const noexcept
-  {
-    return limits.fixed_depth;
-  }
-
-  [[nodiscard]]
-  int depth() const noexcept
-  {
-    return limits.depth;
-  }
-
 private:
   Stopwatch start_time{};
   double n_{};
-  SearchLimits limits{};
   TimeUnit search_time{};
   std::chrono::milliseconds last_curr_post{};
   std::chrono::milliseconds last_post_info{};

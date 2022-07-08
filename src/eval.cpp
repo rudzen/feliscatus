@@ -311,7 +311,7 @@ Score Evaluate<Tuning>::eval_king()
   const auto ksq           = b->square<KING>(Us);
   const auto bb            = bit(ksq);
   const auto flip_ksq      = relative_square(~Us, ksq);
-  auto result              = pst[KING][flip_ksq];
+  auto result              = king_pst[flip_ksq];
 
   result += king_pawn_shelter[popcount((shift_bb<Up>(bb) | shift_bb<NorthEast>(bb) | shift_bb<NorthWest>(bb)) & b->pieces(PAWN, Us))];
 

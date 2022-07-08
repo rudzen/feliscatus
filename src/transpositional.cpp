@@ -26,6 +26,7 @@
 
 #include <fmt/format.h>
 
+#include "pv_entry.hpp"
 #include "transpositional.hpp"
 #include "uci.hpp"
 
@@ -128,6 +129,26 @@ HashEntry *HashTable::insert(
   transp->a = static_cast<std::uint16_t>(age_);
   transp->e = static_cast<std::int16_t>(eval);
   return transp;
+}
+
+void HashTable::insert(const PVEntry &pv)
+{
+  auto *transp = get_entry_to_replace(pv.key, pv.depth);
+
+  if (transp->f == NO_NT)
+    occupied_++;
+
+  const auto k32 = key32(pv.key);
+
+  if (transp->k != k32 || pv.move != MOVE_NONE)
+    transp->m = pv.move;
+
+  transp->k = k32;
+  transp->s = static_cast<std::int16_t>(pv.score);
+  transp->d = static_cast<std::uint8_t>(pv.depth);
+  transp->f = pv.node_type;
+  transp->a = static_cast<std::uint16_t>(age_);
+  transp->e = static_cast<std::int16_t>(pv.eval);
 }
 
 HashEntry *HashTable::get_entry_to_replace(

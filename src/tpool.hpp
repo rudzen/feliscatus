@@ -123,6 +123,24 @@ struct thread_pool final : std::vector<std::unique_ptr<thread>>
   [[nodiscard]]
   std::uint64_t node_count() const;
 
+  [[nodiscard]]
+  bool is_analysing() const noexcept
+  {
+    return limits.infinite | limits.ponder;
+  }
+
+  [[nodiscard]]
+  bool is_fixed_depth() const noexcept
+  {
+    return limits.fixed_depth;
+  }
+
+  [[nodiscard]]
+  int depth() const noexcept
+  {
+    return limits.depth;
+  }
+
   SearchLimits limits{};
   std::atomic_bool stop;
 

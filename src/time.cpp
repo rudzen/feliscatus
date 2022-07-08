@@ -37,10 +37,9 @@ inline std::chrono::milliseconds since_epoch()
 
 }   // namespace
 
-void Time::init(const Color c, SearchLimits &search_limits)
+void Time::init(const Color c, SearchLimits &limits)
 {
 
-  limits         = search_limits;
   last_curr_post = last_post_info = since_epoch();
 
   start_time.start();
