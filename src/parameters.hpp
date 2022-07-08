@@ -244,7 +244,12 @@ constexpr std::array<Score, 64> bishop_pst
   Score( -5, -46), Score( 20, -36), Score(-23, -27), Score(-23, -15), Score(-14, -26), Score(-14, -16), Score( -8, -63), Score(-23, -38)
 };
 
-inline std::array<Score, 64> king_pst {
+#if defined(TUNER)
+inline std::array<Score, 64> king_pst
+#else
+constexpr std::array<Score, 64> king_pst
+#endif
+{
   Score(-83, -116), Score(106, -11), Score(122,  13), Score(137, -34), Score(123, -25), Score( 72, 22), Score( 44,  18), Score(-34, -136),
   Score( -2,  -45), Score( 67,  40), Score( 37,  26), Score( 44,  16), Score( 43,  17), Score( 27, 36), Score(-13,  51), Score(-60,  -75),
   Score(-44,   18), Score( 47,  41), Score(  7,  40), Score( 17,  35), Score( -2,  25), Score( 12, 33), Score( 16,  52), Score(-47,   -5),
