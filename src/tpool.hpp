@@ -83,8 +83,8 @@ private:
   std::condition_variable cv;
   std::size_t idx;
   std::jthread jthread;
-  bool exit{};
-  bool searching;
+  std::atomic_bool exit{};
+  std::atomic_bool searching{};
 };
 
 struct main_thread final : thread

@@ -90,6 +90,8 @@ void init(OptionsMap &o, std::span<std::string> book_files)
     o[uci_name<UciOptions::BOOKS>()] << Option(book_files, selected.c_str(), on_book_change);
     if (o[uci_name<UciOptions::USE_BOOK>()])
       book.open(selected);
+
+    o[uci_name<UciOptions::BOOK_BEST_MOVE>()] << Option(false);
   } else
     fmt::print("info string No book files detected, ignoring\n");
 }

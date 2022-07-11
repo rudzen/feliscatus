@@ -48,8 +48,11 @@ private:
     std::uint32_t learn{};
   };
 
+  using BookIterator = std::vector<BookEntry>::const_iterator;
+
   auto lower_entry(std::uint64_t key) const;
-  auto upper_entry(std::uint64_t key) const;
+  auto upper_entry(std::uint64_t key, BookIterator lower_bound) const;
+  auto select_random(BookIterator first, BookIterator second) const;
 
   std::string_view current_book_;
   std::vector<BookEntry> entries_;

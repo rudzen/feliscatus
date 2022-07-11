@@ -55,7 +55,8 @@ enum class UciOptions
   SHOW_CPU,
   USE_BOOK,
   BOOKS,
-  UCI_OPT_NB = 10
+  BOOK_BEST_MOVE,
+  UCI_OPT_NB = 11
 };
 
 using uci_t = std::underlying_type_t<UciOptions>;
@@ -65,8 +66,8 @@ template<UciOptions Option>
 constexpr std::string_view uci_name()
 {
   constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB)> UciStrings{
-    "Threads", "Hash",         "Hash * Threads", "Clear Hash", "Clear hash on new game",
-    "Ponder",  "UCI_Chess960", "Show CPU usage", "Use book",   "Books"};
+    "Threads",      "Hash",           "Hash * Threads", "Clear Hash", "Clear hash on new game", "Ponder",
+    "UCI_Chess960", "Show CPU usage", "Use book",       "Books",      "Best Book Move"};
 
   return UciStrings[static_cast<uci_t>(Option)];
 }

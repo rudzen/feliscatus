@@ -26,7 +26,8 @@
 #include "transpositional.hpp"
 #include "perft.hpp"
 #include "moves.hpp"
-
+#include "eval.hpp"
+#include "polyglot.hpp"
 namespace
 {
 
@@ -279,9 +280,24 @@ void uci::run(const int argc, char *argv[])
     {
       const auto total = perft::perft(board.get(), 6);
       fmt::print("Total nodes: {}\n", total);
+    } else if (token == "divide")
+    {
+      const auto total = perft::divide(board.get(), 6);
+      fmt::print("Total nodes: {}\n", total);
     } else if (token == "print")
       board->print_moves();
-    else if (token == "exit")
+    else if (token == "d")
+      board->print();
+    else if (token == "eval")
+    {
+      board->print();
+      const auto e = Eval::evaluate(board.get(), 0, 0, 0);
+      fmt::print("Eval: {}\n", e);
+    } else if (token == "book")
+    {
+      const auto m = book.probe(board.get());
+      uci::post_moves(m, MOVE_NONE);
+    } else if (token == "exit")
       break;
   } while (token != "quit" && argc == 1);
 }

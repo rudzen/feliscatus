@@ -24,6 +24,7 @@
 #include <iostream>
 #include <numeric>
 #include <span>
+#include <chrono>
 
 #include <fmt/format.h>
 
@@ -32,6 +33,8 @@
 #include "board.hpp"
 #include "bitboard.hpp"
 #include "moves.hpp"
+#include "uci.hpp"
+#include "prng.hpp"
 
 namespace
 {
@@ -242,20 +245,40 @@ auto PolyBook::lower_entry(const std::uint64_t key) const
     return entry.key < k;
   };
 
-  return std::lower_bound(entries_.begin(), entries_.end(), key, compare_lower);
+  return std::lower_bound(entries_.cbegin(), entries_.cend(), key, compare_lower);
 }
 
-auto PolyBook::upper_entry(const std::uint64_t key) const
+auto PolyBook::upper_entry(const std::uint64_t key, const BookIterator lower_boundry) const
 {
   const auto compare_upper = [](const std::uint64_t k, const BookEntry &entry) {
     return k < entry.key;
   };
 
-  return std::upper_bound(entries_.begin(), entries_.end(), key, compare_upper);
+  return std::upper_bound(lower_boundry, entries_.cend(), key, compare_upper);
+}
+
+auto PolyBook::select_random(BookIterator first, BookIterator second) const
+{
+  std::uint16_t max_weight = 0;
+  std::size_t sum_weight   = 0;
+  const auto seed          = std::chrono::system_clock::now().time_since_epoch();
+  PRNG rng(seed.count());
+
+  auto selected = first;
+  for (auto it = first; it != second; it = std::next(it))
+  {
+    max_weight = std::max(first->weight, max_weight);
+    sum_weight += max_weight;
+
+    if (sum_weight != 0 && rng.rand<std::size_t>() % sum_weight < first->weight)
+      selected = it;
+  }
+
+  return selected;
 }
 
 ///
-/// O(log(n) * m) lookup of known entries by key
+/// O(log(n)) lookup of known entries by key
 ///
 Move PolyBook::probe(Board *board) const
 {
@@ -265,12 +288,33 @@ Move PolyBook::probe(Board *board) const
 
   const auto lower_boundry = lower_entry(key);
 
-  if (lower_boundry != entries_.begin())
+  if (lower_boundry == entries_.begin())
+    return MOVE_NONE;
+
+  const BookEntry *e;
+
+  // In case we have set best book move,
+  // we don't have to look any further
+  if (Options[uci::uci_name<uci::UciOptions::BOOK_BEST_MOVE>()])
+    e = &(*lower_boundry);
+  else
   {
-    const auto e = *lower_boundry;
-    if (e.key == key)
-      return decode(board, e.move);
+    const auto upper_boundry = upper_entry(key, lower_boundry);
+    const auto move_count    = std::distance(lower_boundry, upper_boundry);
+
+    if (move_count == 1)
+      e = &(*lower_boundry);
+    else if (upper_boundry != entries_.end())
+    {
+      e = &(*select_random(lower_boundry, upper_boundry));
+
+      const auto s = uci::info(fmt::format("number of book moves = {}\n", move_count));
+      fmt::print("{}", s);
+    } else
+      e = &(*lower_boundry);
   }
 
-  return MOVE_NONE;
+  return e && e->key == key
+                      ? decode(board, e->move)
+                      : MOVE_NONE;
 }

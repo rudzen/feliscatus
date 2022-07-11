@@ -324,7 +324,8 @@ template<>
 MoveData *generate<QUIET>(Board *b, MoveData *md)
 {
   const auto c = b->side_to_move();
-  return c == WHITE ? generate_quiet_moves<QUIET, WHITE>(b, md) : generate_quiet_moves<QUIET, BLACK>(b, md);
+  return c == WHITE ? generate_quiet_moves<QUIET, WHITE>(b, md)
+                    : generate_quiet_moves<QUIET, BLACK>(b, md);
 }
 
 template<MoveGenFlags Flags>

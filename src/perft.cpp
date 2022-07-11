@@ -44,7 +44,9 @@ std::uint64_t p(Board *b, const int depth)
 
   for (const auto m : ml)
   {
-    [[unlikely]] if (!b->make_move(m, true, true)) continue;
+    [[unlikely]]
+    if (!b->make_move(m, true, true))
+      continue;
 
     nodes += p<Flags>(b, depth - 1);
     b->unmake_move();
@@ -55,7 +57,7 @@ std::uint64_t p(Board *b, const int depth)
 
 }   // namespace
 
-template<MoveGenFlags Flags = MoveGenFlags::LEGALMOVES>
+template<MoveGenFlags Flags = LEGALMOVES>
 struct Perft final
 {
   Perft() = delete;
@@ -75,15 +77,15 @@ template<MoveGenFlags Flags>
 std::uint64_t Perft<Flags>::perft(const int depth) const
 {
   std::size_t nps{};
-
   std::uint64_t total_nodes{};
+  Stopwatch sw;
 
   for (auto i = 1; i <= depth; i++)
   {
-    Stopwatch sw;
+    sw.start();
     const auto nodes = p<Flags>(b, i);
-    total_nodes += nodes;
     const auto time = sw.elapsed_milliseconds() + 1;
+    total_nodes += nodes;
     nps             = nodes / time * 1000;
     fmt::print("depth {}: {} nodes, {} ms, {} nps\n", i, nodes, time, nps);
   }
@@ -98,6 +100,7 @@ std::uint64_t Perft<Flags>::perft_divide(const int depth) const
 
   std::uint64_t nodes{};
   TimeUnit time{};
+  Stopwatch sw;
 
   auto ml = MoveList<Flags>(b);
 
@@ -108,7 +111,7 @@ std::uint64_t Perft<Flags>::perft_divide(const int depth) const
       continue;
 
     const auto nodes_start = nodes;
-    Stopwatch sw;
+    sw.start();
     nodes += p<Flags>(b, depth - 1);
     time += sw.elapsed_milliseconds();
     b->unmake_move();

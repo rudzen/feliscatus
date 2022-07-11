@@ -39,9 +39,9 @@ thread::thread(const std::size_t index)
 
 thread::~thread()
 {
-  assert(!searching);
+  assert(!searching.load());
 
-  exit = true;
+  exit.store(true);
   start_searching();
 }
 
@@ -63,18 +63,18 @@ void thread::idle_loop()
   do
   {
     std::unique_lock<std::mutex> lk(mutex);
-    searching = false;
+    searching.store(false);
 
     // Wake up anyone waiting for search finished
     cv.notify_one();
     cv.wait(lk, [&] {
-      return searching;
+      return searching.load(std::memory_order_relaxed);
     });
 
     // check exit flag, this is set when the class is being destroyed
     [[unlikely]]
-    if (exit)
-      return;
+    if (exit.load())
+      break;
 
     lk.unlock();
 
@@ -85,7 +85,7 @@ void thread::idle_loop()
 void thread::start_searching()
 {
   std::lock_guard<std::mutex> lk(mutex);
-  searching = true;
+  searching.store(true);
   cv.notify_one();   // Wake up the thread in idle_loop()
 }
 
@@ -93,7 +93,7 @@ void thread::wait_for_search_finished()
 {
   std::unique_lock<std::mutex> lk(mutex);
   cv.wait(lk, [&] {
-    return !searching;
+    return !searching.load();
   });
 }
 

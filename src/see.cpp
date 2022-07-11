@@ -57,7 +57,6 @@ auto from_sq(const Bitboard bb, SeeData &data, const Color c)
   return std::make_optional(from);
 }
 
-
 /// "Best" == "Lowest piece value"
 [[nodiscard]]
 std::optional<Square> lookup_best_attacker(SeeData &data, const Square to, const Color c, const Board *b)
@@ -71,40 +70,35 @@ std::optional<Square> lookup_best_attacker(SeeData &data, const Square to, const
     bb = data.current_pc[c] & pawn_attacks_bb(~c, to);
     if (bb)
       return from_sq(bb, data, c);
-    ++data.current_pt[c];
-    data.current_pc[c] = b->pieces(KNIGHT, c);
+    data.current_pc[c] = b->pieces(++data.current_pt[c], c);
     [[fallthrough]];
 
   case KNIGHT:
     bb = data.current_pc[c] & piece_attacks_bb<KNIGHT>(to);
     if (bb)
       return from_sq(bb, data, c);
-    ++data.current_pt[c];
-    data.current_pc[c] = b->pieces(BISHOP, c);
+    data.current_pc[c] = b->pieces(++data.current_pt[c], c);
     [[fallthrough]];
 
   case BISHOP:
     bb = data.current_pc[c] & piece_attacks_bb<BISHOP>(to, occupied);
     if (bb)
       return from_sq(bb, data, c);
-    ++data.current_pt[c];
-    data.current_pc[c] = b->pieces(ROOK, c);
+    data.current_pc[c] = b->pieces(++data.current_pt[c], c);
     [[fallthrough]];
 
   case ROOK:
     bb = data.current_pc[c] & piece_attacks_bb<ROOK>(to, occupied);
     if (bb)
       return from_sq(bb, data, c);
-    ++data.current_pt[c];
-    data.current_pc[c] = b->pieces(QUEEN, c);
+    data.current_pc[c] = b->pieces(++data.current_pt[c], c);
     [[fallthrough]];
 
   case QUEEN:
     bb = data.current_pc[c] & piece_attacks_bb<QUEEN>(to, occupied);
     if (bb)
       return from_sq(bb, data, c);
-    ++data.current_pt[c];
-    data.current_pc[c] = b->pieces(KING, c);
+    data.current_pc[c] = b->pieces(++data.current_pt[c], c);
     [[fallthrough]];
 
   case KING:

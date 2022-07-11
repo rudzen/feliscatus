@@ -347,18 +347,12 @@ void Moves<Tuning>::add_moves(const PieceType pt, const Square from, const Bitbo
   auto bb = attacks & b->pieces(Them);
 
   while (bb)
-  {
-    const auto to = pop_lsb(&bb);
-    add_move<Us, CAPTURE>(pc, from, to);
-  }
+    add_move<Us, CAPTURE>(pc, from, pop_lsb(&bb));
 
   bb = attacks & ~b->pieces();
 
   while (bb)
-  {
-    const auto to = pop_lsb(&bb);
-    add_move<Us, NORMAL>(pc, from, to);
-  }
+    add_move<Us, NORMAL>(pc, from, pop_lsb(&bb));
 }
 
 template<bool Tuning>
@@ -466,19 +460,22 @@ const MoveData *Moves<Tuning>::next_move()
   if (iteration_ == number_moves_)
     return nullptr;
 
+//  sort::partial_limit_sort(&move_list[iteration_], &move_list[number_moves_], 60000);
+
   do
   {
     const auto first_md = &move_list[iteration_];
     const auto end_md   = &move_list[number_moves_];
+    const auto best     = std::max_element(first_md, end_md);
 
-    sort::partial_limit_sort(first_md, end_md, 1800);
-
-    if (max_stage_ > QUIET_STAGE && stage_ == QUIET_STAGE && first_md->score < 0)
+    if (max_stage_ > QUIET_STAGE && stage_ == QUIET_STAGE && best->score < 0)
     {
       generate_quiet_moves<Us>();
       continue;
     }
 
+    // set the "best" move as the current iteration move
+    std::swap(*first_md, *best);
     ++iteration_;
     return first_md;
 
