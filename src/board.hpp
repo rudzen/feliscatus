@@ -149,7 +149,7 @@ struct Board
   bool can_castle(CastlingRight cr) const;
 
   [[nodiscard]]
-  bool is_castleling_impeeded(Square s, Color us) const;
+  bool is_castleling_impeeded(CastlingRight cr) const;
 
   [[nodiscard]]
   Key pawn_key() const;
@@ -256,6 +256,7 @@ private:
   thread *my_t{};
   std::array<Square, COL_NB> oo_king_from{NO_SQ, NO_SQ};
   std::array<Square, COL_NB> ooo_king_from{NO_SQ, NO_SQ};
+  std::array<Bitboard, CASTLING_RIGHT_NB> castling_path{};
 };
 
 inline void Board::add_piece(const Piece pc, const Square s)

@@ -486,12 +486,14 @@ template<bool Tuning>
 template<Color Us>
 bool Moves<Tuning>::can_castle_short() const
 {
-  return b->can_castle(make_castling<Us, KING_SIDE>()) && !b->is_castleling_impeeded(oo_king_to[Us], Us);
+  constexpr auto cr = make_castling<Us, KING_SIDE>();
+  return b->can_castle(cr) && !b->is_castleling_impeeded(cr);
 }
 
 template<bool Tuning>
 template<Color Us>
 bool Moves<Tuning>::can_castle_long() const
 {
-  return b->can_castle(make_castling<Us, QUEEN_SIDE>()) && !b->is_castleling_impeeded(ooo_king_to[Us], Us);
+  constexpr auto cr = make_castling<Us, QUEEN_SIDE>();
+  return b->can_castle(cr) && !b->is_castleling_impeeded(cr);
 }

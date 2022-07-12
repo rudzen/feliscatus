@@ -801,6 +801,13 @@ void Board::add_castle_rights(const Color us, std::optional<File> rook_file)
   castle_rights_mask[ksq] |= castle_rights;
   rook_castles_from[rook_from] = rook_square;
 
+  const auto kto = relative_square(us, castle_rights & KING_SIDE ? G1 : C1);
+  const auto rto = relative_square(us, castle_rights & KING_SIDE ? F1 : D1);
+
+  castling_path[castle_rights] = (between(rook_square, rto) | between(ksq, kto))
+                    & ~bit(ksq, rook_square);
+
+
   if constexpr (Side == KING_SIDE)
     oo_king_from[us]  = ksq;
   else
@@ -818,38 +825,10 @@ void Board::add_castle_rights(const Color us, std::optional<File> rook_file)
   }
 }
 
-bool Board::is_castleling_impeeded(const Square s, const Color us) const
+bool Board::is_castleling_impeeded(const CastlingRight cr) const
 {
-  // A bit complicated because of Chess960. See http://en.wikipedia.org/wiki/Chess960
-  // The following comments were taken from that source.
-
-  // Check that the smallest back rank interval containing the king, the castling rook, and their
-  // destination squares, contains no pieces other than the king and castling rook.
-
-  const auto rook_to          = rook_castles_to[s];
-  const auto rook_from        = rook_castles_from[s];
-  const auto ksq              = square<KING>(us);
-  const auto bb_castle_pieces = bit(rook_from, ksq);
-
-  // castle span
-  auto bb = bb_castle_pieces | between(ksq, rook_from) | between(rook_from, rook_to) | bit(rook_to, s);
-
-  if ((bb & pieces()) != bb_castle_pieces)
-    return true;
-
-  // Check that no square between the king's initial and final squares (including the initial and final
-  // squares) may be under attack by an enemy piece. (Initial square was already checked a this point.)
-
-  const auto them = ~us;
-
-  bb = between(ksq, s) | s;
-
-  while (bb)
-    [[unlikely]]
-    if (is_attacked(pop_lsb(&bb), them))
-      return true;
-
-  return false;
+  assert(cr == WHITE_OO || cr == WHITE_OOO || cr == BLACK_OO || cr == BLACK_OOO);
+  return pieces() & castling_path[cr];
 }
 
 bool Board::gives_check(const Move m)
