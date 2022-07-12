@@ -199,6 +199,9 @@ void Board::clear()
   occupied_by_type.fill(ZeroBB);
   board.fill(NO_PIECE);
   max_ply = plies = search_depth = 0;
+  oo_king_from.fill(NO_SQ);
+  ooo_king_from.fill(NO_SQ);
+  castling_path.fill(ZeroBB);
 }
 
 void Board::perform_move(const Move m)
