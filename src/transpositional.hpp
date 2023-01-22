@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@
 
 #include "types.hpp"
 #include "miscellaneous.hpp"
+
+struct PVEntry;
 
 #pragma pack(1)
 struct alignas(CacheLineSize / 4) HashEntry final
@@ -134,6 +136,8 @@ public:
   HashEntry *find(Key key) const;
 
   HashEntry *insert(Key key, int depth, int score, NodeType nt, Move m, int eval);
+
+  void insert(const PVEntry &pv);
 
   [[nodiscard]]
   HashEntry *get_entry_to_replace(Key key, [[maybe_unused]] int depth) const;

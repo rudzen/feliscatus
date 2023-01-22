@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,10 +37,9 @@ inline std::chrono::milliseconds since_epoch()
 
 }   // namespace
 
-void Time::init(const Color c, SearchLimits &search_limits)
+void Time::init(const Color c, SearchLimits &limits)
 {
 
-  limits         = search_limits;
   last_curr_post = last_post_info = since_epoch();
 
   start_time.start();

@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -83,8 +83,8 @@ private:
   std::condition_variable cv;
   std::size_t idx;
   std::jthread jthread;
-  bool exit{};
-  bool searching;
+  std::atomic_bool exit{};
+  std::atomic_bool searching{};
 };
 
 struct main_thread final : thread
@@ -122,6 +122,24 @@ struct thread_pool final : std::vector<std::unique_ptr<thread>>
 
   [[nodiscard]]
   std::uint64_t node_count() const;
+
+  [[nodiscard]]
+  bool is_analysing() const noexcept
+  {
+    return limits.infinite | limits.ponder;
+  }
+
+  [[nodiscard]]
+  bool is_fixed_depth() const noexcept
+  {
+    return limits.fixed_depth;
+  }
+
+  [[nodiscard]]
+  int depth() const noexcept
+  {
+    return limits.depth;
+  }
 
   SearchLimits limits{};
   std::atomic_bool stop;

@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,6 +38,11 @@ struct Score final
   constexpr Score(const int mg, const int eg)
     : value(static_cast<int>(static_cast<unsigned int>(eg) << 16) + mg)
   { }
+
+  constexpr Score(const std::array<int, 2> &arr)
+    : Score(arr[0], arr[1])
+  {}
+
   [[nodiscard]]
   constexpr Score(const int v) : value(v)
   { }
@@ -99,13 +104,23 @@ struct Score final
     return mg() - eg();
   }
 
+  [[nodiscard]]
+  constexpr std::array<int, 2> array() const
+  {
+    return { mg(), eg() };
+  }
+
+  [[nodiscard]]
+  constexpr std::pair<int, int> pair() const
+  {
+    return std::make_pair(mg(), eg());
+  }
+
 private:
   int value{};
 };
 
 constexpr Score ZeroScore = Score(0);
-
-// TODO : Move some operators inside Score
 
 constexpr Score operator+(const Score d1, const int d2) noexcept
 {

@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,9 +22,11 @@
 #include <cstdint>
 #include <cstdlib>
 #include <vector>
+#include <algorithm>
 
 #include <fmt/format.h>
 
+#include "pv_entry.hpp"
 #include "transpositional.hpp"
 #include "uci.hpp"
 
@@ -96,14 +98,19 @@ HashEntry *HashTable::find(const Key key) const
 {
   auto *bucket     = find_bucket(key);
   const auto k32   = key32(key);
-  const auto found = std::find_if(bucket->entry.begin(), bucket->entry.end(), [&k32](const HashEntry &e) {
+  const auto found = std::ranges::find_if(bucket->entry.begin(), bucket->entry.end(), [&k32](const HashEntry &e) {
     return e.k == k32 && e.f;
   });
   return found != bucket->entry.end() ? found : nullptr;
 }
 
-HashEntry *
-  HashTable::insert(const Key key, const int depth, const int score, const NodeType nt, const Move m, const int eval)
+HashEntry *HashTable::insert(
+  const Key key,
+  const int depth,
+  const int score,
+  const NodeType nt,
+  const Move m,
+  const int eval)
 {
   auto *transp = get_entry_to_replace(key, depth);
 
@@ -124,7 +131,29 @@ HashEntry *
   return transp;
 }
 
-HashEntry *HashTable::get_entry_to_replace(const Key key, [[maybe_unused]] const int depth) const
+void HashTable::insert(const PVEntry &pv)
+{
+  auto *transp = get_entry_to_replace(pv.key, pv.depth);
+
+  if (transp->f == NO_NT)
+    occupied_++;
+
+  const auto k32 = key32(pv.key);
+
+  if (transp->k != k32 || pv.move != MOVE_NONE)
+    transp->m = pv.move;
+
+  transp->k = k32;
+  transp->s = static_cast<std::int16_t>(pv.score);
+  transp->d = static_cast<std::uint8_t>(pv.depth);
+  transp->f = pv.node_type;
+  transp->a = static_cast<std::uint16_t>(age_);
+  transp->e = static_cast<std::int16_t>(pv.eval);
+}
+
+HashEntry *HashTable::get_entry_to_replace(
+  const Key key,
+  [[maybe_unused]] const int depth) const
 {
   auto *bucket   = find_bucket(key);
   const auto k32 = key32(key);
@@ -137,7 +166,7 @@ HashEntry *HashTable::get_entry_to_replace(const Key key, [[maybe_unused]] const
   constexpr auto replacement_score = [](const HashEntry *e) {
     return (e->a << 9) + e->d;
   };
-  auto match = [&k32](HashEntry *e) {
+  auto match = [&k32](const HashEntry *e) {
     return e->f == NO_NT || e->k == k32;
   };
   auto *replace      = entry;

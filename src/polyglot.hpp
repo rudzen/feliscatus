@@ -20,15 +20,52 @@
 
 #pragma once
 
+#include <vector>
+#include <string_view>
+
+#include "types.hpp"
+
 struct Board;
 
-namespace Eval
+struct PolyBook
 {
+  PolyBook() = default;
 
-[[nodiscard]]
-int evaluate(Board *b, std::size_t pool_index, int alpha, int beta);
+  void open(std::string_view path);
 
-[[nodiscard]]
-int tune(Board *b, std::size_t pool_index, int alpha, int beta);
+  Move probe(Board *board) const;
 
-}   // namespace Eval
+  std::size_t size() const;
+
+  bool empty() const;
+
+private:
+  struct BookEntry
+  {
+    std::uint64_t key{};
+    std::uint16_t move{};
+    std::uint16_t weight{};
+    std::uint32_t learn{};
+  };
+
+  using BookIterator = std::vector<BookEntry>::const_iterator;
+
+  auto lower_entry(std::uint64_t key) const;
+  auto upper_entry(std::uint64_t key, BookIterator lower_bound) const;
+  auto select_random(BookIterator first, BookIterator second) const;
+
+  std::string_view current_book_;
+  std::vector<BookEntry> entries_;
+};
+
+inline std::size_t PolyBook::size() const
+{
+  return entries_.size();
+}
+
+inline bool PolyBook::empty() const
+{
+  return entries_.empty();
+}
+
+inline PolyBook book;

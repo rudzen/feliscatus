@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@
 #include "uci.hpp"
 #include "board.hpp"
 #include "moves.hpp"
+#include "polyglot.hpp"
 
 namespace
 {
@@ -41,7 +42,7 @@ namespace
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
 
-std::shared_ptr<spdlog::logger> search_logger =
+const std::shared_ptr<spdlog::logger> search_logger =
   spdlog::rotating_logger_mt("search_logger", "logs/search.txt", max_log_file_size, max_log_files);
 
 constexpr int MAXSCORE = 32767;
@@ -61,11 +62,11 @@ constexpr int null_move_reduction(const int d)
   return 4 + d / 4;
 }
 
-void store_pv(const std::array<PVEntry, MAXDEPTH> &pv, const int pv_length)
+void store_pv(const std::span<PVEntry> pv, const int pv_length)
 {
   assert(pv_length > 0);
   std::for_each(pv.begin(), std::next(pv.begin(), pv_length), [&](const PVEntry &entry) {
-    TT.insert(entry.key, entry.depth, entry.score, entry.node_type, entry.move, entry.eval);
+    TT.insert(entry);
   });
 }
 
@@ -90,15 +91,15 @@ void hash_and_evaluate(
     pos->eval_score  = Eval::evaluate(b, pool_index, alpha, beta);
     pos->transp_type = NO_NT;
     pos->transp_move = MOVE_NONE;
-    return;
+  } else
+  {
+    pos->transp_score = codec_t_table_score(pos->transposition->score(), -plies);
+    pos->eval_score   = codec_t_table_score(pos->transposition->eval(), -plies);
+    pos->transp_depth = pos->transposition->depth();
+    pos->transp_type  = pos->transposition->flags();
+    pos->transp_move  = pos->transposition->move();
+    b->flags()        = 0;
   }
-
-  pos->transp_score = codec_t_table_score(pos->transposition->score(), -plies);
-  pos->eval_score   = codec_t_table_score(pos->transposition->eval(), -plies);
-  pos->transp_depth = pos->transposition->depth();
-  pos->transp_type  = pos->transposition->flags();
-  pos->transp_move  = pos->transposition->move();
-  b->flags()        = 0;
 }
 
 [[nodiscard]]
@@ -120,8 +121,8 @@ void update_quiet_history(thread *t, Position *pos, const Move best_move, const 
   if (pos->killer_moves.front() != best_move)
   {
     // Rotate the killer moves, index 3 become 2, index 2 becomes 1 and index 1 becomes 0 which is replaced with new
-    // move This is the same as std::copy_backward(km.begin(), std::prev(km.end(), 1), std::next(km.begin(), 1));
-    std::rotate(pos->killer_moves.begin(), std::prev(pos->killer_moves.end(), 1), pos->killer_moves.end());
+    // move. This is the same as std::copy_backward(km.begin(), std::prev(km.end(), 1), std::next(km.begin(), 1));
+    std::ranges::rotate(pos->killer_moves.begin(), std::prev(pos->killer_moves.end(), 1), pos->killer_moves.end());
     pos->killer_moves[0] = best_move;
   }
 
@@ -145,7 +146,7 @@ void update_quiet_history(thread *t, Position *pos, const Move best_move, const 
 template<Searcher SearcherType>
 struct Search final
 {
-  Search(Board *t_board) : b(t_board), t(t_board->my_thread())
+  explicit Search(Board *t_board) : b(t_board), t(t_board->my_thread())
   { }
   ~Search()                   = default;
   Search()                    = delete;
@@ -391,16 +392,15 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta)
   if (move_count == 0)
     return b->in_check() ? -MAXSCORE + b->plies : draw_score();
 
-  if (pos->reversible_half_move_count >= 100)
+  if (pos->rule50 >= 100)
     return draw_score();
 
-  if (best_move)
-  {
-    if (!is_capture(best_move) && !is_promotion(best_move))
-      update_quiet_history(t, pos, best_move, depth);
-  }
+  if (best_move && !is_capture(best_move) && !is_promotion(best_move))
+    update_quiet_history(t, pos, best_move, depth);
 
-  return store_search_node_score(best_score, depth, node_type(best_score, beta, best_move), best_move);
+  const auto search_node_type = node_type(best_score, beta, best_move);
+
+  return store_search_node_score(best_score, depth, search_node_type, best_move);
 }
 
 template<Searcher SearcherType>
@@ -487,9 +487,7 @@ std::optional<int> Search<SearcherType>::next_depth_not_pv(
   if (b->in_check() && b->see_last_move(m) >= 0)
     return std::make_optional(depth);
 
-  constexpr auto move_count_limit = PV ? 5 : 3;
-
-  if (
+  if (constexpr auto move_count_limit = PV ? 5 : 3;
     move_count >= move_count_limit && !is_queen_promotion(m) && !is_capture(m)
     && !is_killer_move(m, pos->previous->killer_moves))
   {
@@ -498,10 +496,8 @@ std::optional<int> Search<SearcherType>::next_depth_not_pv(
     if constexpr (NT == BETA)
       next_depth -= 2;
 
-    constexpr auto depth_limit = 3;
-
     // futility
-    if (next_depth <= depth_limit)
+    if (constexpr auto depth_limit = 3; next_depth <= depth_limit)
     {
       const auto score = -pos->eval_score + futility_margin[std::clamp(next_depth, 0, 3)];
 
@@ -627,7 +623,9 @@ bool Search<SearcherType>::make_move_and_evaluate(const Move m, const int alpha,
 
   hash_and_evaluate(pos, b, t->index(), -beta, -alpha, b->plies);
 
-  b->max_ply = std::max<int>(b->max_ply, b->plies);
+  if (b->plies > b->max_ply)
+    b->max_ply = b->plies;
+
   return true;
 }
 
@@ -652,7 +650,7 @@ void Search<SearcherType>::check_time() const
   if constexpr (verbosity)
   {
     const auto stop =
-      !is_analysing() && !pool.main()->time.is_fixed_depth() && b->search_depth > 1 && pool.main()->time.time_up();
+      !is_analysing() && !pool.is_fixed_depth() && b->search_depth > 1 && pool.main()->time.time_up();
 
     if (stop)
     {
@@ -668,7 +666,7 @@ bool Search<SearcherType>::is_analysing()
   if constexpr (!verbosity)
     return true;
   else
-    return pool.main()->time.is_analysing();
+    return pool.is_analysing();
 }
 
 template<Searcher SearcherType>
@@ -756,13 +754,13 @@ bool Search<SearcherType>::move_is_easy() const
 
     [[unlikely]]
     if (
-      (pool.main()->time.is_fixed_depth() && pool.main()->time.depth() == b->search_depth)
+      (pool.is_fixed_depth() && pool.depth() == b->search_depth)
       || (t->pv[0][0].score == MAXSCORE - 1))
     {
       return true;
     }
 
-    return !is_analysing() && !pool.main()->time.is_fixed_depth() && pool.main()->time.plenty_time();
+    return !is_analysing() && !pool.is_fixed_depth() && pool.main()->time.plenty_time();
   }
 }
 
@@ -776,14 +774,31 @@ void thread::search()
 void main_thread::search()
 {
   // initialize
-  time.init(root_board->side_to_move(), pool.limits);
   TT.init_search();
+
+  //
+  // If book is enabled and we succesfully can probe for a move, perform the move
+  //
+  if (Options[uci::uci_name<uci::UciOptions::USE_BOOK>()])
+  {
+      if (const auto book_file = Options[uci::uci_name<uci::UciOptions::BOOKS>()]; !book.empty())
+      {
+        if (const auto book_move = book.probe(root_board.get()); book_move)
+        {
+          uci::post_moves(book_move, MOVE_NONE);
+          return;
+        }
+      }
+  }
+
+  time.init(root_board->side_to_move(), pool.limits);
 
   pool.start_searching();   // start workers
   Search<Searcher::Master>(root_board.get()).go();
 
   while (!pool.stop && (ponder || pool.limits.infinite))
   {
+    // "wait" until stopped
   }
 
   pool.stop = true;
@@ -794,7 +809,7 @@ void main_thread::search()
   [[likely]]
   if (root_board->pos->pv_length)
   {
-    const auto [m, p_move] = std::make_pair(pv[0][0].move, root_board->pos->pv_length > 1 ? pv[0][1].move : MOVE_NONE);
-    uci::post_moves(m, p_move);
+    const auto ponder_move = root_board->pos->pv_length > 1 ? pv[0][1].move : MOVE_NONE;
+    uci::post_moves(pv[0][0].move, ponder_move);
   }
 }

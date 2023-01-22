@@ -26,8 +26,8 @@
                 "NDEBUG"
             ],
             "compilerPath": "C:\\msys64\\mingw64\\bin\\g++",
-            "cStandard": "c18",
-            "cppStandard": "gnu++20",
+            "cStandard": "c17",
+            "cppStandard": "gnu++23",
             "intelliSenseMode": "gcc-x64",
             "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "configurationProvider": "ms-vscode.cmake-tools"

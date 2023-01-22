@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -39,8 +39,6 @@ struct Board
 
   static void init();
 
-  void clear();
-
   bool make_move(Move m, bool check_legal, bool calculate_in_check);
 
   bool make_move(Move m, bool check_legal);
@@ -48,9 +46,6 @@ struct Board
   void unmake_move();
 
   bool make_null_move();
-
-  [[nodiscard]]
-  std::uint64_t calculate_key() const;
 
   [[nodiscard]]
   bool is_repetition() const;
@@ -119,11 +114,9 @@ struct Board
   [[nodiscard]]
   int piece_count(Color c, PieceType pt) const;
 
+  template<PieceType Pt>
   [[nodiscard]]
-  Bitboard king(Color c) const;
-
-  [[nodiscard]]
-  Square king_sq(Color c) const;
+  Square square(Color c) const;
 
   [[nodiscard]]
   bool is_passed_pawn_move(Move m) const;
@@ -156,7 +149,7 @@ struct Board
   bool can_castle(CastlingRight cr) const;
 
   [[nodiscard]]
-  bool is_castleling_impeeded(Square s, Color us) const;
+  bool is_castleling_impeeded(CastlingRight cr) const;
 
   [[nodiscard]]
   Key pawn_key() const;
@@ -177,9 +170,6 @@ struct Board
   Color side_to_move() const;
 
   [[nodiscard]]
-  Bitboard checkers() const;
-
-  [[nodiscard]]
   bool in_check() const;
 
   [[nodiscard]]
@@ -189,10 +179,21 @@ struct Board
   thread *my_thread() const;
 
   [[nodiscard]]
-  bool gives_check(Move m);
+  Move counter_move(Move m) const;
+
+  [[nodiscard]]
+  int history_score(Move m) const;
 
   [[nodiscard]]
   bool is_legal(Move m, Piece pc, Square from, MoveType mt);
+
+  template<CastlingRight Cr, Color C>
+  [[nodiscard]]
+  Square king_from() const;
+
+  template<CastlingRight Cr, Color C>
+  [[nodiscard]]
+  Square king_to() const;
 
   Position *pos;
   int plies{};
@@ -202,6 +203,18 @@ struct Board
   bool chess960{};
 
 private:
+
+  void clear();
+
+  [[nodiscard]]
+  std::uint64_t calculate_key() const;
+
+  [[nodiscard]]
+  Bitboard checkers() const;
+
+  [[nodiscard]]
+  bool gives_check(Move m);
+
   void remove_piece(Square s);
 
   [[nodiscard]]
@@ -239,9 +252,11 @@ private:
   std::array<Piece, SQ_NB> board{};
   std::array<Bitboard, COL_NB> occupied_by_side{};
   std::array<Bitboard, PIECETYPE_NB> occupied_by_type{};
-  std::array<Square, COL_NB> king_square{};
-  PositionList position_list{};
+  PositionList position_list;
   thread *my_t{};
+  std::array<Square, COL_NB> oo_king_from{NO_SQ, NO_SQ};
+  std::array<Square, COL_NB> ooo_king_from{NO_SQ, NO_SQ};
+  std::array<Bitboard, CASTLING_RIGHT_NB> castling_path{};
 };
 
 inline void Board::add_piece(const Piece pc, const Square s)
@@ -250,10 +265,6 @@ inline void Board::add_piece(const Piece pc, const Square s)
   occupied_by_type[type_of(pc)] |= s;
   occupied_by_type[ALL_PIECE_TYPES] |= s;
   board[s] = pc;
-
-  [[unlikely]]
-  if (type_of(pc) == KING)
-    king_square[color_of(pc)] = s;
 }
 
 inline void Board::remove_piece(const Square s)
@@ -275,12 +286,12 @@ inline Piece Board::piece(const Square s) const
 
 inline PieceType Board::piece_type(const Square s) const
 {
-  return type_of(board[s]);
+  return type_of(piece(s));
 }
 
 inline bool Board::is_occupied(const Square s) const
 {
-  return pieces() & s;
+  return piece(s) != NO_PIECE;
 }
 
 inline bool Board::is_attacked(const Square s, const Color c) const
@@ -303,7 +314,7 @@ inline bool Board::is_attacked_by_pawn(const Square s, const Color c) const
 
 inline bool Board::is_attacked_by_king(const Square s, const Color c) const
 {
-  return piece_attacks_bb(KING, s) & king_sq(c);
+  return piece_attacks_bb(KING, s) & square<KING>(c);
 }
 
 inline Bitboard Board::pieces() const
@@ -341,14 +352,11 @@ inline Bitboard Board::pieces(const Color c) const
   return occupied_by_side[c];
 }
 
-inline Bitboard Board::king(const Color c) const
+template<PieceType Pt>
+inline Square Board::square(const Color c) const
 {
-  return bit(king_sq(c));
-}
-
-inline Square Board::king_sq(const Color c) const
-{
-  return king_square[c];
+  assert(piece_count(c, Pt) == 1);
+  return lsb(pieces(Pt, c));
 }
 
 inline bool Board::is_pawn_passed(const Square s, const Color c) const
@@ -368,7 +376,7 @@ inline bool Board::is_piece_on_file(const PieceType pt, const Square s, const Co
 
 inline bool Board::is_draw() const
 {
-  return flags() & Material::recognize_draw();
+  return pos->flags & Material::recognize_draw();
 }
 
 inline bool Board::can_castle() const
@@ -429,4 +437,32 @@ inline Bitboard Board::pinned() const
 inline thread *Board::my_thread() const
 {
   return my_t;
+}
+
+inline Move Board::counter_move(const Move m) const
+{
+  return my_t->counter_moves[move_piece(m)][move_to(m)];
+}
+
+inline int Board::history_score(const Move m) const
+{
+  return my_t->history_scores[move_piece(m)][move_to(m)];
+}
+
+template<CastlingRight Cr, Color C>
+inline Square Board::king_from() const {
+  static_assert(Cr != KING_SIDE || Cr != QUEEN_SIDE);
+  if constexpr (Cr == KING_SIDE)
+    return oo_king_from[C];
+  else
+    return ooo_king_from[C];
+}
+
+template<CastlingRight Cr, Color C>
+inline Square Board::king_to() const {
+  static_assert(Cr != KING_SIDE || Cr != QUEEN_SIDE);
+  if constexpr (Cr == KING_SIDE)
+    return oo_king_to[C];
+  else
+    return ooo_king_to[C];
 }

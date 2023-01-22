@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -81,10 +81,14 @@ constexpr Bitboard Rank6BB = Rank1BB << (8 * 5);
 constexpr Bitboard Rank7BB = Rank1BB << (8 * 6);
 constexpr Bitboard Rank8BB = Rank1BB << (8 * 7);
 
-constexpr Bitboard corner_a1 = make_bitboard(A1, B1, A2, B2);
-constexpr Bitboard corner_a8 = make_bitboard(A8, B8, A7, B7);
-constexpr Bitboard corner_h1 = make_bitboard(H1, G1, H2, G2);
-constexpr Bitboard corner_h8 = make_bitboard(H8, G8, H7, G7);
+constexpr Bitboard corner_a1   = make_bitboard(A1, B1, A2, B2);
+constexpr Bitboard corner_a8   = make_bitboard(A8, B8, A7, B7);
+constexpr Bitboard corner_h1   = make_bitboard(H1, G1, H2, G2);
+constexpr Bitboard corner_h8   = make_bitboard(H8, G8, H7, G7);
+constexpr Bitboard CenterBB    = make_bitboard(D4, E4, D5, E5);
+constexpr Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
+constexpr Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
+constexpr Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
 
 constexpr std::array<Bitboard, SQ_NB> square_bb{
   make_bitboard(A1), make_bitboard(B1), make_bitboard(C1), make_bitboard(D1), make_bitboard(E1), make_bitboard(F1),
@@ -122,12 +126,8 @@ constexpr int distance<Rank>(const Square x, const Square y)
   return util::abs(rank_of(x) - rank_of(y));
 }
 
-inline Bitboard passed_pawn_front_span[COL_NB][SQ_NB];
-inline Bitboard pawn_front_span[COL_NB][SQ_NB];
-inline Bitboard pawn_captures[COL_NB][SQ_NB];
-inline std::array<Square, 2> oo_king_from{};
-inline std::array<Square, 2> ooo_king_from{};
 inline std::array<std::array<Bitboard, SQ_NB>, PIECETYPE_NB> AllAttacks;
+
 inline std::array<std::array<Bitboard, SQ_NB>, SQ_NB> Lines;
 
 consteval std::array<std::array<int, SQ_NB>, SQ_NB> make_distance()
@@ -338,6 +338,13 @@ inline bool aligned(const Square s1, const Square s2, const Square s3)
   return line(s1, s2) & s3;
 }
 
+template<Color C>
+constexpr Bitboard pawn_attacks_bb(const Bitboard b)
+{
+  return C == WHITE ? shift_bb<NORTH_WEST>(b) | shift_bb<NORTH_EAST>(b)
+                    : shift_bb<SOUTH_WEST>(b) | shift_bb<SOUTH_EAST>(b);
+}
+
 constexpr Bitboard (*pawn_fill[COL_NB])(Bitboard) = {fill<NORTH>, fill<SOUTH>};
 
 template<PieceType Pt>
@@ -391,12 +398,6 @@ inline Bitboard piece_attacks_bb(const PieceType pt, const Square sq, const Bitb
   return 0;
 }
 
-[[nodiscard]]
-inline Bitboard pawn_attacks_bb(const Color c, const Square s)
-{
-  return pawn_captures[c][s];
-}
-
 template<PieceType Pt>
 [[nodiscard]]
 Bitboard xray_attacks(const Bitboard occ, Bitboard blockers, const Square sq) {
@@ -417,6 +418,12 @@ constexpr Square lsb(const Bitboard bb)
 }
 
 [[nodiscard]]
+constexpr Square msb(const Bitboard bb)
+{
+  return static_cast<Square>(63 ^ std::countl_zero(bb));
+}
+
+[[nodiscard]]
 constexpr Square pop_lsb(Bitboard *bb)
 {
   const auto s{lsb(*bb)};
@@ -427,7 +434,13 @@ constexpr Square pop_lsb(Bitboard *bb)
 [[nodiscard]]
 constexpr bool more_than_one(const Bitboard bb)
 {
-  return bb & (bb - 1);
+  return !std::has_single_bit(bb);
+}
+
+[[nodiscard]]
+constexpr int popcount(const Bitboard bb)
+{
+  return std::popcount(bb);
 }
 
 [[nodiscard]]
@@ -435,3 +448,70 @@ constexpr bool is_opposite_colors(const Square s1, const Square s2)
 {
   return (static_cast<int>(s1) + static_cast<int>(rank_of(s1)) + s2 + rank_of(s2)) & 1;
 }
+
+consteval std::array<std::array<Bitboard, SQ_NB>, COL_NB> make_pawn_captures()
+{
+  std::array<std::array<Bitboard, SQ_NB>, COL_NB> result{};
+
+  for (auto sq = A1; sq <= H8; ++sq)
+  {
+    const auto bb     = square_bb[sq];
+    result[WHITE][sq] = shift_bb<NORTH_EAST>(bb) | shift_bb<NORTH_WEST>(bb);
+    result[BLACK][sq] = shift_bb<SOUTH_EAST>(bb) | shift_bb<SOUTH_WEST>(bb);
+  }
+
+  return result;
+}
+
+constexpr std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_captures = make_pawn_captures();
+
+[[nodiscard]]
+constexpr Bitboard pawn_attacks_bb(const Color c, const Square s)
+{
+  return pawn_captures[c][s];
+}
+
+consteval std::array<std::array<Bitboard, SQ_NB>, COL_NB> make_pawn_front_span()
+{
+  std::array<std::array<Bitboard, SQ_NB>, COL_NB> result{};
+
+  for (const auto s : Squares)
+  {
+    const auto bb    = square_bb[s];
+    result[WHITE][s] = fill<NORTH>(shift_bb<NORTH>(bb));
+    result[BLACK][s] = fill<SOUTH>(shift_bb<SOUTH>(bb));
+  }
+
+  return result;
+}
+
+constexpr std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_front_span = make_pawn_front_span();
+
+[[nodiscard]]
+constexpr Bitboard pawn_front_spanBB(const Color c, const Square sq) {
+  return pawn_front_span[c][sq];
+}
+
+consteval std::array<std::array<Bitboard, SQ_NB>, COL_NB> make_passed_pawn_front_span()
+{
+  std::array<std::array<Bitboard, SQ_NB>, COL_NB> result{};
+
+  std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_east_attack_span{};
+  std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_west_attack_span{};
+
+  for (const auto s : Squares)
+  {
+    const auto bb = square_bb[s];
+
+    pawn_east_attack_span[WHITE][s] = fill<NORTH>(shift_bb<NORTH_WEST>(bb));
+    pawn_east_attack_span[BLACK][s] = fill<SOUTH>(shift_bb<SOUTH_EAST>(bb));
+    pawn_west_attack_span[WHITE][s] = fill<NORTH>(shift_bb<NORTH_WEST>(bb));
+    pawn_west_attack_span[BLACK][s] = fill<SOUTH>(shift_bb<WEST>(bb));
+    result[WHITE][s] = pawn_east_attack_span[WHITE][s] | pawn_front_span[WHITE][s] | pawn_west_attack_span[WHITE][s];
+    result[BLACK][s] = pawn_east_attack_span[BLACK][s] | pawn_front_span[BLACK][s] | pawn_west_attack_span[BLACK][s];
+  }
+
+  return result;
+}
+
+constexpr std::array<std::array<Bitboard, SQ_NB>, COL_NB> passed_pawn_front_span = make_passed_pawn_front_span();

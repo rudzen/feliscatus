@@ -20,15 +20,24 @@
 
 #pragma once
 
-struct Board;
+#include <string>
+#include <string_view>
 
-namespace Eval
+struct EngineSettings final
 {
+  EngineSettings();
+  std::string_view books_directory() const;
 
-[[nodiscard]]
-int evaluate(Board *b, std::size_t pool_index, int alpha, int beta);
+  private:
+  std::string books_directory_{};
+};
 
-[[nodiscard]]
-int tune(Board *b, std::size_t pool_index, int alpha, int beta);
+inline std::string_view EngineSettings::books_directory() const
+{
+    return books_directory_;
+}
 
-}   // namespace Eval
+namespace Settings
+{
+inline EngineSettings settings;
+}

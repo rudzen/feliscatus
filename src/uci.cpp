@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,8 @@
 #include "transpositional.hpp"
 #include "perft.hpp"
 #include "moves.hpp"
-
+#include "eval.hpp"
+#include "polyglot.hpp"
 namespace
 {
 
@@ -85,8 +86,9 @@ void position(Board *b, std::istringstream &input)
   else if (token == "fen")
   {
     fmt::memory_buffer fen;
+    auto inserter = std::back_inserter(fen);
     while (input >> token && token != "moves")
-      fmt::format_to(fen, "{} ", token);
+      fmt::format_to(inserter, "{} ", token);
     b->set_fen(fmt::to_string(fen), pool.main());
   }
   else return;
@@ -117,11 +119,12 @@ void set_option(std::istringstream &input)
   if (Options.contains(option_name))
   {
     Options[option_name] = option_value;
-    output               = "Option {} = {}\n";
+    output               = fmt::format("Option {} = {}\n", option_name, option_value);
   }
-  else output = "Uknown option {} = {}\n";
+  else output = fmt::format("Uknown option {} = {}\n", option_name, option_value);
 
-  fmt::print(uci::info(fmt::format(output, option_name, option_value)));
+  const auto uci_info = uci::info(output);
+  fmt::print("{}", uci_info);
 }
 
 void go(std::istringstream &input, std::string_view fen)
@@ -160,12 +163,13 @@ void go(std::istringstream &input, std::string_view fen)
 void uci::post_moves(const Move m, const Move ponder_move)
 {
   fmt::memory_buffer buffer;
+  auto inserter = std::back_inserter(buffer);
 
-  fmt::format_to(buffer, "bestmove {}", display_uci(m));
+  fmt::format_to(inserter, "bestmove {}", display_uci(m));
 
   [[likely]]
   if (ponder_move)
-    fmt::format_to(buffer, " ponder {}", display_uci(ponder_move));
+    fmt::format_to(inserter, " ponder {}", display_uci(ponder_move));
 
   fmt::print("{}\n", fmt::to_string(buffer));
 }
@@ -192,20 +196,22 @@ void uci::post_curr_move(const Move m, const int m_number)
 void uci::post_pv(const int d, const int max_ply, const int score, const std::span<PVEntry> &pv_line, const NodeType nt)
 {
   fmt::memory_buffer buffer;
-  fmt::format_to(buffer, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
+  auto inserter = std::back_inserter(buffer);
+
+  fmt::format_to(inserter, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
 
   if (nt == ALPHA)
-    fmt::format_to(buffer, "upperbound ");
+    fmt::format_to(inserter, "upperbound ");
   else if (nt == BETA)
-    fmt::format_to(buffer, "lowerbound ");
+    fmt::format_to(inserter, "lowerbound ");
 
   const auto time                           = pool.main()->time.elapsed() + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
 
-  fmt::format_to(buffer, "hashfull {} nodes {} nps {} time {} pv ", TT.load(), node_count, nodes_per_second, time);
+  fmt::format_to(inserter, "hashfull {} nodes {} nps {} time {} pv ", TT.load(), node_count, nodes_per_second, time);
 
   for (auto &pv : pv_line)
-    fmt::format_to(buffer, "{} ", pv.move);
+    fmt::format_to(inserter, "{} ", pv.move);
 
   fmt::print("{}\n", fmt::to_string(buffer));
 }
@@ -269,15 +275,29 @@ void uci::run(const int argc, char *argv[])
     else if (token == "position")
       position(board.get(), input);
     else if (token == "go")
-    {
       go(input, board->fen());
-    } else if (token == "perft")
+    else if (token == "perft")
     {
       const auto total = perft::perft(board.get(), 6);
       fmt::print("Total nodes: {}\n", total);
+    } else if (token == "divide")
+    {
+      const auto total = perft::divide(board.get(), 6);
+      fmt::print("Total nodes: {}\n", total);
     } else if (token == "print")
       board->print_moves();
-    else if (token == "exit")
+    else if (token == "d")
+      board->print();
+    else if (token == "eval")
+    {
+      board->print();
+      const auto e = Eval::evaluate(board.get(), 0, 0, 0);
+      fmt::print("Eval: {}\n", e);
+    } else if (token == "book")
+    {
+      const auto m = book.probe(board.get());
+      uci::post_moves(m, MOVE_NONE);
+    } else if (token == "exit")
       break;
   } while (token != "quit" && argc == 1);
 }

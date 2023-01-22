@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,12 +27,12 @@
 #include <fmt/format.h>
 
 #include "tune.hpp"
-#include "file_resolver.hpp"
 #include "../src/board.hpp"
 #include "../src/bitboard.hpp"
 #include "../src/transpositional.hpp"
 #include "../src/tpool.hpp"
 #include "../cli/cli_parser.hpp"
+#include "../src/parameters.hpp"
 
 namespace
 {
@@ -56,6 +56,7 @@ int main(const int argc, char **argv)
   const auto cli_parser_settings = cli::make_parser(argc, argv, title, ParserType::Tuner);
 
   TT.init(256);
+  params::init();
 
   bitboard::init();
   Board::init();

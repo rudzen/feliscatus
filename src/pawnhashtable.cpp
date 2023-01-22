@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,12 +29,15 @@ namespace Pawn
 
 template<Color Us>
 [[nodiscard]]
-Score eval_pawns(Board *b, PawnHashEntry *phe)
+Score eval_pawns(const Board *b, PawnHashEntry *phe)
 {
-  constexpr auto Them   = ~Us;
-  auto result           = ZeroScore;
-  auto pawns            = b->pieces(PAWN, Us);
-  phe->passed_pawns[Us] = 0;
+  constexpr auto Them      = ~Us;
+  auto result              = ZeroScore;
+  auto pawns               = b->pieces(PAWN, Us);
+  phe->passed_pawns[Us]    = 0;
+  phe->pawn_attacks[Us]    = pawn_attacks_bb<Us>(pawns);
+  phe->open_files[Us]      = ~(pawn_fill[Us](pawn_fill[Them](pawns)) | pawn_fill[Us](pawn_fill[Them](b->pieces(PAWN, Them))));
+  phe->half_open_files[Us] = ~fill<NORTH>(fill<SOUTH>(pawns)) & ~phe->open_files[Us];
 
   while (pawns)
   {
@@ -42,7 +45,7 @@ Score eval_pawns(Board *b, PawnHashEntry *phe)
     const auto f      = file_of(s);
     const auto flip_s = relative_square(Them, s);
 
-    result += pawn_pst[flip_s];
+    result += params::pst<PAWN>(flip_s);
 
     if (b->is_pawn_passed(s, Us))
       phe->passed_pawns[Us] |= s;
@@ -50,18 +53,18 @@ Score eval_pawns(Board *b, PawnHashEntry *phe)
     const auto open_file = !b->is_piece_on_file(PAWN, s, Them);
 
     if (b->is_pawn_isolated(s, Us))
-      result += pawn_isolated[open_file];
+      result += params::pawn_isolated[open_file];
     else if (b->is_pawn_behind(s, Us))
-      result += pawn_behind[open_file];
+      result += params::pawn_behind[open_file];
 
     if (pawns & f)
-      result += pawn_doubled[open_file];
+      result += params::pawn_doubled[open_file];
   }
   return result;
 }
 
 template<>
-PawnHashEntry *at<true>(Board *b)
+PawnHashEntry *at<true>(const Board *b)
 {
   const auto pawn_key = b->pawn_key();
   auto *entry = b->my_thread()->pawn_hash[pawn_key];
@@ -73,7 +76,7 @@ PawnHashEntry *at<true>(Board *b)
 }
 
 template<>
-PawnHashEntry *at<false>(Board *b)
+PawnHashEntry *at<false>(const Board *b)
 {
   const auto pawn_key = b->pawn_key();
   auto *entry = b->my_thread()->pawn_hash[pawn_key];

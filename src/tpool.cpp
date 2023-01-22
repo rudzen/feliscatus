@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -39,9 +39,9 @@ thread::thread(const std::size_t index)
 
 thread::~thread()
 {
-  assert(!searching);
+  assert(!searching.load());
 
-  exit = true;
+  exit.store(true);
   start_searching();
 }
 
@@ -63,18 +63,18 @@ void thread::idle_loop()
   do
   {
     std::unique_lock<std::mutex> lk(mutex);
-    searching = false;
+    searching.store(false);
 
     // Wake up anyone waiting for search finished
     cv.notify_one();
     cv.wait(lk, [&] {
-      return searching;
+      return searching.load(std::memory_order_relaxed);
     });
 
     // check exit flag, this is set when the class is being destroyed
     [[unlikely]]
-    if (exit)
-      return;
+    if (exit.load())
+      break;
 
     lk.unlock();
 
@@ -85,7 +85,7 @@ void thread::idle_loop()
 void thread::start_searching()
 {
   std::lock_guard<std::mutex> lk(mutex);
-  searching = true;
+  searching.store(true);
   cv.notify_one();   // Wake up the thread in idle_loop()
 }
 
@@ -93,7 +93,7 @@ void thread::wait_for_search_finished()
 {
   std::unique_lock<std::mutex> lk(mutex);
   cv.wait(lk, [&] {
-    return !searching;
+    return !searching.load();
   });
 }
 

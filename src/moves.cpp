@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,6 +26,15 @@
 
 namespace
 {
+
+template<Direction D>
+struct MakePawnFromTo final {
+  constexpr std::pair<Square, Square> operator()(Bitboard *b) const {
+    const auto to   = pop_lsb(b);
+    const auto from = to - D;
+    return {to, from};
+  }
+};
 
 template<bool Tuning>
 void score_move(MoveData &md, Board *b)
@@ -61,12 +70,10 @@ void score_move(MoveData &md, Board *b)
       md.score = KILLERMOVESCORE + 18;
     else if (md == b->pos->killer_moves[3])
       md.score = KILLERMOVESCORE + 17;
-    else if (
-      b->pos->last_move
-      && b->my_thread()->counter_moves[move_piece(b->pos->last_move)][move_to(b->pos->last_move)] == md)
+    else if (b->pos->last_move && b->counter_move(b->pos->last_move) == md)
       md.score = 60000;
     else
-      md.score = b->my_thread()->history_scores[move_piece(md)][move_to(md)];
+      md.score = b->history_score(md);
   } else
   {
     if (is_queen_promotion(md))
@@ -81,6 +88,25 @@ void score_move(MoveData &md, Board *b)
 }
 
 }   // namespace
+
+namespace sort
+{
+
+void partial_limit_sort(MoveData *begin, MoveData *end, const int limit)
+{
+  for (MoveData *sortedEnd = begin, *p = begin + 1; p < end; ++p)
+    if (p->score >= limit)
+    {
+      MoveData tmp = *p, *q;
+      *p           = *++sortedEnd;
+      for (q = sortedEnd; q != begin && *(q - 1) < tmp; --q)
+        *q = *(q - 1);
+      *q = tmp;
+    }
+}
+
+}   // namespace sort
+
 
 template<bool Tuning>
 void Moves<Tuning>::generate_moves(const Move tt_move, const int flags)
@@ -175,10 +201,11 @@ template const MoveData *Moves<false>::next_move();
 template<bool Tuning>
 void Moves<Tuning>::reset(const Move m, const int flags)
 {
-  transp_move_ = m;
-  move_flags_  = flags;
-  iteration_ = number_moves_ = 0;
-  stage_                     = TT_STAGE;
+  transp_move_  = m;
+  move_flags_   = flags;
+  iteration_    = 0;
+  number_moves_ = 0;
+  stage_        = TT_STAGE;
 
   [[likely]]
   if (m)
@@ -241,10 +268,10 @@ void Moves<Tuning>::generate_quiet_moves()
   if (!b->in_check())
   {
     if (can_castle_short<Us>())
-      add_castle_move<Us>(oo_king_from[Us], oo_king_to[Us]);
+      add_castle_move<Us>(b->king_from<KING_SIDE, Us>(), b->king_to<KING_SIDE, Us>());
 
     if (can_castle_long<Us>())
-      add_castle_move<Us>(ooo_king_from[Us], ooo_king_to[Us]);
+      add_castle_move<Us>(b->king_from<QUEEN_SIDE, Us>(), b->king_to<QUEEN_SIDE, Us>());
   }
 
   add_pawn_moves<Us, NORMAL>(pushed, Up);
@@ -320,18 +347,12 @@ void Moves<Tuning>::add_moves(const PieceType pt, const Square from, const Bitbo
   auto bb = attacks & b->pieces(Them);
 
   while (bb)
-  {
-    const auto to = pop_lsb(&bb);
-    add_move<Us, CAPTURE>(pc, from, to);
-  }
+    add_move<Us, CAPTURE>(pc, from, pop_lsb(&bb));
 
   bb = attacks & ~b->pieces();
 
   while (bb)
-  {
-    const auto to = pop_lsb(&bb);
-    add_move<Us, NORMAL>(pc, from, to);
-  }
+    add_move<Us, NORMAL>(pc, from, pop_lsb(&bb));
 }
 
 template<bool Tuning>
@@ -356,7 +377,7 @@ void Moves<Tuning>::add_pawn_capture_moves(const Bitboard to_squares)
   constexpr auto NorthEast    = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
   const auto opponent_pieces  = b->pieces(Them);
   const auto pawns            = b->pieces(PAWN, Us);
-  
+
   add_pawn_moves<Us, CAPTURE>(shift_bb<NorthWest>(pawns) & opponent_pieces & to_squares, NorthWest);
   add_pawn_moves<Us, CAPTURE>(shift_bb<NorthEast>(pawns) & opponent_pieces & to_squares, NorthEast);
   [[unlikely]]
@@ -421,18 +442,15 @@ const MoveData *Moves<Tuning>::next_move()
   {
     switch (stage_)
     {
-    case TT_STAGE: {
+    case TT_STAGE:
       generate_hash_move();
       break;
-    }
-    case CAPTURE_STAGE: {
+    case CAPTURE_STAGE:
       generate_captures_and_promotions<Us>();
       break;
-    }
-    case QUIET_STAGE: {
+    case QUIET_STAGE:
       generate_quiet_moves<Us>();
       break;
-    }
 
     default:   // error
       return nullptr;
@@ -441,6 +459,8 @@ const MoveData *Moves<Tuning>::next_move()
 
   if (iteration_ == number_moves_)
     return nullptr;
+
+//  sort::partial_limit_sort(&move_list[iteration_], &move_list[number_moves_], 60000);
 
   do
   {
@@ -466,12 +486,14 @@ template<bool Tuning>
 template<Color Us>
 bool Moves<Tuning>::can_castle_short() const
 {
-  return b->can_castle(make_castling<Us, KING_SIDE>()) && !b->is_castleling_impeeded(oo_king_to[Us], Us);
+  constexpr auto cr = make_castling<Us, KING_SIDE>();
+  return b->can_castle(cr) && !b->is_castleling_impeeded(cr);
 }
 
 template<bool Tuning>
 template<Color Us>
 bool Moves<Tuning>::can_castle_long() const
 {
-  return b->can_castle(make_castling<Us, QUEEN_SIDE>()) && !b->is_castleling_impeeded(ooo_king_to[Us], Us);
+  constexpr auto cr = make_castling<Us, QUEEN_SIDE>();
+  return b->can_castle(cr) && !b->is_castleling_impeeded(cr);
 }

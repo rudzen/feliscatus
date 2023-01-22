@@ -4,14 +4,14 @@ macro(run_conan)
         message(
                 STATUS
                 "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-        file(DOWNLOAD "https://github.com/conan-io/cmake-conan/raw/v0.15/conan.cmake"
+        file(DOWNLOAD "https://github.com/conan-io/cmake-conan/raw/0.18.1/conan.cmake"
                 "${CMAKE_BINARY_DIR}/conan.cmake")
     endif()
 
     include(${CMAKE_BINARY_DIR}/conan.cmake)
 
-    conan_add_remote(NAME bincrafters URL
-            https://api.bintray.com/conan/bincrafters/public-conan)
+    conan_add_remote(NAME default URL
+        https://center.conan.io)
 
             #blaze/3.7
             #docopt.cpp/0.6.2
@@ -19,10 +19,12 @@ macro(run_conan)
     conan_cmake_run(
             REQUIRES
             ${CONAN_EXTRA_REQUIRES}
-            catch2/2.13.3
-            fmt/7.1.3
-            spdlog/1.8.2
-            nlohmann_json/3.9.1
+            catch2/3.0.1
+            fmt/8.1.1
+            spdlog/1.10.0
+            nlohmann_json/3.10.5
+            cli11/2.2.0
+            robin-hood-hashing/3.11.5
             OPTIONS
             ${CONAN_EXTRA_OPTIONS}
             BASIC_SETUP

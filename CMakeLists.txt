@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.23.2)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/out")
 
 project(Feliscatus CXX)
@@ -9,7 +9,7 @@ include(cmake/PreventInSourceBuilds.cmake)
 
 # Link this 'library' to set the c++ standard / compile-time options requested
 add_library(project_options INTERFACE)
-target_compile_features(project_options INTERFACE cxx_std_20)
+target_compile_features(project_options INTERFACE cxx_std_23)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
     option(ENABLE_BUILD_WITH_TIME_TRACE "Enable -ftime-trace to generate time tracing .json files on clang" OFF)
@@ -29,8 +29,8 @@ include(cmake/CompilerWarnings.cmake)
 set_project_warnings(project_warnings)
 
 # sanitizer options if supported by compiler
-# include(cmake/Sanitizers.cmake)
-# enable_sanitizers(project_options)
+include(cmake/Sanitizers.cmake)
+enable_sanitizers(project_options)
 
 # enable doxygen
 include(cmake/Doxygen.cmake)
@@ -76,8 +76,11 @@ if(ENABLE_FUZZING)
   add_subdirectory(fuzz_test)
 endif()
 
-# cli lib wrapper
+# cli lib
 add_subdirectory(cli)
+
+# io lib
+add_subdirectory(io)
 
 # main lib
 add_subdirectory(src)

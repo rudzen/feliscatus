@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include "uci.hpp"
 #include "transpositional.hpp"
 #include "tpool.hpp"
+#include "polyglot.hpp"
 
 using std::string;
 
@@ -50,6 +51,13 @@ void on_hash_size(const Option &o)
   TT.init(o);
 }
 
+void on_book_change(const Option &o)
+{
+  std::string_view s = o.current_value();
+  fmt::print("book on_change: {}\n", s);
+  book.open(o);
+}
+
 void on_threads(const Option &o)
 {
   pool.set(o);
@@ -62,7 +70,7 @@ bool CaseInsensitiveLess::operator()(const std::string_view s1, const std::strin
   });
 }
 
-void init(OptionsMap &o)
+void init(OptionsMap &o, std::span<std::string> book_files)
 {
   o[uci_name<UciOptions::THREADS>()] << Option(1, 1, 512, on_threads);
   o[uci_name<UciOptions::HASH>()] << Option(256, 1, MaxHashMB, on_hash_size);
@@ -72,6 +80,20 @@ void init(OptionsMap &o)
   o[uci_name<UciOptions::PONDER>()] << Option(false);
   o[uci_name<UciOptions::UCI_Chess960>()] << Option(false);
   o[uci_name<UciOptions::SHOW_CPU>()] << Option(false);
+
+  // configure polyglot book options
+  const auto has_book_files = !book_files.empty();
+  o[uci_name<UciOptions::USE_BOOK>()] << Option(has_book_files);
+  if (has_book_files)
+  {
+    const auto selected = book_files.front();
+    o[uci_name<UciOptions::BOOKS>()] << Option(book_files, selected.c_str(), on_book_change);
+    if (o[uci_name<UciOptions::USE_BOOK>()])
+      book.open(selected);
+
+    o[uci_name<UciOptions::BOOK_BEST_MOVE>()] << Option(false);
+  } else
+    fmt::print("info string No book files detected, ignoring\n");
 }
 
 /// Option class constructors and conversion operators
@@ -91,8 +113,8 @@ Option::Option(const int v, const int minv, const int maxv, const on_change f)
     on_change_(f)
 { }
 
-Option::Option(const char *v, const char *cur, const on_change f)
-  : default_value_(v), current_value_(cur), type_(OptionType::Combo), on_change_(f)
+Option::Option(const std::span<std::string> variants, const char *cur, const on_change f)
+  : variants_(variants), default_value_(cur), current_value_(cur), type_(OptionType::Combo), on_change_(f)
 { }
 
 Option::operator int() const
@@ -103,7 +125,7 @@ Option::operator int() const
 
 Option::operator std::string_view() const
 {
-  assert(type_ == OptionType::String);
+  assert(type_ == OptionType::String || type_ == OptionType::Combo);
   return current_value_;
 }
 
@@ -144,6 +166,11 @@ Option &Option::operator=(const string &v) noexcept
 std::size_t Option::index() const noexcept
 {
   return idx_;
+}
+
+std::span<std::string> Option::variants() const noexcept
+{
+  return variants_;
 }
 
 std::string_view Option::default_value() const noexcept

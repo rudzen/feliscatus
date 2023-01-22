@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,9 +32,6 @@ struct Board;
 #pragma pack(1)
 struct alignas(CacheLineSize / 2) PawnHashEntry final
 {
-  Key zkey{};
-  std::array<Score, COL_NB> scores{};
-  std::array<Bitboard, COL_NB> passed_pawns{};
 
   // TODO : Move more pawn-related only things here
   [[nodiscard]]
@@ -43,6 +40,12 @@ struct alignas(CacheLineSize / 2) PawnHashEntry final
     return scores[WHITE] - scores[BLACK];
   }
 
+  Key zkey{};
+  std::array<Score, COL_NB> scores{};
+  std::array<Bitboard, COL_NB> pawn_attacks{};
+  std::array<Bitboard, COL_NB> passed_pawns{};
+  std::array<Bitboard, COL_NB> half_open_files{};
+  std::array<Bitboard, COL_NB> open_files{};
 };
 #pragma pack()
 
@@ -52,6 +55,6 @@ namespace Pawn
 {
 template<bool Tuning>
 [[nodiscard]]
-PawnHashEntry *at(Board *b);
+PawnHashEntry *at(const Board *b);
 
 }   // namespace Pawn

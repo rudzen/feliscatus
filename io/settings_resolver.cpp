@@ -18,17 +18,34 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include <fstream>
+#include <filesystem>
 
-struct Board;
+#include <nlohmann/json.hpp>
+#include <fmt/format.h>
 
-namespace Eval
+#include "settings_resolver.hpp"
+
+namespace
 {
+constexpr std::string_view settings_file = "Feliscatus.json";
+}
 
-[[nodiscard]]
-int evaluate(Board *b, std::size_t pool_index, int alpha, int beta);
+EngineSettings::EngineSettings()
+{
+  namespace fs = std::filesystem;
 
-[[nodiscard]]
-int tune(Board *b, std::size_t pool_index, int alpha, int beta);
+  auto p = fs::exists(settings_file);
 
-}   // namespace Eval
+  if (!p)
+  {
+    fmt::print("info string Unable to locate {}, no books will be enabled\n", fs::path(settings_file).string());
+    return;
+  }
+
+  std::ifstream i(settings_file.data());
+  nlohmann::json j;
+  i >> j;
+  nlohmann::json j_string = j["book"]["directory"];
+  books_directory_        = j_string.get<std::string>();
+}

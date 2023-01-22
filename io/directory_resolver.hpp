@@ -20,15 +20,10 @@
 
 #pragma once
 
-struct Board;
+#include <vector>
+#include <string_view>
+#include <string>
 
-namespace Eval
-{
-
-[[nodiscard]]
-int evaluate(Board *b, std::size_t pool_index, int alpha, int beta);
-
-[[nodiscard]]
-int tune(Board *b, std::size_t pool_index, int alpha, int beta);
-
-}   // namespace Eval
+namespace directory_resolver {
+    std::vector<std::string> get_book_list(std::string_view directory);
+}

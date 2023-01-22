@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,14 +30,16 @@ template<Color Us>
 [[nodiscard]]
 bool can_castle_short(Board *b)
 {
-  return b->can_castle(make_castling<Us, KING_SIDE>()) && !b->is_castleling_impeeded(oo_king_to[Us], Us);
+  constexpr auto cr = make_castling<Us, KING_SIDE>();
+  return b->can_castle(cr) && !b->is_castleling_impeeded(cr);
 }
 
 template<Color Us>
 [[nodiscard]]
 bool can_castle_long(Board *b)
 {
-  return b->can_castle(make_castling<Us, QUEEN_SIDE>()) && !b->is_castleling_impeeded(ooo_king_to[Us], Us);
+  constexpr auto cr = make_castling<Us, QUEEN_SIDE>();
+  return b->can_castle(cr) && !b->is_castleling_impeeded(cr);
 }
 
 }   // namespace
@@ -258,10 +260,10 @@ MoveData *generate_quiet_moves(Board *b, MoveData *md)
     return md;
 
   if (can_castle_short<Us>(b))
-    md = add_castle_move<Flags, Us>(b, oo_king_from[Us], oo_king_to[Us], md);
+    md = add_castle_move<Flags, Us>(b, b->king_from<KING_SIDE, Us>(), b->king_to<KING_SIDE, Us>(), md);
 
   if (can_castle_long<Us>(b))
-    md = add_castle_move<Flags, Us>(b, ooo_king_from[Us], ooo_king_to[Us], md);
+    md = add_castle_move<Flags, Us>(b, b->king_from<QUEEN_SIDE, Us>(), b->king_to<QUEEN_SIDE, Us>(), md);
 
   return md;
 }
@@ -324,7 +326,8 @@ template<>
 MoveData *generate<QUIET>(Board *b, MoveData *md)
 {
   const auto c = b->side_to_move();
-  return c == WHITE ? generate_quiet_moves<QUIET, WHITE>(b, md) : generate_quiet_moves<QUIET, BLACK>(b, md);
+  return c == WHITE ? generate_quiet_moves<QUIET, WHITE>(b, md)
+                    : generate_quiet_moves<QUIET, BLACK>(b, md);
 }
 
 template<MoveGenFlags Flags>

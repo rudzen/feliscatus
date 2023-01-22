@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -57,11 +57,11 @@ namespace
 std::string compiler_info()
 {
 #if defined(__clang__)
-  return fmt::format("[Clang/LLVM v{}{}{}]", std::string(__clang_major__), __clang_minor__, __clang_patchlevel__);
+  return fmt::format("[Clang/LLVM {}{}{}]", std::string(__clang_major__), __clang_minor__, __clang_patchlevel__);
 #elif defined(__GNUC__) || defined(__GNUG__)
-  return fmt::format("[GNU GCC v{}]", std::string(__VERSION__));
+  return fmt::format("[GNU GCC {}]", std::string(__VERSION__));
 #elif defined(_MSC_VER)
-  return fmt::format("[MS Visual Studio v{}]", _MSC_VER);
+  return fmt::format("[MS Visual Studio {}]", _MSC_VER);
 #else
   return std::string("Unknown compiler");
 #endif
@@ -81,7 +81,7 @@ void bind_this_thread(std::size_t)
 
 /// best_group() retrieves logical processor information using Windows specific
 /// API and returns the best group id for the thread with index idx. Original
-/// code from Texel by Peter �sterlund.
+/// code from Texel by Peter Österlund.
 
 std::optional<int> best_group(const std::size_t idx)
 {
@@ -158,7 +158,9 @@ void bind_this_thread(const std::size_t idx)
   // Use only local variables to be thread-safe
   const auto group = best_group(idx);
 
-  [[unlikely]] if (!group) return;
+  [[unlikely]]
+  if (!group)
+    return;
 
   // Early exit if the needed API are not available at runtime
   auto *const k32 = GetModuleHandle("Kernel32.dll");
@@ -189,9 +191,7 @@ std::string print_engine_info()
   static constexpr std::string_view all_months{"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec"};
   std::string m, d, y, uci;
   fmt::memory_buffer ver_info;
-  fmt::memory_buffer buffer;
-
-  // TODO : parse with chrono?
+  auto inserter = std::back_inserter(ver_info);
 
   std::stringstream date(std::string(__DATE__));
 
@@ -205,20 +205,19 @@ std::string print_engine_info()
   if constexpr (AsUci)
   {
     constexpr std::string_view authors{"Gunnar Harms, FireFather, Rudy Alex Kohn"};
-    fmt::format_to(
-      ver_info, "id name {} {:02}-{:02}-{} {}\nid author {}", title_short, month, day, year, compiler, authors);
+    fmt::format_to(inserter, "id name {} {:02}-{:02}-{} {}\nid author {}", title_short, month, day, year, compiler, authors);
   } else
-    fmt::format_to(ver_info, "{} {:02}-{:02}-{} {}", title_short, month, day, year, compiler);
+    fmt::format_to(inserter, "{} {:02}-{:02}-{} {}", title_short, month, day, year, compiler);
 
 #if defined(NO_LAZY_EVAL_THRESHOLD)
 
-  fmt::format_to(ver_info, " - NO LAZYEVAL");
+  fmt::format_to(inserter, " - NO LAZYEVAL");
 
 #endif
 
 #if defined(NO_PREFETCH)
 
-  fmt::format_to(ver_info, " - NO PREFETCH")
+  fmt::format_to(inserter, " - NO PREFETCH")
 
 #endif
 

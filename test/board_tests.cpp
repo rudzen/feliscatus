@@ -18,17 +18,34 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#define CATCH_CONFIG_MAIN
 
-struct Board;
+#include <catch2/catch_all.hpp>
+#include <algorithm>
 
-namespace Eval
+#include "../src/board.hpp"
+#include "../src/miscellaneous.hpp"
+
+TEST_CASE("FEN set->generate", "[fen]")
 {
+  bitboard::init();
 
-[[nodiscard]]
-int evaluate(Board *b, std::size_t pool_index, int alpha, int beta);
+  pool.set(1);
 
-[[nodiscard]]
-int tune(Board *b, std::size_t pool_index, int alpha, int beta);
+  Board b{};
+  b.set_fen(start_position, pool.main());
 
-}   // namespace Eval
+  const auto fen = b.fen();
+
+  REQUIRE(fen.size() == start_position.size());
+
+  const auto equals = std::equal(
+    fen.begin(), fen.end(),
+    start_position.begin(), start_position.end(),
+    [](const char c1, const char c2) {
+        return c1 == c2;
+    });
+
+  REQUIRE(equals);
+
+}

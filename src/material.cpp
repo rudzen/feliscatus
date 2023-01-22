@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,25 +28,6 @@ namespace
 {
 
 constexpr std::array<int, 7> piece_bit_shift{0, 4, 8, 12, 16, 20};
-
-enum material_key_t
-{
-    k   = 0x00000,
-    kp  = 0x00001,
-    kn  = 0x00010,
-    kb  = 0x00100,
-    kr  = 0x01000,
-    kq  = 0x10000,
-    krr = 0x02000,
-    kbb = 0x00200,
-    kbn = 0x00110,
-    knn = 0x00020,
-    krn = 0x01010,
-    krb = 0x01100,
-    kqb = 0x10100,
-    kqn = 0x10010,
-    all_pawns = 0xf,
-};
 
 }   // namespace
 
@@ -109,7 +90,8 @@ int Material::evaluate(int &flags, const int eval, const Board *b)
 {
   constexpr auto Them = ~Us;
   this->board         = b;
-  drawish = material_flags = 0;
+  drawish             = 0;
+  material_flags      = 0;
 
   std::uint32_t strong_key;
   std::uint32_t weak_key;
@@ -329,7 +311,7 @@ int Material::KBNKX(const int eval, const std::uint32_t key2, const int pc1, con
 
 int Material::KBNK(const int eval, const Color c1) const
 {
-  const auto loosing_kingsq = board->king_sq(~c1);
+  const auto loosing_kingsq = board->square<KING>(~c1);
 
   constexpr auto get_winning_squares = [](const bool dark) {
     return dark ? std::make_pair(A1, H8) : std::make_pair(A8, H1);
@@ -366,7 +348,7 @@ int Material::KBKX(
       if (c1 == c || !board->is_attacked(lsb(board->pieces(BISHOP, c1)), c2))
       {
         if (const auto bishopbb = board->pieces(BISHOP, c1);
-            pawn_front_span[c2][lsb(board->pieces(PAWN, c2))]
+            pawn_front_spanBB(c2, lsb(board->pieces(PAWN, c2)))
             & (piece_attacks_bb<BISHOP>(lsb(bishopbb), board->pieces()) | bishopbb))
           return draw_score();
       }
@@ -400,7 +382,7 @@ int Material::KNKX(
       if (c1 == c || !board->is_attacked(lsb(board->pieces(KNIGHT, c1)), c2))
       {
         if (const auto knightbb = board->pieces(KNIGHT, c1);
-            pawn_front_span[c2][lsb(board->pieces(PAWN, c2))] & (piece_attacks_bb<KNIGHT>(lsb(knightbb)) | knightbb))
+            pawn_front_spanBB(c2, lsb(board->pieces(PAWN, c2))) & (piece_attacks_bb<KNIGHT>(lsb(knightbb)) | knightbb))
           return draw_score();
       }
     }
@@ -470,7 +452,7 @@ int Material::KBpK(const int eval, const Color c1)
 
   if (!same_color(promosq1, lsb(board->pieces(BISHOP, c1))))
   {
-    if (const auto bbk2 = board->king(~c1); (promosq1 == H8 && bbk2 & corner_h8) || (promosq1 == A8 && bbk2 & corner_a8)
+    if (const auto bbk2 = board->pieces(KING, ~c1); (promosq1 == H8 && bbk2 & corner_h8) || (promosq1 == A8 && bbk2 & corner_a8)
                                             || (promosq1 == H1 && bbk2 & corner_h1)
                                             || (promosq1 == A1 && bbk2 & corner_a1))
       return draw_score();
@@ -487,7 +469,7 @@ int Material::KpK(const int eval, const Color c1)
 {
   const auto pawnsq1  = lsb(board->pieces(PAWN, c1));
   const auto promosq1 = static_cast<Square>(c1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
-  const auto bbk2     = board->king(~c1);
+  const auto bbk2     = board->pieces(KING, ~c1);
 
   return (promosq1 == H8 && bbk2 & corner_h8) || (promosq1 == A8 && bbk2 & corner_a8)
              || (promosq1 == H1 && bbk2 & corner_h1) || (promosq1 == A1 && bbk2 & corner_a1)

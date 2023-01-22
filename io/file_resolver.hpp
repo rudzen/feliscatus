@@ -20,15 +20,13 @@
 
 #pragma once
 
-struct Board;
+#include <memory>
+#include <filesystem>
 
-namespace Eval
+namespace file_handler
 {
 
-[[nodiscard]]
-int evaluate(Board *b, std::size_t pool_index, int alpha, int beta);
+template<typename T, typename... Args>
+std::unique_ptr<T> make_file_resolver(Args &&... args);
 
-[[nodiscard]]
-int tune(Board *b, std::size_t pool_index, int alpha, int beta);
-
-}   // namespace Eval
+}   // namespace file_handler

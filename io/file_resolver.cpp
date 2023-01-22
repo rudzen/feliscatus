@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -18,12 +18,9 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
-#include <memory>
-#include <filesystem>
-
 #include <fmt/format.h>
+
+#include "file_resolver.hpp"
 
 struct FileResolver final
 {
@@ -34,7 +31,7 @@ struct FileResolver final
   explicit FileResolver(const std::string_view f, const std::string_view post_name)
   {
     fmt::memory_buffer b;
-    fmt::format_to(b, "{}{}", post_name, f);
+    fmt::format_to(std::back_inserter(b), "{}{}", post_name, f);
     file_ = std::filesystem::path(fmt::to_string(b));
   }
 
@@ -81,14 +78,9 @@ inline std::filesystem::path FileResolver::file_name() const
   return std::filesystem::absolute(file_);
 }
 
-namespace file_handler
-{
-
 template<typename T, typename... Args>
-std::unique_ptr<T> make_file_resolver(Args &&... args)
+std::unique_ptr<T> file_handler::make_file_resolver(Args &&... args)
 {
   static_assert(std::is_same_v<T, FileResolver>);
   return std::make_unique<T>(T(std::forward<Args>(args)...));
 }
-
-}   // namespace file_handler

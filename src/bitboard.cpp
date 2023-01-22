@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -188,22 +188,23 @@ namespace bitboard
 std::string print_bitboard(Bitboard bb, std::string_view title)
 {
   fmt::memory_buffer buffer;
+  auto inserter = std::back_inserter(buffer);
 
   constexpr std::string_view line = "+---+---+---+---+---+---+---+---+";
 
   if (!title.empty())
-    fmt::format_to(buffer, "{}\n", title);
+    fmt::format_to(inserter, "{}\n", title);
 
-  fmt::format_to(buffer, "{}\n", line);
+  fmt::format_to(inserter, "{}\n", line);
 
   for (const auto r : ReverseRanks)
   {
     for (const auto f : Files)
-      fmt::format_to(buffer, "| {} ", bb & make_square(f, r) ? "X" : " ");
+      fmt::format_to(inserter, "| {} ", bb & make_square(f, r) ? "X" : " ");
 
-    fmt::format_to(buffer, "| {}\n{}\n", std::to_string(1 + r), line);
+    fmt::format_to(inserter, "| {}\n{}\n", std::to_string(1 + r), line);
   }
-  fmt::format_to(buffer, "  a   b   c   d   e   f   g   h\n");
+  fmt::format_to(inserter, "  a   b   c   d   e   f   g   h\n");
 
   return fmt::to_string(buffer);
 }
@@ -278,26 +279,6 @@ void init()
 
         Lines[s1][s2] = (piece_attacks_bb(pt, s1, 0) & piece_attacks_bb(pt, s2, 0)) | s1 | s2;
       }
-  }
-
-  std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_east_attack_span{};
-  std::array<std::array<Bitboard, SQ_NB>, COL_NB> pawn_west_attack_span{};
-
-  for (const auto s : Squares)
-  {
-    const auto bb = square_bb[s];
-
-    pawn_front_span[WHITE][s]        = fill<NORTH>(shift_bb<NORTH>(bb));
-    pawn_front_span[BLACK][s]        = fill<SOUTH>(shift_bb<SOUTH>(bb));
-    pawn_east_attack_span[WHITE][s]  = fill<NORTH>(shift_bb<NORTH_WEST>(bb));
-    pawn_east_attack_span[BLACK][s]  = fill<SOUTH>(shift_bb<SOUTH_EAST>(bb));
-    pawn_west_attack_span[WHITE][s]  = fill<NORTH>(shift_bb<NORTH_WEST>(bb));
-    pawn_west_attack_span[BLACK][s]  = fill<SOUTH>(shift_bb<WEST>(bb));
-    passed_pawn_front_span[WHITE][s] = pawn_east_attack_span[WHITE][s] | pawn_front_span[WHITE][s] | pawn_west_attack_span[WHITE][s];
-    passed_pawn_front_span[BLACK][s] = pawn_east_attack_span[BLACK][s] | pawn_front_span[BLACK][s] | pawn_west_attack_span[BLACK][s];
-
-    pawn_captures[WHITE][s] = shift_bb<NORTH_EAST>(bb) | shift_bb<NORTH_WEST>(bb);
-    pawn_captures[BLACK][s] = shift_bb<SOUTH_EAST>(bb) | shift_bb<SOUTH_WEST>(bb);
   }
 }
 

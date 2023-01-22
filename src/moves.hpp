@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,14 +45,6 @@ struct MoveData final
 };
 
 struct Board;
-
-enum MoveStage
-{
-  TT_STAGE,
-  CAPTURE_STAGE,
-  QUIET_STAGE,
-  END_STAGE
-};
 
 template<bool Tuning = false>
 struct Moves final
@@ -124,8 +116,8 @@ private:
 
   std::array<MoveData, 256> move_list{};
   int iteration_{};
-  int stage_{};
-  int max_stage_{};
+  MoveStage stage_{};
+  MoveStage max_stage_{};
   int number_moves_{};
   Move transp_move_{};
   int move_flags_{};

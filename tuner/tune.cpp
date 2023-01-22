@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020      Rudy Alex Kohn
+  Copyright (C) 2020-2022 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,9 +28,12 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/rotating_file_sink.h>
+#include <robin_hood.h>
 
 #include "tune.hpp"
-#include "file_resolver.hpp"
+
+#include "../io/file_resolver.hpp"
+
 #include "../src/board.hpp"
 #include "../src/eval.hpp"
 #include "../src/parameters.hpp"
@@ -114,41 +117,42 @@ enum SelectedParams : std::uint64_t
 template<bool Hr>
 std::string emit_code(const std::vector<eval::Param> &params0)
 {
-  std::unordered_map<std::string, std::vector<eval::Param>> params1;
+  robin_hood::unordered_map<std::string, std::vector<eval::Param>> params1;
 
   for (const auto &param : params0)
     params1[param.name_].emplace_back(param);
 
   fmt::memory_buffer s;
+  auto inserter = std::back_inserter(s);
 
   for (auto &params2 : params1)
   {
     const auto n = params2.second.size();
 
     if (n > 1)
-      format_to(s, "inline std::array<int, {}> {} {{", n, params2.first);
+      format_to(inserter, "inline std::array<int, {}> {} {{", n, params2.first);
     else
-      format_to(s, "inline int {} = ", params2.first);
+      format_to(inserter, "inline int {} = ", params2.first);
 
     for (size_t i = 0; i < n; ++i)
     {
       if (Hr && n == 64)
       {
         if (i % 8 == 0)
-          format_to(s, "\n ");
+          format_to(inserter, "\n ");
 
-        format_to(s, "{}", params2.second[i].value_);
+        format_to(inserter, "{}", params2.second[i].value_);
       } else
-        format_to(s, "{}", params2.second[i].value_);
+        format_to(inserter, "{}", params2.second[i].value_);
 
       if (n > 1 && i < n - 1)
-        format_to(s, ", ");
+        format_to(inserter, ", ");
     }
 
     if (n > 1)
-      format_to(s, " }}");
+      format_to(inserter, " }}");
 
-    format_to(s, ";\n");
+    format_to(inserter, ";\n");
   }
 
   return fmt::to_string(s);
@@ -203,41 +207,41 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
       for (const auto sq : Squares)
       {
         auto istep = sq > 7 && sq < 56 ? step : 0;
-        params.emplace_back("pawn_pst", pawn_pst[sq], 0, istep);
+        params.emplace_back("pawn_pst", params::pst<PAWN>(sq), 0, istep);
       }
     }
 
     if (settings->mobility)
     {
       console->info("Pawn mobility tuning active");
-      for (auto &v : pawn_isolated)
+      for (auto &v : params::pawn_isolated)
         params.emplace_back("pawn_isolated", v, 0, step);
 
-      for (auto &v : pawn_behind)
+      for (auto &v : params::pawn_behind)
         params.emplace_back("pawn_behind", v, 0, step);
 
-      for (auto &v : pawn_doubled)
+      for (auto &v : params::pawn_doubled)
         params.emplace_back("pawn_doubled", v, 0, step);
     }
 
     if (settings->passed_pawn)
     {
-      for (auto &v : passed_pawn)
+      for (auto &v : params::passed_pawn)
         params.emplace_back("passed_pawn", v, 0, step);
 
-      for (auto &v : passed_pawn_no_us)
+      for (auto &v : params::passed_pawn_no_us)
         params.emplace_back("passed_pawn_no_us", v, 0, step);
 
-      for (auto &v : passed_pawn_no_them)
+      for (auto &v : params::passed_pawn_no_them)
         params.emplace_back("passed_pawn_no_them", v, 0, step);
 
-      for (auto &v : passed_pawn_no_attacks)
+      for (auto &v : params::passed_pawn_no_attacks)
         params.emplace_back("passed_pawn_no_attacks", v, 0, step);
 
-      for (auto &v : passed_pawn_king_dist_us)
+      for (auto &v : params::passed_pawn_king_dist_us)
         params.emplace_back("passed_pawn_king_dist_us", v, 0, step);
 
-      for (auto &v : passed_pawn_king_dist_them)
+      for (auto &v : params::passed_pawn_king_dist_them)
         params.emplace_back("passed_pawn_king_dist_them", v, 0, step);
     }
   }
@@ -248,27 +252,27 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     {
       for (const auto sq : Squares)
       {
-        params.emplace_back("knight_pst", knight_pst[sq], 0, step);
+        params.emplace_back("knight_pst", params::pst<KNIGHT>(sq), 0, step);
       }
     }
 
     if (settings->mobility)
     {
-      for (auto &v : knight_mob)
+      for (auto &v : params::knight_mob)
         params.emplace_back("knight_mob", v, 0, step);
 
-      for (auto &v : knight_mob2)
+      for (auto &v : params::knight_mob2)
         params.emplace_back("knight_mob2", v, 0, step);
 
-      for (auto &v : knight_mob2)
+      for (auto &v : params::knight_mob2)
         params.emplace_back("knight_mob2", v, 0, step);
     }
 
     // if (settings->weakness)
-    //   params.emplace_back("knight_in_danger", piece_in_danger[Knight], 0, step);
+    //   params.emplace_back("knight_in_danger", params::piece_in_danger[Knight], 0, step);
 
     // if (settings->strength)
-    //   params.emplace_back("knight_attack_king", attacks_on_king[Knight], 0, step);
+    //   params.emplace_back("knight_attack_king", params::attacks_on_king[Knight], 0, step);
   }
 
   if (settings->bishop)
@@ -276,28 +280,28 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     if (settings->psqt)
     {
       for (const auto sq : Squares)
-        params.emplace_back("bishop_pst", bishop_pst[sq], 0, step);
+        params.emplace_back("bishop_pst", params::pst<BISHOP>(sq), 0, step);
     }
 
     if (settings->mobility)
     {
-      for (auto &v : bishop_mob)
+      for (auto &v : params::bishop_mob)
         params.emplace_back("bishop_mob", v, 0, step);
 
-      for (auto &v : bishop_mob2)
+      for (auto &v : params::bishop_mob2)
         params.emplace_back("bishop_mob2", v, 0, step);
     }
 
     if (settings->coordination)
     {
-      params.emplace_back("bishop_pair", bishop_pair, 0, step);
+      params.emplace_back("bishop_pair", params::bishop_pair, 0, step);
     }
 
     // if (settings->weakness)
-    //   params.emplace_back("bishop_in_danger", piece_in_danger[Bishop], 0, step);
+    //   params.emplace_back("bishop_in_danger", params::piece_in_danger[Bishop], 0, step);
 
     // if (settings->strength)
-    //   params.emplace_back("attacks_on_king[Bishop]", attacks_on_king[Bishop], 0, step);
+    //   params.emplace_back("attacks_on_king[Bishop]", params::attacks_on_king[Bishop], 0, step);
   }
 
   if (settings->rook)
@@ -306,25 +310,25 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     {
       for (const auto sq : Squares)
       {
-        params.emplace_back("rook_pst", rook_pst[sq], 0, step);
+        params.emplace_back("rook_pst", params::pst<ROOK>(sq), 0, step);
       }
     }
 
     if (settings->mobility)
     {
-      for (auto &v : rook_mob)
+      for (auto &v : params::rook_mob)
         params.emplace_back("rook_mob", v, 0, step);
 
-      params.emplace_back("king_obstructs_rook", king_obstructs_rook, 0, step);
+      params.emplace_back("king_obstructs_rook", params::king_obstructs_rook, 0, step);
     }
 
-    // params.emplace_back("rook_open_file", rook_open_file, 0, step);
+    // params.emplace_back("rook_open_file", params::rook_open_file, 0, step);
 
     // if (settings->weakness)
-    //   params.emplace_back("rook_in_danger", piece_in_danger[Rook], 0, step);
+    //   params.emplace_back("rook_in_danger", params::piece_in_danger[Rook], 0, step);
 
     // if (settings->strength)
-    //   params.emplace_back("attacks_on_king[Rook]", attacks_on_king[Rook], 0, step);
+    //   params.emplace_back("attacks_on_king[Rook]", params::attacks_on_king[Rook], 0, step);
   }
 
   if (settings->queen)
@@ -332,20 +336,20 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     if (settings->psqt)
     {
       for (const auto sq : Squares)
-        params.emplace_back("queen_pst", queen_pst[sq], 0, step);
+        params.emplace_back("queen_pst", params::pst<QUEEN>(sq), 0, step);
     }
 
     if (settings->mobility)
     {
-      for (auto &v : queen_mob)
+      for (auto &v : params::queen_mob)
         params.emplace_back("queen_mob", v, 0, step);
     }
 
     // if (settings->weakness)
-    //   params.emplace_back("queen_in_danger", piece_in_danger[Queen], 0, step);
+    //   params.emplace_back("queen_in_danger", params::piece_in_danger[Queen], 0, step);
 
     // if (settings->strength)
-    //   params.emplace_back("attacks_on_king[Queen]", attacks_on_king[Queen], 0, step);
+    //   params.emplace_back("attacks_on_king[Queen]", params::attacks_on_king[Queen], 0, step);
   }
 
   if (settings->king)
@@ -353,24 +357,24 @@ void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
     if (settings->psqt)
     {
       for (const auto sq : Squares)
-        params.emplace_back("king_pst", king_pst[sq], 0, step);
+        params.emplace_back("king_pst", params::pst<KING>(sq), 0, step);
     }
 
-    for (auto &v : king_pawn_shelter)
+    for (auto &v : params::king_pawn_shelter)
       params.emplace_back("king_pawn_shelter", v, 0, step);
 
-    for (auto &v : king_on_open)
+    for (auto &v : params::king_on_open)
       params.emplace_back("king_on_open", v, 0, step);
 
-    for (auto &v : king_on_half_open)
+    for (auto &v : params::king_on_half_open)
       params.emplace_back("king_on_half_open", v, 0, step);
   }
 
   // if (settings->lazy_margin)
-  //   params.emplace_back("lazy_margin", lazy_margin, 0, step);
+  //   params.emplace_back("lazy_margin", params::lazy_margin, 0, step);
 
   // if (settings->tempo)
-  //   params.emplace_back("tempo", tempo, 0, step);
+  //   params.emplace_back("tempo", params::tempo, 0, step);
 }
 
 }   // namespace
@@ -430,7 +434,7 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
   PGNPlayer pgn;
   pgn.read(settings->file_name);
 
-  // Tuning as described in https://chessprogramming.wikispaces.com/Texel%27s+Tuning+Method
+  // Tuning as described in https://www.chessprogramming.org/Texel%27s_Tuning_Method
 
   score_static_ = true;
 
@@ -560,17 +564,15 @@ double Tune::e(
   x /= nodes.empty() ? 1.0 : static_cast<double>(nodes.size());
 
   fmt::memory_buffer s;
+  auto inserter = std::back_inserter(s);
 
-  // fmt::print("x:{}", x);
-  format_to(s, "x:{:.{}f}", x, 12);
+  format_to(inserter, "x:{:.{}f}", x, 12);
 
   for (std::size_t i = 0; i < params_index.size(); ++i)
     if (params[params_index[i].idx_].step_)
-      format_to(s, " prm[{}]:{}\n", i, params[params_index[i].idx_].value_);
+      format_to(inserter, " prm[{}]:{}\n", i, params[params_index[i].idx_].value_);
 
-  format_to(s, "\n");
-
-  console->info("{}\n", fmt::to_string(s));
+  console->info("{}\n\n", fmt::to_string(s));
 
   return x;
 }

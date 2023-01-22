@@ -18,17 +18,30 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#define CATCH_CONFIG_MAIN
 
-struct Board;
+#include <catch2/catch_all.hpp>
 
-namespace Eval
+#include "../src/types.hpp"
+#include "../src/bitboard.hpp"
+
+TEST_CASE("single bit detection mto()", "[sing_bit_detection_mto]")
 {
+  constexpr auto sq            = make_square(FILE_A, RANK_2);
+  constexpr auto sq2           = make_square(FILE_B, RANK_7);
+  constexpr auto one           = bit(sq) | bit(sq2);
+  constexpr auto expectedCount = more_than_one(one);
 
-[[nodiscard]]
-int evaluate(Board *b, std::size_t pool_index, int alpha, int beta);
+  REQUIRE(expectedCount == true);
+  REQUIRE(std::has_single_bit(one) != true);
+}
 
-[[nodiscard]]
-int tune(Board *b, std::size_t pool_index, int alpha, int beta);
+TEST_CASE("does msb yield correct square", "[msb]")
+{
+  constexpr auto expected  = make_square(FILE_B, RANK_5);
+  constexpr auto secondary = make_square(FILE_A, RANK_1);
+  constexpr auto bb        = bit(expected) | bit(secondary);
+  constexpr auto actual    = msb(bb);
 
-}   // namespace Eval
+  REQUIRE(expected == actual);
+}
