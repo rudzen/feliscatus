@@ -30,7 +30,7 @@ constexpr TimeUnit time_reserve = 72;
 constexpr std::chrono::milliseconds curr_move_post_limit(5000);
 constexpr std::chrono::milliseconds last_post_info_span(1000);
 
-inline std::chrono::milliseconds since_epoch()
+std::chrono::milliseconds since_epoch()
 {
   return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
 }
@@ -48,7 +48,7 @@ void Time::init(const Color c, SearchLimits &limits)
     search_time = 950 * limits.movetime / 1000;
   else
   {
-    const auto moves_left = util::in_between<1, 30>(limits.movestogo) ? limits.movestogo : 30;
+    const auto moves_left = util::inBetween<1, 30>(limits.movestogo) ? limits.movestogo : 30;
     const auto time_left  = limits.time[c];
     const auto time_inc   = limits.inc[c];
 

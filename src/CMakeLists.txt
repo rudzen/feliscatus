@@ -5,4 +5,4 @@ file(GLOB files
 
 add_library(logic STATIC ${files})
 
-target_link_libraries(logic PRIVATE project_options project_warnings CONAN_PKG::fmt CONAN_PKG::spdlog Threads::Threads)
+target_link_libraries(logic PRIVATE project_options project_warnings fmt spdlog Threads::Threads)

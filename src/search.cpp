@@ -80,11 +80,16 @@ constexpr int codec_t_table_score(const int score, const int ply)
 bool is_hash_score_valid(const Position *pos, const int depth, const int alpha, const int beta)
 {
   return pos->transposition && pos->transposition->depth() >= depth
-         && (pos->transposition->is_exact() || (pos->transposition->is_beta() && pos->transp_score >= beta) || (pos->transposition->is_alpha() && pos->transp_score <= alpha));
+         && (pos->transposition->isExact() || (pos->transposition->isBeta() && pos->transp_score >= beta) || (pos->transposition->isAlpha() && pos->transp_score <= alpha));
 }
 
 void hash_and_evaluate(
-  Position *pos, Board *b, const std::size_t pool_index, const int alpha, const int beta, const int plies)
+  Position *pos,
+  Board *b,
+  const std::size_t pool_index,
+  const int alpha,
+  const int beta,
+  const int plies)
 {
   if ((pos->transposition = TT.find(b->key())) == nullptr)
   {
@@ -333,10 +338,10 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta)
       if constexpr (verbosity)
       {
         if (b->plies == 1 && b->search_depth >= 20 && (pool.main()->time.should_post_curr_move() || is_analysing()))
-          uci::post_curr_move(move_data->move, move_count);
+          uci::postCurrMove(move_data->move, move_count);
 
         if (pool.main()->time.should_post_info())
-          uci::post_info(depth, b->search_depth);
+          uci::postInfo(depth, b->search_depth);
       }
 
       if (PV && move_count == 1)
@@ -700,7 +705,7 @@ void Search<SearcherType>::update_pv(const Move m, const int score, const int de
     if constexpr (verbosity)
     {
       const std::span pv_line{pv[ply]};
-      uci::post_pv(b->search_depth, b->max_ply, score, pv_line.subspan(ply, pv_len[ply]), NT);
+      uci::postPv(b->search_depth, b->max_ply, score, pv_line.subspan(ply, pv_len[ply]), NT);
     }
   }
 }
@@ -708,7 +713,7 @@ void Search<SearcherType>::update_pv(const Move m, const int score, const int de
 template<Searcher SearcherType>
 void Search<SearcherType>::init_search()
 {
-  pos            = b->pos;   // Updated in make_move and unmake_move from here on.
+  pos            = b->pos;   // Updated in makeMove and unmakeMove from here on.
   pos->pv_length = 0;
   pos->killer_moves.fill(MOVE_NONE);
 }
@@ -774,18 +779,18 @@ void thread::search()
 void main_thread::search()
 {
   // initialize
-  TT.init_search();
+  TT.initSearch();
 
   //
   // If book is enabled and we succesfully can probe for a move, perform the move
   //
-  if (Options[uci::uci_name<uci::UciOptions::USE_BOOK>()])
+  if (Options[uci::uciName<uci::UciOptions::USE_BOOK>()])
   {
-      if (const auto book_file = Options[uci::uci_name<uci::UciOptions::BOOKS>()]; !book.empty())
+      if (const auto book_file = Options[uci::uciName<uci::UciOptions::BOOKS>()]; !book.empty())
       {
         if (const auto book_move = book.probe(root_board.get()); book_move)
         {
-          uci::post_moves(book_move, MOVE_NONE);
+        uci::postMoves(book_move, MOVE_NONE);
           return;
         }
       }
@@ -810,6 +815,6 @@ void main_thread::search()
   if (root_board->pos->pv_length)
   {
     const auto ponder_move = root_board->pos->pv_length > 1 ? pv[0][1].move : MOVE_NONE;
-    uci::post_moves(pv[0][0].move, ponder_move);
+    uci::postMoves(pv[0][0].move, ponder_move);
   }
 }

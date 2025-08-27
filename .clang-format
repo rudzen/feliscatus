@@ -81,7 +81,7 @@ ObjCSpaceAfterProperty: true
 ObjCSpaceBeforeProtocolList: false
 PointerAlignment: Right
 ReflowComments: true
-SortIncludes: false
+SortIncludes: Never
 SortUsingDeclarations: false
 SpaceAfterCStyleCast: false
 SpaceAfterTemplateKeyword: false
@@ -95,6 +95,6 @@ SpacesInContainerLiterals: true
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 SpaceInEmptyBlock: true
-Standard: c++20
+Standard: Latest
 TabWidth: 8
 UseTab: Never

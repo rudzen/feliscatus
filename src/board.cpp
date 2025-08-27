@@ -57,7 +57,7 @@ Square ep_square(std::string_view s, const Color stm)
   const auto first = s.front();
 
   [[unlikely]]
-  if (!util::in_between<'a', 'h'>(first))
+  if (!util::inBetween<'a', 'h'>(first))
     return NO_SQ;
 
   s.remove_prefix(1);
@@ -345,7 +345,7 @@ bool Board::is_pseudo_legal(const Move m) const
 
   const auto pt = type_of(move_piece(m));
 
-  return !util::in_between<QUEEN, BISHOP>(pt) || !(between(from, to) & pieces());
+  return !util::inBetween<QUEEN, BISHOP>(pt) || !(between(from, to) & pieces());
 }
 
 void Board::print() const
@@ -445,7 +445,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
 
   update_key(pos, m);
 
-  prefetch(TT.find_bucket(pos->key));
+  prefetch(TT.findBucket(pos->key));
 
   pos->material.make_move(m);
   pos->pinned = pinned_pieces(pos->side_to_move, ksq);
@@ -575,7 +575,7 @@ void Board::set_fen(std::string_view fen, thread *t)
   {
     [[unlikely]]
     if (std::isdigit(token))
-      sq += util::from_char<int>(token) * EAST;
+      sq += util::fromChar<int>(token) * EAST;
     else if (token == '/')
       sq += SOUTH * 2;
     else if (const auto pc_idx = piece_index.find_first_of(tolower(token)); pc_idx != std::string_view::npos)
@@ -605,12 +605,12 @@ void Board::set_fen(std::string_view fen, thread *t)
   space++;
   current = update_current();
 
-  pos->rule50 = util::to_integral<int>(current);
+  pos->rule50 = util::toIntegral<int>(current);
 
   space++;
   current = update_current();
 
-  plies = util::to_integral<int>(current);
+  plies = util::toIntegral<int>(current);
   plies = std::max(2 * (plies - 1), 0) + (pos->side_to_move == BLACK);
 
   update_position(pos);
@@ -638,53 +638,53 @@ std::string Board::fen() const
         [[likely]]
         if (empty)
         {
-          format_to(s, "{}", util::to_char(empty));
+          fmt::format_to(s, "{}", util::toChar(empty));
           empty = 0;
         }
-        format_to(s, "{}", piece_letter[pc]);
+        fmt::format_to(s, "{}", piece_letter[pc]);
       } else
         empty++;
     }
 
     [[likely]]
     if (empty)
-      format_to(s, "{}", util::to_char(empty));
+      fmt::format_to(s, "{}", util::toChar(empty));
 
     [[likely]]
     if (r > 0)
-      format_to(s, "/");
+      fmt::format_to(s, "/");
   }
 
-  format_to(s, " {} ", pos->side_to_move == WHITE ? 'w' : 'b');
+  fmt::format_to(s, " {} ", pos->side_to_move == WHITE ? 'w' : 'b');
 
   [[unlikely]]
   if (can_castle())
   {
     [[unlikely]]
     if (can_castle(WHITE_OO))
-      format_to(s, "K");
+      fmt::format_to(s, "K");
 
     [[unlikely]]
     if (can_castle(WHITE_OOO))
-      format_to(s, "Q");
+      fmt::format_to(s, "Q");
 
     [[unlikely]]
     if (can_castle(BLACK_OO))
-      format_to(s, "k");
+      fmt::format_to(s, "k");
 
     [[unlikely]]
     if (can_castle(BLACK_OOO))
-      format_to(s, "q");
+      fmt::format_to(s, "q");
   } else
-    format_to(s, "-");
+    fmt::format_to(s, "-");
 
   [[unlikely]]
   if (const auto en_pessant_sq = en_passant_square(); en_pessant_sq != NO_SQ)
-    format_to(s, " {} ", square_to_string(en_pessant_sq));
+    fmt::format_to(s, " {} ", square_to_string(en_pessant_sq));
   else
-    format_to(s, " - ");
+    fmt::format_to(s, " - ");
 
-  format_to(s, "{} {}", pos->rule50, 1 + (plies - (pos->side_to_move == BLACK)) / 2);
+  fmt::format_to(s, "{} {}", pos->rule50, 1 + (plies - (pos->side_to_move == BLACK)) / 2);
 
   return fmt::to_string(buf);
 }
@@ -706,7 +706,7 @@ void Board::setup_castling(const std::string_view s)
       add_castle_rights<KING_SIDE>(us, std::nullopt);
     else if (token == 'q')
       add_castle_rights<QUEEN_SIDE>(us, std::nullopt);
-    else if (util::in_between<'a', 'h'>(token))
+    else if (util::inBetween<'a', 'h'>(token))
     {
       chess960             = true;
       const auto rook_file = std::make_optional(static_cast<File>(token - 'a'));
@@ -747,7 +747,7 @@ void Board::update_position(Position *p) const
   p->checkers   = attackers_to(square<KING>(p->side_to_move)) & pieces(~p->side_to_move);
   p->in_check   = is_attacked(square<KING>(p->side_to_move), ~p->side_to_move);
   auto key      = zobrist.zero();
-  auto pawn_key = zobrist.no_pawn();
+  auto pawn_key = zobrist.noPawn();
   auto b        = pieces();
 
   while (b)

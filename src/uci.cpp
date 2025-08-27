@@ -36,7 +36,7 @@ constexpr TimeUnit time_safety_margin = 1;
 [[nodiscard]]
 std::unique_ptr<Board> new_board()
 {
-  const auto num_threads = static_cast<std::size_t>(Options[uci::uci_name<uci::UciOptions::THREADS>()]);
+  const auto num_threads = static_cast<std::size_t>(Options[uci::uciName<uci::UciOptions::THREADS>()]);
   pool.set(num_threads);
   auto board = std::make_unique<Board>();
   board->set_fen(start_position, pool.main());
@@ -160,45 +160,45 @@ void go(std::istringstream &input, std::string_view fen)
 
 }   // namespace
 
-void uci::post_moves(const Move m, const Move ponder_move)
+void uci::postMoves(Move m, Move ponderMove)
 {
   fmt::memory_buffer buffer;
   auto inserter = std::back_inserter(buffer);
 
-  fmt::format_to(inserter, "bestmove {}", display_uci(m));
+  fmt::format_to(inserter, "bestmove {}", displayUci(m));
 
   [[likely]]
-  if (ponder_move)
-    fmt::format_to(inserter, " ponder {}", display_uci(ponder_move));
+  if (ponderMove)
+    fmt::format_to(inserter, " ponder {}", displayUci(ponderMove));
 
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-void uci::post_info(const int d, const int selective_depth)
+void uci::postInfo(const int d, const int selectiveDepth)
 {
   const auto time                           = pool.main()->time.elapsed() + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
-  if (!Options[uci_name<UciOptions::SHOW_CPU>()])
+  if (!Options[uciName<UciOptions::SHOW_CPU>()])
     fmt::print(
-      "info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selective_depth, TT.load(), node_count,
+      "info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selectiveDepth, TT.load(), node_count,
       nodes_per_second, time);
   else
     fmt::print(
-      "info depth {} seldepth {} hashfull {} nodes {} nps {} time {} cpuload {}\n", d, selective_depth, TT.load(),
+      "info depth {} seldepth {} hashfull {} nodes {} nps {} time {} cpuload {}\n", d, selectiveDepth, TT.load(),
       node_count, nodes_per_second, time, Cpu.usage());
 }
 
-void uci::post_curr_move(const Move m, const int m_number)
+void uci::postCurrMove(Move m, int number)
 {
-  fmt::print("info currmove {} currmovenumber {}\n", display_uci(m), m_number);
+  fmt::print("info currmove {} currmovenumber {}\n", displayUci(m), number);
 }
 
-void uci::post_pv(const int d, const int max_ply, const int score, const std::span<PVEntry> &pv_line, const NodeType nt)
+void uci::postPv(int d, int maxPly, int score, const std::span<PVEntry> &pvLine, NodeType nt)
 {
   fmt::memory_buffer buffer;
   auto inserter = std::back_inserter(buffer);
 
-  fmt::format_to(inserter, "info depth {} seldepth {} score cp {} ", d, max_ply, score);
+  fmt::format_to(inserter, "info depth {} seldepth {} score cp {} ", d, maxPly, score);
 
   if (nt == ALPHA)
     fmt::format_to(inserter, "upperbound ");
@@ -210,26 +210,26 @@ void uci::post_pv(const int d, const int max_ply, const int score, const std::sp
 
   fmt::format_to(inserter, "hashfull {} nodes {} nps {} time {} pv ", TT.load(), node_count, nodes_per_second, time);
 
-  for (auto &pv : pv_line)
-    fmt::format_to(inserter, "{} ", pv.move);
+  for (auto &pv : pvLine)
+    fmt::format_to(inserter, "{} ", displayUci(pv.move));
 
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-std::string uci::display_uci(const Move m)
+std::string uci::displayUci(Move m)
 {
   [[unlikely]]
   if (m == MOVE_NONE)
     return std::string("0000");
 
   // append piece promotion if the move is a promotion.
-  return !is_promotion(m) ? fmt::format("{}{}", move_from(m), move_to(m))
-                          : fmt::format("{}{}{}", move_from(m), move_to(m), piece_index[type_of(move_promoted(m))]);
+  return !is_promotion(m) ? fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)))
+                          : fmt::format("{}{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)), piece_index[type_of(move_promoted(m))]);
 }
 
-std::string uci::info(const std::string_view info_string)
+std::string uci::info(const std::string_view infoString)
 {
-  return fmt::format("info string {}", info_string);
+  return fmt::format("info string {}", infoString);
 }
 
 void uci::run(const int argc, char *argv[])
@@ -261,12 +261,16 @@ void uci::run(const int argc, char *argv[])
     else if (token == "ponder")
       pool.main()->ponder = true;
     else if (token == "uci")
-      fmt::print("{}{}\nuciok\n", misc::print_engine_info<true>(), Options);
+    {
+      // auto output = fmt::format("{}{}\nuciok\n", misc::print_engine_info<true>(), Options);
+      // fmt::print("{}{}\nuciok\n", misc::print_engine_info<true>(), Options);
+      fmt::print("uciok");
+    }
     else if (token == "isready")
       fmt::print("readyok\n");
     else if (token == "ucinewgame")
     {
-      if (Options[uci::uci_name<UciOptions::CLEAR_HASH_NEW_GAME>()])
+      if (Options[uci::uciName<UciOptions::CLEAR_HASH_NEW_GAME>()])
         TT.clear();
       board = new_board();
       fmt::print("readyok\n");
@@ -296,7 +300,7 @@ void uci::run(const int argc, char *argv[])
     } else if (token == "book")
     {
       const auto m = book.probe(board.get());
-      uci::post_moves(m, MOVE_NONE);
+      uci::postMoves(m, MOVE_NONE);
     } else if (token == "exit")
       break;
   } while (token != "quit" && argc == 1);

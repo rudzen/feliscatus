@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.23.2)
+cmake_minimum_required(VERSION 3.29.9)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/out")
@@ -40,7 +40,7 @@ enable_doxygen()
 include(cmake/StaticAnalyzers.cmake)
 
 option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
-option(ENABLE_TESTING "Enable Test Builds" ON)
+option(ENABLE_TESTING "Enable Test Builds" OFF)
 option(ENABLE_FUZZING "Enable Fuzzing Builds" OFF)
 
 # Very basic PCH example
@@ -54,22 +54,44 @@ if (ENABLE_PCH)
 endif()
 
 # Set up some extra Conan dependencies based on our needs before loading Conan
-set(CONAN_EXTRA_REQUIRES "")
-set(CONAN_EXTRA_OPTIONS "")
+#set(CONAN_EXTRA_REQUIRES "")
+#set(CONAN_EXTRA_OPTIONS "")
+
+include(cmake/CPM.cmake)
+
+CPMAddPackage("gh:fmtlib/fmt#11.0.2")
+CPMAddPackage(
+        NAME
+        spdlog
+        VERSION
+        1.14.1
+        GITHUB_REPOSITORY
+        "gabime/spdlog"
+        OPTIONS
+        "SPDLOG_FMT_EXTERNAL ON")
+
+CPMAddPackage("gh:CLIUtils/CLI11@2.5.0")
+CPMAddPackage(
+        URI "gh:nlohmann/json@3.12.0"
+        OPTIONS "JSON_BuildTests OFF"
+)
+#CPMAddPackage("gh:robin-hood-hashing/robin-hood-hashing@3.11.5")
+
+#CPMAddPackage("gh:catchorg/Catch2@3.10.0")
 
 # include conan stuff
-include(cmake/Conan.cmake)
-run_conan()
+#include(cmake/Conan.cmake)
+#run_conan()
 
 # include engine options
 include(cmake/Engine.cmake)
 enable_engine_options()
 
-if(ENABLE_TESTING)
-  enable_testing()
-  message("Building Tests.")
-  add_subdirectory(test)
-endif()
+#if(ENABLE_TESTING)
+#  enable_testing()
+#  message("Building Tests.")
+#  add_subdirectory(test)
+#endif()
 
 if(ENABLE_FUZZING)
   message("Building Fuzz Tests, using fuzzing sanitizer https://www.llvm.org/docs/LibFuzzer.html")

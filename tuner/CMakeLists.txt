@@ -1,6 +1,7 @@
 file(GLOB files
         "*.cpp"
         "*.hpp"
+        "*.h"
         )
 
 add_definitions("-DTUNER")
@@ -11,6 +12,6 @@ add_library(tune STATIC ${files})
 
 add_executable(FeliscatusTuner main.cpp)
 
-target_link_libraries(tune PRIVATE logic CONAN_PKG::cli11 cli project_options project_warnings CONAN_PKG::fmt CONAN_PKG::spdlog CONAN_PKG::nlohmann_json CONAN_PKG::robin-hood-hashing Threads::Threads)
+target_link_libraries(tune PRIVATE logic CLI11 cli project_options project_warnings fmt spdlog nlohmann_json Threads::Threads)
 
-target_link_libraries(FeliscatusTuner PRIVATE logic CONAN_PKG::cli11 cli tune project_options project_warnings CONAN_PKG::fmt CONAN_PKG::spdlog CONAN_PKG::nlohmann_json CONAN_PKG::robin-hood-hashing Threads::Threads)
+target_link_libraries(FeliscatusTuner PRIVATE logic CLI11 cli tune project_options project_warnings fmt spdlog nlohmann_json Threads::Threads)

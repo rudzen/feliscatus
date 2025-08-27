@@ -649,9 +649,9 @@ constexpr bool is_ok(const T t)
   if constexpr (std::is_same_v<T, Piece>)
     return is_ok(type_of(t));
   else if constexpr (std::is_same_v<T, Square>)
-    return util::in_between<A1, H8>(t);
+    return util::inBetween<A1, H8>(t);
   else if constexpr (std::is_same_v<T, PieceType>)
-    return util::in_between<PAWN, KING>(type_of(t));
+    return util::inBetween<PAWN, KING>(type_of(t));
   else if constexpr (std::is_same_v<T, Move>)
     return t != MOVE_NONE && move_from(t) != move_to(t);
 }

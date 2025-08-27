@@ -42,8 +42,8 @@ template<typename T>
 constexpr T abs(const T v)
 {
   static_assert(std::is_integral_v<T>);
-  constexpr auto mask_shift = (sizeof(int) * CHAR_BIT - 1);
-  const auto mask           = static_cast<int>(v) >> mask_shift;
+  constexpr auto maskShift  = (sizeof(int) * CHAR_BIT - 1);
+  const auto mask           = static_cast<int>(v) >> maskShift;
   return (v ^ mask) - mask;
 }
 
@@ -62,7 +62,7 @@ constexpr double sigmoid(const double x, const double k)
 }
 
 template<typename T>
-constexpr bool in_between(const T v, const T min, const T max)
+constexpr bool inBetween(const T v, const T min, const T max)
 {
   static_assert(std::is_integral<T>::value || std::is_enum<T>::value, "invalid type.");
   return static_cast<unsigned int>(v) - static_cast<unsigned int>(min)
@@ -70,34 +70,34 @@ constexpr bool in_between(const T v, const T min, const T max)
 }
 
 template<int Min, int Max>
-constexpr bool in_between(const int v)
+constexpr bool inBetween(const int v)
 {
   return static_cast<unsigned int>(v) - static_cast<unsigned int>(Min)
          <= static_cast<unsigned int>(Max) - static_cast<unsigned int>(Min);
 }
 
 template<typename Integral>
-constexpr char to_char(const Integral v)
+constexpr char toChar(const Integral v)
 {
   return static_cast<char>(v + '0');
 }
 
 template<typename T>
-constexpr T from_char(const char c)
+constexpr T fromChar(const char c)
 {
   return static_cast<T>(c - '0');
 }
 
 template<typename T>
-constexpr T to_integral(std::string_view str)
+constexpr T toIntegral(std::string_view str)
 {
   static_assert(std::is_integral_v<T>, "Only integrals allowed.");
 
-  auto sv_val = [&str]() {
+  auto svVal = [&str]() {
     auto x = T(0);
-    while (in_between<'0', '9'>(str.front()))
+    while (inBetween<'0', '9'>(str.front()))
     {
-      x = x * 10 + from_char<T>(str.front());
+      x = x * 10 + fromChar<T>(str.front());
       str.remove_prefix(1);
     }
     return x;
@@ -106,18 +106,18 @@ constexpr T to_integral(std::string_view str)
   // In case T is signed, make sure the string is correctly converted
   if constexpr (std::is_signed_v<T>)
   {
-    return str.front() == '-' ? str.remove_prefix(1), -sv_val() : sv_val();
+    return str.front() == '-' ? str.remove_prefix(1), -svVal() : svVal();
   } else
   // discard string prefix if its a - sign, as target type is unsigned
   {
     if (str.front() == '-')
       str.remove_prefix(1);
-    return sv_val();
+    return svVal();
   }
 }
 
 template<typename ToCheck, std::size_t ExpectedSize, std::size_t RealSize = sizeof(ToCheck)>
-void check_size()
+void checkSize()
 {
   static_assert(ExpectedSize == RealSize, "Size is off!");
 }
@@ -162,13 +162,13 @@ constexpr T round(T2 value)
 #endif
 }
 
-inline void find_and_replace(
-  std::string &source, const std::string_view &find, const std::string_view &replace, const bool only_once = true)
+inline void findAndReplace(
+  std::string &source, const std::string_view &find, const std::string_view &replace, const bool onlyOnce = true)
 {
   for (std::string::size_type i = 0; (i = source.find(find, i)) != std::string::npos;)
   {
     source.replace(i, find.length(), replace);
-    if (only_once)
+    if (onlyOnce)
       return;
     i += replace.length();
   }

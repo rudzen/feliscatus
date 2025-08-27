@@ -57,8 +57,8 @@ struct thread
   thread &operator=(thread &&other) = delete;
 
   virtual void search();
-  void clear_data();
-  void idle_loop();
+  void clearData();
+  void idleLoop();
   void start_searching();
   void wait_for_search_finished();
 

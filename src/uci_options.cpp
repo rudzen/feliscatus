@@ -32,7 +32,7 @@ using std::string;
 namespace
 {
 
-constexpr std::array<std::string_view, 2> bool_string{"false", "true"};
+constexpr std::array<std::string_view, 2> boolString{"false", "true"};
 constexpr int MaxHashMB            = 131072;
 constinit std::size_t insert_order = 0;
 
@@ -41,24 +41,24 @@ constinit std::size_t insert_order = 0;
 namespace uci
 {
 
-void on_clear_hash(const Option &)
+void onClearHash(const Option &)
 {
   TT.clear();
 }
 
-void on_hash_size(const Option &o)
+void onHashSize(const Option &o)
 {
   TT.init(o);
 }
 
-void on_book_change(const Option &o)
+void onBookChange(const Option &o)
 {
-  std::string_view s = o.current_value();
+  std::string_view s = o.currentValue();
   fmt::print("book on_change: {}\n", s);
   book.open(o);
 }
 
-void on_threads(const Option &o)
+void onThreads(const Option &o)
 {
   pool.set(o);
 }
@@ -70,28 +70,28 @@ bool CaseInsensitiveLess::operator()(const std::string_view s1, const std::strin
   });
 }
 
-void init(OptionsMap &o, std::span<std::string> book_files)
+void init(OptionsMap &o, std::span<std::string> bookFiles)
 {
-  o[uci_name<UciOptions::THREADS>()] << Option(1, 1, 512, on_threads);
-  o[uci_name<UciOptions::HASH>()] << Option(256, 1, MaxHashMB, on_hash_size);
-  o[uci_name<UciOptions::HASH_X_THREADS>()] << Option(true);
-  o[uci_name<UciOptions::CLEAR_HASH>()] << Option(on_clear_hash);
-  o[uci_name<UciOptions::CLEAR_HASH_NEW_GAME>()] << Option(false);
-  o[uci_name<UciOptions::PONDER>()] << Option(false);
-  o[uci_name<UciOptions::UCI_Chess960>()] << Option(false);
-  o[uci_name<UciOptions::SHOW_CPU>()] << Option(false);
+  o[uciName<UciOptions::THREADS>()] << Option(1, 1, 512, onThreads);
+  o[uciName<UciOptions::HASH>()] << Option(256, 1, MaxHashMB, onHashSize);
+  o[uciName<UciOptions::HASH_X_THREADS>()] << Option(true);
+  o[uciName<UciOptions::CLEAR_HASH>()] << Option(onClearHash);
+  o[uciName<UciOptions::CLEAR_HASH_NEW_GAME>()] << Option(false);
+  o[uciName<UciOptions::PONDER>()] << Option(false);
+  o[uciName<UciOptions::UCI_Chess960>()] << Option(false);
+  o[uciName<UciOptions::SHOW_CPU>()] << Option(false);
 
   // configure polyglot book options
-  const auto has_book_files = !book_files.empty();
-  o[uci_name<UciOptions::USE_BOOK>()] << Option(has_book_files);
-  if (has_book_files)
+  const auto hasBookFiles = !bookFiles.empty();
+  o[uciName<UciOptions::USE_BOOK>()] << Option(hasBookFiles);
+  if (hasBookFiles)
   {
-    const auto selected = book_files.front();
-    o[uci_name<UciOptions::BOOKS>()] << Option(book_files, selected.c_str(), on_book_change);
-    if (o[uci_name<UciOptions::USE_BOOK>()])
+    const auto selected = bookFiles.front();
+    o[uciName<UciOptions::BOOKS>()] << Option(bookFiles, selected.c_str(), onBookChange);
+    if (o[uciName<UciOptions::USE_BOOK>()])
       book.open(selected);
 
-    o[uci_name<UciOptions::BOOK_BEST_MOVE>()] << Option(false);
+    o[uciName<UciOptions::BOOK_BEST_MOVE>()] << Option(false);
   } else
     fmt::print("info string No book files detected, ignoring\n");
 }
@@ -102,7 +102,7 @@ Option::Option(const char *v, const on_change f) : default_value_(v), current_va
 { }
 
 Option::Option(const bool v, const on_change f)
-  : default_value_(bool_string[v]), current_value_(default_value_), type_(OptionType::Check), on_change_(f)
+  : default_value_(boolString[v]), current_value_(default_value_), type_(OptionType::Check), on_change_(f)
 { }
 
 Option::Option(const on_change f) : type_(OptionType::Button), on_change_(f)
@@ -120,7 +120,7 @@ Option::Option(const std::span<std::string> variants, const char *cur, const on_
 Option::operator int() const
 {
   assert(type_ == OptionType::Check || type_ == OptionType::Spin);
-  return (type_ == OptionType::Spin ? util::to_integral<int>(current_value_) : current_value_ == bool_string[true]);
+  return (type_ == OptionType::Spin ? util::toIntegral<int>(current_value_) : current_value_ == boolString[true]);
 }
 
 Option::operator std::string_view() const
@@ -147,14 +147,14 @@ void Option::operator<<(const Option &o)
 
 Option &Option::operator=(const string &v) noexcept
 {
-  const auto is_button = type_ == OptionType::Button;
+  const auto isButton = type_ == OptionType::Button;
 
   if (
-    (!is_button && v.empty()) || (type_ == OptionType::Check && v != "true" && v != "false")
-    || (type_ == OptionType::Spin && (!util::in_between(util::to_integral<int>(v), min_, max_))))
+    (!isButton && v.empty()) || (type_ == OptionType::Check && v != "true" && v != "false")
+    || (type_ == OptionType::Spin && (!util::inBetween(util::toIntegral<int>(v), min_, max_))))
     return *this;
 
-  if (!is_button)
+  if (!isButton)
     current_value_ = v;
 
   if (on_change_)
@@ -173,12 +173,12 @@ std::span<std::string> Option::variants() const noexcept
   return variants_;
 }
 
-std::string_view Option::default_value() const noexcept
+std::string_view Option::defaultValue() const noexcept
 {
   return default_value_;
 }
 
-std::string_view Option::current_value() const noexcept
+std::string_view Option::currentValue() const noexcept
 {
   return current_value_;
 }

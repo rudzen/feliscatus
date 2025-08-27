@@ -48,7 +48,7 @@ TEST_CASE("in_between positive test", "[in_between_positive]")
   constexpr auto min_boundry = KNIGHT;
   constexpr auto max_boundry = ROOK;
 
-  constexpr auto actual = util::in_between<min_boundry, max_boundry>(pt);
+  constexpr auto actual = util::inBetween<min_boundry, max_boundry>(pt);
 
   REQUIRE(actual == expected);
 }
@@ -62,7 +62,7 @@ TEST_CASE("in_between negative test", "[in_between_negative]")
   constexpr auto min_boundry = BISHOP;
   constexpr auto max_boundry = QUEEN;
 
-  constexpr auto actual = util::in_between<min_boundry, max_boundry>(pt);
+  constexpr auto actual = util::inBetween<min_boundry, max_boundry>(pt);
 
   REQUIRE(actual == expected);
 }

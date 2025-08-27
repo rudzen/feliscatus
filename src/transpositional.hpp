@@ -31,19 +31,19 @@ struct PVEntry;
 struct alignas(CacheLineSize / 4) HashEntry final
 {
   [[nodiscard]]
-  bool is_exact() const noexcept
+  bool isExact() const noexcept
   {
     return f & EXACT;
   }
 
   [[nodiscard]]
-  bool is_beta() const noexcept
+  bool isBeta() const noexcept
   {
     return f & BETA;
   }
 
   [[nodiscard]]
-  bool is_alpha() const noexcept
+  bool isAlpha() const noexcept
   {
     return f & ALPHA;
   }
@@ -87,7 +87,7 @@ private:
   Move m;       // move
   std::int16_t e;    // eval
 
-  friend class HashTable;
+  friend struct HashTable;
 };
 #pragma pack()
 
@@ -114,22 +114,22 @@ public:
   HashTable &operator=(const HashTable &) = delete;
   HashTable &operator=(HashTable &&other) = delete;
 
-  void init(std::uint64_t new_size_mb);
+  void init(std::uint64_t newSizeMb);
 
   void clear();
 
-  void init_search();
+  void initSearch();
 
   [[nodiscard]]
-  HashEntry *first_entry(const Key key) const
+  HashEntry *firstEntry(const Key key) const
   {
-    return &table_[mul_hi64(key, bucket_count_)].entry[0];
+    return &table_[mul_hi64(key, m_bucketCount)].entry[0];
   }
 
   [[nodiscard]]
-  Bucket *find_bucket(const Key key) const
+  Bucket *findBucket(const Key key) const
   {
-    return &table_[mul_hi64(key, bucket_count_)];
+    return &table_[mul_hi64(key, m_bucketCount)];
   }
 
   [[nodiscard]]
@@ -140,13 +140,13 @@ public:
   void insert(const PVEntry &pv);
 
   [[nodiscard]]
-  HashEntry *get_entry_to_replace(Key key, [[maybe_unused]] int depth) const;
+  HashEntry *getEntryToReplace(Key key, [[maybe_unused]] int depth) const;
 
   [[nodiscard]]
   int load() const;
 
   [[nodiscard]]
-  int size_mb() const;
+  int sizeMb() const;
 
 private:
   static_assert(CacheLineSize % sizeof(Bucket) == 0, "Bucket size incorrect");
@@ -154,27 +154,27 @@ private:
   Bucket *table_{};
   void *mem_{};
 
-  std::size_t bucket_count_{};
-  std::size_t fullness_element_{};
-  std::uint64_t occupied_{};
-  std::uint64_t size_mb_{};
-  std::uint64_t size_{};
-  int age_{};
+  std::size_t m_bucketCount{};
+  std::size_t m_fullnessElement{};
+  std::uint64_t m_occupied{};
+  std::uint64_t m_sizeMb{};
+  std::uint64_t m_size{};
+  int m_age{};
 };
 
-inline void HashTable::init_search()
+inline void HashTable::initSearch()
 {
-  age_++;
+  m_age++;
 }
 
 inline int HashTable::load() const
 {
-  return static_cast<int>(static_cast<double>(occupied_) / fullness_element_ * 1000);
+  return static_cast<int>(static_cast<double>(m_occupied) / m_fullnessElement * 1000);
 }
 
-inline int HashTable::size_mb() const
+inline int HashTable::sizeMb() const
 {
-  return static_cast<int>(size_mb_);
+  return static_cast<int>(m_sizeMb);
 }
 
 constinit inline HashTable TT;

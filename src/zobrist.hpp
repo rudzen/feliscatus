@@ -28,55 +28,55 @@ struct Zobrist final {
 constexpr explicit Zobrist() {
   PRNG rng(seed());
 
-  zobrist_side   = rng();
-  zobrist_nopawn = rng();
+  zobristSide    = rng();
+  zobristNopawn  = rng();
 
-  for (auto &z : zobrist_pst)
-    for (auto &z_pst : z)
-      z_pst = rng();
+  for (auto &z : zobristPst)
+    for (auto &zPst : z)
+      zPst = rng();
 
-  for (auto &z : zobrist_castling)
+  for (auto &z : zobristCastling)
     z = rng();
 
-  for (auto &z : zobrist_ep_file)
+  for (auto &z : zobristEpFile)
     z = rng();
 }
 
-constexpr Key pst(const Piece pc, const Square sq) const {
-    return zobrist_pst[pc][sq];
+[[nodiscard]] constexpr Key pst(const Piece pc, const Square sq) const {
+    return zobristPst[pc][sq];
 }
 
-constexpr Key castle(const int castle_rights) const {
-    return zobrist_castling[castle_rights];
+[[nodiscard]] constexpr Key castle(const int castleRights) const {
+    return zobristCastling[castleRights];
 }
 
-constexpr Key ep(const File f) const {
-    return zobrist_ep_file[f];
+[[nodiscard]] constexpr Key ep(const File f) const {
+    return zobristEpFile[f];
 }
 
-constexpr Key side() const {
-    return zobrist_side;
+[[nodiscard]] constexpr Key side() const {
+    return zobristSide;
 }
 
-constexpr Key no_pawn() const {
-    return zobrist_nopawn;
+[[nodiscard]] constexpr Key noPawn() const {
+    return zobristNopawn;
 }
 
-constexpr Key zero() const {
+[[nodiscard]] constexpr Key zero() const {
   return 0;
 }
 
 private:
 
-constexpr Key seed() const {
+[[nodiscard]] constexpr Key seed() const {
   return 1070372;
 }
 
-std::array<std::array<Key, PIECE_NB>, SQ_NB> zobrist_pst{};
-std::array<Key, CASTLING_RIGHT_NB> zobrist_castling{};
-std::array<Key, FILE_NB> zobrist_ep_file{};
-Key zobrist_side{};
-Key zobrist_nopawn{};
+std::array<std::array<Key, PIECE_NB>, SQ_NB> zobristPst{};
+std::array<Key, CASTLING_RIGHT_NB> zobristCastling{};
+std::array<Key, FILE_NB> zobristEpFile{};
+Key zobristSide{};
+Key zobristNopawn{};
 
 };
 

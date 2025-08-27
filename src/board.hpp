@@ -450,7 +450,7 @@ inline int Board::history_score(const Move m) const
 }
 
 template<CastlingRight Cr, Color C>
-inline Square Board::king_from() const {
+Square Board::king_from() const {
   static_assert(Cr != KING_SIDE || Cr != QUEEN_SIDE);
   if constexpr (Cr == KING_SIDE)
     return oo_king_from[C];
@@ -459,7 +459,7 @@ inline Square Board::king_from() const {
 }
 
 template<CastlingRight Cr, Color C>
-inline Square Board::king_to() const {
+Square Board::king_to() const {
   static_assert(Cr != KING_SIDE || Cr != QUEEN_SIDE);
   if constexpr (Cr == KING_SIDE)
     return oo_king_to[C];

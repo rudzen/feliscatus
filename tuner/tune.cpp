@@ -28,9 +28,9 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/rotating_file_sink.h>
-#include <robin_hood.h>
 
 #include "tune.hpp"
+#include "map.h"
 
 #include "../io/file_resolver.hpp"
 
@@ -56,11 +56,11 @@ inline bool x_;
 
 struct Param final
 {
-  Param(std::string name, Score &value, const Score initial_value, const int step, const int stages = 2)
-    : name_(std::move(name)), initial_value_(initial_value), value_(value), step_(step), stages_(stages)
+  Param(std::string name, Score &value, const Score initialValue, const int step, const int stages = 2)
+    : name_(std::move(name)), initial_value_(initialValue), value_(value), step_(step), stages_(stages)
   {
     if (x_)
-      value = initial_value;
+      value = initialValue;
   }
 
   std::string name_;
@@ -87,8 +87,8 @@ namespace
 {
 
 auto console    = spdlog::stdout_color_mt("tuner");
-auto err_logger = spdlog::stderr_color_mt("stderr");
-std::shared_ptr<spdlog::logger> file_logger;
+auto errLogger  = spdlog::stderr_color_mt("stderr");
+std::shared_ptr<spdlog::logger> fileLogger;
 
 enum SelectedParams : std::uint64_t
 {
@@ -115,9 +115,9 @@ enum SelectedParams : std::uint64_t
 };
 
 template<bool Hr>
-std::string emit_code(const std::vector<eval::Param> &params0)
+std::string emitCode(const std::vector<eval::Param> &params0)
 {
-  robin_hood::unordered_map<std::string, std::vector<eval::Param>> params1;
+  jvn::unordered_map<std::string, std::vector<eval::Param>> params1;
 
   for (const auto &param : params0)
     params1[param.name_].emplace_back(param);
@@ -130,35 +130,35 @@ std::string emit_code(const std::vector<eval::Param> &params0)
     const auto n = params2.second.size();
 
     if (n > 1)
-      format_to(inserter, "inline std::array<int, {}> {} {{", n, params2.first);
+      fmt::format_to(inserter, "inline std::array<int, {}> {} {{", n, params2.first);
     else
-      format_to(inserter, "inline int {} = ", params2.first);
+      fmt::format_to(inserter, "inline int {} = ", params2.first);
 
     for (size_t i = 0; i < n; ++i)
     {
       if (Hr && n == 64)
       {
         if (i % 8 == 0)
-          format_to(inserter, "\n ");
+          fmt::format_to(inserter, "\n ");
 
-        format_to(inserter, "{}", params2.second[i].value_);
+        fmt::format_to(inserter, "{}", params2.second[i].value_);
       } else
-        format_to(inserter, "{}", params2.second[i].value_);
+        fmt::format_to(inserter, "{}", params2.second[i].value_);
 
       if (n > 1 && i < n - 1)
-        format_to(inserter, ", ");
+        fmt::format_to(inserter, ", ");
     }
 
     if (n > 1)
-      format_to(inserter, " }}");
+      fmt::format_to(inserter, " }}");
 
-    format_to(inserter, ";\n");
+    fmt::format_to(inserter, ";\n");
   }
 
   return fmt::to_string(s);
 }
 
-void print_best_values(const double E, const std::vector<eval::Param> &params)
+void printBestValues(const double e, const std::vector<eval::Param> &params)
 {
   auto finished = 0;
 
@@ -169,7 +169,7 @@ void print_best_values(const double E, const std::vector<eval::Param> &params)
     console->info("{}:{}:{}  step:{}\n", i, params[i].name_, params[i].value_, params[i].step_);
   }
 
-  console->info("Best E:{}", E);
+  console->info("Best E:{}", e);
   console->info("Finished:{} %", finished == 0 ? 100.0 : finished * 100.0 / params.size());
 }
 
@@ -192,7 +192,7 @@ constexpr double bestK()
 }
 
 
-void init_eval(std::vector<eval::Param> &params, const ParserSettings *settings)
+void initEval(std::vector<eval::Param> &params, const ParserSettings *settings)
 {
   auto step = 1;
 
@@ -388,7 +388,7 @@ PGNPlayer::PGNPlayer() : pgn::PGNPlayer()
 void PGNPlayer::read_pgn_database()
 {
   PGNFileReader::read_pgn_database();
-  print_progress(true);
+  printProgress(true);
 }
 
 void PGNPlayer::read_san_move()
@@ -411,7 +411,7 @@ void PGNPlayer::read_game_termination()
   all_selected_nodes_.insert(all_selected_nodes_.end(), current_game_nodes_.begin(), current_game_nodes_.end());
   current_game_nodes_.clear();
 
-  print_progress(false);
+  printProgress(false);
 }
 
 void PGNPlayer::read_comment1()
@@ -419,7 +419,7 @@ void PGNPlayer::read_comment1()
   pgn::PGNPlayer::read_comment1();
 }
 
-void PGNPlayer::print_progress(const bool force) const
+void PGNPlayer::printProgress(const bool force) const
 {
   if (!force && game_count_ % 100 != 0)
     return;
@@ -440,10 +440,10 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
 
   std::vector<Param> params;
 
-  init_eval(params, settings);
+  initEval(params, settings);
 
   if (score_static_)
-    make_quiet(pgn.all_selected_nodes_);
+    makeQuiet(pgn.all_selected_nodes_);
 
   std::vector<ParamIndexRecord> params_index;
 
@@ -455,13 +455,13 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
   constexpr auto K                 = bestK();
   auto bestE                       = e(pgn.all_selected_nodes_, params, params_index, K);
   auto improved                    = true;
-  file_logger = spdlog::rotating_logger_mt("file_logger", "logs/tuner.txt", max_log_file_size, max_log_files);
+  fileLogger = spdlog::rotating_logger_mt("fileLogger", "logs/tuner.txt", max_log_file_size, max_log_files);
 
-  file_logger->info("Tuner session started.");
+  fileLogger->info("Tuner session started.");
 
   std::ofstream out(fmt::format("{}{}", settings->file_name, ".txt"));
   out << fmt::format("Old E:{}\n", bestE);
-  out << fmt::format("Old Values:\n{}\n", emit_code<true>(params));
+  out << fmt::format("Old Values:\n{}\n", emitCode<true>(params));
 
   // 0 == mg, 1 == eg
   auto stage     = 0;
@@ -469,7 +469,7 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
 
   while (improved)
   {
-    print_best_values(bestE, params);
+    printBestValues(bestE, params);
     improved = false;
 
     for (std::size_t i = 0; i < params_index.size(); ++i)
@@ -494,15 +494,15 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
 
         fmt::print("Tuning prm[{}] {} i:{}  current:{}  trying:{}...\n", idx, params[idx].name_, i, original, value);
 
-        auto new_e = e(pgn.all_selected_nodes_, params, params_index, K);
+        auto newE = e(pgn.all_selected_nodes_, params, params_index, K);
 
-        if (new_e < bestE)
+        if (newE < bestE)
         {
-          params_index[i].improved_ = bestE - new_e;
-          bestE                     = new_e;
+          params_index[i].improved_ = bestE - newE;
+          bestE                     = newE;
           improved                  = true;
           out << "E:" << bestE << "\n";
-          out << emit_code<true>(params);
+          out << emitCode<true>(params);
         } else if (step > 0)
         {
           step = -step;
@@ -511,15 +511,15 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
           fmt::print(
             "Tuning prm[{}] {} i:{}  current:{}  trying:{}...\n", idx, params[idx].name_, i, value - step, value);
 
-          new_e = e(pgn.all_selected_nodes_, params, params_index, K);
+          newE = e(pgn.all_selected_nodes_, params, params_index, K);
 
-          if (new_e < bestE)
+          if (newE < bestE)
           {
-            params_index[i].improved_ = bestE - new_e;
-            bestE                     = new_e;
+            params_index[i].improved_ = bestE - newE;
+            bestE                     = newE;
             improved                  = true;
             out << "E:" << bestE << "\n";
-            out << emit_code<true>(params);
+            out << emitCode<true>(params);
           } else
           {
             params_index[i].improved_ = 0;
@@ -541,23 +541,23 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
       // std::stable_sort(params_index.begin(), params_index.end());
     }
   }
-  print_best_values(bestE, params);
+  printBestValues(bestE, params);
   out << fmt::format("New E:{}\n", bestE);
-  out << fmt::format("\nNew:\n{}\n", emit_code<false>(params));
+  out << fmt::format("\nNew:\n{}\n", emitCode<false>(params));
 
-  fmt::print("{}\n", emit_code<true>(params));
+  fmt::print("{}\n", emitCode<true>(params));
 }
 
 double Tune::e(
-  const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &params_index,
-  const double K)
+  const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &paramsIndex,
+  const double k)
 {
   auto x = 0.0;
 
   for (const auto &node : nodes)
   {
     b->set_fen(node.fen_, pool.main());
-    const auto z = node.result_ - util::sigmoid(score(WHITE), K);
+    const auto z = node.result_ - util::sigmoid(score(WHITE), k);
     x += z * z;
   }
 
@@ -566,47 +566,47 @@ double Tune::e(
   fmt::memory_buffer s;
   auto inserter = std::back_inserter(s);
 
-  format_to(inserter, "x:{:.{}f}", x, 12);
+  fmt::format_to(inserter, "x:{:.{}f}", x, 12);
 
-  for (std::size_t i = 0; i < params_index.size(); ++i)
-    if (params[params_index[i].idx_].step_)
-      format_to(inserter, " prm[{}]:{}\n", i, params[params_index[i].idx_].value_);
+  for (std::size_t i = 0; i < paramsIndex.size(); ++i)
+    if (params[paramsIndex[i].idx_].step_)
+      fmt::format_to(inserter, " prm[{}]:{}\n", i, params[paramsIndex[i].idx_].value_);
 
   console->info("{}\n\n", fmt::to_string(s));
 
   return x;
 }
 
-void Tune::make_quiet(std::vector<Node> &nodes)
+void Tune::makeQuiet(std::vector<Node> &nodes)
 {
   auto *t = pool.main();
   for (auto &node : nodes)
   {
     b->set_fen(node.fen_, t);
     t->pv_length[0] = 0;
-    quiesce_score(-32768, 32768, true, 0);
-    play_pv();
+    auto q = quiesceScore(-32768, 32768, true, 0);
+    playPv();
     node.fen_ = b->fen();
   }
 }
 
 int Tune::score(const Color c) const
 {
-  const auto score = score_static_ ? Eval::tune(b.get(), 0, -100000, 100000) : quiesce_score(-32768, 32768, false, 0);
+  const auto score = score_static_ ? Eval::tune(b.get(), 0, -100000, 100000) : quiesceScore(-32768, 32768, false, 0);
   return b->side_to_move() == c ? score : -score;
 }
 
-int Tune::quiesce_score(int alpha, const int beta, const bool store_pv, const int ply) const
+int Tune::quiesceScore(int alpha, const int beta, const bool storePv, const int ply) const
 {
   auto score = Eval::tune(b.get(), 0, -100000, 100000);
 
   if (score >= beta)
     return score;
 
-  auto best_score = score;
+  auto bestScore = score;
 
-  if (best_score > alpha)
-    alpha = best_score;
+  if (bestScore > alpha)
+    alpha = bestScore;
 
   auto mg = Moves<true>(b.get());
 
@@ -614,38 +614,38 @@ int Tune::quiesce_score(int alpha, const int beta, const bool store_pv, const in
 
   // b->pos->generate_captures_and_promotions(this);
 
-  while (const auto *const move_data = mg.next_move())
+  while (const auto *const moveData = mg.next_move())
   {
-    if (!is_promotion(move_data->move) && move_data->score < 0)
+    if (!is_promotion(moveData->move) && moveData->score < 0)
       break;
 
-    if (make_move(move_data->move, ply))
+    if (makeMove(moveData->move, ply))
     {
-      score = -quiesce_score(-beta, -alpha, store_pv, ply + 1);
+      score = -quiesceScore(-beta, -alpha, storePv, ply + 1);
 
       b->unmake_move();
 
-      if (score > best_score)
+      if (score > bestScore)
       {
-        best_score = score;
+        bestScore = score;
 
-        if (best_score > alpha)
+        if (bestScore > alpha)
         {
           if (score >= beta)
             break;
 
-          if (store_pv)
-            update_pv(move_data->move, best_score, ply);
+          if (storePv)
+            updatePv(moveData->move, bestScore, ply);
 
-          alpha = best_score;
+          alpha = bestScore;
         }
       }
     }
   }
-  return best_score;
+  return bestScore;
 }
 
-bool Tune::make_move(const Move m, int ply) const
+bool Tune::makeMove(Move m, int ply) const
 {
   if (!b->make_move(m, true, true))
     return false;
@@ -655,19 +655,19 @@ bool Tune::make_move(const Move m, int ply) const
   return true;
 }
 
-void Tune::unmake_move() const
+void Tune::unmakeMove() const
 {
   b->unmake_move();
 }
 
-void Tune::play_pv() const
+void Tune::playPv() const
 {
   auto *t = b->my_thread();
   for (auto i = 0; i < t->pv_length[0]; ++i)
     b->make_move(t->pv[0][i].move, false, true);
 }
 
-void Tune::update_pv(const Move m, const int score, const int ply) const
+void Tune::updatePv(Move m, int score, int ply) const
 {
   auto *t = b->my_thread();
   assert(ply < MAXDEPTH);
@@ -678,12 +678,12 @@ void Tune::update_pv(const Move m, const int score, const int ply) const
   entry->move  = m;
   // entry->eval = game_->pos->eval_score;
 
-  const auto next_ply = ply + 1;
+  const auto nextPly = ply + 1;
 
-  t->pv_length[ply] = t->pv_length[next_ply];
+  t->pv_length[ply] = t->pv_length[nextPly];
 
-  for (auto i = next_ply; i < t->pv_length[ply]; ++i)
-    t->pv[ply][i] = t->pv[next_ply][i];
+  for (auto i = nextPly; i < t->pv_length[ply]; ++i)
+    t->pv[ply][i] = t->pv[nextPly][i];
 }
 
 }   // namespace eval

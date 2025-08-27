@@ -295,7 +295,7 @@ Move PolyBook::probe(Board *board) const
 
   // In case we have set best book move,
   // we don't have to look any further
-  if (Options[uci::uci_name<uci::UciOptions::BOOK_BEST_MOVE>()])
+  if (Options[uci::uciName<uci::UciOptions::BOOK_BEST_MOVE>()])
     e = &(*lower_boundry);
   else
   {

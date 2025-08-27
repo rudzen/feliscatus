@@ -25,13 +25,9 @@
 
 #include <fmt/format.h>
 
-///
-/// Multi-valued type which is used to hold the mg and mg scores.
-///
-
+/// Multivalued type which is used to hold the mg and mg scores.
 struct Score final
 {
-
   [[nodiscard]]
   constexpr Score() = default;
   [[nodiscard]]

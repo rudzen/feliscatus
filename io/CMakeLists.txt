@@ -10,4 +10,4 @@ configure_file (
         "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Feliscatus.json"
         COPYONLY)
 
-target_link_libraries(io PRIVATE project_options project_warnings CONAN_PKG::fmt CONAN_PKG::spdlog CONAN_PKG::nlohmann_json)
+target_link_libraries(io PRIVATE project_options project_warnings fmt spdlog nlohmann_json)

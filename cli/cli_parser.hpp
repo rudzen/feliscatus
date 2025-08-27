@@ -46,6 +46,7 @@ struct ParserSettings {
 
 namespace cli {
 
-std::unique_ptr<ParserSettings> make_parser(int argc, char **argv, const std::string &title, ParserType type);
+std::unique_ptr<ParserSettings>
+  makeParser(const int argc, char **argv, const std::string &title, const ParserType type);
 
 }

@@ -58,7 +58,7 @@ public:
 
   void read_comment1() override;
 
-  void print_progress(bool force) const;
+  void printProgress(bool force) const;
 
   std::vector<Node> all_selected_nodes_;
 
@@ -73,21 +73,21 @@ public:
 
   double
     e(const std::vector<Node> &nodes, const std::vector<Param> &params,
-      const std::vector<ParamIndexRecord> &params_index, double K);
+      const std::vector<ParamIndexRecord> &paramsIndex, double k);
 
-  void make_quiet(std::vector<Node> &nodes);
+  void makeQuiet(std::vector<Node> &nodes);
 
-  int score(Color c) const;
+  [[nodiscard]] int score(Color c) const;
 
-  int quiesce_score(int alpha, int beta, bool store_pv, int ply) const;
+  [[nodiscard]] int quiesceScore(int alpha, int beta, bool storePv, int ply) const;
 
-  bool make_move(Move m, int ply) const;
+  [[nodiscard]] bool makeMove(Move m, int ply) const;
 
-  void unmake_move() const;
+  void unmakeMove() const;
 
-  void play_pv() const;
+  void playPv() const;
 
-  void update_pv(Move m, int score, int ply) const;
+  void updatePv(Move m, int score, int ply) const;
 
 private:
   std::unique_ptr<Board> b;

@@ -34,7 +34,7 @@ constexpr std::size_t parallel_threshold = 8;
 }
 
 thread::thread(const std::size_t index)
-  : root_board(std::make_unique<Board>()), idx(index), jthread(&thread::idle_loop, this), searching(true)
+  : root_board(std::make_unique<Board>()), idx(index), jthread(&thread::idleLoop, this), searching(true)
 { }
 
 thread::~thread()
@@ -45,7 +45,7 @@ thread::~thread()
   start_searching();
 }
 
-void thread::clear_data()
+void thread::clearData()
 {
   std::memset(history_scores.data(), 0, sizeof history_scores);
   std::memset(counter_moves.data(), 0, sizeof counter_moves);
@@ -54,10 +54,10 @@ void thread::clear_data()
   draw_score.fill(0);
 }
 
-void thread::idle_loop()
+void thread::idleLoop()
 {
   // NUMA fix
-  if (Options[uci::uci_name<uci::UciOptions::THREADS>()] > 8)
+  if (Options[uci::uciName<uci::UciOptions::THREADS>()] > 8)
     WinProcGroup::bind_this_thread(idx);
 
   do
@@ -86,7 +86,7 @@ void thread::start_searching()
 {
   std::lock_guard<std::mutex> lk(mutex);
   searching.store(true);
-  cv.notify_one();   // Wake up the thread in idle_loop()
+  cv.notify_one();   // Wake up the thread in idleLoop()
 }
 
 void thread::wait_for_search_finished()
@@ -128,9 +128,9 @@ void thread_pool::set(const std::size_t v)
 
     clear_data();
 
-    auto tt_size = static_cast<std::size_t>(Options[uci::uci_name<uci::UciOptions::HASH>()]);
+    auto tt_size = static_cast<std::size_t>(Options[uci::uciName<uci::UciOptions::HASH>()]);
 
-    if (Options[uci::uci_name<uci::UciOptions::HASH_X_THREADS>()])
+    if (Options[uci::uciName<uci::UciOptions::HASH_X_THREADS>()])
       tt_size *= size();
 
     TT.init(tt_size);
@@ -183,7 +183,7 @@ void thread_pool::wait_for_search_finished()
 void thread_pool::clear_data()
 {
   for (auto &w : *this)
-    w->clear_data();
+    w->clearData();
 }
 
 std::uint64_t thread_pool::node_count() const

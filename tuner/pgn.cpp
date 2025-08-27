@@ -68,7 +68,7 @@ bool start_of_promoted_to(const char *p)
 
 bool is_square(const char *p, Square &square)
 {
-  if (std::strlen(p) > 1 && util::in_between<'a', 'h'>(p[0]) && util::in_between<'0', '9'>(p[1]))
+  if (std::strlen(p) > 1 && util::inBetween<'a', 'h'>(p[0]) && util::inBetween<'0', '9'>(p[1]))
   {
     square = static_cast<Square>(((p[1] - '1') << 3) + p[0] - 'a');
     return true;
@@ -78,7 +78,7 @@ bool is_square(const char *p, Square &square)
 
 bool is_rank_digit(const char *p, int &rank)
 {
-  if (std::strlen(p) && util::in_between<'1', '8'>(p[0]))
+  if (std::strlen(p) && util::inBetween<'1', '8'>(p[0]))
   {
     rank = p[0] - '1';
     return true;
@@ -88,7 +88,7 @@ bool is_rank_digit(const char *p, int &rank)
 
 bool is_file_letter(const char *p, int &file)
 {
-  if (std::strlen(p) && util::in_between<'a', 'h'>(p[0]))
+  if (std::strlen(p) && util::inBetween<'a', 'h'>(p[0]))
   {
     file = p[0] - 'a';
     return true;

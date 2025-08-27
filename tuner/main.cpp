@@ -53,7 +53,7 @@ int main(const int argc, char **argv)
 {
   fmt::print("{}\n", title);
 
-  const auto cli_parser_settings = cli::make_parser(argc, argv, title, ParserType::Tuner);
+  const auto cli_parser_settings = cli::makeParser(argc, argv, title, ParserType::Tuner);
 
   TT.init(256);
   params::init();
