@@ -51,7 +51,7 @@ struct Board
   bool is_repetition() const;
 
   [[nodiscard]]
-  std::int64_t half_move_count() const;
+  i64 half_move_count() const;
 
   void new_game(thread *t);
 
@@ -134,10 +134,10 @@ struct Board
   bool is_pawn_behind(Square s, Color c) const;
 
   [[nodiscard]]
-  int see_move(Move m);
+  i32 see_move(Move m);
 
   [[nodiscard]]
-  int see_last_move(Move m);
+  i32 see_last_move(Move m);
 
   [[nodiscard]]
   bool is_draw() const;
@@ -161,7 +161,7 @@ struct Board
   Material &material() const;
 
   [[nodiscard]]
-  int &flags() const;
+  i32 &flags() const;
 
   [[nodiscard]]
   Square en_passant_square() const;
@@ -182,7 +182,7 @@ struct Board
   Move counter_move(Move m) const;
 
   [[nodiscard]]
-  int history_score(Move m) const;
+  i32 history_score(Move m) const;
 
   [[nodiscard]]
   bool is_legal(Move m, Piece pc, Square from, MoveType mt);
@@ -196,10 +196,10 @@ struct Board
   Square king_to() const;
 
   Position *pos;
-  int plies{};
-  int max_ply{};
-  int search_depth{};
-  std::array<int, SQ_NB> castle_rights_mask{};
+  i32 plies{};
+  i32 max_ply{};
+  i32 search_depth{};
+  std::array<i32, SQ_NB> castle_rights_mask{};
   bool chess960{};
 
 private:
@@ -207,7 +207,7 @@ private:
   void clear();
 
   [[nodiscard]]
-  std::uint64_t calculate_key() const;
+  Key calculate_key() const;
 
   [[nodiscard]]
   Bitboard checkers() const;
@@ -233,7 +233,7 @@ private:
   bool is_attacked_by_king(Square s, Color c) const;
 
   [[nodiscard]]
-  bool is_piece_on_square(PieceType pt, Square s, Color c);
+  bool is_piece_on_square(PieceType pt, Square s, Color c) const;
 
   [[nodiscard]]
   int see_rec(int mat_change, Piece next_capture, Square to, Color c);
@@ -353,7 +353,7 @@ inline Bitboard Board::pieces(const Color c) const
 }
 
 template<PieceType Pt>
-inline Square Board::square(const Color c) const
+Square Board::square(const Color c) const
 {
   assert(piece_count(c, Pt) == 1);
   return lsb(pieces(Pt, c));
@@ -364,7 +364,7 @@ inline bool Board::is_pawn_passed(const Square s, const Color c) const
   return !(passed_pawn_front_span[c][s] & pieces(PAWN, ~c));
 }
 
-inline bool Board::is_piece_on_square(const PieceType pt, const Square s, const Color c)
+inline bool Board::is_piece_on_square(const PieceType pt, const Square s, const Color c) const
 {
   return board[s] == make_piece(pt, c);
 }
@@ -404,7 +404,7 @@ inline Material &Board::material() const
   return pos->material;
 }
 
-inline int &Board::flags() const
+inline i32 &Board::flags() const
 {
   return pos->flags;
 }
@@ -444,7 +444,7 @@ inline Move Board::counter_move(const Move m) const
   return my_t->counter_moves[move_piece(m)][move_to(m)];
 }
 
-inline int Board::history_score(const Move m) const
+inline i32 Board::history_score(const Move m) const
 {
   return my_t->history_scores[move_piece(m)][move_to(m)];
 }

@@ -28,7 +28,7 @@ namespace
 {
 
 template<MoveGenFlags Flags>
-std::uint64_t p(Board *b, const int depth)
+u64 p(Board *b, const int depth)
 {
   if (depth == 0)
     return 1;
@@ -39,7 +39,7 @@ std::uint64_t p(Board *b, const int depth)
   if (depth == 1)
     return ml.size();
 
-  std::uint64_t nodes{};
+  u64 nodes{};
 
   for (const auto m : ml)
   {
@@ -64,19 +64,19 @@ struct Perft final
   { }
   explicit Perft(Board *board, int flags);
 
-  std::uint64_t perft(int depth) const;
+  u64 perft(int depth) const;
 
-  std::uint64_t perft_divide(int depth) const;
+  u64 perft_divide(int depth) const;
 
 private:
   Board *b{};
 };
 
 template<MoveGenFlags Flags>
-std::uint64_t Perft<Flags>::perft(const int depth) const
+u64 Perft<Flags>::perft(const int depth) const
 {
   std::size_t nps{};
-  std::uint64_t total_nodes{};
+  u64 total_nodes{};
   Stopwatch sw;
 
   for (auto i = 1; i <= depth; i++)
@@ -93,11 +93,11 @@ std::uint64_t Perft<Flags>::perft(const int depth) const
 }
 
 template<MoveGenFlags Flags>
-std::uint64_t Perft<Flags>::perft_divide(const int depth) const
+u64 Perft<Flags>::perft_divide(const i32 depth) const
 {
   fmt::print("depth: {}\n", depth);
 
-  std::uint64_t nodes{};
+  u64 nodes{};
   TimeUnit time{};
   Stopwatch sw;
 
@@ -124,12 +124,12 @@ std::uint64_t Perft<Flags>::perft_divide(const int depth) const
   return nodes;
 }
 
-std::uint64_t perft::perft(Board *b, const int depth)
+u64 perft::perft(Board *b, const int depth)
 {
   return Perft(b).perft(depth);
 }
 
-std::uint64_t perft::divide(Board *b, const int depth)
+u64 perft::divide(Board *b, const int depth)
 {
   return Perft(b).perft_divide(depth);
 }

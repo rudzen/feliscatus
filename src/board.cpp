@@ -41,8 +41,8 @@ namespace
 std::array<Square, SQ_NB> rook_castles_to{NO_SQ};
 std::array<Square, SQ_NB> rook_castles_from{NO_SQ};
 
-constexpr auto max_log_file_size = 1048576 * 5;
-constexpr auto max_log_files     = 3;
+constexpr i32 max_log_file_size = 1048576 * 5;
+constexpr i32 max_log_files     = 3;
 
 const std::shared_ptr<spdlog::logger> logger =
   spdlog::rotating_logger_mt("castleling_logger", "logs/castleling.txt", max_log_file_size, max_log_files);
@@ -71,7 +71,7 @@ template<CastlingRight Side>
 [[nodiscard]]
 Square find_rook_square(const Color us, const Board *b)
 {
-  const auto rook = make_piece(ROOK, us);
+  const Piece rook = make_piece(ROOK, us);
 
   const auto Relative = [&us](const Square s) {
     return relative_square(us, s);
@@ -96,11 +96,11 @@ Square find_rook_square(const Color us, const Board *b)
 
 void update_key(Position *pos, const Move m)
 {
-  auto pawn_key = pos->pawn_structure_key;
-  auto key      = pos->key ^ pawn_key;
+  Key pawn_key = pos->pawn_structure_key;
+  Key key      = pos->key ^ pawn_key;
 
   pawn_key ^= zobrist.side();
-  const auto *prev = pos->previous;   // (pos - 1);
+  const Position *prev = pos->previous;   // (pos - 1);
 
   [[unlikely]]
   if (prev->en_passant_square != NO_SQ)
@@ -119,11 +119,11 @@ void update_key(Position *pos, const Move m)
     return;
   }
 
-  const auto piece   = move_piece(m);
-  const auto is_pawn = type_of(piece) == PAWN;
-  const auto from    = move_from(m);
-  const auto to      = move_to(m);
-  const auto mt      = type_of(m);
+  const Piece piece  = move_piece(m);
+  const bool is_pawn = type_of(piece) == PAWN;
+  const Square from  = move_from(m);
+  const Square to    = move_to(m);
+  const MoveType mt  = type_of(m);
 
   // from and to for moving piece
   [[likely]]
@@ -166,7 +166,7 @@ void update_key(Position *pos, const Move m)
   [[unlikely]]
   if (mt & CASTLE)
   {
-    const auto rook = make_piece(ROOK, move_side(m));
+    const Piece rook = make_piece(ROOK, move_side(m));
     key ^= zobrist.pst(rook, rook_castles_from[to]) ^ zobrist.pst(rook, rook_castles_to[to]);
   }
   key ^= pawn_key;
@@ -183,7 +183,7 @@ Board::Board() : position_list({})
 
 void Board::init()
 {
-  for (const auto side : Colors)
+  for (const Color side : Colors)
   {
     const auto rank1                            = relative_rank(side, RANK_1);
     rook_castles_to[make_square(FILE_G, rank1)] = make_square(FILE_F, rank1);
@@ -204,15 +204,15 @@ void Board::clear()
 
 void Board::perform_move(const Move m)
 {
-  const auto from = move_from(m);
-  const auto to   = move_to(m);
-  const auto mt   = type_of(m);
-  auto pc         = move_piece(m);
+  const Square from = move_from(m);
+  const Square to   = move_to(m);
+  const MoveType mt = type_of(m);
+  Piece pc          = move_piece(m);
 
   [[unlikely]]
   if (mt & CASTLE)
   {
-    const auto rook = make_piece(ROOK, move_side(m));
+    const Piece rook = make_piece(ROOK, move_side(m));
     remove_piece(rook_castles_from[to]);
     remove_piece(from);
     add_piece(rook, rook_castles_to[to]);
@@ -224,7 +224,7 @@ void Board::perform_move(const Move m)
     [[unlikely]]
     if (mt & EPCAPTURE)
     {
-      const auto direction = pawn_push(color_of(pc));
+      const Direction direction = pawn_push(color_of(pc));
       remove_piece(to - direction);
     } else if (mt & CAPTURE)
       remove_piece(to);
@@ -239,15 +239,15 @@ void Board::perform_move(const Move m)
 
 void Board::unperform_move(const Move m)
 {
-  const auto from = move_from(m);
-  const auto to   = move_to(m);
-  const auto pc   = move_piece(m);
-  const auto mt   = type_of(m);
+  const Square from = move_from(m);
+  const Square to   = move_to(m);
+  const Piece pc    = move_piece(m);
+  const MoveType mt = type_of(m);
 
   [[unlikely]]
   if (mt & CASTLE)
   {
-    const auto rook = make_piece(ROOK, move_side(m));
+    const Piece rook = make_piece(ROOK, move_side(m));
     remove_piece(to);
     remove_piece(rook_castles_to[to]);
     add_piece(pc, from);
@@ -259,7 +259,7 @@ void Board::unperform_move(const Move m)
     [[unlikely]]
     if (mt & EPCAPTURE)
     {
-      const auto direction = pawn_push(color_of(pc));
+      const Direction direction = pawn_push(color_of(pc));
       add_piece(move_captured(m), to - direction);
     } else if (mt & CAPTURE)
       add_piece(move_captured(m), to);
@@ -270,11 +270,11 @@ void Board::unperform_move(const Move m)
 
 Bitboard Board::pinned_pieces(const Color c, const Square s) const
 {
-  const auto them        = ~c;
-  const auto all_pieces  = pieces();
-  const auto side_pieces = pieces(c);
-  auto pinners           = xray_attacks<BISHOP>(all_pieces, side_pieces, s) & pieces(BISHOP, QUEEN, them);
-  auto pinned_pieces     = ZeroBB;
+  const Color them           = ~c;
+  const Bitboard all_pieces  = pieces();
+  const Bitboard side_pieces = pieces(c);
+  Bitboard pinners           = xray_attacks<BISHOP>(all_pieces, side_pieces, s) & pieces(BISHOP, QUEEN, them);
+  Bitboard pinned_pieces     = ZeroBB;
 
   while (pinners)
     pinned_pieces |= between(pop_lsb(&pinners), s) & side_pieces;
@@ -289,13 +289,13 @@ Bitboard Board::pinned_pieces(const Color c, const Square s) const
 
 bool Board::is_attacked_by_slider(const Square s, const Color c) const
 {
-  const auto all_pieces = pieces();
-  const auto r_attacks  = piece_attacks_bb<ROOK>(s, all_pieces);
+  const Bitboard all_pieces = pieces();
+  const Bitboard r_attacks  = piece_attacks_bb<ROOK>(s, all_pieces);
 
   if (pieces(ROOK, c) & r_attacks)
     return true;
 
-  const auto b_attacks = piece_attacks_bb<BISHOP>(s, all_pieces);
+  const Bitboard b_attacks = piece_attacks_bb<BISHOP>(s, all_pieces);
 
   if (pieces(BISHOP, c) & b_attacks)
     return true;
@@ -309,15 +309,15 @@ bool Board::is_pseudo_legal(const Move m) const
 
   assert(is_ok(m));
 
-  const auto from = move_from(m);
-  const auto pc   = move_piece(m);
+  const Square from = move_from(m);
+  const Piece pc    = move_piece(m);
 
   [[unlikely]]
   if ((pieces(pc) & from) == 0)
     return false;
 
-  const auto to       = move_to(m);
-  const auto move_stm = move_side(m);
+  const Square to      = move_to(m);
+  const Color move_stm = move_side(m);
 
   [[unlikely]]
   if (move_stm != side_to_move())
@@ -337,7 +337,7 @@ bool Board::is_pseudo_legal(const Move m) const
   else if (pieces() & to)
     return false;
 
-  const auto pt = type_of(move_piece(m));
+  const PieceType pt = type_of(move_piece(m));
 
   return !util::inBetween<QUEEN, BISHOP>(pt) || !(between(from, to) & pieces());
 }
@@ -353,10 +353,10 @@ void Board::print() const
   {
     fmt::format_to(inserter, "{}  ", rank + 1);
 
-    for (const auto file : Files)
+    for (const File file : Files)
     {
-      const auto sq = make_square(file, rank);
-      const auto pc = piece(sq);
+      const Square sq = make_square(file, rank);
+      const Piece pc  = piece(sq);
       fmt::format_to(inserter, "{} ", piece_letter[pc]);
     }
     fmt::format_to(inserter, "\n");
@@ -377,14 +377,14 @@ bool Board::is_passed_pawn_move(const Move m) const
 
 bool Board::is_pawn_isolated(const Square s, const Color c) const
 {
-  const auto f               = bb_file(file_of(s));
-  const auto neighbour_files = shift_bb<WEST>(f) | shift_bb<EAST>(f);
+  const Bitboard f               = bb_file(file_of(s));
+  const Bitboard neighbour_files = shift_bb<WEST>(f) | shift_bb<EAST>(f);
   return (pieces(PAWN, c) & neighbour_files) == 0;
 }
 
 bool Board::is_pawn_behind(const Square s, const Color c) const
 {
-  const auto bbsq = bit(s);
+  const Bitboard bbsq = bit(s);
   return (pieces(PAWN, c) & pawn_fill[~c](shift_bb<WEST>(bbsq) | shift_bb<EAST>(bbsq))) == 0;
 }
 
@@ -396,7 +396,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
 
   perform_move(m);
 
-  const auto mt = type_of(m);
+  const MoveType mt = type_of(m);
 
   if (check_legal && !(mt & CASTLE) && is_attacked(square<KING>(pos->side_to_move), ~pos->side_to_move))
   {
@@ -404,10 +404,10 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
     return false;
   }
 
-  const auto from = move_from(m);
-  const auto to   = move_to(m);
+  const Square from = move_from(m);
+  const Square to   = move_to(m);
 
-  auto *const prev = pos++;
+  Position *const prev = pos++;
 
   pos->previous          = prev;
   pos->side_to_move      = ~prev->side_to_move;
@@ -422,7 +422,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
   pos->key                = prev->key;
   pos->pawn_structure_key = prev->pawn_structure_key;
 
-  const auto ksq = square<KING>(pos->side_to_move);
+  const Square ksq = square<KING>(pos->side_to_move);
 
   if (calculate_in_check)
     pos->in_check = is_attacked(ksq, ~pos->side_to_move);
@@ -475,19 +475,19 @@ bool Board::make_null_move()
   return true;
 }
 
-std::uint64_t Board::calculate_key() const
+Key Board::calculate_key() const
 {
-  auto key = zobrist.zero();
+  Key key = zobrist.zero();
 
-  for (const auto pt : PieceTypes)
+  for (const PieceType pt : PieceTypes)
   {
-    for (const auto c : Colors)
+    for (const Color c : Colors)
     {
       auto bb = pieces(pt, c);
       while (bb)
       {
-        const auto sq = pop_lsb(&bb);
-        const auto pc = piece(sq);
+        const Square sq = pop_lsb(&bb);
+        const Piece pc  = piece(sq);
         key ^= zobrist.pst(pc, sq);
       }
     }
@@ -507,8 +507,8 @@ std::uint64_t Board::calculate_key() const
 
 bool Board::is_repetition() const
 {
-  auto num_moves = pos->rule50;
-  auto *prev     = pos;
+  i32 num_moves  = pos->rule50;
+  Position *prev = pos;
 
   while ((num_moves = num_moves - 2) >= 0 && prev - position_list.data() > 1)
   {
@@ -521,7 +521,7 @@ bool Board::is_repetition() const
   return false;
 }
 
-std::int64_t Board::half_move_count() const
+i64 Board::half_move_count() const
 {
   return pos->rule50;
   // TODO : fix implementation defined behaviour
@@ -540,9 +540,9 @@ void Board::set_fen(std::string_view fen, thread *t)
 
   clear();
 
-  constexpr auto splitter = ' ';
+  constexpr char splitter = ' ';
 
-  auto sq = A8;
+  Square sq = A8;
 
   // indicates where in the fen the last space was located
   std::size_t space{};
@@ -560,19 +560,19 @@ void Board::set_fen(std::string_view fen, thread *t)
   };
 
   // the current view of the fen
-  auto current = update_current();
+  std::string_view current = update_current();
 
-  for (const auto token : current)
+  for (const char token : current)
   {
     [[unlikely]]
     if (std::isdigit(token))
       sq += util::fromChar<int>(token) * EAST;
     else if (token == '/')
       sq += SOUTH * 2;
-    else if (const auto pc_idx = piece_index.find_first_of(tolower(token)); pc_idx != std::string_view::npos)
+    else if (const std::size_t pc_idx = piece_index.find_first_of(tolower(token)); pc_idx != std::string_view::npos)
     {
-      const auto c  = islower(token) ? BLACK : WHITE;
-      const auto pc = make_piece(static_cast<PieceType>(pc_idx), c);
+      const Color c  = islower(token) ? BLACK : WHITE;
+      const Piece pc = make_piece(static_cast<PieceType>(pc_idx), c);
       add_piece(pc, sq);
       ++sq;
     }
@@ -616,7 +616,7 @@ std::string Board::fen() const
 
   for (const Rank r : ReverseRanks)
   {
-    auto empty = 0;
+    u8 empty = 0;
 
     for (const auto f : Files)
     {
@@ -670,7 +670,7 @@ std::string Board::fen() const
     fmt::format_to(s, "-");
 
   [[unlikely]]
-  if (const auto en_pessant_sq = en_passant_square(); en_pessant_sq != NO_SQ)
+  if (const Square en_pessant_sq = en_passant_square(); en_pessant_sq != NO_SQ)
     fmt::format_to(s, " {} ", square_to_string(en_pessant_sq));
   else
     fmt::format_to(s, " - ");
@@ -688,10 +688,10 @@ void Board::setup_castling(const std::string_view s)
   if (s.front() == '-')
     return;
 
-  for (const auto c : s)
+  for (const char c : s)
   {
-    const auto us    = static_cast<Color>(!std::isupper(c));
-    const auto token = std::tolower(c);
+    const Color us   = static_cast<Color>(!std::isupper(c));
+    const char token = std::tolower(c);
 
     if (token == 'k')
       add_castle_rights<KING_SIDE>(us, std::nullopt);
@@ -699,8 +699,8 @@ void Board::setup_castling(const std::string_view s)
       add_castle_rights<QUEEN_SIDE>(us, std::nullopt);
     else if (util::inBetween<'a', 'h'>(token))
     {
-      chess960             = true;
-      const auto rook_file = std::make_optional(static_cast<File>(token - 'a'));
+      chess960                            = true;
+      const std::optional<File> rook_file = std::make_optional(static_cast<File>(token - 'a'));
 
       if (rook_file.value() > file_of(square<KING>(us)))
         add_castle_rights<KING_SIDE>(us, rook_file);
@@ -712,7 +712,7 @@ void Board::setup_castling(const std::string_view s)
 
 std::string Board::move_to_string(const Move m) const
 {
-  const auto mt = type_of(m);
+  const MoveType mt = type_of(m);
 
   // shredder fen
   [[unlikely]]
@@ -732,8 +732,8 @@ std::string Board::move_to_string(const Move m) const
 
 void Board::print_moves()
 {
-  auto ml = MoveList<LEGALMOVES>(this);
-  for (auto i = 1; const auto m : ml)
+  MoveList<LEGALMOVES> ml = MoveList<LEGALMOVES>(this);
+  for (u8 i = 1; const auto m : ml)
     fmt::print("{}. {}   {}\n", i++, move_to_string(m.move), m.score);
 }
 
@@ -747,8 +747,8 @@ void Board::update_position(Position *p) const
 
   while (b)
   {
-    const auto sq = pop_lsb(&b);
-    const auto pc = piece(sq);
+    const Square sq = pop_lsb(&b);
+    const Piece pc  = piece(sq);
     key ^= zobrist.pst(pc, sq);
     [[likely]]
     if (type_of(pc) == PAWN)
@@ -785,24 +785,23 @@ Bitboard Board::attackers_to(const Square s) const
 template<CastlingRight Side>
 void Board::add_castle_rights(const Color us, std::optional<File> rook_file)
 {
-  const auto castle_rights = make_castling<Side>(us);
-  const auto rank_one      = relative_rank(us, RANK_1);
-  const auto ksq           = square<KING>(us);
-  const auto rook_square =
+  const CastlingRight castle_rights = make_castling<Side>(us);
+  const Rank rank_one               = relative_rank(us, RANK_1);
+  const Square ksq                  = square<KING>(us);
+  const Square rook_square =
     !rook_file.has_value() ? find_rook_square<Side>(us, this) : make_square(rook_file.value(), rank_one);
-  constexpr auto r_from_file = Side == KING_SIDE ? FILE_G : FILE_C;
-  const auto rook_from       = make_square(r_from_file, rank_one);
+  constexpr File r_from_file = Side == KING_SIDE ? FILE_G : FILE_C;
+  const Square rook_from     = make_square(r_from_file, rank_one);
 
   pos->castle_rights |= castle_rights;
   castle_rights_mask[rook_square] |= castle_rights;
   castle_rights_mask[ksq] |= castle_rights;
   rook_castles_from[rook_from] = rook_square;
 
-  const auto kto = relative_square(us, castle_rights & KING_SIDE ? G1 : C1);
-  const auto rto = relative_square(us, castle_rights & KING_SIDE ? F1 : D1);
+  const Square kto = relative_square(us, castle_rights & KING_SIDE ? G1 : C1);
+  const Square rto = relative_square(us, castle_rights & KING_SIDE ? F1 : D1);
 
   castling_path[castle_rights] = (between(rook_square, rto) | between(ksq, kto)) & ~bit(ksq, rook_square);
-
 
   if constexpr (Side == KING_SIDE)
     oo_king_from[us] = ksq;
@@ -814,7 +813,7 @@ void Board::add_castle_rights(const Color us, std::optional<File> rook_file)
     chess960 = true;
   else
   {
-    constexpr auto far_file = Side == KING_SIDE ? FILE_H : FILE_A;
+    constexpr File far_file = Side == KING_SIDE ? FILE_H : FILE_A;
 
     if (file_of(rook_square) != far_file)
       chess960 = true;
@@ -830,7 +829,7 @@ bool Board::is_castleling_impeeded(const CastlingRight cr) const
 bool Board::gives_check(const Move m)
 {
   perform_move(m);
-  const auto attacked = is_attacked(square<KING>(~pos->side_to_move), pos->side_to_move);
+  const bool attacked = is_attacked(square<KING>(~pos->side_to_move), pos->side_to_move);
   unperform_move(m);
   return attacked;
 }
@@ -841,7 +840,7 @@ bool Board::is_legal(const Move m, const Piece pc, const Square from, const Move
     return true;
 
   perform_move(m);
-  const auto attacked = is_attacked(square<KING>(pos->side_to_move), ~pos->side_to_move);
+  const bool attacked = is_attacked(square<KING>(pos->side_to_move), ~pos->side_to_move);
   unperform_move(m);
   return !attacked;
 }

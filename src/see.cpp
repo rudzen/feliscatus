@@ -128,12 +128,12 @@ int Board::see_move(const Move m)
   return score;
 }
 
-int Board::see_last_move(const Move m)
+i32 Board::see_last_move(const Move m)
 {
   return see_rec(material_change(m), next_to_capture(m), move_to(m), ~move_side(m));
 }
 
-int Board::see_rec(const int mat_change, const Piece next_capture, const Square to, const Color c)
+i32 Board::see_rec(const int mat_change, const Piece next_capture, const Square to, const Color c)
 {
   SeeData data{{PAWN, PAWN}, {pieces(PAWN, WHITE), pieces(PAWN, BLACK)}};
   const auto rr = relative_rank(c, to);
