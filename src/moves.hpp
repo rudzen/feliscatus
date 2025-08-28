@@ -115,13 +115,13 @@ private:
   bool can_castle_long() const;
 
   std::array<MoveData, 256> move_list{};
+  Board *b{};
   int iteration_{};
+  int number_moves_{};
+  int move_flags_{};
+  Move transp_move_{};
   MoveStage stage_{};
   MoveStage max_stage_{};
-  int number_moves_{};
-  Move transp_move_{};
-  int move_flags_{};
-  Board *b{};
 };
 
 template<bool Tuning>

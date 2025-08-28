@@ -23,17 +23,31 @@
 #include <cstdint>
 #include <array>
 #include <ranges>
-#include <cstdio>
 #include <string_view>
 
 #include "util.hpp"
 
-using Bitboard = std::uint64_t;
-using Key      = std::uint64_t;
+using u8       = std::uint8_t;
+using u16      = std::uint16_t;
+using u32      = std::uint32_t;
+using u64      = std::uint64_t;
+using i8       = std::int8_t;
+using i16      = std::int16_t;
+using i32      = std::int32_t;
+using i64      = std::int64_t;
+using e8       = u8;
+using e16      = u16;
+using e32      = u32;
+using e64      = u64;
+using r32      = float;
+using r64      = double;
+using Bitboard = u64;
+using Key      = u64;
 
-constexpr int MAXDEPTH = 128;
+constexpr i32 MAXDEPTH = 128;
 
-enum Square
+// clang::format off
+enum Square : e8
 {
   A1, B1, C1, D1, E1, F1, G1, H1,
   A2, B2, C2, D2, E2, F2, G2, H2,
@@ -46,6 +60,7 @@ enum Square
   NO_SQ,
   SQ_NB = 64
 };
+// clang::format on
 
 template<typename T>
 concept SquareT = std::is_convertible_v<T, Square>;
@@ -67,7 +82,7 @@ constexpr std::string_view square_to_string(const Square s)
   return SquareString[s];
 }
 
-enum Color : std::uint8_t
+enum Color : e8
 {
   WHITE,
   BLACK,
@@ -86,7 +101,7 @@ constexpr Color operator~(const C c) noexcept
 
 constexpr std::array<Color, COL_NB> Colors{WHITE, BLACK};
 
-enum NodeType : std::uint8_t
+enum NodeType : e8
 {
   NO_NT = 0,
   EXACT = 1,
@@ -94,7 +109,7 @@ enum NodeType : std::uint8_t
   ALPHA = 4
 };
 
-enum File : int
+enum File : e8
 {
   FILE_A,
   FILE_B,
@@ -114,7 +129,7 @@ constexpr std::array<File, 8> Files{FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE
 
 constexpr std::ranges::reverse_view ReverseFiles{Files};
 
-enum Rank : int
+enum Rank : e8
 {
   RANK_1,
   RANK_2,
@@ -141,7 +156,7 @@ constexpr Rank relative_rank(const C c, const R r)
   return static_cast<Rank>(r ^ (c * 7));
 }
 
-enum Direction : int
+enum Direction : i32
 {
   NORTH = 8,
   EAST  = 1,
@@ -170,7 +185,7 @@ constexpr Direction pawn_push(const C c)
   return c == WHITE ? NORTH : SOUTH;
 }
 
-enum PieceType
+enum PieceType : e8
 {
   PAWN            = 0,
   KNIGHT          = 1,
@@ -188,7 +203,7 @@ concept PieceTypeT = std::is_convertible_v<T, PieceType>;
 
 constexpr std::array<PieceType, 6> PieceTypes{PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
 
-enum Piece
+enum Piece : e8
 {
   W_PAWN   = 0, W_KNIGHT =  1, W_BISHOP =  2, W_ROOK =  3, W_QUEEN =  4, W_KING =  5,
   B_PAWN   = 8, B_KNIGHT =  9, B_BISHOP = 10, B_ROOK = 11, B_QUEEN = 12, B_KING = 13,
@@ -223,7 +238,7 @@ template<ColorT C>
 [[nodiscard]]
 constexpr Piece make_piece(const PieceType pt, const C c)
 {
-  return static_cast<Piece>(pt | (c << 3));
+  return static_cast<Piece>(pt | c << 3);
 }
 
 [[nodiscard]]
@@ -252,7 +267,7 @@ enum Move : std::uint32_t
 template<typename T>
 concept MoveT = std::is_convertible_v<T, Move>;
 
-enum MoveType : std::uint8_t
+enum MoveType : e8
 {
   NORMAL     = 0,
   DOUBLEPUSH = 1,
@@ -262,7 +277,7 @@ enum MoveType : std::uint8_t
   CAPTURE    = 1 << 4
 };
 
-enum CastlingRight
+enum CastlingRight : e8
 {
   NO_CASTLING       = 0,
   WHITE_OO          = 1,
@@ -323,7 +338,7 @@ enum MoveGenFlags
   QUIET      = 1 << 3
 };
 
-enum MaterialKey : std::uint32_t
+enum MaterialKey : e32
 {
   MATERIAL_NONE = 0,
   k             = 0x00000,
@@ -343,7 +358,7 @@ enum MaterialKey : std::uint32_t
   all_pawns     = 0xf,
 };
 
-enum MoveStage
+enum MoveStage : e8
 {
   TT_STAGE,
   CAPTURE_STAGE,
@@ -623,7 +638,7 @@ constexpr Move init_move(
   const P promoted)
 {
   return static_cast<Move>(
-    (pc << 26) | (cap << 22) | (promoted << 18) | (Mt << 12) | (from << 6) | static_cast<int>(to));
+    pc << 26 | cap << 22 | promoted << 18 | Mt << 12 | from << 6 | static_cast<i32>(to));
 }
 
 template<PieceT P, SquareT S>
@@ -637,7 +652,7 @@ constexpr Move init_move(
   const P promoted)
 {
   return static_cast<Move>(
-    (pc << 26) | (captured << 22) | (promoted << 18) | (mt << 12) | (from << 6) | static_cast<int>(to));
+    pc << 26 | captured << 22 | promoted << 18 | mt << 12 | from << 6 | static_cast<i32>(to));
 }
 
 /// Checks if Piece, PieceType, Square or Move is ok
@@ -654,4 +669,5 @@ constexpr bool is_ok(const T t)
     return util::inBetween<PAWN, KING>(type_of(t));
   else if constexpr (std::is_same_v<T, Move>)
     return t != MOVE_NONE && move_from(t) != move_to(t);
+  return false;
 }

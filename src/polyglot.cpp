@@ -23,7 +23,6 @@
 #include <fstream>
 #include <iostream>
 #include <numeric>
-#include <span>
 #include <chrono>
 
 #include <fmt/format.h>
@@ -35,62 +34,66 @@
 #include "moves.hpp"
 #include "uci.hpp"
 #include "prng.hpp"
+#include "types.hpp"
 
 namespace
 {
 
 constexpr std::array<CastlingRight, 4> poly_castles{WHITE_OO, WHITE_OOO, BLACK_OO, BLACK_OOO};
 
-constexpr std::uint64_t get_piece_key(const Piece pc, const Square sq)
+constexpr u64 get_piece_key(const Piece pc, const Square sq)
 {
   return Polyglot::Keys::pc_key(pc, sq);
 }
 
-constexpr std::uint64_t get_castle_key(const CastlingRight cr) {
+constexpr u64 get_castle_key(const CastlingRight cr)
+{
   const auto end = std::find(poly_castles.cbegin(), poly_castles.cend(), cr);
   const auto idx = std::distance(poly_castles.cbegin(), end);
   return Polyglot::Keys::castle_key(idx);
 }
 
-constexpr std::uint64_t get_side_key(const Color c) {
+constexpr u64 get_side_key(const Color c)
+{
   if (c == WHITE)
     return Polyglot::Keys::side_key();
 
   return 0ULL;
 }
 
-constexpr std::uint64_t get_en_passant_key(const File f) {
+constexpr u64 get_en_passant_key(const File f)
+{
   return Polyglot::Keys::en_passant_key(f);
 }
 
-std::uint64_t hash_pieces(Board *board)
+u64 hash_pieces(Board *board)
 {
-  std::uint64_t hash{};
+  u64 hash{};
   auto pieces = board->pieces();
 
   while (pieces)
   {
-    const auto sq = pop_lsb(&pieces);
-    const auto pc = board->piece(sq);
+    const Square sq = pop_lsb(&pieces);
+    const Piece pc  = board->piece(sq);
     hash ^= get_piece_key(pc, sq);
   }
 
   return hash;
 }
 
-std::uint64_t hash_castle(Board *board)
+u64 hash_castle(Board *board)
 {
   if (!board->can_castle())
     return 0ULL;
 
-  const auto accumulator = [&board](const std::uint64_t r, const CastlingRight cr) {
+  const auto accumulator = [&board](const u64 r, const CastlingRight cr) {
     return board->can_castle(cr) ? r ^ get_castle_key(cr) : r;
   };
 
   return std::accumulate(poly_castles.cbegin(), poly_castles.cend(), 0ULL, accumulator);
 }
 
-std::uint64_t hash_enpassant(const Square ep_sq)
+u64 hash_enpassant(const Square ep_sq)
 {
   if (ep_sq != NO_SQ)
     return get_en_passant_key(file_of(ep_sq));
@@ -98,12 +101,12 @@ std::uint64_t hash_enpassant(const Square ep_sq)
   return 0;
 }
 
-std::uint64_t hash_turn(const Color stm)
+u64 hash_turn(const Color stm)
 {
   return get_side_key(stm);
 }
 
-std::uint64_t poly_key(Board *board)
+u64 poly_key(Board *board)
 {
   return hash_pieces(board) ^ hash_castle(board) ^ hash_turn(board->side_to_move())
        ^ hash_enpassant(board->en_passant_square());
@@ -128,45 +131,49 @@ std::uint64_t poly_key(Board *board)
 ///
 /// If the move is "0" (a1a1) then it should simply be ignored.
 ///
-Move decode(Board *board, std::uint16_t move)
+Move decode(Board *board, const u16 move)
 {
   if (!move)
     return MOVE_NONE;
 
-  const auto to_f     = static_cast<File>(move & 0x7);
-  const auto to_r     = static_cast<Rank>((move & 0x38) >> 3);
-  const auto from_f   = static_cast<File>((move & 0x1C0) >> 6);
-  const auto from_r   = static_cast<Rank>((move & 0xE00) >> 9);
-  const auto promoted = static_cast<PieceType>((move & 0x7000) >> 12);
-  const auto from     = make_square(from_f, from_r);
-  const auto to       = make_square(to_f, to_r);
-  const auto pc       = board->piece(from);
-  const auto pt       = type_of(pc);
+  const File to_f          = static_cast<File>(move & 0x7);
+  const Rank to_r          = static_cast<Rank>((move & 0x38) >> 3);
+  const File from_f        = static_cast<File>((move & 0x1C0) >> 6);
+  const Rank from_r        = static_cast<Rank>((move & 0xE00) >> 9);
+  const PieceType promoted = static_cast<PieceType>((move & 0x7000) >> 12);
+  const Square from        = make_square(from_f, from_r);
+  const Square to          = make_square(to_f, to_r);
+  const Piece pc           = board->piece(from);
+  const PieceType pt       = type_of(pc);
 
   // check castleling move
 
   if (pt == KING)
   {
-    if (from == E1 && to == H1)
-      return init_move<CASTLE>(pc, NO_PIECE, from, G1, NO_PIECE);
+    if (from == E1)
+    {
+      if (to == H1)
+        return init_move<CASTLE>(pc, NO_PIECE, from, G1, NO_PIECE);
 
-    if (from == E1 && to == A1)
-      return init_move<CASTLE>(pc, NO_PIECE, from, A1, NO_PIECE);
+      if (to == A1)
+        return init_move<CASTLE>(pc, NO_PIECE, from, A1, NO_PIECE);
+    } else if (from == E8)
+    {
+      if (to == H8)
+        return init_move<CASTLE>(pc, NO_PIECE, from, G8, NO_PIECE);
 
-    if (from == E8 && to == H8)
-      return init_move<CASTLE>(pc, NO_PIECE, from, G8, NO_PIECE);
-
-    if (from == E8 && to == A8)
-      return init_move<CASTLE>(pc, NO_PIECE, from, C8, NO_PIECE);
+      if (to == A8)
+        return init_move<CASTLE>(pc, NO_PIECE, from, C8, NO_PIECE);
+    }
   }
 
-  auto ml = MoveList<LEGALMOVES>(board);
+  const MoveList<LEGALMOVES> ml = MoveList<LEGALMOVES>(board);
 
   const auto from_to_matches = [&from, &to](const Move m) {
     return from == move_from(m) && to == move_to(m);
   };
 
-  const auto m = std::find_if(ml.cbegin(), ml.cend(), from_to_matches);
+  const MoveData *const m = std::find_if(ml.cbegin(), ml.cend(), from_to_matches);
 
   if (m != ml.end())
   {
@@ -188,7 +195,7 @@ Move decode(Board *board, std::uint16_t move)
 ///
 void PolyBook::open(const std::string_view path)
 {
-  auto book_file = std::ifstream(path.data(), std::ios::binary | std::ios::ate);
+  std::ifstream book_file = std::ifstream(path.data(), std::ios::binary | std::ios::ate);
 
   if (!book_file)
   {
@@ -202,7 +209,7 @@ void PolyBook::open(const std::string_view path)
     return;
   }
 
-  const std::size_t size  = book_file.tellg();
+  const std::size_t size = book_file.tellg();
 
   if (size <= sizeof(BookEntry))
   {
@@ -227,7 +234,7 @@ void PolyBook::open(const std::string_view path)
   for (std::size_t i = 0; i < count; i++)
   {
     BookEntry entry;
-    book_file.read(reinterpret_cast<char*>(&entry), sizeof(BookEntry));
+    book_file.read(reinterpret_cast<char *>(&entry), sizeof(BookEntry));
     entry.key    = std::byteswap(entry.key);
     entry.move   = std::byteswap(entry.move);
     entry.weight = std::byteswap(entry.weight);
@@ -236,32 +243,31 @@ void PolyBook::open(const std::string_view path)
   }
 
   fmt::print("info string Parsed book. path={},size={}\n", path, entries_.size());
-
 }
 
-auto PolyBook::lower_entry(const std::uint64_t key) const
+auto PolyBook::lower_entry(const u64 key) const
 {
-  const auto compare_lower = [](const BookEntry &entry, const std::uint64_t k) {
+  const auto compare_lower = [](const BookEntry &entry, const u64 k) {
     return entry.key < k;
   };
 
   return std::lower_bound(entries_.cbegin(), entries_.cend(), key, compare_lower);
 }
 
-auto PolyBook::upper_entry(const std::uint64_t key, const BookIterator lower_boundry) const
+auto PolyBook::upper_entry(const u64 key, const BookIterator lower_bound) const
 {
-  const auto compare_upper = [](const std::uint64_t k, const BookEntry &entry) {
+  const auto compare_upper = [](const u64 k, const BookEntry &entry) {
     return k < entry.key;
   };
 
-  return std::upper_bound(lower_boundry, entries_.cend(), key, compare_upper);
+  return std::upper_bound(lower_bound, entries_.cend(), key, compare_upper);
 }
 
-auto PolyBook::select_random(BookIterator first, BookIterator second) const
+auto PolyBook::select_random(const BookIterator first, const BookIterator second) const
 {
-  std::uint16_t max_weight = 0;
-  std::size_t sum_weight   = 0;
-  const auto seed          = std::chrono::system_clock::now().time_since_epoch();
+  u16 max_weight         = 0;
+  std::size_t sum_weight = 0;
+  const auto seed        = std::chrono::system_clock::now().time_since_epoch();
   PRNG rng(seed.count());
 
   auto selected = first;
@@ -314,7 +320,5 @@ Move PolyBook::probe(Board *board) const
       e = &(*lower_boundry);
   }
 
-  return e && e->key == key
-                      ? decode(board, e->move)
-                      : MOVE_NONE;
+  return e && e->key == key ? decode(board, e->move) : MOVE_NONE;
 }

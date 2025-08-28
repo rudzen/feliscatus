@@ -142,7 +142,7 @@ void initialize_magics(const std::array<MagicInit, 64> &magicInit, MagicTable &m
 
   std::vector<int> squares(SQ_NB / 2);
 
-  for (const auto sq : Squares)
+  for (const Square sq : Squares)
   {
     magic[sq].magic = magicInit[sq].magic;
     magic[sq].data  = &lookupTable[magicInit[sq].index];
@@ -156,7 +156,7 @@ void initialize_magics(const std::array<MagicInit, 64> &magicInit, MagicTable &m
     // Loop through all possible occupations within the mask and calculate the corresponding attack sets.
     for (Bitboard k = 0; k < (OneBB << squares.size()); ++k)
     {
-      auto bb2 = bb = 0;
+      Bitboard bb2 = bb = 0;
 
       for (auto j = 0; j < static_cast<int>(squares.size()); ++j)
         if (test_bit(k, j))

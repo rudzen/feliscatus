@@ -27,7 +27,7 @@
 
 struct Time final
 {
-  void init(Color c, SearchLimits &limits);
+  void init(Color c, const SearchLimits &limits);
 
   [[nodiscard]]
   bool time_up() const noexcept;

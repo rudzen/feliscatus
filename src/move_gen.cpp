@@ -200,40 +200,40 @@ MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets)
     // handle captures
     if constexpr (Flags == CAPTURES)
     {
-      constexpr auto NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
-      constexpr auto NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
+      constexpr Direction NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
+      constexpr Direction NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
 
-      auto pawns_up_east = shift_bb<NorthEast>(promotion_pawns) & opponents;
-      auto pawns_up_west = shift_bb<NorthWest>(promotion_pawns) & opponents;
+      Bitboard pawns_up_east = shift_bb<NorthEast>(promotion_pawns) & opponents;
+      Bitboard pawns_up_west = shift_bb<NorthWest>(promotion_pawns) & opponents;
 
       while (pawns_up_east)
       {
-        const auto to = pop_lsb(&pawns_up_east);
-        md            = add_move<Flags, Us>(b, pc, to - NorthEast, to, PROMOTION | CAPTURE, md, QUEEN);
-        md            = add_move<Flags, Us>(b, pc, to - NorthEast, to, PROMOTION | CAPTURE, md, ROOK);
-        md            = add_move<Flags, Us>(b, pc, to - NorthEast, to, PROMOTION | CAPTURE, md, ROOK);
-        md            = add_move<Flags, Us>(b, pc, to - NorthEast, to, PROMOTION | CAPTURE, md, KNIGHT);
+        const Square to = pop_lsb(&pawns_up_east);
+        md              = add_move<Flags, Us>(b, pc, to - NorthEast, to, PROMOTION | CAPTURE, md, QUEEN);
+        md              = add_move<Flags, Us>(b, pc, to - NorthEast, to, PROMOTION | CAPTURE, md, ROOK);
+        md              = add_move<Flags, Us>(b, pc, to - NorthEast, to, PROMOTION | CAPTURE, md, ROOK);
+        md              = add_move<Flags, Us>(b, pc, to - NorthEast, to, PROMOTION | CAPTURE, md, KNIGHT);
       }
 
       while (pawns_up_west)
       {
-        const auto to = pop_lsb(&pawns_up_west);
-        md            = add_move<Flags, Us>(b, pc, to - NorthWest, to, PROMOTION | CAPTURE, md, QUEEN);
-        md            = add_move<Flags, Us>(b, pc, to - NorthWest, to, PROMOTION | CAPTURE, md, ROOK);
-        md            = add_move<Flags, Us>(b, pc, to - NorthWest, to, PROMOTION | CAPTURE, md, ROOK);
-        md            = add_move<Flags, Us>(b, pc, to - NorthWest, to, PROMOTION | CAPTURE, md, KNIGHT);
+        const Square to = pop_lsb(&pawns_up_west);
+        md              = add_move<Flags, Us>(b, pc, to - NorthWest, to, PROMOTION | CAPTURE, md, QUEEN);
+        md              = add_move<Flags, Us>(b, pc, to - NorthWest, to, PROMOTION | CAPTURE, md, ROOK);
+        md              = add_move<Flags, Us>(b, pc, to - NorthWest, to, PROMOTION | CAPTURE, md, ROOK);
+        md              = add_move<Flags, Us>(b, pc, to - NorthWest, to, PROMOTION | CAPTURE, md, KNIGHT);
       }
     } else if constexpr (Flags == QUIET)
     {
-      not_occupied  = ~b->pieces();
-      auto pawns_up = shift_bb<Up>(promotion_pawns) & not_occupied;
+      not_occupied      = ~b->pieces();
+      Bitboard pawns_up = shift_bb<Up>(promotion_pawns) & not_occupied;
       while (pawns_up)
       {
-        const auto to = pop_lsb(&pawns_up);
-        md            = add_move<Flags, Us>(b, pc, to - Up, to, PROMOTION, md, QUEEN);
-        md            = add_move<Flags, Us>(b, pc, to - Up, to, PROMOTION, md, ROOK);
-        md            = add_move<Flags, Us>(b, pc, to - Up, to, PROMOTION, md, BISHOP);
-        md            = add_move<Flags, Us>(b, pc, to - Up, to, PROMOTION, md, KNIGHT);
+        const Square to = pop_lsb(&pawns_up);
+        md              = add_move<Flags, Us>(b, pc, to - Up, to, PROMOTION, md, QUEEN);
+        md              = add_move<Flags, Us>(b, pc, to - Up, to, PROMOTION, md, ROOK);
+        md              = add_move<Flags, Us>(b, pc, to - Up, to, PROMOTION, md, BISHOP);
+        md              = add_move<Flags, Us>(b, pc, to - Up, to, PROMOTION, md, KNIGHT);
       }
     }
   }
@@ -245,11 +245,11 @@ template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]
 MoveData *generate_quiet_moves(Board *b, MoveData *md)
 {
-  constexpr auto NotRank7  = ~rank_7[Us];
-  constexpr auto Rank3     = rank_3[Us];
-  constexpr auto Up        = pawn_push(Us);
-  const auto empty_squares = ~b->pieces();
-  const auto pushed        = shift_bb<Up>(b->pieces(PAWN, Us) & NotRank7) & empty_squares;
+  constexpr Bitboard NotRank7  = ~rank_7[Us];
+  constexpr Bitboard Rank3     = rank_3[Us];
+  constexpr Direction Up       = pawn_push(Us);
+  const Bitboard empty_squares = ~b->pieces();
+  const Bitboard pushed        = shift_bb<Up>(b->pieces(PAWN, Us) & NotRank7) & empty_squares;
 
   // md = generate_pawn_moves<QUIET, Us>(b, md, empty_squares);
   md = add_pawn_moves<Flags, Us, NORMAL, Up>(b, pushed, md);
@@ -272,13 +272,13 @@ template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]
 MoveData *generate_captures_and_promotions(Board *b, MoveData *md)
 {
-  constexpr auto Them         = ~Us;
-  constexpr auto NorthWest    = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
-  constexpr auto NorthEast    = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
-  constexpr auto Rank_7       = rank_7[Us];
-  constexpr auto Up           = pawn_push(Us);
-  const auto opponent_pieces  = b->pieces(Them);
-  const auto pawns            = b->pieces(PAWN, Us);
+  constexpr Color Them           = ~Us;
+  constexpr Direction NorthWest  = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
+  constexpr Direction NorthEast  = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
+  constexpr Bitboard Rank_7      = rank_7[Us];
+  constexpr Direction Up         = pawn_push(Us);
+  const Bitboard opponent_pieces = b->pieces(Them);
+  const Bitboard pawns           = b->pieces(PAWN, Us);
 
   md = add_pawn_moves<Flags, Us, NORMAL, Up>(b, shift_bb<Up>(pawns & Rank_7) & ~b->pieces(), md);
   md = add_pawn_moves<Flags, Us, CAPTURE, NorthWest>(b, shift_bb<NorthWest>(pawns) & opponent_pieces, md);
@@ -326,8 +326,7 @@ template<>
 MoveData *generate<QUIET>(Board *b, MoveData *md)
 {
   const auto c = b->side_to_move();
-  return c == WHITE ? generate_quiet_moves<QUIET, WHITE>(b, md)
-                    : generate_quiet_moves<QUIET, BLACK>(b, md);
+  return c == WHITE ? generate_quiet_moves<QUIET, WHITE>(b, md) : generate_quiet_moves<QUIET, BLACK>(b, md);
 }
 
 template<MoveGenFlags Flags>

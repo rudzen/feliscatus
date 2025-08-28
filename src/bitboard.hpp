@@ -21,7 +21,6 @@
 #pragma once
 
 #include <cassert>
-#include <cstdint>
 #include <bit>
 #include <algorithm>
 #include <string_view>

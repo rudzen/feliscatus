@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "types.hpp"
 #include "hash.hpp"
 #include "score.hpp"

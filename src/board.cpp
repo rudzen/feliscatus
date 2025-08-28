@@ -64,9 +64,7 @@ Square ep_square(std::string_view s, const Color stm)
 
   const auto target_row = stm == WHITE ? '6' : '3';
 
-  return s.front() != target_row
-         ? NO_SQ
-         : static_cast<Square>(first - 'a' + (s.front() - '1') * 8);
+  return s.front() != target_row ? NO_SQ : static_cast<Square>(first - 'a' + (s.front() - '1') * 8);
 }
 
 template<CastlingRight Side>
@@ -219,8 +217,7 @@ void Board::perform_move(const Move m)
     remove_piece(from);
     add_piece(rook, rook_castles_to[to]);
     add_piece(pc, to);
-  }
-  else
+  } else
   {
     remove_piece(from);
 
@@ -229,8 +226,7 @@ void Board::perform_move(const Move m)
     {
       const auto direction = pawn_push(color_of(pc));
       remove_piece(to - direction);
-    }
-    else if (mt & CAPTURE)
+    } else if (mt & CAPTURE)
       remove_piece(to);
 
     [[unlikely]]
@@ -256,8 +252,7 @@ void Board::unperform_move(const Move m)
     remove_piece(rook_castles_to[to]);
     add_piece(pc, from);
     add_piece(rook, rook_castles_from[to]);
-  }
-  else
+  } else
   {
     remove_piece(to);
 
@@ -266,8 +261,7 @@ void Board::unperform_move(const Move m)
     {
       const auto direction = pawn_push(color_of(pc));
       add_piece(move_captured(m), to - direction);
-    }
-    else if (mt & CAPTURE)
+    } else if (mt & CAPTURE)
       add_piece(move_captured(m), to);
 
     add_piece(pc, from);
@@ -404,9 +398,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
 
   const auto mt = type_of(m);
 
-  if (check_legal
-  && !(mt & CASTLE)
-  && is_attacked(square<KING>(pos->side_to_move), ~pos->side_to_move))
+  if (check_legal && !(mt & CASTLE) && is_attacked(square<KING>(pos->side_to_move), ~pos->side_to_move))
   {
     unperform_move(m);
     return false;
@@ -415,7 +407,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
   const auto from = move_from(m);
   const auto to   = move_to(m);
 
-  auto *const prev       = pos++;
+  auto *const prev = pos++;
 
   pos->previous          = prev;
   pos->side_to_move      = ~prev->side_to_move;
@@ -424,8 +416,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
   pos->castle_rights     = prev->castle_rights;
   pos->null_moves_in_row = 0;
 
-  pos->rule50 =
-    mt & (CAPTURE | EPCAPTURE) || type_of(move_piece(m)) == PAWN ? 0 : prev->rule50 + 1;
+  pos->rule50 = mt & (CAPTURE | EPCAPTURE) || type_of(move_piece(m)) == PAWN ? 0 : prev->rule50 + 1;
 
   pos->en_passant_square  = type_of(m) & DOUBLEPUSH ? to + pawn_push(pos->side_to_move) : NO_SQ;
   pos->key                = prev->key;
@@ -468,18 +459,18 @@ void Board::unmake_move()
 
 bool Board::make_null_move()
 {
-  auto *const prev                = pos++;
-  pos->previous                   = prev;
-  pos->side_to_move               = ~prev->side_to_move;
-  pos->material                   = prev->material;
-  pos->last_move                  = MOVE_NONE;
-  pos->in_check                   = false;
-  pos->castle_rights              = prev->castle_rights;
-  pos->null_moves_in_row          = prev->null_moves_in_row + 1;
-  pos->rule50 = 0;
-  pos->en_passant_square          = NO_SQ;
-  pos->key                        = prev->key;
-  pos->pawn_structure_key         = prev->pawn_structure_key;
+  Position *const prev    = pos++;
+  pos->previous           = prev;
+  pos->side_to_move       = ~prev->side_to_move;
+  pos->material           = prev->material;
+  pos->last_move          = MOVE_NONE;
+  pos->in_check           = false;
+  pos->castle_rights      = prev->castle_rights;
+  pos->null_moves_in_row  = prev->null_moves_in_row + 1;
+  pos->rule50             = 0;
+  pos->en_passant_square  = NO_SQ;
+  pos->key                = prev->key;
+  pos->pawn_structure_key = prev->pawn_structure_key;
   update_key(pos, MOVE_NONE);
   return true;
 }
@@ -534,7 +525,7 @@ std::int64_t Board::half_move_count() const
 {
   return pos->rule50;
   // TODO : fix implementation defined behaviour
-  //return pos - position_list.data();
+  // return pos - position_list.data();
 }
 
 void Board::new_game(thread *t)
@@ -730,7 +721,11 @@ std::string Board::move_to_string(const Move m) const
 
   [[unlikely]]
   if (mt & PROMOTION)
-    return fmt::format("{}{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)), piece_to_string(type_of(move_promoted(m))));
+    return fmt::format(
+      "{}{}{}",
+      square_to_string(move_from(m)),
+      square_to_string(move_to(m)),
+      piece_to_string(type_of(move_promoted(m))));
 
   return fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)));
 }
@@ -744,11 +739,11 @@ void Board::print_moves()
 
 void Board::update_position(Position *p) const
 {
-  p->checkers   = attackers_to(square<KING>(p->side_to_move)) & pieces(~p->side_to_move);
-  p->in_check   = is_attacked(square<KING>(p->side_to_move), ~p->side_to_move);
-  auto key      = zobrist.zero();
-  auto pawn_key = zobrist.noPawn();
-  auto b        = pieces();
+  p->checkers  = attackers_to(square<KING>(p->side_to_move)) & pieces(~p->side_to_move);
+  p->in_check  = is_attacked(square<KING>(p->side_to_move), ~p->side_to_move);
+  Key key      = zobrist.zero();
+  Key pawn_key = zobrist.noPawn();
+  Bitboard b   = pieces();
 
   while (b)
   {
@@ -778,8 +773,8 @@ void Board::update_position(Position *p) const
 Bitboard Board::attackers_to(const Square s, const Bitboard occ) const
 {
   return (pawn_attacks_bb(BLACK, s) & pieces(PAWN, WHITE)) | (pawn_attacks_bb(WHITE, s) & pieces(PAWN, BLACK))
-         | (piece_attacks_bb<KNIGHT>(s) & pieces(KNIGHT)) | (piece_attacks_bb<BISHOP>(s, occ) & pieces(BISHOP, QUEEN))
-         | (piece_attacks_bb<ROOK>(s, occ) & pieces(ROOK, QUEEN)) | (piece_attacks_bb<KING>(s) & pieces(KING));
+       | (piece_attacks_bb<KNIGHT>(s) & pieces(KNIGHT)) | (piece_attacks_bb<BISHOP>(s, occ) & pieces(BISHOP, QUEEN))
+       | (piece_attacks_bb<ROOK>(s, occ) & pieces(ROOK, QUEEN)) | (piece_attacks_bb<KING>(s) & pieces(KING));
 }
 
 Bitboard Board::attackers_to(const Square s) const
@@ -790,12 +785,11 @@ Bitboard Board::attackers_to(const Square s) const
 template<CastlingRight Side>
 void Board::add_castle_rights(const Color us, std::optional<File> rook_file)
 {
-  const auto castle_rights   = make_castling<Side>(us);
-  const auto rank_one        = relative_rank(us, RANK_1);
-  const auto ksq             = square<KING>(us);
-  const auto rook_square     = !rook_file.has_value()
-                             ? find_rook_square<Side>(us, this)
-                             : make_square(rook_file.value(), rank_one);
+  const auto castle_rights = make_castling<Side>(us);
+  const auto rank_one      = relative_rank(us, RANK_1);
+  const auto ksq           = square<KING>(us);
+  const auto rook_square =
+    !rook_file.has_value() ? find_rook_square<Side>(us, this) : make_square(rook_file.value(), rank_one);
   constexpr auto r_from_file = Side == KING_SIDE ? FILE_G : FILE_C;
   const auto rook_from       = make_square(r_from_file, rank_one);
 
@@ -807,12 +801,11 @@ void Board::add_castle_rights(const Color us, std::optional<File> rook_file)
   const auto kto = relative_square(us, castle_rights & KING_SIDE ? G1 : C1);
   const auto rto = relative_square(us, castle_rights & KING_SIDE ? F1 : D1);
 
-  castling_path[castle_rights] = (between(rook_square, rto) | between(ksq, kto))
-                    & ~bit(ksq, rook_square);
+  castling_path[castle_rights] = (between(rook_square, rto) | between(ksq, kto)) & ~bit(ksq, rook_square);
 
 
   if constexpr (Side == KING_SIDE)
-    oo_king_from[us]  = ksq;
+    oo_king_from[us] = ksq;
   else
     ooo_king_from[us] = ksq;
 

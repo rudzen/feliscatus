@@ -219,10 +219,12 @@ Score eval_pieces(EvalD *eval)
 
       if (mob <= 3)
       {
-        const auto king_file = file_of(b->square<KING>(Us));
-        if (king_file < FILE_E == file_of(s) < king_file)
+        const File king_file = file_of(b->square<KING>(Us));
+        const bool kingFileLessThanFileE = king_file < FILE_E;
+        const bool squareLessThanKingFile = file_of(s) < king_file;
+        if (kingFileLessThanFileE == squareLessThanKingFile)
         {
-          const auto modifier = 1 + (Us & !b->can_castle());
+          const i32 modifier = 1 + (Us & !b->can_castle());
           result -= params::king_obstructs_rook * modifier;
         }
       }
@@ -272,7 +274,7 @@ Score eval_king(EvalD *eval)
 template<Color Us>
 Score eval_passed_pawns(EvalD *eval)
 {
-  constexpr auto Them = ~Us;
+  constexpr Color Them = ~Us;
 
   const Board *b           = eval->b;
   const PawnHashEntry *phe = eval->phe;

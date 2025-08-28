@@ -37,9 +37,8 @@ std::chrono::milliseconds since_epoch()
 
 }   // namespace
 
-void Time::init(const Color c, SearchLimits &limits)
+void Time::init(const Color c, const SearchLimits &limits)
 {
-
   last_curr_post = last_post_info = since_epoch();
 
   start_time.start();
@@ -62,7 +61,7 @@ void Time::init(const Color c, SearchLimits &limits)
       search_time = 2 * (time_left / (moves_left + 1) + time_inc);
       n_          = 2.5;
     }
-    search_time = std::max<TimeUnit>(0, std::min<int>(search_time, time_left - time_reserve));
+    search_time = std::max<TimeUnit>(0, std::min<TimeUnit>(search_time, time_left - time_reserve));
   }
 }
 
@@ -73,6 +72,7 @@ bool Time::time_up() const noexcept
 
 bool Time::plenty_time() const noexcept
 {
+
   return search_time < start_time.elapsed_milliseconds() * n_;
 }
 

@@ -28,8 +28,10 @@ namespace
 {
 
 template<Direction D>
-struct MakePawnFromTo final {
-  constexpr std::pair<Square, Square> operator()(Bitboard *b) const {
+struct MakePawnFromTo final
+{
+  constexpr std::pair<Square, Square> operator()(Bitboard *b) const
+  {
     const auto to   = pop_lsb(b);
     const auto from = to - D;
     return {to, from};
@@ -87,26 +89,20 @@ void score_move(MoveData &md, Board *b)
   }
 }
 
-}   // namespace
-
-namespace sort
-{
-
 void partial_limit_sort(MoveData *begin, MoveData *end, const int limit)
 {
-  for (MoveData *sortedEnd = begin, *p = begin + 1; p < end; ++p)
-    if (p->score >= limit)
-    {
-      MoveData tmp = *p, *q;
-      *p           = *++sortedEnd;
-      for (q = sortedEnd; q != begin && *(q - 1) < tmp; --q)
-        *q = *(q - 1);
-      *q = tmp;
-    }
+  // Partition: moves with score >= limit to the front
+  MoveData *mid = std::partition(begin, end, [limit](const MoveData &m) {
+    return m.score >= limit;
+  });
+
+  // Sort only the high-score moves in descending order
+  std::sort(begin, mid, [](const MoveData &a, const MoveData &b) {
+    return a.score > b.score;
+  });
 }
 
-}   // namespace sort
-
+}   // namespace
 
 template<bool Tuning>
 void Moves<Tuning>::generate_moves(const Move tt_move, const int flags)
@@ -234,13 +230,13 @@ template<bool Tuning>
 template<Color Us>
 void Moves<Tuning>::generate_captures_and_promotions()
 {
-  constexpr auto Them         = ~Us;
-  constexpr auto NorthWest    = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
-  constexpr auto NorthEast    = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
-  constexpr auto Rank_7       = rank_7[Us];
-  constexpr auto Up           = pawn_push(Us);
-  const auto opponent_pieces  = b->pieces(Them);
-  const auto pawns            = b->pieces(PAWN, Us);
+  constexpr auto Them        = ~Us;
+  constexpr auto NorthWest   = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
+  constexpr auto NorthEast   = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
+  constexpr auto Rank_7      = rank_7[Us];
+  constexpr auto Up          = pawn_push(Us);
+  const auto opponent_pieces = b->pieces(Them);
+  const auto pawns           = b->pieces(PAWN, Us);
 
   add_pawn_moves<Us, NORMAL>(shift_bb<Up>(pawns & Rank_7) & ~b->pieces(), Up);
   add_pawn_moves<Us, CAPTURE>(shift_bb<NorthWest>(pawns) & opponent_pieces, NorthWest);
@@ -372,11 +368,11 @@ template<bool Tuning>
 template<Color Us>
 void Moves<Tuning>::add_pawn_capture_moves(const Bitboard to_squares)
 {
-  constexpr auto Them         = ~Us;
-  constexpr auto NorthWest    = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
-  constexpr auto NorthEast    = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
-  const auto opponent_pieces  = b->pieces(Them);
-  const auto pawns            = b->pieces(PAWN, Us);
+  constexpr auto Them        = ~Us;
+  constexpr auto NorthWest   = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
+  constexpr auto NorthEast   = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
+  const auto opponent_pieces = b->pieces(Them);
+  const auto pawns           = b->pieces(PAWN, Us);
 
   add_pawn_moves<Us, CAPTURE>(shift_bb<NorthWest>(pawns) & opponent_pieces & to_squares, NorthWest);
   add_pawn_moves<Us, CAPTURE>(shift_bb<NorthEast>(pawns) & opponent_pieces & to_squares, NorthEast);
@@ -460,7 +456,7 @@ const MoveData *Moves<Tuning>::next_move()
   if (iteration_ == number_moves_)
     return nullptr;
 
-//  sort::partial_limit_sort(&move_list[iteration_], &move_list[number_moves_], 60000);
+  //partial_limit_sort(&move_list[iteration_], &move_list[number_moves_], 60000);
 
   do
   {

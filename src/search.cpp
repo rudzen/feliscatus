@@ -80,16 +80,12 @@ constexpr int codec_t_table_score(const int score, const int ply)
 bool is_hash_score_valid(const Position *pos, const int depth, const int alpha, const int beta)
 {
   return pos->transposition && pos->transposition->depth() >= depth
-         && (pos->transposition->isExact() || (pos->transposition->isBeta() && pos->transp_score >= beta) || (pos->transposition->isAlpha() && pos->transp_score <= alpha));
+      && (pos->transposition->isExact() || (pos->transposition->isBeta() && pos->transp_score >= beta)
+          || (pos->transposition->isAlpha() && pos->transp_score <= alpha));
 }
 
 void hash_and_evaluate(
-  Position *pos,
-  Board *b,
-  const std::size_t pool_index,
-  const int alpha,
-  const int beta,
-  const int plies)
+  Position *pos, const Board *b, const std::size_t pool_index, const int alpha, const int beta, const int plies)
 {
   if ((pos->transposition = TT.find(b->key())) == nullptr)
   {
@@ -153,10 +149,10 @@ struct Search final
 {
   explicit Search(Board *t_board) : b(t_board), t(t_board->my_thread())
   { }
-  ~Search()                   = default;
-  Search()                    = delete;
-  Search(const Search &other) = delete;
-  Search(Search &&other)      = delete;
+  ~Search()                         = default;
+  Search()                          = delete;
+  Search(const Search &other)       = delete;
+  Search(Search &&other)            = delete;
   Search &operator=(const Search &) = delete;
   Search &operator=(Search &&other) = delete;
 
@@ -179,8 +175,7 @@ private:
 
   template<NodeType NT, bool PV>
   [[nodiscard]]
-  std::optional<int>
-    next_depth_not_pv(int depth, int move_count, Move m, int alpha, int &best_score) const;
+  std::optional<int> next_depth_not_pv(int depth, int move_count, Move m, int alpha, int &best_score) const;
 
   [[nodiscard]]
   int next_depth_pv(Move singular_move, int depth, Move m) const;
@@ -417,9 +412,9 @@ template<Searcher SearcherType>
 template<NodeType NT, bool PV>
 int Search<SearcherType>::search_next_depth(const int depth, const int alpha, const int beta)
 {
-  return (b->is_draw() || b->is_repetition()) && pos->last_move
-           ? -draw_score()
-           : depth <= 0 ? -search_quiesce<PV>(alpha, beta, 0) : -search<NT, PV>(depth, alpha, beta);
+  return (b->is_draw() || b->is_repetition()) && pos->last_move ? -draw_score()
+       : depth <= 0                                             ? -search_quiesce<PV>(alpha, beta, 0)
+                                                                : -search<NT, PV>(depth, alpha, beta);
 }
 
 template<Searcher SearcherType>
@@ -431,9 +426,9 @@ Move Search<SearcherType>::singular_move(const int depth)
   else
   {
     return pos->transp_move && pos->transp_type == EXACT && depth >= 4
-               && search_fail_low(depth / 2, std::max<int>(-MAXSCORE, pos->eval_score - 75), pos->transp_move)
-             ? pos->transp_move
-             : MOVE_NONE;
+            && search_fail_low(depth / 2, std::max<int>(-MAXSCORE, pos->eval_score - 75), pos->transp_move)
+           ? pos->transp_move
+           : MOVE_NONE;
   }
 }
 
@@ -485,7 +480,7 @@ template<Searcher SearcherType>
 bool Search<SearcherType>::should_try_null_move(const int beta) const
 {
   return !b->in_check() && pos->null_moves_in_row < 1 && !b->material().is_kx(b->side_to_move())
-         && pos->eval_score >= beta;
+      && pos->eval_score >= beta;
 }
 
 template<Searcher SearcherType>
@@ -497,9 +492,9 @@ std::optional<int> Search<SearcherType>::next_depth_not_pv(
   if (b->in_check() && b->see_last_move(m) >= 0)
     return std::make_optional(depth);
 
-  if (constexpr auto move_count_limit = PV ? 5 : 3;
-    move_count >= move_count_limit && !is_queen_promotion(m) && !is_capture(m)
-    && !is_killer_move(m, pos->previous->killer_moves))
+  if (constexpr auto move_count_limit = PV ? 5 : 3; move_count >= move_count_limit && !is_queen_promotion(m)
+                                                    && !is_capture(m)
+                                                    && !is_killer_move(m, pos->previous->killer_moves))
   {
     auto next_depth = depth - 2 - depth / 8 - (move_count - 6) / 10;
 
@@ -611,8 +606,8 @@ int Search<SearcherType>::search_quiesce(int alpha, const int beta, const int qs
   }
 
   return !pos->transposition || pos->transp_depth <= 0
-           ? store_search_node_score(best_score, 0, node_type(best_score, beta, best_move), best_move)
-           : best_score;
+         ? store_search_node_score(best_score, 0, node_type(best_score, beta, best_move), best_move)
+         : best_score;
 }
 
 template<Searcher SearcherType>
@@ -659,8 +654,7 @@ void Search<SearcherType>::check_time() const
 {
   if constexpr (verbosity)
   {
-    const auto stop =
-      !is_analysing() && !pool.is_fixed_depth() && b->search_depth > 1 && pool.main()->time.time_up();
+    const auto stop = !is_analysing() && !pool.is_fixed_depth() && b->search_depth > 1 && pool.main()->time.time_up();
 
     if (stop)
     {
@@ -763,12 +757,8 @@ bool Search<SearcherType>::move_is_easy() const
       return true;
 
     [[unlikely]]
-    if (
-      (pool.is_fixed_depth() && pool.depth() == b->search_depth)
-      || (t->pv[0][0].score == MAXSCORE - 1))
-    {
+    if ((pool.is_fixed_depth() && pool.depth() == b->search_depth) || t->pv[0][0].score == MAXSCORE - 1)
       return true;
-    }
 
     return !is_analysing() && !pool.is_fixed_depth() && pool.main()->time.plenty_time();
   }
@@ -791,14 +781,14 @@ void main_thread::search()
   //
   if (Options[uci::uciName<uci::UciOptions::USE_BOOK>()])
   {
-      if (const auto book_file = Options[uci::uciName<uci::UciOptions::BOOKS>()]; !book.empty())
+    if (const auto book_file = Options[uci::uciName<uci::UciOptions::BOOKS>()]; !book.empty())
+    {
+      if (const auto book_move = book.probe(root_board.get()); book_move)
       {
-        if (const auto book_move = book.probe(root_board.get()); book_move)
-        {
         uci::postMoves(book_move, MOVE_NONE);
-          return;
-        }
+        return;
       }
+    }
   }
 
   time.init(root_board->side_to_move(), pool.limits);

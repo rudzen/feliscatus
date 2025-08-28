@@ -28,6 +28,9 @@
 #include "moves.hpp"
 #include "eval.hpp"
 #include "polyglot.hpp"
+
+#include "types.hpp"
+
 namespace
 {
 
@@ -36,7 +39,7 @@ constexpr TimeUnit time_safety_margin = 1;
 [[nodiscard]]
 std::unique_ptr<Board> new_board()
 {
-  const auto num_threads = static_cast<std::size_t>(Options[uci::uciName<uci::UciOptions::THREADS>()]);
+  const std::size_t num_threads = static_cast<std::size_t>(Options[uci::uciName<uci::UciOptions::THREADS>()]);
   pool.set(num_threads);
   auto board = std::make_unique<Board>();
   board->set_fen(start_position, pool.main());
@@ -44,7 +47,7 @@ std::unique_ptr<Board> new_board()
 }
 
 [[nodiscard]]
-constexpr std::uint64_t nps(const std::uint64_t nodes, const TimeUnit time)
+constexpr u64 nps(const u64 nodes, const TimeUnit time)
 {
   return nodes * 1000 / time;
 }
@@ -52,19 +55,18 @@ constexpr std::uint64_t nps(const std::uint64_t nodes, const TimeUnit time)
 [[nodiscard]]
 auto node_info(const TimeUnit time)
 {
-  const auto nodes = pool.node_count();
+  const uint64_t nodes = pool.node_count();
   return std::make_pair(nodes, nps(nodes, time));
 }
 
 [[nodiscard]]
 Move string_to_move(Board *b, const std::string_view m)
 {
-  auto mg = Moves(b);
+  Moves<> mg = Moves(b);
   mg.generate_moves();
 
-  while (const MoveData *move_data = mg.next_move())
-    [[unlikely]]
-    if (m == uci::display_uci(move_data->move))
+  while (const MoveData *move_data = mg.next_move()) [[unlikely]]
+    if (m == uci::displayUci(move_data->move))
       return move_data->move;
   return MOVE_NONE;
 }
@@ -82,20 +84,18 @@ void position(Board *b, std::istringstream &input)
 
     // get rid of "moves" token
     input >> token;
-  }
-  else if (token == "fen")
+  } else if (token == "fen")
   {
     fmt::memory_buffer fen;
     auto inserter = std::back_inserter(fen);
     while (input >> token && token != "moves")
       fmt::format_to(inserter, "{} ", token);
     b->set_fen(fmt::to_string(fen), pool.main());
-  }
-  else return;
+  } else
+    return;
 
   // parse any moves if they exist
-  while (input >> token)
-    [[likely]]
+  while (input >> token) [[likely]]
     if (const auto m = string_to_move(b, token); m)
       b->make_move(m, false, true);
 }
@@ -120,14 +120,14 @@ void set_option(std::istringstream &input)
   {
     Options[option_name] = option_value;
     output               = fmt::format("Option {} = {}\n", option_name, option_value);
-  }
-  else output = fmt::format("Uknown option {} = {}\n", option_name, option_value);
+  } else
+    output = fmt::format("Uknown option {} = {}\n", option_name, option_value);
 
   const auto uci_info = uci::info(output);
   fmt::print("{}", uci_info);
 }
 
-void go(std::istringstream &input, std::string_view fen)
+void go(std::istringstream &input, const std::string_view fen)
 {
   auto &limits = pool.limits;
 
@@ -160,7 +160,7 @@ void go(std::istringstream &input, std::string_view fen)
 
 }   // namespace
 
-void uci::postMoves(Move m, Move ponderMove)
+void uci::postMoves(const Move m, const Move ponderMove)
 {
   fmt::memory_buffer buffer;
   auto inserter = std::back_inserter(buffer);
@@ -188,12 +188,12 @@ void uci::postInfo(const int d, const int selectiveDepth)
       node_count, nodes_per_second, time, Cpu.usage());
 }
 
-void uci::postCurrMove(Move m, int number)
+void uci::postCurrMove(const Move m, int number)
 {
   fmt::print("info currmove {} currmovenumber {}\n", displayUci(m), number);
 }
 
-void uci::postPv(int d, int maxPly, int score, const std::span<PVEntry> &pvLine, NodeType nt)
+void uci::postPv(int d, int maxPly, int score, const std::span<PVEntry> &pvLine, const NodeType nt)
 {
   fmt::memory_buffer buffer;
   auto inserter = std::back_inserter(buffer);
@@ -216,15 +216,17 @@ void uci::postPv(int d, int maxPly, int score, const std::span<PVEntry> &pvLine,
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-std::string uci::displayUci(Move m)
+std::string uci::displayUci(const Move m)
 {
   [[unlikely]]
   if (m == MOVE_NONE)
-    return std::string("0000");
+    return {"0000"};
 
   // append piece promotion if the move is a promotion.
   return !is_promotion(m) ? fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)))
-                          : fmt::format("{}{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)), piece_index[type_of(move_promoted(m))]);
+                          : fmt::format(
+                              "{}{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)),
+                              piece_index[type_of(move_promoted(m))]);
 }
 
 std::string uci::info(const std::string_view infoString)
@@ -265,8 +267,7 @@ void uci::run(const int argc, char *argv[])
       // auto output = fmt::format("{}{}\nuciok\n", misc::print_engine_info<true>(), Options);
       // fmt::print("{}{}\nuciok\n", misc::print_engine_info<true>(), Options);
       fmt::print("uciok");
-    }
-    else if (token == "isready")
+    } else if (token == "isready")
       fmt::print("readyok\n");
     else if (token == "ucinewgame")
     {
@@ -299,8 +300,8 @@ void uci::run(const int argc, char *argv[])
       fmt::print("Eval: {}\n", e);
     } else if (token == "book")
     {
-      const auto m = book.probe(board.get());
-      uci::postMoves(m, MOVE_NONE);
+      const Move m = book.probe(board.get());
+      postMoves(m, MOVE_NONE);
     } else if (token == "exit")
       break;
   } while (token != "quit" && argc == 1);
