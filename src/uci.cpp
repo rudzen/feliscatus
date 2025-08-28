@@ -176,7 +176,7 @@ void uci::postMoves(const Move m, const Move ponderMove)
 
 void uci::postInfo(const int d, const int selectiveDepth)
 {
-  const auto time                           = pool.main()->time.elapsed() + time_safety_margin;
+  const auto time                           = elapsed(&pool.main()->time) + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
   if (!Options[uciName<UciOptions::SHOW_CPU>()])
     fmt::print(
@@ -205,7 +205,7 @@ void uci::postPv(int d, int maxPly, int score, const std::span<PVEntry> &pvLine,
   else if (nt == BETA)
     fmt::format_to(inserter, "lowerbound ");
 
-  const auto time                           = pool.main()->time.elapsed() + time_safety_margin;
+  const TimeUnit time                       = elapsed(&pool.main()->time) + time_safety_margin;
   const auto [node_count, nodes_per_second] = node_info(time);
 
   fmt::format_to(inserter, "hashfull {} nodes {} nps {} time {} pv ", TT.load(), node_count, nodes_per_second, time);

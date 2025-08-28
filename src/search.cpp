@@ -35,6 +35,7 @@
 #include "board.hpp"
 #include "moves.hpp"
 #include "polyglot.hpp"
+#include "time.hpp"
 
 namespace
 {
@@ -334,12 +335,12 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta)
       {
         if (b->plies == 1)
         {
-          if (b->search_depth >= 20 && (pool.main()->time.should_post_curr_move() || is_analysing()))
+          if (b->search_depth >= 20 && (should_post_current_move(&pool.main()->time) || is_analysing()))
             uci::postCurrMove(move_data->move, move_count);
         } else if (b->plies == 0)
         {
           // note that b->plies == 0 is required to avoid spamming weird depth values where it should not
-          if (pool.main()->time.should_post_info())
+          if (should_post_info(&pool.main()->time))
             uci::postInfo(depth, b->search_depth);
         }
       }
@@ -654,7 +655,7 @@ void Search<SearcherType>::check_time() const
 {
   if constexpr (verbosity)
   {
-    const auto stop = !is_analysing() && !pool.is_fixed_depth() && b->search_depth > 1 && pool.main()->time.time_up();
+    const auto stop = !is_analysing() && !pool.is_fixed_depth() && b->search_depth > 1 && is_time_up(&pool.main()->time);
 
     if (stop)
     {
@@ -760,7 +761,7 @@ bool Search<SearcherType>::move_is_easy() const
     if ((pool.is_fixed_depth() && pool.depth() == b->search_depth) || t->pv[0][0].score == MAXSCORE - 1)
       return true;
 
-    return !is_analysing() && !pool.is_fixed_depth() && pool.main()->time.plenty_time();
+    return !is_analysing() && !pool.is_fixed_depth() && has_plenty_time(&pool.main()->time);
   }
 }
 
@@ -791,7 +792,7 @@ void main_thread::search()
     }
   }
 
-  time.init(root_board->side_to_move(), pool.limits);
+  init_time(&time, root_board->side_to_move(), &pool.limits);
 
   pool.start_searching();   // start workers
   Search<Searcher::Master>(root_board.get()).go();

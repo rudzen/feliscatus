@@ -20,35 +20,47 @@
 
 #pragma once
 
-#include "stopwatch.hpp"
 #include "miscellaneous.hpp"
 #include "search_limits.hpp"
 #include "position.hpp"
 
-struct Time final
+struct Stopwatch
 {
-  void init(Color c, const SearchLimits &limits);
-
-  [[nodiscard]]
-  bool time_up() const noexcept;
-
-  [[nodiscard]]
-  bool plenty_time() const noexcept;
-
-  void ponder_hit() noexcept;
-
-  [[nodiscard]]
-  TimeUnit elapsed() const noexcept;
-
-  [[nodiscard]]
-  bool should_post_curr_move() noexcept;
-
-  bool should_post_info() noexcept;
-
-private:
-  Stopwatch start_time{};
-  double n_{};
-  TimeUnit search_time{};
-  std::chrono::milliseconds last_curr_post{};
-  std::chrono::milliseconds last_post_info{};
+  std::chrono::time_point<std::chrono::system_clock> start_time;
+  std::chrono::time_point<std::chrono::system_clock> end_time;
+  std::chrono::time_point<std::chrono::system_clock> last_curr_info;
+  bool running;
 };
+
+struct Time
+{
+  Stopwatch start_time;
+  TimeUnit search_time;
+  std::chrono::milliseconds last_curr_post;
+  std::chrono::milliseconds last_post_info;
+  r64 n;
+};
+
+void start(Stopwatch *sw);
+
+void stop(Stopwatch *sw);
+
+TimeUnit elapsed_milliseconds(const Stopwatch *sw);
+
+TimeUnit elapsed_microseconds(Stopwatch *sw);
+
+TimeUnit elapsed_seconds(Stopwatch *sw);
+
+void init_time(Time *time, Color c, const SearchLimits *limits);
+
+bool is_time_up(const Time * time);
+
+bool has_plenty_time(const Time * time);
+
+void ponder_hit(Time* time);
+
+TimeUnit elapsed(const Time * time);
+
+bool should_post_current_move(Time* time);
+
+bool should_post_info(Time* time);

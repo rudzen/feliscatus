@@ -21,7 +21,6 @@
 #include <fmt/format.h>
 
 #include "perft.hpp"
-#include "stopwatch.hpp"
 #include "board.hpp"
 #include "moves.hpp"
 
@@ -82,11 +81,11 @@ std::uint64_t Perft<Flags>::perft(const int depth) const
 
   for (auto i = 1; i <= depth; i++)
   {
-    sw.start();
-    const auto nodes = p<Flags>(b, i);
-    const auto time = sw.elapsed_milliseconds() + 1;
+    start(&sw);
+    const u64 nodes     = p<Flags>(b, i);
+    const TimeUnit time = elapsed_milliseconds(&sw) + 1;
     total_nodes += nodes;
-    nps             = nodes / time * 1000;
+    nps = nodes / time * 1000;
     fmt::print("depth {}: {} nodes, {} ms, {} nps\n", i, nodes, time, nps);
   }
 
@@ -110,10 +109,10 @@ std::uint64_t Perft<Flags>::perft_divide(const int depth) const
     if (!b->make_move(m, true, true))
       continue;
 
-    const auto nodes_start = nodes;
-    sw.start();
+    const u64 nodes_start = nodes;
+    start(&sw);
     nodes += p<Flags>(b, depth - 1);
-    time += sw.elapsed_milliseconds();
+    time += elapsed_milliseconds(&sw);
     b->unmake_move();
     fmt::print("move {}: {} nodes\n", b->move_to_string(m), nodes - nodes_start);
   }
@@ -127,10 +126,10 @@ std::uint64_t Perft<Flags>::perft_divide(const int depth) const
 
 std::uint64_t perft::perft(Board *b, const int depth)
 {
-  return Perft<LEGALMOVES>(b).perft(depth);
+  return Perft(b).perft(depth);
 }
 
 std::uint64_t perft::divide(Board *b, const int depth)
 {
-  return Perft<LEGALMOVES>(b).perft_divide(depth);
+  return Perft(b).perft_divide(depth);
 }

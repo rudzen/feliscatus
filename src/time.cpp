@@ -37,69 +37,101 @@ std::chrono::milliseconds since_epoch()
 
 }   // namespace
 
-void Time::init(const Color c, const SearchLimits &limits)
+void start(Stopwatch *sw)
 {
-  last_curr_post = last_post_info = since_epoch();
+  sw->start_time = std::chrono::system_clock::now();
+  sw->running    = true;
+}
 
-  start_time.start();
+void stop(Stopwatch *sw)
+{
+  sw->start_time = std::chrono::system_clock::now();
+  sw->running    = false;
+}
+
+TimeUnit elapsed_milliseconds(const Stopwatch *sw)
+{
+  const std::chrono::time_point<std::chrono::system_clock> end_time =
+    sw->running ? std::chrono::system_clock::now() : sw->end_time;
+  return std::chrono::duration_cast<std::chrono::milliseconds>(end_time - sw->start_time).count();
+}
+TimeUnit elapsed_microseconds(Stopwatch *sw)
+{
+  const auto end_time = sw->running ? std::chrono::system_clock::now() : sw->end_time;
+  return std::chrono::duration_cast<std::chrono::microseconds>(end_time - sw->start_time).count();
+}
+
+TimeUnit elapsed_seconds(Stopwatch *sw)
+{
+  const auto end_time = sw->running ? std::chrono::system_clock::now() : sw->end_time;
+  return std::chrono::duration_cast<std::chrono::seconds>(end_time - sw->start_time).count();
+}
+
+void init_time(Time *time, const Color c, const SearchLimits *limits)
+{
+  time->last_curr_post = time->last_post_info = since_epoch();
+
+  start(&time->start_time);
+
   [[unlikely]]
-  if (limits.fixed_movetime)
-    search_time = 950 * limits.movetime / 1000;
+  if (limits->fixed_movetime)
+    time->search_time = 950 * limits->movetime / 1000;
   else
   {
-    const auto moves_left = util::inBetween<1, 30>(limits.movestogo) ? limits.movestogo : 30;
-    const auto time_left  = limits.time[c];
-    const auto time_inc   = limits.inc[c];
+    const i32 moves_left     = util::inBetween<1, 30>(limits->movestogo) ? limits->movestogo : 30;
+    const TimeUnit time_left = limits->time[c];
+    const TimeUnit time_inc  = limits->inc[c];
 
     [[unlikely]]
     if (time_inc == 0 && time_left < 1000)
     {
-      search_time = time_left / (moves_left * 2);
-      n_          = 1;
+      time->search_time = time_left / (moves_left * 2);
+      time->n          = 1;
     } else
     {
-      search_time = 2 * (time_left / (moves_left + 1) + time_inc);
-      n_          = 2.5;
+      time->search_time = 2 * (time_left / (moves_left + 1) + time_inc);
+      time->n          = 2.5;
     }
-    search_time = std::max<TimeUnit>(0, std::min<TimeUnit>(search_time, time_left - time_reserve));
+    time->search_time = std::max<TimeUnit>(0, std::min<TimeUnit>(time->search_time, time_left - time_reserve));
   }
 }
 
-bool Time::time_up() const noexcept
+bool is_time_up(const Time *time)
 {
-  return start_time.elapsed_milliseconds() > search_time;
+  return elapsed_milliseconds(&time->start_time) > time->search_time;
 }
 
-bool Time::plenty_time() const noexcept
+bool has_plenty_time(const Time *time)
 {
-
-  return search_time < start_time.elapsed_milliseconds() * n_;
+  return time->search_time < elapsed_milliseconds(&time->start_time) * time->n;
 }
 
-void Time::ponder_hit() noexcept
+void ponder_hit(Time *time)
 {
-  search_time += start_time.elapsed_milliseconds();
+  time->search_time += elapsed_milliseconds(&time->start_time);
 }
 
-TimeUnit Time::elapsed() const noexcept
+TimeUnit elapsed(const Time *time)
 {
-  return start_time.elapsed_milliseconds();
+  return elapsed_milliseconds(&time->start_time);
 }
 
-bool Time::should_post_curr_move() noexcept
+bool should_post_current_move(Time *time)
 {
-  const auto now = since_epoch();
-  const auto can_post = now - last_curr_post > curr_move_post_limit;
+  const std::chrono::milliseconds now = since_epoch();
+  const bool can_post                 = now - time->last_curr_post > curr_move_post_limit;
+
   if (can_post)
-    last_curr_post = now;
+    time->last_curr_post = now;
   return can_post;
 }
 
-bool Time::should_post_info() noexcept
+bool should_post_info(Time *time)
 {
-  const auto now = since_epoch();
-  const auto can_post = now - last_post_info > last_post_info_span;
+  const std::chrono::milliseconds now = since_epoch();
+  const bool can_post                 = now - time->last_post_info > last_post_info_span;
+
   if (can_post)
-    last_post_info = now;
+    time->last_post_info = now;
   return can_post;
 }
