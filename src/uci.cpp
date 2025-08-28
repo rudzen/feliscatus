@@ -266,7 +266,7 @@ void uci::run(const int argc, char *argv[])
     {
       // auto output = fmt::format("{}{}\nuciok\n", misc::print_engine_info<true>(), Options);
       // fmt::print("{}{}\nuciok\n", misc::print_engine_info<true>(), Options);
-      fmt::print("uciok");
+      fmt::print("uciok\n");
     } else if (token == "isready")
       fmt::print("readyok\n");
     else if (token == "ucinewgame")
