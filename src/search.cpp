@@ -769,7 +769,7 @@ bool Search<SearcherType>::move_is_easy() const
 
 void thread::search()
 {
-  Search<Searcher::Slave>(root_board.get()).go();
+  Search<Searcher::Slave>(root_board).go();
 }
 
 void main_thread::search()
@@ -784,7 +784,7 @@ void main_thread::search()
   {
     if (const auto book_file = Options[uci::uciName<uci::UciOptions::BOOKS>()]; !book.empty())
     {
-      if (const auto book_move = book.probe(root_board.get()); book_move)
+      if (const auto book_move = book.probe(root_board); book_move)
       {
         uci::postMoves(book_move, MOVE_NONE);
         return;
@@ -792,12 +792,12 @@ void main_thread::search()
     }
   }
 
-  init_time(&time, root_board->side_to_move(), &pool.limits);
+  init_time(&time, root_board->side_to_move(), pool.limits);
 
   pool.start_searching();   // start workers
-  Search<Searcher::Master>(root_board.get()).go();
+  Search<Searcher::Master>(root_board).go();
 
-  while (!pool.stop && (ponder || pool.limits.infinite))
+  while (!pool.stop && (ponder || pool.limits->infinite))
   {
     // "wait" until stopped
   }

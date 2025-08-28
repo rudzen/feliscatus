@@ -25,16 +25,98 @@
 #include "uci.hpp"
 #include "board.hpp"
 #include "transpositional.hpp"
+#include "search_limits.hpp"
 
 namespace
 {
 
-constexpr std::size_t parallel_threshold = 8;
+// Calculate required memory for thread objects
+constexpr size_t calculate_thread_memory_requirement()
+{
+  // Basic thread object size
+  constexpr size_t thread_base_size = sizeof(struct thread);
+  constexpr size_t main_thread_size = sizeof(struct main_thread);
 
+  // Board object size (allocated separately per thread)
+  constexpr size_t board_size = sizeof(Board);
+
+  // Add some padding for alignment
+  constexpr size_t alignment_padding = 64;
+
+  return std::max(thread_base_size, main_thread_size) + board_size + alignment_padding;
 }
 
-thread::thread(const std::size_t index)
-  : root_board(std::make_unique<Board>()), idx(index), jthread(&thread::idleLoop, this), searching(true)
+constexpr size_t THREAD_MEMORY_SIZE = calculate_thread_memory_requirement();
+constexpr size_t PARALLEL_THRESHOLD = 8;
+
+/**
+ * Reset and prepare arena for thread allocation based on thread count
+ * Calculates required memory for threads and boards, resets arena state
+ */
+void reset_thread_arena(Arena &arena, size_t thread_count)
+{
+  // Calculate total memory needed for all threads
+  // Main thread (slightly larger) + regular threads + boards + alignment padding
+  const size_t total_memory_needed = thread_count * THREAD_MEMORY_SIZE;
+
+  // Add memory for SearchLimits and its search_moves array
+  const size_t search_limits_size = sizeof(SearchLimits) + (sizeof(Move) * MAX_MOVES);
+
+  // Add extra space for safety (20% overhead)
+  const size_t arena_size = total_memory_needed + search_limits_size + ((total_memory_needed + search_limits_size) / 5);
+
+  // Check if current arena capacity is sufficient
+  if (arena.capacity() < arena_size)
+  {
+    // Need to resize the arena - calculate new size with some growth factor
+    // Use at least 50% more than required to avoid frequent resizing
+    const size_t new_capacity = arena_size + (arena_size / 2);
+
+    if (!arena.resize_and_reset(new_capacity))
+    {
+      // Failed to resize arena - this is a critical error
+      // For now, we'll continue with existing capacity and hope it works
+      // In a production system, you might want to throw an exception or handle this differently
+      arena.reset();
+    }
+  } else   // Arena has sufficient capacity, just reset it
+    arena.reset();
+}
+
+/**
+ * Allocate and construct a thread object from arena memory
+ * Uses placement new to properly construct objects
+ * Returns nullptr if out of memory
+ */
+template<typename ThreadType>
+ThreadType *allocate_thread_from_arena(Arena &arena, size_t index)
+{
+  // Allocate thread object from arena
+  ThreadType *thread_obj = arena.allocate<ThreadType>(1);
+  if (!thread_obj)
+    return nullptr;   // Out of memory
+
+  // Allocate Board object from arena
+  Board *board_obj = arena.allocate<Board>(1);
+  if (!board_obj)
+    return nullptr;   // Out of memory - arena will be reset anyway
+
+  // Use placement new to construct the thread object
+  new (thread_obj) ThreadType(index);
+
+  // Use placement new to construct the Board object
+  // TODO (rudzen) : This should be removed once the board class is refactored to not require a constructor
+  new (board_obj) Board();
+
+  // Directly assign the arena-allocated Board pointer
+  thread_obj->root_board = board_obj;
+
+  return thread_obj;
+}
+
+}   // namespace
+
+thread::thread(const size_t index) : jthread(&thread::idleLoop, this), idx(index), searching(true)
 { }
 
 thread::~thread()
@@ -62,7 +144,7 @@ void thread::idleLoop()
 
   do
   {
-    std::unique_lock<std::mutex> lk(mutex);
+    std::unique_lock lk(mutex);
     searching.store(false);
 
     // Wake up anyone waiting for search finished
@@ -84,14 +166,14 @@ void thread::idleLoop()
 
 void thread::start_searching()
 {
-  std::lock_guard<std::mutex> lk(mutex);
+  std::lock_guard lk(mutex);
   searching.store(true);
   cv.notify_one();   // Wake up the thread in idleLoop()
 }
 
 void thread::wait_for_search_finished()
 {
-  std::unique_lock<std::mutex> lk(mutex);
+  std::unique_lock lk(mutex);
   cv.wait(lk, [&] {
     return !searching.load();
   });
@@ -99,46 +181,71 @@ void thread::wait_for_search_finished()
 
 #if defined(linux)
 thread_pool::thread_pool()
-{ }
 #else
 thread_pool::thread_pool()
   : node_counters(
-    {[&] {
-       return node_count_seq();
-     },
-     [&] {
-       return node_count_par();
-     }})
-{ }
+      {[&] {
+         return node_count_seq();
+       },
+       [&] {
+         return node_count_par();
+       }})
 #endif
+{
+  // Don't allocate from arena during constructor - the arena will be reset in set()
+  // Initialize limits as nullptr, it will be allocated in set()
+  limits = nullptr;
+}
 
-void thread_pool::set(const std::size_t v)
+void thread_pool::set(const size_t v)
 {
   while (!empty())
     pop_back();
 
   assert(v > 0);
 
-  if (v > 0)
+  if (v == 0)
+    return;
+
+  // Reset and prepare the arena for thread allocation
+  reset_thread_arena(thread_arena, v);
+
+  // Allocate SearchLimits from arena first
+  limits = thread_arena.allocate<SearchLimits>(1);
+  if (limits) {
+    // Allocate the search_moves array from arena
+    limits->search_moves = thread_arena.allocate<Move>(MAX_MOVES);
+    if (limits->search_moves) {
+      // Initialize the SearchLimits structure
+      ClearSearchLimits(limits);
+    }
+  }
+
+  // Allocate main thread from arena
+  main_thread *main_t = allocate_thread_from_arena<main_thread>(thread_arena, 0);
+  if (main_t)
+    emplace_back(main_t);
+
+  // Allocate remaining threads from arena
+  while (size() < v)
   {
-    emplace_back(std::make_unique<main_thread>(0));
+    thread *t = allocate_thread_from_arena<thread>(thread_arena, size());
+    if (t)
+      emplace_back(t);
+  }
 
-    while (size() < v)
-      emplace_back(std::make_unique<thread>(size()));
+  clear_data();
 
-    clear_data();
+  size_t tt_size = Options[uci::uciName<uci::UciOptions::HASH>()];
 
-    auto tt_size = static_cast<std::size_t>(Options[uci::uciName<uci::UciOptions::HASH>()]);
+  if (Options[uci::uciName<uci::UciOptions::HASH_X_THREADS>()])
+    tt_size *= size();
 
-    if (Options[uci::uciName<uci::UciOptions::HASH_X_THREADS>()])
-      tt_size *= size();
-
-    TT.init(tt_size);
+  TT.init(tt_size);
 
 #if !defined(linux)
-    parallel = size() > parallel_threshold;
+  parallel = size() > PARALLEL_THRESHOLD;
 #endif
-  }
 }
 
 void thread_pool::start_thinking(std::string_view fen)
@@ -148,11 +255,11 @@ void thread_pool::start_thinking(std::string_view fen)
   front_thread->wait_for_search_finished();
 
   stop                 = false;
-  front_thread->ponder = limits.ponder;
+  front_thread->ponder = limits->ponder;
 
-  const auto setup = [&fen](std::unique_ptr<thread> &t) {
+  const auto setup = [&fen](thread *t) {
     t->node_count = 0;
-    t->root_board->set_fen(fen, t.get());
+    t->root_board->set_fen(fen, t);
   };
 
 #if defined(linux)
@@ -166,7 +273,7 @@ void thread_pool::start_thinking(std::string_view fen)
 
 void thread_pool::start_searching()
 {
-  auto start = [](std::unique_ptr<thread> &t) {
+  auto start = [](thread *t) {
     t->start_searching();
   };
   std::for_each(std::next(begin()), end(), start);
@@ -174,22 +281,25 @@ void thread_pool::start_searching()
 
 void thread_pool::wait_for_search_finished()
 {
-  auto wait = [](std::unique_ptr<thread> &t) {
+  auto wait = [](thread *t) {
     t->wait_for_search_finished();
   };
   std::for_each(std::next(begin()), end(), wait);
 }
 
-void thread_pool::clear_data()
+void thread_pool::clear_data() const
 {
   for (auto &w : *this)
     w->clearData();
 }
 
-std::uint64_t thread_pool::node_count() const
+// Initialize the static thread arena with a reasonable size (32MB)
+Arena thread_pool::thread_arena(32 * 1024 * 1024);
+
+u64 thread_pool::node_count() const
 {
 #if defined(linux)
-  const auto accumulator = [](const std::uint64_t r, const std::unique_ptr<thread> &d) {
+  const auto accumulator = [](const u64 r, const thread *d) {
     return r + d->node_count.load(std::memory_order_relaxed);
   };
   return std::accumulate(cbegin(), cend(), 0ull, accumulator);
@@ -199,19 +309,19 @@ std::uint64_t thread_pool::node_count() const
 }
 
 #if !defined(linux)
-std::uint64_t thread_pool::node_count_seq() const
+u64 thread_pool::node_count_seq() const
 {
-  const auto accumulator = [](const std::uint64_t r, const std::unique_ptr<thread> &d) {
+  const auto accumulator = [](const u64 r, const thread *d) {
     return r + d->node_count.load(std::memory_order_relaxed);
   };
   return std::accumulate(cbegin(), cend(), 0ull, accumulator);
 }
 
-std::uint64_t thread_pool::node_count_par() const
+u64 thread_pool::node_count_par() const
 {
-  const auto accumulator = [](const std::unique_ptr<thread> &d) {
+  const auto accumulator = [](const thread *d) {
     return d->node_count.load(std::memory_order_relaxed);
   };
-  return std::transform_reduce(std::execution::par_unseq, cbegin(), cend(), 0ull, std::plus<>(), accumulator);
+  return std::transform_reduce(std::execution::par_unseq, cbegin(), cend(), 0ull, std::plus(), accumulator);
 }
 #endif

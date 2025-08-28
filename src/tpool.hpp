@@ -22,7 +22,6 @@
 
 #include <array>
 #include <atomic>
-#include <memory>
 #include <mutex>
 #include <thread>
 #include <condition_variable>
@@ -34,12 +33,15 @@
 #include "pv_entry.hpp"
 #include "time.hpp"
 #include "types.hpp"
+#include "arena.h"
 
 /// Main thread pool header
 /// Contains pool, thread and main_thread
 
 using HistoryScores = std::array<std::array<int, SQ_NB>, 16>;
 using CounterMoves  = std::array<std::array<Move, SQ_NB>, 16>;
+
+struct SearchLimits;
 
 enum class Searcher
 {
@@ -49,7 +51,7 @@ enum class Searcher
 
 struct thread
 {
-  explicit thread(std::size_t index);
+  explicit thread(size_t index);
   virtual ~thread();
   thread(const thread &other) = delete;
   thread(thread &&other)      = delete;
@@ -63,7 +65,7 @@ struct thread
   void wait_for_search_finished();
 
   [[nodiscard]]
-  std::size_t index() const
+  size_t index() const
   {
     return idx;
   }
@@ -72,17 +74,17 @@ struct thread
   HistoryScores history_scores{};
   CounterMoves counter_moves{};
   std::array<std::array<PVEntry, MAXDEPTH>, MAXDEPTH> pv{};
-  std::array<int, MAXDEPTH> pv_length{};
+  std::array<i32, MAXDEPTH> pv_length{};
   std::atomic_uint64_t node_count;
   std::condition_variable waiter;
-  std::unique_ptr<Board> root_board{};
-  std::array<int, COL_NB> draw_score{};
+  Board* root_board{};
+  std::array<i32, COL_NB> draw_score{};
 
 private:
+  std::jthread jthread;
   std::mutex mutex;
   std::condition_variable cv;
-  std::size_t idx;
-  std::jthread jthread;
+  size_t idx;
   std::atomic_bool exit{};
   std::atomic_bool searching{};
 };
@@ -97,7 +99,7 @@ struct main_thread final : thread
   Time time{};
 };
 
-struct thread_pool final : std::vector<std::unique_ptr<thread>>
+struct thread_pool final : std::vector<thread*>
 {
   thread_pool();
   ~thread_pool()                        = default;
@@ -106,7 +108,7 @@ struct thread_pool final : std::vector<std::unique_ptr<thread>>
   thread_pool &operator=(const thread_pool &) = delete;
   thread_pool &operator=(thread_pool &&other) = delete;
 
-  void set(std::size_t v);
+  void set(size_t v);
 
   void start_thinking(std::string_view fen);
   void start_searching();
@@ -115,46 +117,48 @@ struct thread_pool final : std::vector<std::unique_ptr<thread>>
   [[nodiscard]]
   main_thread *main() const
   {
-    return static_cast<main_thread *>(front().get());
+    return static_cast<main_thread *>(front());
   }
 
-  void clear_data();
+  void clear_data() const;
 
   [[nodiscard]]
-  std::uint64_t node_count() const;
+  u64 node_count() const;
 
   [[nodiscard]]
   bool is_analysing() const noexcept
   {
-    return limits.infinite | limits.ponder;
+    return limits->infinite | limits->ponder;
   }
 
   [[nodiscard]]
   bool is_fixed_depth() const noexcept
   {
-    return limits.fixed_depth;
+    return limits->fixed_depth;
   }
 
   [[nodiscard]]
-  int depth() const noexcept
+  i32 depth() const noexcept
   {
-    return limits.depth;
+    return limits->depth;
   }
 
-  SearchLimits limits{};
+  SearchLimits* limits;
   std::atomic_bool stop;
 
 #if !defined(linux)
 private:
   [[nodiscard]]
-  std::uint64_t node_count_par() const;
+  u64 node_count_par() const;
 
   [[nodiscard]]
-  std::uint64_t node_count_seq() const;
+  u64 node_count_seq() const;
 
   bool parallel{};
-  const std::array<std::function<std::uint64_t()>, 2> node_counters;
+  const std::array<std::function<u64()>, 2> node_counters;
 #endif
+
+  static Arena thread_arena;
 };
 
 // global data object

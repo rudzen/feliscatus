@@ -56,7 +56,6 @@ void HashTable::init(const std::uint64_t newSizeMb)
   m_fullnessElement  = m_bucketCount * BucketSize;
   std::free(mem_);
   m_size = m_bucketCount * sizeof(Bucket) + CacheLineSize - 1;
-  // TODO : replace with std::aligned_alloc() at some point;
   mem_ = std::malloc(m_size);
 
   if (!mem_)

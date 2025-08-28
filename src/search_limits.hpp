@@ -20,32 +20,27 @@
 
 #pragma once
 
-#include <array>
-#include <vector>
+#include <cstring>
 
 #include "miscellaneous.hpp"
 #include "types.hpp"
 
 struct SearchLimits final
 {
-  std::array<TimeUnit, COL_NB> time{};
-  std::array<TimeUnit, COL_NB> inc{};
-  TimeUnit movetime{};
-  int movestogo{};
-  int depth{};
-  bool ponder{};
-  bool infinite{};
-  bool fixed_movetime{};
-  bool fixed_depth{};
-  std::vector<Move> search_moves{};
-
-  void clear()
-  {
-    time.fill(0);
-    inc.fill(0);
-    movetime  = 0;
-    movestogo = depth = 0;
-    ponder = infinite = fixed_movetime = fixed_depth = false;
-    search_moves.clear();
-  }
+  TimeUnit time[2];
+  TimeUnit inc[2];
+  TimeUnit movetime;
+  i32 movestogo;
+  i32 depth;
+  bool ponder;
+  bool infinite;
+  bool fixed_movetime;
+  bool fixed_depth;
+  Move* search_moves;
+  u16 search_moves_count;
 };
+
+inline void ClearSearchLimits(SearchLimits* limits)
+{
+    std::memset(limits, 0, sizeof(SearchLimits) + sizeof(Move) * MAX_MOVES);
+}

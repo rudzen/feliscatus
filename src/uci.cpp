@@ -135,31 +135,31 @@ void set_option(std::istringstream &input)
 
 void go(std::istringstream &input, const std::string_view fen)
 {
-  auto &limits = pool.limits;
+  auto limits = pool.limits;
 
-  limits.clear();
+  ClearSearchLimits(limits);
 
   std::string token;
 
   while (input >> token)
     if (token == "wtime")
-      input >> limits.time[WHITE];
+      input >> limits->time[WHITE];
     else if (token == "btime")
-      input >> limits.time[BLACK];
+      input >> limits->time[BLACK];
     else if (token == "winc")
-      input >> limits.inc[WHITE];
+      input >> limits->inc[WHITE];
     else if (token == "binc")
-      input >> limits.inc[BLACK];
+      input >> limits->inc[BLACK];
     else if (token == "movestogo")
-      input >> limits.movestogo;
+      input >> limits->movestogo;
     else if (token == "depth")
-      input >> limits.depth;
+      input >> limits->depth;
     else if (token == "movetime")
-      input >> limits.movetime;
+      input >> limits->movetime;
     else if (token == "infinite")
-      limits.infinite = true;
+      limits->infinite = true;
     else if (token == "ponder")
-      limits.ponder = true;
+      limits->ponder = true;
 
   pool.start_thinking(fen);
 }
@@ -212,7 +212,7 @@ void uci::postPv(int d, int maxPly, int score, const std::span<PVEntry> &pvLine,
 
   fmt::format_to(inserter, "hashfull {} nodes {} nps {} time {} pv ", TT.load(), node_count, nodes_per_second, time);
 
-  for (auto &pv : pvLine)
+  for (const PVEntry &pv : pvLine)
     fmt::format_to(inserter, "{} ", displayUci(pv.move));
 
   fmt::print("{}\n", fmt::to_string(buffer));
@@ -225,10 +225,7 @@ std::string uci::displayUci(const Move m)
     return {"0000"};
 
   // append piece promotion if the move is a promotion.
-  return !is_promotion(m) ? fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)))
-                          : fmt::format(
-                              "{}{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)),
-                              piece_index[type_of(move_promoted(m))]);
+  return !is_promotion(m) ? fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m))) : fmt::format("{}{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)), piece_index[type_of(move_promoted(m))]);
 }
 
 std::string uci::info(const std::string_view infoString)

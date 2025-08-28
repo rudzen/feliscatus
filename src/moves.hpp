@@ -114,7 +114,7 @@ private:
   [[nodiscard]]
   bool can_castle_long() const;
 
-  std::array<MoveData, 256> move_list{};
+  std::array<MoveData, MAX_MOVES> move_list{};
   Board *b{};
   int iteration_{};
   int number_moves_{};
@@ -141,11 +141,11 @@ MoveData *generate(Board *b, MoveData *md);
 // A simple array wrapper for storing the generated moves
 
 template<MoveGenFlags Flags>
-struct MoveList final : std::array<MoveData, 256>
+struct MoveList final : std::array<MoveData, MAX_MOVES>
 {
   [[nodiscard]]
   explicit MoveList(Board *b)
-    : std::array<MoveData, 256>({}), last_move(MoveGen::generate<Flags>(b, begin())){};
+    : std::array<MoveData, MAX_MOVES>({}), last_move(MoveGen::generate<Flags>(b, begin())){};
 
   [[nodiscard]]
   const_iterator end() const

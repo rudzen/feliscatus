@@ -45,6 +45,7 @@ using Bitboard = u64;
 using Key      = u64;
 
 constexpr i32 MAXDEPTH = 128;
+constexpr u16 MAX_MOVES = 256;
 
 // clang::format off
 enum Square : e8
