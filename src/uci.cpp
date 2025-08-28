@@ -52,11 +52,17 @@ constexpr u64 nps(const u64 nodes, const TimeUnit time)
   return nodes * 1000 / time;
 }
 
-[[nodiscard]]
-auto node_info(const TimeUnit time)
+struct NodeInfo
 {
-  const uint64_t nodes = pool.node_count();
-  return std::make_pair(nodes, nps(nodes, time));
+  u64 nodes;
+  u64 nps;
+};
+
+[[nodiscard]]
+NodeInfo node_info(const TimeUnit time)
+{
+  const u64 nodes = pool.node_count();
+  return {.nodes = nodes, .nps = nps(nodes, time)};
 }
 
 [[nodiscard]]
@@ -176,16 +182,12 @@ void uci::postMoves(const Move m, const Move ponderMove)
 
 void uci::postInfo(const int d, const int selectiveDepth)
 {
-  const auto time                           = elapsed(&pool.main()->time) + time_safety_margin;
-  const auto [node_count, nodes_per_second] = node_info(time);
+  const TimeUnit time     = elapsed(&pool.main()->time) + time_safety_margin;
+  const NodeInfo nodeInfo = node_info(time);
   if (!Options[uciName<UciOptions::SHOW_CPU>()])
-    fmt::print(
-      "info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selectiveDepth, TT.load(), node_count,
-      nodes_per_second, time);
+    fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selectiveDepth, TT.load(), nodeInfo.nodes, nodeInfo.nps, time);
   else
-    fmt::print(
-      "info depth {} seldepth {} hashfull {} nodes {} nps {} time {} cpuload {}\n", d, selectiveDepth, TT.load(),
-      node_count, nodes_per_second, time, Cpu.usage());
+    fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {} cpuload {}\n", d, selectiveDepth, TT.load(), nodeInfo.nodes, nodeInfo.nps, time, Cpu.usage());
 }
 
 void uci::postCurrMove(const Move m, int number)
