@@ -337,11 +337,16 @@ int Search<SearcherType>::search(int depth, int alpha, const int beta)
 
       if constexpr (verbosity)
       {
-        if (b->plies == 1 && b->search_depth >= 20 && (pool.main()->time.should_post_curr_move() || is_analysing()))
-          uci::postCurrMove(move_data->move, move_count);
-
-        if (pool.main()->time.should_post_info())
-          uci::postInfo(depth, b->search_depth);
+        if (b->plies == 1)
+        {
+          if (b->search_depth >= 20 && (pool.main()->time.should_post_curr_move() || is_analysing()))
+            uci::postCurrMove(move_data->move, move_count);
+        } else if (b->plies == 0)
+        {
+          // note that b->plies == 0 is required to avoid spamming weird depth values where it should not
+          if (pool.main()->time.should_post_info())
+            uci::postInfo(depth, b->search_depth);
+        }
       }
 
       if (PV && move_count == 1)
