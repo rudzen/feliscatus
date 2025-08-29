@@ -350,7 +350,7 @@ void Board::print() const
 
 int Board::piece_count(const Color c, const PieceType pt) const
 {
-  return pos->material.count(c, pt);
+  return material::count(&pos->material, c, pt);
 }
 
 bool Board::is_passed_pawn_move(const Move m) const
@@ -421,7 +421,7 @@ bool Board::make_move(const Move m, const bool check_legal, const bool calculate
 
   prefetch(TT.findBucket(pos->key));
 
-  pos->material.make_move(m);
+  material::make_move(&pos->material, m);
   pos->pinned = pinned_pieces(pos->side_to_move, ksq);
 
   return true;
@@ -737,7 +737,7 @@ void Board::update_position(Position *p) const
     if (type_of(pc) == PAWN)
       pawn_key ^= zobrist.pst(pc, sq);
 
-    p->material.add(pc);
+    material::add(&p->material, pc);
   }
 
   [[unlikely]]

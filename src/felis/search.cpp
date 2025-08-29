@@ -462,7 +462,7 @@ auto Search<SearcherType>::search_fail_low(const int depth, int alpha, const Mov
 template<Searcher SearcherType>
 bool Search<SearcherType>::should_try_null_move(const int beta) const
 {
-  return !b->in_check() && pos->null_moves_in_row < 1 && !b->material().is_kx(b->side_to_move())
+  return !b->in_check() && pos->null_moves_in_row < 1 && !material::is_kx(b->material(), b->side_to_move())
       && pos->eval_score >= beta;
 }
 

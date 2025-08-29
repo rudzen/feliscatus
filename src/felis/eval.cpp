@@ -17,8 +17,7 @@ namespace
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
 
-const std::shared_ptr<spdlog::logger> eval_logger =
-  spdlog::rotating_logger_mt("eval_logger", "logs/eval.txt", max_log_file_size, max_log_files);
+const std::shared_ptr<spdlog::logger> eval_logger = spdlog::rotating_logger_mt("eval_logger", "logs/eval.txt", max_log_file_size, max_log_files);
 
 struct Stages
 {
@@ -27,9 +26,9 @@ struct Stages
 };
 
 [[nodiscard]]
-Stages stages(Material &mat)
+Stages stages(Material *mat)
 {
-  const auto stage = (mat.value() - mat.pawn_value()) / static_cast<double>(Material::max_value_without_pawns);
+  const r64 stage = (material::value(mat) - material::pawn_value(mat)) / static_cast<double>(material::max_value_without_pawns);
   return {.mg = stage, .eg = 1 - stage};
 }
 
@@ -93,7 +92,7 @@ void set_attacks(EvalD *eval, const Bitboard attacks)
 template<Color Us>
 void eval_material(EvalD *eval)
 {
-  eval->posistion_value[Us] = eval->b->material().material_value[Us];
+  eval->posistion_value[Us] = eval->b->material()->material_value[Us];
   bool add                  = false;
 
   const i32 bishop_count = eval->b->piece_count(Us, BISHOP);
@@ -201,8 +200,8 @@ Score eval_pieces(EvalD *eval)
 
       if (mob <= 3)
       {
-        const File king_file = file_of(b->square<KING>(Us));
-        const bool kingFileLessThanFileE = king_file < FILE_E;
+        const File king_file              = file_of(b->square<KING>(Us));
+        const bool kingFileLessThanFileE  = king_file < FILE_E;
         const bool squareLessThanKingFile = file_of(s) < king_file;
         if (kingFileLessThanFileE == squareLessThanKingFile)
         {
@@ -295,7 +294,7 @@ void eval_king_attack(EvalD *eval)
 }
 
 template<Color Us>
-i32 evaluate(EvalD *eval, int alpha, int beta)
+i32 evaluate(EvalD *eval, const int alpha, const int beta)
 {
   init_evaluate<WHITE>(eval);
   init_evaluate<BLACK>(eval);
@@ -310,9 +309,8 @@ i32 evaluate(EvalD *eval, int alpha, int beta)
 
   const auto mat_eval = eval->posistion_value[WHITE] - eval->posistion_value[BLACK];
 
-  if (const auto lazy_eval = Us == WHITE ? mat_eval : -mat_eval;
-      lazy_eval - params::lazy_margin > beta || lazy_eval + params::lazy_margin < alpha)
-    return b->material().evaluate<Us>(b->flags(), lazy_eval, b);
+  if (const auto lazy_eval = Us == WHITE ? mat_eval : -mat_eval; lazy_eval - params::lazy_margin > beta || lazy_eval + params::lazy_margin < alpha)
+    return material::evaluate(b->material(), b->flags(), lazy_eval, b, Us);
 
 #endif
 
@@ -342,7 +340,7 @@ i32 evaluate(EvalD *eval, int alpha, int beta)
   const i32 pos_eval_mg    = static_cast<i32>(result.mg() * stageScores.mg);
   const i32 pos_eval_eg    = static_cast<i32>(result.eg() * stageScores.eg);
   const i32 pos_eval       = pos_eval_mg + pos_eval_eg + (eval->posistion_value[WHITE] - eval->posistion_value[BLACK]);
-  const i32 score          = b->material().evaluate<Us>(b->flags(), Us == WHITE ? pos_eval : -pos_eval, b);
+  const i32 score          = material::evaluate(b->material(), b->flags(), Us == WHITE ? pos_eval : -pos_eval, b, Us);
 
   return score;
 }

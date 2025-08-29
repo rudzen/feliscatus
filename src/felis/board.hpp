@@ -141,7 +141,7 @@ struct Board
   Key key() const;
 
   [[nodiscard]]
-  Material &material() const;
+  Material* material() const;
 
   [[nodiscard]]
   i32 &flags() const;
@@ -360,7 +360,7 @@ inline bool Board::is_piece_on_file(const PieceType pt, const Square s, const Co
 
 inline bool Board::is_draw() const
 {
-  return pos->flags & Material::recognize_draw();
+  return pos->flags & material::RECOGNIZEDDRAW;
 }
 
 inline bool Board::can_castle() const
@@ -383,9 +383,9 @@ inline Key Board::key() const
   return pos->key;
 }
 
-inline Material &Board::material() const
+inline Material* Board::material() const
 {
-  return pos->material;
+  return &pos->material;
 }
 
 inline i32 &Board::flags() const

@@ -19,7 +19,7 @@ void Position::clear()
   checkers           = ZeroBB;
   in_check           = false;
   previous           = nullptr;
-  material.clear();
+  material::clear(&material);
   killer_moves.fill(MOVE_NONE);
 }
 
