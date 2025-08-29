@@ -16,8 +16,13 @@ if(ENABLE_IPO)
     include(CheckIPOSupported)
     check_ipo_supported(RESULT result OUTPUT output)
     if(result)
-        message("IPO enabled: ${output}")
-        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+        if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+            message("IPO enabled: ${output}")
+            set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+        else()
+            message("IPO disabled for Debug build.")
+            set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+        endif()
     else()
         message("IPO is not supported: ${output}")
     endif()
@@ -49,3 +54,11 @@ option(ENABLE_STRIPPING "Enables binary stripping (reduce file size) (aka -s)" O
 if (ENABLE_STRIPPING)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 endif()
+
+# Disable optimizations for Debug builds
+set(CMAKE_CXX_FLAGS_DEBUG "-O0" CACHE STRING "Debug flags" FORCE)
+set(CMAKE_C_FLAGS_DEBUG "-O0" CACHE STRING "Debug C flags" FORCE)
+
+# Enable -O3 for Release builds
+set(CMAKE_CXX_FLAGS_RELEASE "-O3" CACHE STRING "Release flags" FORCE)
+set(CMAKE_C_FLAGS_RELEASE "-O3" CACHE STRING "Release C flags" FORCE)
