@@ -35,19 +35,16 @@ i32 count(const Material *m, Color c, PieceType pt);
 
 void make_move(Material *m, Move move);
 
-bool is_kx(Material *m, Color c);
+bool is_kx(const Material *m, Color c);
 
 [[nodiscard]]
-int value(Material *m);
+int value(const Material *m);
 
 [[nodiscard]]
-int value(Material *m, Color c);
+int pawn_value(const Material *m);
 
 [[nodiscard]]
-int pawn_value(Material *m);
-
-[[nodiscard]]
-int pawn_count(Material *m);
+int pawn_count(const Material *m);
 
 [[nodiscard]]
 int evaluate(Material *m, int &flags, int eval, const Board *b, Color us);

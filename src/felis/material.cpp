@@ -15,13 +15,13 @@ constexpr int RECOGNIZEDDRAW = 1;
 constexpr std::array<int, 7> piece_bit_shift{0, 4, 8, 12, 16, 20};
 
 [[nodiscard]]
-int draw_score(Material *m)
+i32 draw_score(Material *m)
 {
   m->material_flags |= RECOGNIZEDDRAW;
   return 0;
 }
 
-void update_key(Material *m, Color c, PieceType pt, int delta)
+void update_key(Material *m, const Color c, const PieceType pt, const int delta)
 {
   if (pt == KING)
     return;
@@ -30,13 +30,13 @@ void update_key(Material *m, Color c, PieceType pt, int delta)
   m->key[c] |= x << piece_bit_shift[pt];
 }
 
-i32 pawn_count(Material *m, Color c)
+i32 pawn_count(const Material *m, const Color c)
 {
   return static_cast<int>(m->key[c] & 15);
 }
 
 [[nodiscard]]
-int KQBKX(Material *m, int eval, u32 key2)
+i32 KQBKX(Material *m, const i32 eval, const u32 key2)
 {
   switch (key2 & ~all_pawns)
   {
@@ -51,7 +51,7 @@ int KQBKX(Material *m, int eval, u32 key2)
 }
 
 [[nodiscard]]
-int KQNKX(Material *m, int eval, u32 key2)
+i32 KQNKX(Material *m, const i32 eval, const u32 key2)
 {
   switch (key2 & ~all_pawns)
   {
@@ -66,7 +66,7 @@ int KQNKX(Material *m, int eval, u32 key2)
 }
 
 [[nodiscard]]
-int KRBKX(Material *m, int eval, u32 key2)
+i32 KRBKX(Material *m, const i32 eval, const u32 key2)
 {
   switch (key2 & ~all_pawns)
   {
@@ -87,7 +87,7 @@ int KRBKX(Material *m, int eval, u32 key2)
 }
 
 [[nodiscard]]
-int KRNKX(Material *m, int eval, u32 key2)
+i32 KRNKX(Material *m, const i32 eval, const u32 key2)
 {
   switch (key2 & ~all_pawns)
   {
@@ -108,7 +108,7 @@ int KRNKX(Material *m, int eval, u32 key2)
 }
 
 [[nodiscard]]
-int KRKX(Material *m, int eval, u32 key2)
+i32 KRKX(Material *m, const i32 eval, const u32 key2)
 {
   switch (key2 & ~all_pawns)
   {
@@ -130,7 +130,7 @@ int KRKX(Material *m, int eval, u32 key2)
 }
 
 [[nodiscard]]
-int KBBKX(Material *m, int eval, u32 key2)
+i32 KBBKX(Material *m, const i32 eval, const u32 key2)
 {
   switch (key2 & ~all_pawns)
   {
@@ -145,7 +145,7 @@ int KBBKX(Material *m, int eval, u32 key2)
 }
 
 [[nodiscard]]
-int KBNK(Material *m, int eval, Color c1)
+i32 KBNK(const Material *m, const i32 eval, const Color c1)
 {
   const Square loosing_kingsq = m->board->square<KING>(~c1);
 
@@ -157,11 +157,11 @@ int KBNK(Material *m, int eval, Color c1)
 
   const auto [first_corner, second_corner] = get_winning_squares(dark);
 
-  return eval + 175 - (25 * std::min<int>(distance(first_corner, loosing_kingsq), distance(second_corner, loosing_kingsq)));
+  return eval + 175 - (25 * std::min<i32>(distance(first_corner, loosing_kingsq), distance(second_corner, loosing_kingsq)));
 }
 
 [[nodiscard]]
-int KBNKX(Material *m, int eval, u32 key2, int pc1, int pc2, Color c1)
+i32 KBNKX(Material *m, const i32 eval, const u32 key2, const i32 pc1, const i32 pc2, const Color c1)
 {
   switch (key2 & ~all_pawns)
   {
@@ -184,9 +184,8 @@ int KBNKX(Material *m, int eval, u32 key2, int pc1, int pc2, Color c1)
   return eval;
 }
 
-
 [[nodiscard]]
-int KNKX(Material *m, int eval, u32 key2, int pc1, int pc2, Color c1, Color c2, Color c)
+i32 KNKX(Material *m, const i32 eval, const u32 key2, const i32 pc1, const i32 pc2, const Color c1, const Color c2, const Color c)
 {
   switch (key2 & ~all_pawns)
   {
@@ -213,11 +212,11 @@ int KNKX(Material *m, int eval, u32 key2, int pc1, int pc2, Color c1, Color c2, 
   default:
     break;
   }
-  return pc1 == 0 ? std::min<int>(0, eval) : eval;
+  return pc1 == 0 ? std::min<i32>(0, eval) : eval;
 }
 
 [[nodiscard]]
-int KNNKX(Material *m, int eval, u32 key2, int pc1)
+i32 KNNKX(Material *m, const i32 eval, const u32 key2, const i32 pc1)
 {
   switch (key2 & ~all_pawns)
   {
@@ -235,10 +234,10 @@ int KNNKX(Material *m, int eval, u32 key2, int pc1)
 
 // fen 8/6k1/8/8/3K4/5B1P/8/8 w - - 0 1
 [[nodiscard]]
-int KBpK(Material *m, int eval, Color c1)
+i32 KBpK(Material *m, const i32 eval, const Color c1)
 {
-  const auto pawnsq1  = lsb(m->board->pieces(PAWN, c1));
-  const auto promosq1 = static_cast<Square>(c1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
+  const Square pawnsq1  = lsb(m->board->pieces(PAWN, c1));
+  const Square promosq1 = static_cast<Square>(c1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
 
   if (!same_color(promosq1, lsb(m->board->pieces(BISHOP, c1))))
   {
@@ -246,17 +245,18 @@ int KBpK(Material *m, int eval, Color c1)
     if ((promosq1 == H8 && bbk2 & corner_h8) || (promosq1 == A8 && bbk2 & corner_a8) || (promosq1 == H1 && bbk2 & corner_h1) || (promosq1 == A1 && bbk2 & corner_a1))
       return draw_score(m);
   }
+
   return eval;
 }
 
 [[nodiscard]]
-int KBxKx(Material *m, int eval, u32 key1, u32 key2, Color c1)
+i32 KBxKx(Material *m, const i32 eval, const u32 key1, const u32 key2, const Color c1)
 {
   return (key1 & all_pawns) == 1 && (key2 & all_pawns) == 0 ? KBpK(m, eval, c1) : eval;
 }
 
 [[nodiscard]]
-int KBxKX(Material *m, int eval, u32 key1, u32 key2, Color c1)
+i32 KBxKX(Material *m, const i32 eval, const u32 key1, const u32 key2, const Color c1)
 {
   switch (key2 & ~all_pawns)
   {
@@ -276,7 +276,7 @@ int KBxKX(Material *m, int eval, u32 key1, u32 key2, Color c1)
 }
 
 [[nodiscard]]
-int KpK(Material *m, int eval, Color c1)
+i32 KpK(Material *m, const i32 eval, const Color c1)
 {
   const Square pawnsq1  = lsb(m->board->pieces(PAWN, c1));
   const Square promosq1 = static_cast<Square>(c1 == BLACK ? file_of(pawnsq1) : file_of(pawnsq1) + 56);
@@ -286,19 +286,19 @@ int KpK(Material *m, int eval, Color c1)
 }
 
 [[nodiscard]]
-int KxKx(Material *m, int eval, int pc1, int pc2, Color c1)
+i32 KxKx(Material *m, const i32 eval, const i32 pc1, const i32 pc2, const Color c1)
 {
   return pc1 == 1 && pc2 == 0 ? KpK(m, eval, c1) : eval;
 }
 
 [[nodiscard]]
-int KKx(Material *m, int eval, int pc1, int pc2, Color c1)
+i32 KKx(Material *m, const i32 eval, const i32 pc1, const i32 pc2, const Color c1)
 {
   return pc1 + pc2 == 0 ? draw_score(m) : pc2 > 0 ? KxKx(m, eval, pc1, pc2, c1) : eval;
 }
 
 [[nodiscard]]
-int KBKX(Material *m, i32 eval, u32 key1, u32 key2, i32 pc1, i32 pc2, Color c1, Color c2, Color c)
+i32 KBKX(Material *m, const i32 eval, const u32 key1, const u32 key2, const i32 pc1, const i32 pc2, const Color c1, const Color c2, const Color c)
 {
   if (pc1 > 0)
     return KBxKX(m, eval, key1, key2, c1);
@@ -350,6 +350,7 @@ void remove(Material *m, const Piece pc)
   update_key(m, c, pt, -1);
   m->material_value[c] -= piece_values[pt];
 }
+
 void add(Material *m, const Piece pc)
 {
   const Color c      = color_of(pc);
@@ -363,7 +364,7 @@ i32 count(const Material *m, const Color c, const PieceType pt)
   return m->key[c] >> piece_bit_shift[pt] & 15;
 }
 
-void make_move(Material *m, Move move)
+void make_move(Material *m, const Move move)
 {
   if (is_capture(move))
     remove(m, move_captured(move));
@@ -375,32 +376,27 @@ void make_move(Material *m, Move move)
   }
 }
 
-bool is_kx(Material *m, Color c)
+bool is_kx(const Material *m, const Color c)
 {
   return m->key[c] == (m->key[c] & 15);
 }
 
-int value(Material *m)
+i32 value(const Material *m)
 {
   return m->material_value[WHITE] + m->material_value[BLACK];
 }
 
-int value(Material *m, Color c)
+i32 pawn_value(const Material *m)
 {
-  return m->material_value[c];
+  return static_cast<i32>(m->key[WHITE] & all_pawns) * piece_values[PAWN] + static_cast<i32>(m->key[BLACK] & all_pawns) * piece_values[PAWN];
 }
 
-int pawn_value(Material *m)
+i32 pawn_count(const Material *m)
 {
-  return static_cast<int>(m->key[WHITE] & all_pawns) * piece_values[PAWN] + static_cast<int>(m->key[BLACK] & all_pawns) * piece_values[PAWN];
+  return static_cast<i32>(m->key[WHITE] & 15) + static_cast<i32>(m->key[BLACK] & 15);
 }
 
-int pawn_count(Material *m)
-{
-  return static_cast<int>(m->key[WHITE] & 15) + static_cast<int>(m->key[BLACK] & 15);
-}
-
-int evaluate(Material *m, int &flags, int eval, const Board *b, Color us)
+i32 evaluate(Material *m, i32 &flags, const int eval, const Board *b, const Color us)
 {
   const Color them  = ~us;
   m->board          = b;
@@ -427,8 +423,8 @@ int evaluate(Material *m, int &flags, int eval, const Board *b, Color us)
   }
 
   const Color weak_side        = ~strong_side;
-  const auto strong_pawn_count = ::pawn_count(m, strong_side);
-  const auto weak_pawn_count   = ::pawn_count(m, weak_side);
+  const i32 strong_pawn_count = ::pawn_count(m, strong_side);
+  const i32 weak_pawn_count   = ::pawn_count(m, weak_side);
 
   switch (strong_key & ~all_pawns)
   {
