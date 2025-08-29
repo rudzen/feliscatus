@@ -1,22 +1,7 @@
-/*
-  Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
-  Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
-  Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020-2022 Rudy Alex Kohn
-
-  Feliscatus is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-
-  Feliscatus is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
+// Copyright (C) 2017      FireFather (Tomcat author)
+// Copyright (C) 2020-2025 Rudy Alex Kohn
+// See end of file for extended copyright information.
 
 #pragma once
 
@@ -73,7 +58,7 @@ struct Score final
       std::uint16_t u;
       std::int16_t s;
     } eg = {static_cast<std::uint16_t>((static_cast<unsigned>(value + 0x8000) >> 16))};
-    return static_cast<int>(eg.s);
+    return eg.s;
   }
 
   [[nodiscard]]
@@ -83,7 +68,7 @@ struct Score final
       std::uint16_t u;
       std::int16_t s;
     } mg = {static_cast<std::uint16_t>((static_cast<unsigned>(value)))};
-    return static_cast<int>(mg.s);
+    return mg.s;
   }
 
   [[nodiscard]]
@@ -172,13 +157,31 @@ constexpr Score operator*(const Score s, const bool b)
   return b ? s : ZeroScore;
 }
 
-template<>
-struct fmt::formatter<Score> : formatter<std::string_view>
-{
-  // parse is inherited from formatter<string_view>.
-  template<typename FormatContext>
-  auto format(const Score s, FormatContext &ctx)
-  {
-    return formatter<std::string_view>::format(fmt::format("m:{} e:{}", s.mg(), s.eg()), ctx);
+template <>
+struct fmt::formatter<Score> {
+  // Parse format specifications (none supported here)
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const Score& s, FormatContext& ctx) {
+    return fmt::format_to(ctx.out(), "m:{} e:{}", s.mg(), s.eg());
   }
 };
+
+// Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
+// Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
+// Copyright (C) 2017      FireFather (Tomcat author)
+// Copyright (C) 2020-2022 Rudy Alex Kohn
+//
+// Feliscatus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Feliscatus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Feliscatus.  If not, see <http://www.gnu.org/licenses/>.

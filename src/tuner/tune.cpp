@@ -1,27 +1,13 @@
-/*
-  Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
-  Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
-  Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020-2022 Rudy Alex Kohn
-
-  Feliscatus is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-
-  Feliscatus is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
+// Copyright (C) 2017      FireFather (Tomcat author)
+// Copyright (C) 2020-2025 Rudy Alex Kohn
+// See end of file for extended copyright information.
 
 #include <cassert>
 #include <string>
 #include <fstream>
 #include <utility>
+#include <unordered_map>
 
 #include <fmt/format.h>
 #include <spdlog/spdlog.h>
@@ -53,8 +39,7 @@ inline bool x_;
 
 struct Param final
 {
-  Param(std::string name, Score &value, const Score initialValue, const int step, const int stages = 2)
-    : name_(std::move(name)), initial_value_(initialValue), value_(value), step_(step), stages_(stages)
+  Param(std::string name, Score &value, const Score initialValue, const int step, const int stages = 2) : name_(std::move(name)), initial_value_(initialValue), value_(value), step_(step), stages_(stages)
   {
     if (x_)
       value = initialValue;
@@ -83,8 +68,8 @@ inline bool operator<(const ParamIndexRecord &lhs, const ParamIndexRecord &rhs)
 namespace
 {
 
-auto console    = spdlog::stdout_color_mt("tuner");
-auto errLogger  = spdlog::stderr_color_mt("stderr");
+auto console   = spdlog::stdout_color_mt("tuner");
+auto errLogger = spdlog::stderr_color_mt("stderr");
 std::shared_ptr<spdlog::logger> fileLogger;
 
 enum SelectedParams : std::uint64_t
@@ -112,9 +97,9 @@ enum SelectedParams : std::uint64_t
 };
 
 template<bool Hr>
-std::string emitCode(const std::vector<eval::Param> &params0)
+std::string emitCode(std::vector<eval::Param> &params0)
 {
-  jvn::unordered_map<std::string, std::vector<eval::Param>> params1;
+  std::unordered_map<std::string, std::vector<eval::Param>> params1;
 
   for (const auto &param : params0)
     params1[param.name_].emplace_back(param);
@@ -133,14 +118,13 @@ std::string emitCode(const std::vector<eval::Param> &params0)
 
     for (size_t i = 0; i < n; ++i)
     {
+      const Score s = params2.second[i].value_;
       if (Hr && n == 64)
       {
         if (i % 8 == 0)
           fmt::format_to(inserter, "\n ");
-
-        fmt::format_to(inserter, "{}", params2.second[i].value_);
-      } else
-        fmt::format_to(inserter, "{}", params2.second[i].value_);
+      }
+      fmt::format_to(inserter, "m:{} e:{}", s.mg(), s.eg());
 
       if (n > 1 && i < n - 1)
         fmt::format_to(inserter, ", ");
@@ -163,7 +147,8 @@ void printBestValues(const double e, const std::vector<eval::Param> &params)
   {
     if (params[i].step_ == 0)
       finished++;
-    console->info("{}:{}:{}  step:{}\n", i, params[i].name_, params[i].value_, params[i].step_);
+    const Score s = params[i].value_;
+    console->info("{}:mg={},eg={}:{}  step:{}\n", i, params[i].name_, s.mg(), s.eg(), params[i].step_);
   }
 
   console->info("Best E:{}", e);
@@ -421,9 +406,7 @@ void PGNPlayer::printProgress(const bool force) const
   if (!force && game_count_ % 100 != 0)
     return;
 
-  fmt::print(
-    "game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_, all_nodes_count_,
-    all_selected_nodes_.size());
+  fmt::print("game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_, all_nodes_count_, all_selected_nodes_.size());
 }
 
 Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std::move(board)), score_static_(false)
@@ -447,22 +430,23 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
   for (std::size_t i = 0; i < params.size(); ++i)
     params_index.emplace_back(i, 0);
 
-  constexpr auto max_log_file_size = 1048576 * 5;
-  constexpr auto max_log_files     = 3;
-  constexpr auto K                 = bestK();
-  auto bestE                       = e(pgn.all_selected_nodes_, params, params_index, K);
-  auto improved                    = true;
-  fileLogger = spdlog::rotating_logger_mt("fileLogger", "logs/tuner.txt", max_log_file_size, max_log_files);
+  constexpr i32 max_log_file_size = 1048576 * 5;
+  constexpr i32 max_log_files     = 3;
+  constexpr r64 K                 = bestK();
+  r64 bestE                       = e(pgn.all_selected_nodes_, params, params_index, K);
+  bool improved                   = true;
+  fileLogger                      = spdlog::rotating_logger_mt("fileLogger", "logs/tuner.txt", max_log_file_size, max_log_files);
 
   fileLogger->info("Tuner session started.");
 
   std::ofstream out(fmt::format("{}{}", settings->file_name, ".txt"));
   out << fmt::format("Old E:{}\n", bestE);
-  out << fmt::format("Old Values:\n{}\n", emitCode<true>(params));
+  auto t = emitCode<true>(params);
+  out << fmt::format("Old Values:\n{}\n", t);
 
   // 0 == mg, 1 == eg
-  auto stage     = 0;
-  Score original = ZeroScore;
+  auto stage = 0;
+  Score original;
 
   while (improved)
   {
@@ -545,9 +529,7 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
   fmt::print("{}\n", emitCode<true>(params));
 }
 
-double Tune::e(
-  const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &paramsIndex,
-  const double k)
+double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &paramsIndex, const double k)
 {
   auto x = 0.0;
 
@@ -584,7 +566,7 @@ void Tune::makeQuiet(std::vector<Node> &nodes)
   {
     b->set_fen(node.fen_, t);
     t->pv_length[0] = 0;
-    auto q = quiesceScore(-32768, 32768, true, 0);
+    //auto q          = quiesceScore(-32768, 32768, true, 0);
     playPv();
     node.fen_ = b->fen();
   }
@@ -687,3 +669,21 @@ void Tune::updatePv(Move m, int score, int ply) const
 }
 
 }   // namespace eval
+
+// Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
+// Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
+// Copyright (C) 2017      FireFather (Tomcat author)
+// Copyright (C) 2020-2022 Rudy Alex Kohn
+//
+// Feliscatus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Feliscatus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Feliscatus.  If not, see <http://www.gnu.org/licenses/>.

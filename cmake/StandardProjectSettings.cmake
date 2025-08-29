@@ -55,10 +55,14 @@ if (ENABLE_STRIPPING)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 endif()
 
-# Disable optimizations for Debug builds
+# Set -O0 for Debug builds
 set(CMAKE_CXX_FLAGS_DEBUG "-O0" CACHE STRING "Debug flags" FORCE)
 set(CMAKE_C_FLAGS_DEBUG "-O0" CACHE STRING "Debug C flags" FORCE)
 
-# Enable -O3 for Release builds
+# Set -O3 for all other build types
 set(CMAKE_CXX_FLAGS_RELEASE "-O3" CACHE STRING "Release flags" FORCE)
 set(CMAKE_C_FLAGS_RELEASE "-O3" CACHE STRING "Release C flags" FORCE)
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3" CACHE STRING "RelWithDebInfo flags" FORCE)
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3" CACHE STRING "RelWithDebInfo C flags" FORCE)
+set(CMAKE_CXX_FLAGS_MINSIZEREL "-O3" CACHE STRING "MinSizeRel flags" FORCE)
+set(CMAKE_C_FLAGS_MINSIZEREL "-O3" CACHE STRING "MinSizeRel C flags" FORCE)
