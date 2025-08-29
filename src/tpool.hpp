@@ -20,6 +20,9 @@
 
 #pragma once
 
+#include "transpositional.hpp"
+
+
 #include <array>
 #include <atomic>
 #include <mutex>
@@ -29,11 +32,10 @@
 #include <vector>
 #include <functional>
 
-#include "pawnhashtable.hpp"
-#include "pv_entry.hpp"
-#include "time.hpp"
-#include "types.hpp"
-#include "arena.h"
+#include <pawnhashtable.hpp>
+#include <time.hpp>
+#include <types.hpp>
+#include <arena.h>
 
 /// Main thread pool header
 /// Contains pool, thread and main_thread
@@ -53,8 +55,8 @@ struct thread
 {
   explicit thread(size_t index);
   virtual ~thread();
-  thread(const thread &other) = delete;
-  thread(thread &&other)      = delete;
+  thread(const thread &other)       = delete;
+  thread(thread &&other)            = delete;
   thread &operator=(const thread &) = delete;
   thread &operator=(thread &&other) = delete;
 
@@ -77,7 +79,7 @@ struct thread
   std::array<i32, MAXDEPTH> pv_length{};
   std::atomic_uint64_t node_count;
   std::condition_variable waiter;
-  Board* root_board{};
+  Board *root_board{};
   std::array<i32, COL_NB> draw_score{};
 
 private:
@@ -99,12 +101,12 @@ struct main_thread final : thread
   Time time{};
 };
 
-struct thread_pool final : std::vector<thread*>
+struct thread_pool final : std::vector<thread *>
 {
   thread_pool();
-  ~thread_pool()                        = default;
-  thread_pool(const thread_pool &other) = delete;
-  thread_pool(thread_pool &&other)      = delete;
+  ~thread_pool()                              = default;
+  thread_pool(const thread_pool &other)       = delete;
+  thread_pool(thread_pool &&other)            = delete;
   thread_pool &operator=(const thread_pool &) = delete;
   thread_pool &operator=(thread_pool &&other) = delete;
 
@@ -143,7 +145,7 @@ struct thread_pool final : std::vector<thread*>
     return limits->depth;
   }
 
-  SearchLimits* limits;
+  SearchLimits *limits;
   std::atomic_bool stop;
 
 #if !defined(linux)

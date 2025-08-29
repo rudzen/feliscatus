@@ -20,15 +20,15 @@
 
 #include <fmt/format.h>
 
-#include "perft.hpp"
-#include "board.hpp"
-#include "moves.hpp"
+#include <perft.hpp>
+#include <board.hpp>
+#include <moves.hpp>
 
 namespace
 {
 
 template<MoveGenFlags Flags>
-u64 p(Board *b, const int depth)
+u64 p(Board *b, const i32 depth)
 {
   if (depth == 0)
     return 1;
@@ -39,7 +39,7 @@ u64 p(Board *b, const int depth)
   if (depth == 1)
     return ml.size();
 
-  u64 nodes{};
+  u64 nodes = 0;
 
   for (const auto m : ml)
   {
@@ -73,13 +73,15 @@ private:
 };
 
 template<MoveGenFlags Flags>
-u64 Perft<Flags>::perft(const int depth) const
+u64 Perft<Flags>::perft(const i32 depth) const
 {
-  std::size_t nps{};
-  u64 total_nodes{};
-  Stopwatch sw;
+  std::size_t nps = 0;
+  u64 total_nodes = 0;
 
-  for (auto i = 1; i <= depth; i++)
+  Stopwatch sw;
+  start(&sw);
+
+  for (i32 i = 1; i <= depth; i++)
   {
     start(&sw);
     const u64 nodes     = p<Flags>(b, i);
@@ -97,9 +99,10 @@ u64 Perft<Flags>::perft_divide(const i32 depth) const
 {
   fmt::print("depth: {}\n", depth);
 
-  u64 nodes{};
+  u64 nodes = 0;
   TimeUnit time{};
   Stopwatch sw;
+  start(&sw);
 
   auto ml = MoveList<Flags>(b);
 

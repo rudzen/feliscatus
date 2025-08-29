@@ -25,8 +25,8 @@
 #include <algorithm>
 #include <string_view>
 
-#include "types.hpp"
-#include "util.hpp"
+#include <types.hpp>
+#include <util.hpp>
 
 //------------------------------------------------
 // magic bb structures

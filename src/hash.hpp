@@ -20,10 +20,9 @@
 
 #pragma once
 
-#include <cstdint>
 #include <array>
 
-#include "types.hpp"
+#include <types.hpp>
 
 template<typename Entry, std::size_t N>
 struct Table
@@ -31,7 +30,7 @@ struct Table
   [[nodiscard]]
   Entry *operator[](const Key key) noexcept
   {
-    return &table_[static_cast<std::uint32_t>(key) & (N - 1)];
+    return &table_[static_cast<u32>(key) & (N - 1)];
   }
 
 private:

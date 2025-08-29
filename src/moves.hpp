@@ -24,7 +24,7 @@
 #include <cstdint>
 #include <functional>
 
-#include "types.hpp"
+#include <types.hpp>
 
 struct MoveData final
 {
@@ -49,7 +49,6 @@ struct Board;
 template<bool Tuning = false>
 struct Moves final
 {
-
   explicit Moves(Board *board) : b(board)
   { }
 

@@ -2,7 +2,7 @@
   Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
   Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
   Copyright (C) 2017      FireFather (Tomcat author)
-  Copyright (C) 2020-2022 Rudy Alex Kohn
+  Copyright (C) 2020-2025 Rudy Alex Kohn
 
   Feliscatus is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,19 +27,19 @@
 
 #include <fmt/format.h>
 
-#include "polyglot.hpp"
-#include "polyglot_keys.hpp"
-#include "board.hpp"
-#include "bitboard.hpp"
-#include "moves.hpp"
-#include "uci.hpp"
-#include "prng.hpp"
-#include "types.hpp"
+#include <polyglot.hpp>
+#include <polyglot_keys.hpp>
+#include <board.hpp>
+#include <bitboard.hpp>
+#include <moves.hpp>
+#include <uci.hpp>
+#include <prng.hpp>
+#include <types.hpp>
 
 namespace
 {
 
-constexpr std::array<CastlingRight, 4> poly_castles{WHITE_OO, WHITE_OOO, BLACK_OO, BLACK_OOO};
+constexpr std::array poly_castles{WHITE_OO, WHITE_OOO, BLACK_OO, BLACK_OOO};
 
 constexpr u64 get_piece_key(const Piece pc, const Square sq)
 {
@@ -48,8 +48,8 @@ constexpr u64 get_piece_key(const Piece pc, const Square sq)
 
 constexpr u64 get_castle_key(const CastlingRight cr)
 {
-  const auto end = std::find(poly_castles.cbegin(), poly_castles.cend(), cr);
-  const auto idx = std::distance(poly_castles.cbegin(), end);
+  const CastlingRight *const end = std::find(poly_castles.cbegin(), poly_castles.cend(), cr);
+  const std::ptrdiff_t idx       = std::distance(poly_castles.cbegin(), end);
   return Polyglot::Keys::castle_key(idx);
 }
 
@@ -66,10 +66,10 @@ constexpr u64 get_en_passant_key(const File f)
   return Polyglot::Keys::en_passant_key(f);
 }
 
-u64 hash_pieces(Board *board)
+u64 hash_pieces(const Board *board)
 {
   u64 hash{};
-  auto pieces = board->pieces();
+  Bitboard pieces = board->pieces();
 
   while (pieces)
   {
@@ -108,8 +108,7 @@ u64 hash_turn(const Color stm)
 
 u64 poly_key(Board *board)
 {
-  return hash_pieces(board) ^ hash_castle(board) ^ hash_turn(board->side_to_move())
-       ^ hash_enpassant(board->en_passant_square());
+  return hash_pieces(board) ^ hash_castle(board) ^ hash_turn(board->side_to_move()) ^ hash_enpassant(board->en_passant_square());
 }
 
 ///
@@ -190,11 +189,24 @@ Move decode(Board *board, const u16 move)
 
 }   // namespace
 
+struct BookEntry
+{
+  std::uint64_t key;
+  std::uint16_t move;
+  std::uint16_t weight;
+  std::uint32_t learn;
+};
+
+// Initialize the static thread arena with a reasonable size (8MB)
+Arena PolyBook::arena(8 * 1024 * 1024);
+
 ///
 /// Opens a binary polyglot book and parses entries
 ///
 void PolyBook::open(const std::string_view path)
 {
+  fmt::print("{}", "info string Loading book...\n");
+
   std::ifstream book_file = std::ifstream(path.data(), std::ios::binary | std::ios::ate);
 
   if (!book_file)
@@ -203,7 +215,7 @@ void PolyBook::open(const std::string_view path)
     return;
   }
 
-  if (current_book_ == path)
+  if (book_name && book_name == path)
   {
     fmt::print("Book already open, restart engine if book file has changed\n");
     return;
@@ -225,53 +237,64 @@ void PolyBook::open(const std::string_view path)
     return;
   }
 
-  current_book_ = path.data();
+  const size_t arena_required = count * sizeof(BookEntry);
 
-  entries_.clear();
-  entries_.reserve(count);
+  if (arena.capacity() < arena_required)
+    arena.resize_and_reset(arena_required);
+  else if (arena.remaining() < arena_required)
+    arena.reset();
+
+  entries     = arena.allocate<BookEntry>(count);
+  entry_count = count;
+
+  std::memset(entries, 0, count * sizeof(BookEntry));
+
+  book_name = path.data();
 
   book_file.seekg(0);
+
+  BookEntry *entry = entries;
+
   for (std::size_t i = 0; i < count; i++)
   {
-    BookEntry entry;
-    book_file.read(reinterpret_cast<char *>(&entry), sizeof(BookEntry));
-    entry.key    = std::byteswap(entry.key);
-    entry.move   = std::byteswap(entry.move);
-    entry.weight = std::byteswap(entry.weight);
-    entry.learn  = std::byteswap(entry.learn);
-    entries_.emplace_back(entry);
+    book_file.read(reinterpret_cast<char *>(entry), sizeof(BookEntry));
+    entry->key    = std::byteswap(entry->key);
+    entry->move   = std::byteswap(entry->move);
+    entry->weight = std::byteswap(entry->weight);
+    entry->learn  = std::byteswap(entry->learn);
+    entry++;
   }
 
-  fmt::print("info string Parsed book. path={},size={}\n", path, entries_.size());
+  fmt::print("info string Parsed book. path={},size={},entries={}\n", path, size, count);
 }
 
-auto PolyBook::lower_entry(const u64 key) const
+BookEntry *PolyBook::lower_entry(const u64 key) const
 {
   const auto compare_lower = [](const BookEntry &entry, const u64 k) {
     return entry.key < k;
   };
 
-  return std::lower_bound(entries_.cbegin(), entries_.cend(), key, compare_lower);
+  return std::lower_bound(entries, entries + entry_count, key, compare_lower);
 }
 
-auto PolyBook::upper_entry(const u64 key, const BookIterator lower_bound) const
+BookEntry *PolyBook::upper_entry(const u64 key, BookEntry *lower_bound) const
 {
   const auto compare_upper = [](const u64 k, const BookEntry &entry) {
     return k < entry.key;
   };
 
-  return std::upper_bound(lower_bound, entries_.cend(), key, compare_upper);
+  return std::upper_bound(lower_bound, entries + entry_count, key, compare_upper);
 }
 
-auto PolyBook::select_random(const BookIterator first, const BookIterator second) const
+BookEntry *PolyBook::select_random(BookEntry *first, const BookEntry *second) const
 {
-  u16 max_weight         = 0;
-  std::size_t sum_weight = 0;
-  const auto seed        = std::chrono::system_clock::now().time_since_epoch();
+  u16 max_weight                                                         = 0;
+  std::size_t sum_weight                                                 = 0;
+  const std::chrono::duration<long long, std::ratio<1, 1000000000>> seed = std::chrono::system_clock::now().time_since_epoch();
   PRNG rng(seed.count());
 
-  auto selected = first;
-  for (auto it = first; it != second; it = std::next(it))
+  BookEntry *selected = first;
+  for (BookEntry *it = first; it != second; it = std::next(it))
   {
     max_weight = std::max(first->weight, max_weight);
     sum_weight += max_weight;
@@ -283,18 +306,16 @@ auto PolyBook::select_random(const BookIterator first, const BookIterator second
   return selected;
 }
 
-///
 /// O(log(n)) lookup of known entries by key
-///
 Move PolyBook::probe(Board *board) const
 {
   const auto key = poly_key(board);
 
   fmt::print("info string Probing book. key={}\n", key);
 
-  const auto lower_boundry = lower_entry(key);
+  BookEntry *const lower_boundry = lower_entry(key);
 
-  if (lower_boundry == entries_.begin())
+  if (lower_boundry == entries)
     return MOVE_NONE;
 
   const BookEntry *e;
@@ -302,22 +323,22 @@ Move PolyBook::probe(Board *board) const
   // In case we have set best book move,
   // we don't have to look any further
   if (Options[uci::uciName<uci::UciOptions::BOOK_BEST_MOVE>()])
-    e = &(*lower_boundry);
+    e = lower_boundry;
   else
   {
-    const auto upper_boundry = upper_entry(key, lower_boundry);
-    const auto move_count    = std::distance(lower_boundry, upper_boundry);
+    BookEntry *const upper_boundry  = upper_entry(key, lower_boundry);
+    const std::ptrdiff_t move_count = std::distance(lower_boundry, upper_boundry);
 
     if (move_count == 1)
-      e = &(*lower_boundry);
-    else if (upper_boundry != entries_.end())
+      e = lower_boundry;
+    else if (upper_boundry != entries + entry_count)
     {
-      e = &(*select_random(lower_boundry, upper_boundry));
+      e = select_random(lower_boundry, upper_boundry);
 
       const auto s = uci::info(fmt::format("number of book moves = {}\n", move_count));
       fmt::print("{}", s);
     } else
-      e = &(*lower_boundry);
+      e = lower_boundry;
   }
 
   return e && e->key == key ? decode(board, e->move) : MOVE_NONE;

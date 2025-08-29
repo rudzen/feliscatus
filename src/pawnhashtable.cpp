@@ -18,11 +18,9 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <fmt/format.h>
-
-#include "pawnhashtable.hpp"
-#include "board.hpp"
-#include "parameters.hpp"
+#include <pawnhashtable.hpp>
+#include <board.hpp>
+#include <parameters.hpp>
 
 namespace Pawn
 {
@@ -31,9 +29,9 @@ template<Color Us>
 [[nodiscard]]
 Score eval_pawns(const Board *b, PawnHashEntry *phe)
 {
-  constexpr auto Them      = ~Us;
-  auto result              = ZeroScore;
-  auto pawns               = b->pieces(PAWN, Us);
+  constexpr Color Them     = ~Us;
+  Score result             = ZeroScore;
+  Bitboard pawns           = b->pieces(PAWN, Us);
   phe->passed_pawns[Us]    = 0;
   phe->pawn_attacks[Us]    = pawn_attacks_bb<Us>(pawns);
   phe->open_files[Us]      = ~(pawn_fill[Us](pawn_fill[Them](pawns)) | pawn_fill[Us](pawn_fill[Them](b->pieces(PAWN, Them))));
@@ -41,16 +39,16 @@ Score eval_pawns(const Board *b, PawnHashEntry *phe)
 
   while (pawns)
   {
-    const auto s      = pop_lsb(&pawns);
-    const auto f      = file_of(s);
-    const auto flip_s = relative_square(Them, s);
+    const Square s      = pop_lsb(&pawns);
+    const File f        = file_of(s);
+    const Square flip_s = relative_square(Them, s);
 
     result += params::pst<PAWN>(flip_s);
 
     if (b->is_pawn_passed(s, Us))
       phe->passed_pawns[Us] |= s;
 
-    const auto open_file = !b->is_piece_on_file(PAWN, s, Them);
+    const bool open_file = !b->is_piece_on_file(PAWN, s, Them);
 
     if (b->is_pawn_isolated(s, Us))
       result += params::pawn_isolated[open_file];
@@ -66,26 +64,26 @@ Score eval_pawns(const Board *b, PawnHashEntry *phe)
 template<>
 PawnHashEntry *at<true>(const Board *b)
 {
-  const auto pawn_key = b->pawn_key();
-  auto *entry = b->my_thread()->pawn_hash[pawn_key];
+  const Key pawn_key   = b->pawn_key();
+  PawnHashEntry *entry = b->my_thread()->pawn_hash[pawn_key];
 
   entry->scores[WHITE] = eval_pawns<WHITE>(b, entry);
   entry->scores[BLACK] = eval_pawns<BLACK>(b, entry);
-  entry->zkey = pawn_key;
+  entry->zkey          = pawn_key;
   return entry;
 }
 
 template<>
 PawnHashEntry *at<false>(const Board *b)
 {
-  const auto pawn_key = b->pawn_key();
-  auto *entry = b->my_thread()->pawn_hash[pawn_key];
+  const Key pawn_key   = b->pawn_key();
+  PawnHashEntry *entry = b->my_thread()->pawn_hash[pawn_key];
 
   if (entry->zkey == 0)
   {
     entry->scores[WHITE] = eval_pawns<WHITE>(b, entry);
     entry->scores[BLACK] = eval_pawns<BLACK>(b, entry);
-    entry->zkey = pawn_key;
+    entry->zkey          = pawn_key;
   }
 
   return entry;

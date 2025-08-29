@@ -20,9 +20,7 @@
 
 #pragma once
 
-#include <cstdint>
-
-#include "types.hpp"
+#include <types.hpp>
 
 struct Board;
 

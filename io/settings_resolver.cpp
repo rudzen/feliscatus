@@ -23,8 +23,7 @@
 
 #include <nlohmann/json.hpp>
 #include <fmt/format.h>
-
-#include "settings_resolver.hpp"
+#include <settings_resolver.hpp>
 
 namespace
 {

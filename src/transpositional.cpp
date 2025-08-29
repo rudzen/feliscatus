@@ -26,9 +26,8 @@
 
 #include <fmt/format.h>
 
-#include "pv_entry.hpp"
-#include "transpositional.hpp"
-#include "uci.hpp"
+#include <transpositional.hpp>
+#include <uci.hpp>
 
 namespace
 {

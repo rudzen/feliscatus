@@ -22,8 +22,7 @@
 #include <vector>
 
 #include <fmt/format.h>
-
-#include "bitboard.hpp"
+#include <bitboard.hpp>
 
 namespace
 {

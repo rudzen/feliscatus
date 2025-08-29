@@ -20,12 +20,19 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "types.hpp"
 #include "miscellaneous.hpp"
 
-struct PVEntry;
+struct PVEntry final
+{
+  Key key;
+  int depth;
+  int score;
+  int previous_score;
+  Move move;
+  NodeType node_type;
+  int eval;
+};
 
 #pragma pack(1)
 struct alignas(CacheLineSize / 4) HashEntry final

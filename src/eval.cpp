@@ -24,10 +24,10 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
-#include "eval.hpp"
-#include "types.hpp"
-#include "board.hpp"
-#include "parameters.hpp"
+#include <eval.hpp>
+#include <types.hpp>
+#include <board.hpp>
+#include <parameters.hpp>
 
 namespace
 {

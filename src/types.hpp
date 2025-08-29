@@ -25,7 +25,7 @@
 #include <ranges>
 #include <string_view>
 
-#include "util.hpp"
+#include <util.hpp>
 
 using u8       = std::uint8_t;
 using u16      = std::uint16_t;

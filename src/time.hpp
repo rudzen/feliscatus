@@ -47,9 +47,9 @@ void stop(Stopwatch *sw);
 
 TimeUnit elapsed_milliseconds(const Stopwatch *sw);
 
-TimeUnit elapsed_microseconds(Stopwatch *sw);
+TimeUnit elapsed_microseconds(const Stopwatch *sw);
 
-TimeUnit elapsed_seconds(Stopwatch *sw);
+TimeUnit elapsed_seconds(const Stopwatch *sw);
 
 void init_time(Time *time, Color c, const SearchLimits *limits);
 

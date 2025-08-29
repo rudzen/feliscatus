@@ -30,11 +30,9 @@
 
 #include <fmt/format.h>
 
-#include "miscellaneous.hpp"
-#include "types.hpp"
-#include "pv_entry.hpp"
-#include "search_limits.hpp"
-#include "cpu.hpp"
+#include <types.hpp>
+#include <cpu.hpp>
+#include <transpositional.hpp>
 
 struct Board;
 

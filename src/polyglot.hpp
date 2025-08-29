@@ -20,12 +20,11 @@
 
 #pragma once
 
-#include <vector>
-#include <string_view>
-
-#include "types.hpp"
+#include <arena.h>
+#include <types.hpp>
 
 struct Board;
+struct BookEntry;
 
 struct PolyBook
 {
@@ -40,32 +39,25 @@ struct PolyBook
   bool empty() const;
 
 private:
-  struct BookEntry
-  {
-    std::uint64_t key{};
-    std::uint16_t move{};
-    std::uint16_t weight{};
-    std::uint32_t learn{};
-  };
+  BookEntry* lower_entry(std::uint64_t key) const;
+  BookEntry* upper_entry(std::uint64_t key, BookEntry* lower_bound) const;
+  BookEntry* select_random(BookEntry* first, const BookEntry * second) const;
 
-  using BookIterator = std::vector<BookEntry>::const_iterator;
+  const char* book_name;
+  BookEntry* entries;
+  size_t entry_count;
 
-  auto lower_entry(std::uint64_t key) const;
-  auto upper_entry(std::uint64_t key, BookIterator lower_bound) const;
-  auto select_random(BookIterator first, BookIterator second) const;
-
-  std::string_view current_book_;
-  std::vector<BookEntry> entries_;
+  static Arena arena;
 };
 
 inline std::size_t PolyBook::size() const
 {
-  return entries_.size();
+  return entry_count;
 }
 
 inline bool PolyBook::empty() const
 {
-  return entries_.empty();
+  return entry_count == 0;
 }
 
 inline PolyBook book;

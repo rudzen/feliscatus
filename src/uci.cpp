@@ -21,15 +21,14 @@
 #include <sstream>
 #include <cstdio>
 
-#include "uci.hpp"
-#include "board.hpp"
-#include "transpositional.hpp"
-#include "perft.hpp"
-#include "moves.hpp"
-#include "eval.hpp"
-#include "polyglot.hpp"
-
-#include "types.hpp"
+#include <uci.hpp>
+#include <board.hpp>
+#include <transpositional.hpp>
+#include <perft.hpp>
+#include <moves.hpp>
+#include <eval.hpp>
+#include <polyglot.hpp>
+#include <types.hpp>
 
 namespace
 {
@@ -135,7 +134,7 @@ void set_option(std::istringstream &input)
 
 void go(std::istringstream &input, const std::string_view fen)
 {
-  auto limits = pool.limits;
+  SearchLimits *limits = pool.limits;
 
   ClearSearchLimits(limits);
 

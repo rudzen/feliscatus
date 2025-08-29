@@ -18,8 +18,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "position.hpp"
-#include "bitboard.hpp"
+#include <position.hpp>
+#include <bitboard.hpp>
 
 void Position::clear()
 {

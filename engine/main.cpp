@@ -21,16 +21,21 @@
 #include <fmt/format.h>
 #include <spdlog/spdlog.h>
 
+#include <bitboard.hpp>
+#include <board.hpp>
+#include <uci.hpp>
+#include <transpositional.hpp>
 #include "../src/bitboard.hpp"
 #include "../src/board.hpp"
 #include "../src/uci.hpp"
 #include "../src/transpositional.hpp"
-#include "../src/polyglot.hpp"
 #include "../io/directory_resolver.hpp"
 #include "../io/settings_resolver.hpp"
 
 int main(const int argc, char *argv[])
 {
+  fmt::print("{}", "af");
+
   util::checkSize<PawnHashEntry, 96>();
 
   spdlog::flush_every(std::chrono::seconds(3));

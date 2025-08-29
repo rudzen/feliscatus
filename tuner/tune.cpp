@@ -492,7 +492,7 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
         else
           value = Score(value.mg(), value.eg() + step);
 
-        fmt::print("Tuning prm[{}] {} i:{}  current:{}  trying:{}...\n", idx, params[idx].name_, i, original, value);
+        fmt::print("Tuning prm[{}] {} i:{}  current:{}{}  trying:{}/{}...\n", idx, params[idx].name_, i, original.mg(), original.eg(), value.mg(), value.eg());
 
         auto newE = e(pgn.all_selected_nodes_, params, params_index, K);
 
@@ -508,8 +508,8 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
           step = -step;
           value += 2 * step;
 
-          fmt::print(
-            "Tuning prm[{}] {} i:{}  current:{}  trying:{}...\n", idx, params[idx].name_, i, value - step, value);
+          Score s = value - step;
+          fmt::print("Tuning prm[{}] {} i:{}  current:{}{}  trying:{}/{}...\n", idx, params[idx].name_, i, s.mg(), s.eg(), value.mg(), value.eg());
 
           newE = e(pgn.all_selected_nodes_, params, params_index, K);
 
@@ -570,7 +570,10 @@ double Tune::e(
 
   for (std::size_t i = 0; i < paramsIndex.size(); ++i)
     if (params[paramsIndex[i].idx_].step_)
-      fmt::format_to(inserter, " prm[{}]:{}\n", i, params[paramsIndex[i].idx_].value_);
+    {
+      auto v = params[paramsIndex[i].idx_].value_;
+      fmt::format_to(inserter, " prm[{}]:{}/{}\n", i, v.mg(), v.eg());
+    }
 
   console->info("{}\n\n", fmt::to_string(s));
 

@@ -21,9 +21,8 @@
 #pragma once
 
 #include <cassert>
-#include <concepts>
 
-#include "types.hpp"
+#include <types.hpp>
 
 template<class T>
 concept PRNGCompatible = std::is_convertible_v<T, Key>;

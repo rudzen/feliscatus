@@ -20,9 +20,9 @@
 
 #include <utility>
 
-#include "moves.hpp"
-#include "board.hpp"
-#include "bitboard.hpp"
+#include <moves.hpp>
+#include <board.hpp>
+#include <bitboard.hpp>
 
 namespace
 {

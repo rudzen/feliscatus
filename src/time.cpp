@@ -55,13 +55,13 @@ TimeUnit elapsed_milliseconds(const Stopwatch *sw)
     sw->running ? std::chrono::system_clock::now() : sw->end_time;
   return std::chrono::duration_cast<std::chrono::milliseconds>(end_time - sw->start_time).count();
 }
-TimeUnit elapsed_microseconds(Stopwatch *sw)
+TimeUnit elapsed_microseconds(const Stopwatch *sw)
 {
   const auto end_time = sw->running ? std::chrono::system_clock::now() : sw->end_time;
   return std::chrono::duration_cast<std::chrono::microseconds>(end_time - sw->start_time).count();
 }
 
-TimeUnit elapsed_seconds(Stopwatch *sw)
+TimeUnit elapsed_seconds(const Stopwatch *sw)
 {
   const auto end_time = sw->running ? std::chrono::system_clock::now() : sw->end_time;
   return std::chrono::duration_cast<std::chrono::seconds>(end_time - sw->start_time).count();
@@ -92,6 +92,8 @@ void init_time(Time *time, const Color c, const SearchLimits *limits)
       time->search_time = 2 * (time_left / (moves_left + 1) + time_inc);
       time->n          = 2.5;
     }
+
+
     time->search_time = std::max<TimeUnit>(0, std::min<TimeUnit>(time->search_time, time_left - time_reserve));
   }
 }

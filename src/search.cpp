@@ -28,7 +28,6 @@
 
 #include "eval.hpp"
 #include "transpositional.hpp"
-#include "pv_entry.hpp"
 #include "position.hpp"
 #include "tpool.hpp"
 #include "uci.hpp"

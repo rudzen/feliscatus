@@ -19,8 +19,7 @@
 */
 
 #include <fmt/format.h>
-
-#include "file_resolver.hpp"
+#include <file_resolver.hpp>
 
 struct FileResolver final
 {

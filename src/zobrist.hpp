@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "types.hpp"
-#include "prng.hpp"
+#include <types.hpp>
+#include <prng.hpp>
 
 struct Zobrist final {
 

@@ -93,7 +93,7 @@ constexpr T toIntegral(std::string_view str)
 {
   static_assert(std::is_integral_v<T>, "Only integrals allowed.");
 
-  auto svVal = [&str]() {
+  auto svVal = [&str] {
     auto x = T(0);
     while (inBetween<'0', '9'>(str.front()))
     {

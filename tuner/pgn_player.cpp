@@ -21,6 +21,8 @@
 #include <fmt/format.h>
 
 #include "pgn_player.hpp"
+
+#include "uci.hpp"
 #include "../src/bitboard.hpp"
 #include "../src/util.hpp"
 #include "../src/board.hpp"
@@ -152,13 +154,13 @@ void pgn::PGNPlayer::read_san_move()
   if (!found)
   {
     fmt::print("!found [{}]\n", token_str);
-    fmt::print("to_square_: {}\n", to_square_);
-    fmt::print("piece: {}\n", piece);
+    fmt::print("to_square_: {}\n",  square_to_string(to_square_));
+    fmt::print("piece: {}\n",  (int)piece);
     fmt::print("from_file_: {}\n", from_file_);
     fmt::print("from_rank_: {}\n", from_rank_);
     fmt::print("pawn_move_: {}\n", pawn_move_);
     fmt::print("castle_move_: {}\n", castle_move_);
-    fmt::print("side_to_move: {}\n", side_to_move);
+    fmt::print("side_to_move: {}\n",  (int)side_to_move);
     fmt::print("pos->in_check: {}\n", b->in_check());
     fmt::print("game_count_: {}\n", game_count_);
     b->print();

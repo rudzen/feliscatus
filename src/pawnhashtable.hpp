@@ -20,17 +20,16 @@
 
 #pragma once
 
-#include "types.hpp"
-#include "hash.hpp"
-#include "score.hpp"
-#include "miscellaneous.hpp"
+#include <types.hpp>
+#include <hash.hpp>
+#include <score.hpp>
+#include <miscellaneous.hpp>
 
 struct Board;
 
 #pragma pack(1)
 struct alignas(CacheLineSize / 2) PawnHashEntry final
 {
-
   // TODO : Move more pawn-related only things here
   [[nodiscard]]
   Score eval() const noexcept

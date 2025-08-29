@@ -22,8 +22,8 @@
 
 #include <array>
 
-#include "score.hpp"
-#include "types.hpp"
+#include <score.hpp>
+#include <types.hpp>
 
 namespace params
 {
@@ -350,7 +350,7 @@ constexpr std::array<PcSqArr, PIECETYPE_NB> pc_sq_arr = make_pst();
 template<PieceType Pt>
 [[nodiscard]]
 #if defined(TUNER)
-inline Score &pst(const Square sq)
+Score &pst(const Square sq)
 #else
 constexpr Score pst(const Square sq)
 #endif

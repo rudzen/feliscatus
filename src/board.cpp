@@ -25,14 +25,14 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
-#include "board.hpp"
-#include "bitboard.hpp"
-#include "util.hpp"
-#include "transpositional.hpp"
-#include "miscellaneous.hpp"
-#include "prng.hpp"
-#include "moves.hpp"
-#include "zobrist.hpp"
+#include <board.hpp>
+#include <bitboard.hpp>
+#include <util.hpp>
+#include <transpositional.hpp>
+#include <miscellaneous.hpp>
+#include <prng.hpp>
+#include <moves.hpp>
+#include <zobrist.hpp>
 
 namespace
 {
@@ -545,10 +545,10 @@ void Board::set_fen(std::string_view fen, thread *t)
   Square sq = A8;
 
   // indicates where in the fen the last space was located
-  std::size_t space{};
+  std::size_t space = 0;
 
   // updates the fen and the current view to the next part of the fen
-  const auto update_current = [&fen, &space]() {
+  const auto update_current = [&fen, &space] {
     // remove already parsed section from fen
     fen.remove_prefix(space);
 

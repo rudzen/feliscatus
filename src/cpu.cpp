@@ -21,8 +21,8 @@
 #include <cstring>
 #include <limits>
 
-#include "cpu.hpp"
-#include "util.hpp"
+#include <cpu.hpp>
+#include <util.hpp>
 
 namespace
 {

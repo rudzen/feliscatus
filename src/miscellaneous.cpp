@@ -44,12 +44,11 @@ typedef bool (*fun3_t)(HANDLE, CONST GROUP_AFFINITY *, PGROUP_AFFINITY);
 #include <vector>
 #include <optional>
 #include <sstream>
-#include <cstdint>
 
 #include <fmt/format.h>
 
-#include "miscellaneous.hpp"
-#include "util.hpp"
+#include <miscellaneous.hpp>
+#include <util.hpp>
 
 namespace
 {

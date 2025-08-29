@@ -1,8 +1,52 @@
-file(GLOB files
-        "*.cpp"
-        "*.hpp"
-        )
+set(files
+        "arena.h"
+        "bitboard.cpp"
+        "bitboard.hpp"
+        "board.cpp"
+        "board.hpp"
+        "cpu.cpp"
+        "cpu.hpp"
+        "eval.cpp"
+        "eval.hpp"
+        "hash.hpp"
+        "material.cpp"
+        "material.hpp"
+        "miscellaneous.cpp"
+        "miscellaneous.hpp"
+        "move_gen.cpp"
+        "moves.cpp"
+        "moves.hpp"
+        "parameters.hpp"
+        "pawnhashtable.cpp"
+        "pawnhashtable.hpp"
+        "perft.cpp"
+        "perft.hpp"
+        "polyglot.cpp"
+        "polyglot.hpp"
+        "polyglot_keys.hpp"
+        "position.cpp"
+        "position.hpp"
+        "prng.hpp"
+        "score.hpp"
+        "search.cpp"
+        "search_limits.hpp"
+        "see.cpp"
+        "time.cpp"
+        "time.hpp"
+        "tpool.cpp"
+        "tpool.hpp"
+        "transpositional.cpp"
+        "transpositional.hpp"
+        "types.hpp"
+        "uci.cpp"
+        "uci_options.cpp"
+        "uci.hpp"
+        "util.hpp"
+        "zobrist.hpp"
+)
 
 add_library(logic STATIC ${files})
+
+target_include_directories(logic PUBLIC .)
 
 target_link_libraries(logic PRIVATE project_options project_warnings fmt spdlog Threads::Threads)

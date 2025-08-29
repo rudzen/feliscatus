@@ -22,10 +22,9 @@
 
 #include <array>
 
-#include "types.hpp"
+#include <types.hpp>
 
 struct Board;
-enum Move : std::uint32_t;
 
 struct Material final
 {

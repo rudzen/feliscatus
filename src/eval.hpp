@@ -20,15 +20,17 @@
 
 #pragma once
 
+#include <types.hpp>
+
 struct Board;
 
 namespace Eval
 {
 
 [[nodiscard]]
-int evaluate(const Board *b, std::size_t pool_index, int alpha, int beta);
+int evaluate(const Board *b, std::size_t pool_index, i32 alpha, i32 beta);
 
 [[nodiscard]]
-int tune(const Board *b, std::size_t pool_index, int alpha, int beta);
+int tune(const Board *b, std::size_t pool_index, i32 alpha, i32 beta);
 
 }   // namespace Eval

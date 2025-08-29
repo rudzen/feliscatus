@@ -22,10 +22,10 @@
 
 #include <fmt/format.h>
 
-#include "uci.hpp"
-#include "transpositional.hpp"
-#include "tpool.hpp"
-#include "polyglot.hpp"
+#include <uci.hpp>
+#include <transpositional.hpp>
+#include <tpool.hpp>
+#include <polyglot.hpp>
 
 using std::string;
 
@@ -82,14 +82,14 @@ void init(OptionsMap &o, std::span<std::string> bookFiles)
   o[uciName<UciOptions::SHOW_CPU>()] << Option(false);
 
   // configure polyglot book options
-  const auto hasBookFiles = !bookFiles.empty();
+  const bool hasBookFiles = !bookFiles.empty();
   o[uciName<UciOptions::USE_BOOK>()] << Option(hasBookFiles);
   if (hasBookFiles)
   {
-    const auto selected = bookFiles.front();
+    const string selected = bookFiles.front();
     o[uciName<UciOptions::BOOKS>()] << Option(bookFiles, selected.c_str(), onBookChange);
-    if (o[uciName<UciOptions::USE_BOOK>()])
-      book.open(selected);
+    // if (o[uciName<UciOptions::USE_BOOK>()])
+    book.open(selected);
 
     o[uciName<UciOptions::BOOK_BEST_MOVE>()] << Option(false);
   } else
@@ -120,7 +120,7 @@ Option::Option(const std::span<std::string> variants, const char *cur, const on_
 Option::operator int() const
 {
   assert(type_ == OptionType::Check || type_ == OptionType::Spin);
-  return (type_ == OptionType::Spin ? util::toIntegral<int>(current_value_) : current_value_ == boolString[true]);
+  return type_ == OptionType::Spin ? util::toIntegral<int>(current_value_) : current_value_ == boolString[true];
 }
 
 Option::operator std::string_view() const

@@ -24,16 +24,16 @@
 #include <array>
 #include <optional>
 
-#include "types.hpp"
-#include "bitboard.hpp"
-#include "position.hpp"
-#include "tpool.hpp"
+#include <types.hpp>
+#include <bitboard.hpp>
+#include <position.hpp>
+#include <tpool.hpp>
 
 enum Move : std::uint32_t;
 
 struct Board
 {
-  using PositionList = std::array<Position, 4096>;
+  using PositionList = std::array<Position, MAX_MOVES>;
 
   Board();
 
@@ -355,6 +355,7 @@ inline Bitboard Board::pieces(const Color c) const
 template<PieceType Pt>
 Square Board::square(const Color c) const
 {
+  assert(Pt == KING);
   assert(piece_count(c, Pt) == 1);
   return lsb(pieces(Pt, c));
 }

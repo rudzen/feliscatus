@@ -23,8 +23,7 @@
 #include <fmt/format.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
-
-#include "directory_resolver.hpp"
+#include <directory_resolver.hpp>
 
 namespace
 {
@@ -32,8 +31,7 @@ namespace
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
 
-const std::shared_ptr<spdlog::logger> logger =
-  spdlog::rotating_logger_mt("directory_logger", "logs/directory.log", max_log_file_size, max_log_files);
+const std::shared_ptr<spdlog::logger> logger = spdlog::rotating_logger_mt("directory_logger", "logs/directory.log", max_log_file_size, max_log_files);
 
 constexpr std::string_view extension = ".bin";
 
@@ -46,8 +44,8 @@ std::vector<std::string> directory_resolver::get_book_list(const std::string_vie
 
   namespace fs = std::filesystem;
 
-  const auto path = fs::absolute(directory);
-  const auto cwd  = !fs::exists(path) ? fs::current_path().append(directory) : path;
+  const std::filesystem::path path = fs::absolute(directory);
+  const std::filesystem::path cwd  = !fs::exists(path) ? fs::current_path().append(directory) : path;
 
   if (!fs::is_directory(cwd))
   {
@@ -61,7 +59,8 @@ std::vector<std::string> directory_resolver::get_book_list(const std::string_vie
   {
     if (entry.is_regular_file())
     {
-      if (const auto s = fs::absolute(entry.path()).string(); s.ends_with(extension))
+      const std::string s = fs::absolute(entry.path()).string();
+      if (s.ends_with(extension))
         file_names.emplace_back(s);
     }
   }

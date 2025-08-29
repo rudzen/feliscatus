@@ -61,8 +61,9 @@ int main(const int argc, char **argv)
   bitboard::init();
   Board::init();
 
-  const Stopwatch sw;
-  eval::Tune(std::make_unique<Board>(), cli_parser_settings.get());
-  const auto seconds = sw.elapsed_seconds();
+  Stopwatch sw;
+  start(&sw);
+  auto t = eval::Tune(std::make_unique<Board>(), cli_parser_settings.get());
+  const auto seconds = elapsed_seconds(&sw);
   fmt::print("{} seconds\n", seconds);
 }

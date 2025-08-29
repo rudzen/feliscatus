@@ -21,8 +21,8 @@
 #include <array>
 #include <algorithm>
 
-#include "material.hpp"
-#include "board.hpp"
+#include <material.hpp>
+#include <board.hpp>
 
 namespace
 {
@@ -33,8 +33,8 @@ constexpr std::array<int, 7> piece_bit_shift{0, 4, 8, 12, 16, 20};
 
 void Material::clear()
 {
-  key.fill(0);
-  material_value.fill(0);
+  key[0] = key[1] = 0;
+  material_value[0] = material_value[1] = 0;
 }
 
 void Material::remove(const Piece pc)

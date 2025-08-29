@@ -21,11 +21,11 @@
 #include <numeric>
 #include <execution>
 
-#include "tpool.hpp"
-#include "uci.hpp"
-#include "board.hpp"
-#include "transpositional.hpp"
-#include "search_limits.hpp"
+#include <tpool.hpp>
+#include <uci.hpp>
+#include <board.hpp>
+#include <transpositional.hpp>
+#include <search_limits.hpp>
 
 namespace
 {
