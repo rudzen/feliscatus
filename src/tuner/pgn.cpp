@@ -34,18 +34,28 @@
 #include <felis/types.hpp>
 #include <felis/util.hpp>
 
-enum Token : std::uint8_t
+enum Token : e8
 {
-  Symbol, Integer, String, NAG,
-  Asterisk, Period, LParen, RParen,
-  LBracket, RBracket, LT, GT, Invalid, None
+  Symbol,
+  Integer,
+  String,
+  NAG,
+  Asterisk,
+  Period,
+  LParen,
+  RParen,
+  LBracket,
+  RBracket,
+  LT,
+  GT,
+  Invalid,
+  None
 };
 
 namespace
 {
 
-const char token_string[][12] = {"Symbol", "Integer",  "String",   "NAG", "Asterisk", "Period",  "LParen",
-                                 "RParen", "LBracket", "RBracket", "LT",  "GT",       "Invalid", "None"};
+const char token_string[][12] = {"Symbol", "Integer", "String", "NAG", "Asterisk", "Period", "LParen", "RParen", "LBracket", "RBracket", "LT", "GT", "Invalid", "None"};
 
 constexpr bool is_white_space(const char c)
 {
@@ -128,7 +138,7 @@ constexpr bool start_of_tag_value(const Token token)
 
 struct PGNFile final
 {
-  PGNFile(const char *path, const int oflag, const int pmode)
+  PGNFile(const char *path, const int oflag, const i32 pmode)
   {
 #if defined(__linux__)
     constexpr int O_BINARY = 0;
@@ -146,11 +156,11 @@ struct PGNFile final
     close(fd);
   }
 
-  size_t read(unsigned char *buf, const size_t count) const
+  size_t read(uchar *buf, const size_t count) const
   {
     int n;
 
-    if ((n = ::read(fd, static_cast<void *>(buf), count)) == -1)
+    if ((n = ::read(fd, buf, count)) == -1)
     {
       fmt::print(stderr, "File::File: cannot read file");
       exit(EXIT_FAILURE);
@@ -159,7 +169,7 @@ struct PGNFile final
   }
 
 private:
-  int fd;
+  i32 fd;
 };
 
 class UnexpectedToken final : std::exception {
@@ -189,7 +199,7 @@ namespace pgn
 
 PGNFileReader::PGNFileReader() : file_(nullptr)
 {
-  if ((buffer_ = new unsigned char[bufsize]) == nullptr)
+  if ((buffer_ = new uchar[bufsize]) == nullptr)
   {
     fmt::print(stderr, "PGNFileReader: unable to allocate buffer\n");
     exit(EXIT_FAILURE);
@@ -349,7 +359,7 @@ void PGNFileReader::read_move_number_indication()
 {
   move_number_ = strtol(token_str, nullptr, 10);
 
-  auto periods = 0;
+  i32 periods = 0;
 
   do
   {
@@ -395,13 +405,11 @@ void PGNFileReader::read_san_move()
 
 bool PGNFileReader::read_san_move_suffix(char *&p)
 {
-  const auto len = strlen(p);
+  const size_t len = strlen(p);
 
   if (len && (p[0] == '+' || p[0] == '#'))
     p += 1;   // NOLINT(bugprone-branch-clone)
-  else if (
-    len > 1
-    && (strncmp(p, "!!", 2) == 0 || strncmp(p, "!?", 2) == 0 || strncmp(p, "?!", 2) == 0 || strncmp(p, "??", 2) == 0))
+  else if (len > 1 && (strncmp(p, "!!", 2) == 0 || strncmp(p, "!?", 2) == 0 || strncmp(p, "?!", 2) == 0 || strncmp(p, "??", 2) == 0))
     p += 2;
   else if ((len && p[0] == '!') || (strlen(p) && p[0] == '?'))
     p += 1;
@@ -497,8 +505,8 @@ void PGNFileReader::read_castle_move(char *&p)
 {
   const int len = strlen(p);
 
-  constexpr auto queen_side_length = 5;
-  constexpr auto king_side_length  = 3;
+  constexpr i32 queen_side_length = 5;
+  constexpr i32 king_side_length  = 3;
 
   if (len >= queen_side_length && strncmp(p, "O-O-O", queen_side_length) == 0)
   {
@@ -589,8 +597,7 @@ bool PGNFileReader::start_of_move_number_indication() const
 
 bool PGNFileReader::start_of_san_move()
 {
-  return token_ == Symbol
-         && (start_of_pawn_move(token_str) || start_of_castle_move(token_str) || start_of_move(token_str));
+  return token_ == Symbol && (start_of_pawn_move(token_str) || start_of_castle_move(token_str) || start_of_move(token_str));
 }
 
 bool PGNFileReader::start_of_pawn_move(const char *p)
@@ -635,15 +642,12 @@ bool PGNFileReader::start_of_capture_or_quiet_move(const char *p)
 
 bool PGNFileReader::start_of_capture(const char *p)
 {
-  return (strlen(p) && p[0] == 'x') || (strlen(p) > 1 && p[1] == 'x' && is_rank_digit(p, from_rank_))
-         || (strlen(p) > 1 && p[1] == 'x' && is_file_letter(p, from_file_))
-         || (strlen(p) > 2 && p[2] == 'x' && is_square(p, from_square_));
+  return (strlen(p) && p[0] == 'x') || (strlen(p) > 1 && p[1] == 'x' && is_rank_digit(p, from_rank_)) || (strlen(p) > 1 && p[1] == 'x' && is_file_letter(p, from_file_)) || (strlen(p) > 2 && p[2] == 'x' && is_square(p, from_square_));
 }
 
 bool PGNFileReader::start_of_quiet_move(const char *p)
 {
-  return (strlen(p) > 1 && is_square(p, from_square_)) || (strlen(p) && is_rank_digit(p, from_rank_))
-         || (strlen(p) && is_file_letter(p, from_file_));
+  return (strlen(p) > 1 && is_square(p, from_square_)) || (strlen(p) && is_rank_digit(p, from_rank_)) || (strlen(p) && is_file_letter(p, from_file_));
 }
 
 bool PGNFileReader::start_of_numeric_annotation_glyph()
@@ -787,9 +791,7 @@ bool PGNFileReader::read_symbol()
     if (n == 0)
       break;
 
-    if (
-      !std::isalnum(ch_) && ch_ != '_' && ch_ != '+' && ch_ != '/' && ch_ != '#' && ch_ != '=' && ch_ != ':'
-      && ch_ != '-')
+    if (!std::isalnum(ch_) && ch_ != '_' && ch_ != '+' && ch_ != '/' && ch_ != '#' && ch_ != '=' && ch_ != ':' && ch_ != '-')
       break;
   } while (true);
 
@@ -845,8 +847,8 @@ bool PGNFileReader::read_string()
   if (ch_ != '\"')
     return false;
 
-  auto len  = 0;
-  auto i    = 0;
+  i32 len   = 0;
+  i32 i     = 0;
   char prev = 0;
 
   do
@@ -858,7 +860,7 @@ bool PGNFileReader::read_string()
 
     prev = ch_;
 
-    const auto n = get_char(ch_, true, false, false);
+    const i32 n = get_char(ch_, true, false, false);
 
     if (n == -1)
       throw 0;
@@ -881,7 +883,7 @@ int PGNFileReader::get_char(unsigned char &c, bool get, const bool skip_ws, cons
   {
     if (get)
     {
-      const auto n = get_char(c);
+      const i32 n = get_char(c);
 
       if (n <= 0)
         return n;
@@ -906,12 +908,12 @@ int PGNFileReader::get_char(unsigned char &c, bool get, const bool skip_ws, cons
 
 void PGNFileReader::read_comment1()
 {
-  unsigned char c;
-  auto *p = comment_;
+  uchar c;
+  char *p = comment_;
 
   do
   {
-    const auto n = get_char(c);
+    const i32 n = get_char(c);
 
     if (n <= 0)
       return;
@@ -929,11 +931,11 @@ void PGNFileReader::read_comment1()
   *p = '\0';
 }
 
-void PGNFileReader::read_comment2(unsigned char &c)
+void PGNFileReader::read_comment2(uchar &c)
 {
   do
   {
-    auto n = get_char(c);
+    i32 n = get_char(c);
 
     if (n <= 0)
       return;

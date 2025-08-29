@@ -40,6 +40,9 @@ using e32      = u32;
 using e64      = u64;
 using r32      = float;
 using r64      = double;
+using uchar    = unsigned char;
+
+// Chess specific types
 using Bitboard = u64;
 using Key      = u64;
 

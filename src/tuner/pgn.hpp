@@ -24,9 +24,9 @@
 #include <felis/types.hpp>
 
 struct PGNFile;
-enum Token : std::uint8_t;
+enum Token : e8;
 
-enum Result : std::uint8_t
+enum Result : e8
 {
   WhiteWin,
   Draw,
@@ -153,7 +153,7 @@ protected:
   virtual void read_next_token(Token &token);
 
   [[nodiscard]]
-  int get_char(unsigned char &c);
+  i32 get_char(unsigned char &c);
 
   [[nodiscard]]
   bool read_symbol();
@@ -165,38 +165,38 @@ protected:
   bool read_string();
 
   [[nodiscard]]
-  int get_char(unsigned char &c, bool get, bool skip_ws, bool skip_comment);
+  i32 get_char(unsigned char &c, bool get, bool skip_ws, bool skip_comment);
 
   virtual void read_comment1();
 
-  virtual void read_comment2(unsigned char &c);
+  virtual void read_comment2(uchar &c);
 
   std::unique_ptr<PGNFile> file_;
-  unsigned char *buffer_;
+  uchar *buffer_;
   std::size_t readpos_;
   std::size_t fillpos_;
   std::size_t line_;
   std::size_t pos_;
-  unsigned char ch_;
+  uchar ch_;
   Token token_;
   char token_str[1024];
   bool strict_;
   char tag_name_[1024];
   char tag_value_[1024];
   char comment_[2048];
-  int from_file_;
-  int from_rank_;
-  int from_piece_;
+  i32 from_file_;
+  i32 from_rank_;
+  i32 from_piece_;
   Square from_square_;
   Square to_square_;
-  int promoted_to;
+  i32 promoted_to;
   Color side_to_move;
-  int move_number_;
+  i32 move_number_;
   bool pawn_move_;
   bool castle_move_;
   bool piece_move_;
   bool capture_;
-  int game_count_;
+  i32 game_count_;
   Result result_;
 };
 }   // namespace pgn

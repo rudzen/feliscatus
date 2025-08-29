@@ -54,7 +54,7 @@ bool strieq(const char *s1, const char *s2)
     return false;
 
   for (std::size_t i = 0; i < std::strlen(s1); i++)
-    if (::tolower(*(s1 + i)) != ::tolower(*(s2 + i)))
+    if (tolower(*(s1 + i)) != tolower(*(s2 + i)))
       return false;
 
   return true;
@@ -68,7 +68,7 @@ pgn::PGNPlayer::PGNPlayer([[maybe_unused]] bool check_legal) : PGNFileReader(), 
 void pgn::PGNPlayer::read_pgn_game()
 {
   b->new_game(pool.main());
-  pgn::PGNFileReader::read_pgn_game();
+  PGNFileReader::read_pgn_game();
 }
 
 void pgn::PGNPlayer::read_tag_pair()
@@ -86,7 +86,7 @@ void pgn::PGNPlayer::read_san_move()
 {
   PGNFileReader::read_san_move();
 
-  Piece piece{NO_PIECE};
+  Piece piece;
 
   auto mg = Moves<true>(b.get());
 
@@ -135,10 +135,7 @@ void pgn::PGNPlayer::read_san_move()
   while (auto *const move_data = mg.next_move())
   {
     const auto m = move_data->move;
-    if (
-      move_piece(m) != piece || move_to(m) != to_square_ || (promoted != NO_PIECE && move_promoted(m) != promoted)
-      || (capture_ && !is_capture(m)) || (from_file_ != -1 && file_of(move_from(m)) != from_file_)
-      || (from_rank_ != -1 && rank_of(move_from(m)) != from_rank_))
+    if (move_piece(m) != piece || move_to(m) != to_square_ || (promoted != NO_PIECE && move_promoted(m) != promoted) || (capture_ && !is_capture(m)) || (from_file_ != -1 && file_of(move_from(m)) != from_file_) || (from_rank_ != -1 && rank_of(move_from(m)) != from_rank_))
       continue;
 
     if (!b->make_move(m, true, true))
@@ -151,13 +148,13 @@ void pgn::PGNPlayer::read_san_move()
   if (!found)
   {
     fmt::print("!found [{}]\n", token_str);
-    fmt::print("to_square_: {}\n",  square_to_string(to_square_));
-    fmt::print("piece: {}\n",  (int)piece);
+    fmt::print("to_square_: {}\n", square_to_string(to_square_));
+    fmt::print("piece: {}\n", (int)piece);
     fmt::print("from_file_: {}\n", from_file_);
     fmt::print("from_rank_: {}\n", from_rank_);
     fmt::print("pawn_move_: {}\n", pawn_move_);
     fmt::print("castle_move_: {}\n", castle_move_);
-    fmt::print("side_to_move: {}\n",  (int)side_to_move);
+    fmt::print("side_to_move: {}\n", (int)side_to_move);
     fmt::print("pos->in_check: {}\n", b->in_check());
     fmt::print("game_count_: {}\n", game_count_);
     b->print();
