@@ -59,12 +59,12 @@ endif()
 
 include(cmake/CPM.cmake)
 
-CPMAddPackage("gh:fmtlib/fmt#11.0.2")
+CPMAddPackage("gh:fmtlib/fmt#11.2.0")
 CPMAddPackage(
         NAME
         spdlog
         VERSION
-        1.14.1
+        1.15.3
         GITHUB_REPOSITORY
         "gabime/spdlog"
         OPTIONS
