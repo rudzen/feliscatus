@@ -98,17 +98,4 @@ if(ENABLE_FUZZING)
   add_subdirectory(fuzz_test)
 endif()
 
-# cli lib
-add_subdirectory(cli)
-
-# io lib
-add_subdirectory(io)
-
-# main lib
 add_subdirectory(src)
-
-# engine
-add_subdirectory(engine)
-
-# tuner
-add_subdirectory(tuner)
