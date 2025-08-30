@@ -95,7 +95,7 @@ u64 Perft<Flags>::perft_divide(const i32 depth) const {
     fmt::print("move {}: {} nodes\n", b->move_to_string(m), nodes - nodes_start);
   }
 
-  const auto nps = nodes / (time + 1) * 1000;
+  const u64 nps = nodes / (time + 1) * 1000;
 
   fmt::print("{} nodes, {} nps", nodes, nps);
 

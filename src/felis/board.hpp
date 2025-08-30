@@ -12,8 +12,6 @@
 #include <felis/position.hpp>
 #include <felis/tpool.hpp>
 
-enum Move : std::uint32_t;
-
 struct Board {
   using PositionList = std::array<Position, MAX_MOVES>;
 

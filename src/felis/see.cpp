@@ -3,43 +3,39 @@
 // Copyright (C) 2020-2025 Rudy Alex Kohn
 // See end of file for extended copyright information.
 
-#include <optional>
 #include <felis/board.hpp>
 
 namespace {
 
-using CurrentPieceType = std::array<PieceType, COL_NB>;
-using CurrentPieces    = std::array<Bitboard, COL_NB>;
-
 struct SeeData final {
-  CurrentPieceType current_pt{};
-  CurrentPieces current_pc{};
+  PieceType current_pt[COL_NB];
+  Bitboard  current_pc[COL_NB];
 };
 
-constexpr int SEE_INVALID_SCORE = -5000;
+constexpr i32 SEE_INVALID_SCORE = -5000;
 
 [[nodiscard]]
-constexpr auto material_change(const Move m) {
-  return (is_capture(m) ? piece_value(move_captured(m)) : 0) + (is_promotion(m) ? (piece_value(move_promoted(m)) - piece_value<PAWN>()) : 0);
+constexpr i32 material_change(const Move m) {
+  return (is_capture(m) ? piece_value(move_captured(m)) : 0) + (is_promotion(m) ? piece_value(move_promoted(m)) - piece_value<PAWN>() : 0);
 }
 
 [[nodiscard]]
-constexpr auto next_to_capture(const Move m) {
+constexpr Piece next_to_capture(const Move m) {
   return is_promotion(m) ? move_promoted(m) : move_piece(m);
 }
 
 [[nodiscard]]
-auto from_sq(const Bitboard bb, SeeData& data, const Color c) {
-  const auto from = lsb(bb);
+Square from_sq(const Bitboard bb, SeeData& data, const Color c) {
+  const Square from = lsb(bb);
   data.current_pc[c] &= ~bit(from);
-  return std::make_optional(from);
+  return from;
 }
 
 /// "Best" == "Lowest piece value"
 [[nodiscard]]
-std::optional<Square> lookup_best_attacker(SeeData& data, const Square to, const Color c, const Board* b) {
+Square lookup_best_attacker(SeeData& data, const Square to, const Color c, const Board* b) {
   const auto occupied = b->pieces();
-  Bitboard bb;
+  Bitboard   bb;
 
   switch (data.current_pt[c]) {
     case PAWN:
@@ -85,17 +81,17 @@ std::optional<Square> lookup_best_attacker(SeeData& data, const Square to, const
     default: break;
   }
 
-  return std::nullopt;
+  return NO_SQ;
 }
 
 }   // namespace
 
-int Board::see_move(const Move m) {
+i32 Board::see_move(const Move m) {
   perform_move(m);
 
-  const auto us    = move_side(m);
-  const auto them  = ~us;
-  const auto score = !is_attacked(square<KING>(us), them) ? see_rec(material_change(m), next_to_capture(m), move_to(m), them) : SEE_INVALID_SCORE;
+  const Color us    = move_side(m);
+  const Color them  = ~us;
+  const i32   score = !is_attacked(square<KING>(us), them) ? see_rec(material_change(m), next_to_capture(m), move_to(m), them) : SEE_INVALID_SCORE;
 
   unperform_move(m);
   return score;
@@ -105,22 +101,32 @@ i32 Board::see_last_move(const Move m) {
   return see_rec(material_change(m), next_to_capture(m), move_to(m), ~move_side(m));
 }
 
-i32 Board::see_rec(const int mat_change, const Piece next_capture, const Square to, const Color c) {
+i32 Board::see_rec(const i32 mat_change, const Piece next_capture, const Square to, const Color c) {
+  // clang format doesn't support designated initializers yet (!), so we turn it off here
+  // clang-format off
   SeeData data{
-    {PAWN, PAWN},
-    {pieces(PAWN, WHITE), pieces(PAWN, BLACK)}
+    .current_pt = {PAWN, PAWN},
+    .current_pc = {pieces(PAWN, WHITE), pieces(PAWN, BLACK)}
   };
-  const auto rr = relative_rank(c, to);
-  Move m;
+  // clang-format on
+
+  const Rank rr = relative_rank(c, to);
+  Move       m;
 
   do {
-    const auto from = lookup_best_attacker(data, to, c, this);
-    if (!from)
+    const Square from = lookup_best_attacker(data, to, c, this);
+    if (from == NO_SQ)
       return mat_change;
 
-    const auto current_pt = data.current_pt[c];
+    const PieceType current_pt = data.current_pt[c];
 
-    m = current_pt == PAWN && rr == RANK_8 ? init_move < PROMOTION | CAPTURE > (make_piece(current_pt, c), next_capture, from.value(), to, make_piece(QUEEN, c)) : init_move<CAPTURE>(make_piece(current_pt, c), next_capture, from.value(), to, NO_PIECE);
+    if (current_pt == PAWN && rr == RANK_8) {
+      constexpr MoveType Type = PROMOTION | CAPTURE;
+      m                       = init_move<Type>(make_piece(current_pt, c), next_capture, from, to, make_piece(QUEEN, c));
+    } else {
+      constexpr MoveType Type = CAPTURE;
+      m                       = init_move<Type>(make_piece(current_pt, c), next_capture, from, to, NO_PIECE);
+    }
 
     perform_move(m);
 
@@ -130,7 +136,7 @@ i32 Board::see_rec(const int mat_change, const Piece next_capture, const Square 
     unperform_move(m);
   } while (true);
 
-  const auto score = -see_rec(material_change(m), next_to_capture(m), move_to(m), ~move_side(m));
+  const i32 score = -see_rec(material_change(m), next_to_capture(m), move_to(m), ~move_side(m));
 
   unperform_move(m);
 
