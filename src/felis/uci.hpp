@@ -21,7 +21,7 @@ struct Board;
 
 namespace uci {
 
-inline CpuLoad Cpu;
+inline Cpu Cpu;
 
 enum class UciOptions { THREADS, HASH, HASH_X_THREADS, CLEAR_HASH, CLEAR_HASH_NEW_GAME, PONDER, UCI_Chess960, SHOW_CPU, USE_BOOK, BOOKS, BOOK_BEST_MOVE, UCI_OPT_NB = 11 };
 

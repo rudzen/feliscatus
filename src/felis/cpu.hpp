@@ -13,32 +13,20 @@
 #include <string>
 #include <cstdlib>
 #include <cstdio>
-#include <array>
 #include <cstring>
 #include "sys/times.h"
 #include "sys/vtimes.h"
 #endif
+#include <felis/types.hpp>
 
-struct CpuLoad final {
-
-  CpuLoad();
-  ~CpuLoad()                          = default;
-  CpuLoad(const CpuLoad& other)       = delete;
-  CpuLoad(CpuLoad&& other)            = delete;
-  CpuLoad& operator=(const CpuLoad&)  = delete;
-  CpuLoad& operator=(CpuLoad&& other) = delete;
-
-  [[nodiscard]]
-  int usage();
-
-private:
+struct Cpu final {
 #if defined(WIN32)
 
-  ULARGE_INTEGER last_cpu{};
-  ULARGE_INTEGER last_sys_cpu{};
-  ULARGE_INTEGER last_user_cpu{};
-  DWORD num_processors{};
-  HANDLE self{};
+  ULARGE_INTEGER last_cpu;
+  ULARGE_INTEGER last_sys_cpu;
+  ULARGE_INTEGER last_user_cpu;
+  DWORD num_processors;
+  HANDLE self;
 
 #else
 
@@ -49,6 +37,13 @@ private:
 
 #endif
 };
+
+namespace cpu {
+
+void init(Cpu* c);
+r64 usage(Cpu* c);
+
+}   // namespace cpu
 
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)

@@ -8,53 +8,47 @@
 #include <felis/cpu.hpp>
 #include <felis/util.hpp>
 
-namespace {
-
-constexpr double DEFAULT_OVERFLOW_VALUE = std::numeric_limits<double>::min();
-
-}
+void cpu::init(Cpu* c) {
+  std::memset(c, 0, sizeof(Cpu));
 
 #if defined(WIN32)
+  c->self = GetCurrentProcess();
 
-CpuLoad::CpuLoad() : self(GetCurrentProcess()) {
-  SYSTEM_INFO sys_info{};
-  FILETIME ftime{};
-  FILETIME fsys{};
-  FILETIME fuser{};
+  SYSTEM_INFO sys_info;
+  FILETIME ftime;
+  FILETIME fsys;
+  FILETIME fuser;
 
   GetSystemInfo(&sys_info);
-  num_processors = sys_info.dwNumberOfProcessors;
+  c->num_processors = sys_info.dwNumberOfProcessors;
 
   GetSystemTimeAsFileTime(&ftime);
 
-  std::memcpy(&last_cpu, &ftime, sizeof(FILETIME));
+  std::memcpy(&c->last_cpu, &ftime, sizeof(FILETIME));
 
-  GetProcessTimes(self, &ftime, &ftime, &fsys, &fuser);
-  std::memcpy(&last_sys_cpu, &fsys, sizeof(FILETIME));
-  std::memcpy(&last_user_cpu, &fuser, sizeof(FILETIME));
-}
+  GetProcessTimes(c->self, &ftime, &ftime, &fsys, &fuser);
+  std::memcpy(&c->last_sys_cpu, &fsys, sizeof(FILETIME));
+  std::memcpy(&c->last_user_cpu, &fuser, sizeof(FILETIME));
+
+
 #else
+  struct tms time_sample;
+  char line[128];
 
-CpuLoad::CpuLoad() {
-  struct tms time_sample{};
-  std::array<char, 128> line{};
-
-  last_cpu      = times(&time_sample);
-  last_sys_cpu  = time_sample.tms_stime;
-  last_user_cpu = time_sample.tms_utime;
+  c->last_cpu      = times(&time_sample);
+  c->last_sys_cpu  = time_sample.tms_stime;
+  c->last_user_cpu = time_sample.tms_utime;
 
   FILE* file = fopen("/proc/cpuinfo", "r");
-  while (fgets(line.data(), 128, file) != nullptr) {
-    if (std::strncmp(line.data(), "processor", 9) == 0)
-      num_processors++;
+  while (fgets(line, 128, file) != nullptr) {
+    if (std::strncmp(line, "processor", 9) == 0)
+      c->num_processors++;
   }
   fclose(file);
-}
-
 #endif
-
-int CpuLoad::usage() {
-  double percent;
+}
+r64 cpu::usage(Cpu* c) {
+  r64 percent;
 
 #if defined(WIN32)
   FILETIME ftime{};
@@ -68,35 +62,37 @@ int CpuLoad::usage() {
   GetSystemTimeAsFileTime(&ftime);
   std::memcpy(&now, &ftime, sizeof(FILETIME));
 
-  GetProcessTimes(self, &ftime, &ftime, &fsys, &fuser);
+  GetProcessTimes(c->self, &ftime, &ftime, &fsys, &fuser);
   std::memcpy(&sys, &fsys, sizeof(FILETIME));
   std::memcpy(&user, &fuser, sizeof(FILETIME));
-  percent = static_cast<double>((sys.QuadPart - last_sys_cpu.QuadPart) + (user.QuadPart - last_user_cpu.QuadPart));
-  percent /= static_cast<double>(now.QuadPart - last_cpu.QuadPart);
-  percent /= num_processors;
-  last_cpu      = now;
-  last_user_cpu = user;
-  last_sys_cpu  = sys;
+  percent = static_cast<double>((sys.QuadPart - c->last_sys_cpu.QuadPart) + (user.QuadPart - c->last_user_cpu.QuadPart));
+  percent /= static_cast<double>(now.QuadPart - c->last_cpu.QuadPart);
+  percent /= c->num_processors;
+  c->last_cpu      = now;
+  c->last_user_cpu = user;
+  c->last_sys_cpu  = sys;
 
 #else
+
   struct tms time_sample{};
   const clock_t now = times(&time_sample);
 
-  if (now <= last_cpu || time_sample.tms_stime < last_sys_cpu || time_sample.tms_utime < last_user_cpu) {
+  if (now <= c->last_cpu || time_sample.tms_stime < c->last_sys_cpu || time_sample.tms_utime < c->last_user_cpu) {
     // Overflow detection. Just skip this value.
-    percent = DEFAULT_OVERFLOW_VALUE;
+    percent = std::numeric_limits<double>::min();
   } else {
-    percent = (time_sample.tms_stime - last_sys_cpu) + (time_sample.tms_utime - last_user_cpu);
-    percent /= (now - last_cpu);
-    percent /= num_processors;
+    percent = (time_sample.tms_stime - c->last_sys_cpu) + (time_sample.tms_utime - c->last_user_cpu);
+    percent /= (now - c->last_cpu);
+    percent /= c->num_processors;
   }
-  last_cpu      = now;
-  last_sys_cpu  = time_sample.tms_stime;
-  last_user_cpu = time_sample.tms_utime;
+  c->last_cpu      = now;
+  c->last_sys_cpu  = time_sample.tms_stime;
+  c->last_user_cpu = time_sample.tms_utime;
 
 #endif
 
-  return percent <= 0 ? 0 : util::round<int>(percent * 1000);
+  return percent <= 0. ? 0. : percent * 1000;
+
 }
 
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)

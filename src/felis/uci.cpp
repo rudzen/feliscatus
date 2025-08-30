@@ -156,7 +156,7 @@ void uci::postInfo(const int d, const int selectiveDepth) {
   if (!Options[uciName<UciOptions::SHOW_CPU>()])
     fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {}\n", d, selectiveDepth, TT.load(), nodeInfo.nodes, nodeInfo.nps, time);
   else
-    fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {} cpuload {}\n", d, selectiveDepth, TT.load(), nodeInfo.nodes, nodeInfo.nps, time, Cpu.usage());
+    fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {} cpuload {}\n", d, selectiveDepth, TT.load(), nodeInfo.nodes, nodeInfo.nps, time, cpu::usage(&Cpu));
 }
 
 void uci::postCurrMove(const Move m, int number) {

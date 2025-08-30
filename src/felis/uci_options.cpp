@@ -45,6 +45,7 @@ bool CaseInsensitiveLess::operator()(const std::string_view s1, const std::strin
 }
 
 void init(OptionsMap& o, std::span<std::string> bookFiles) {
+  cpu::init(&Cpu);
   o[uciName<UciOptions::THREADS>()] << Option(1, 1, 512, onThreads);
   o[uciName<UciOptions::HASH>()] << Option(256, 1, MaxHashMB, onHashSize);
   o[uciName<UciOptions::HASH_X_THREADS>()] << Option(true);
