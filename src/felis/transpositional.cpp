@@ -12,88 +12,70 @@
 #include <felis/transpositional.hpp>
 #include <felis/uci.hpp>
 
-namespace
-{
+namespace {
 
-constexpr std::uint32_t key32(const Key key)
-{
+constexpr std::uint32_t key32(const Key key) {
   return key >> 32;
 }
 
 }   // namespace
 
-HashTable::~HashTable()
-{
+HashTable::~HashTable() {
   std::free(mem_);
 }
 
-void HashTable::init(const std::uint64_t newSizeMb)
-{
+void HashTable::init(const std::uint64_t newSizeMb) {
   if (m_sizeMb == newSizeMb)
     return;
 
   // Original code from SF
 
-  m_bucketCount      = newSizeMb * 1024 * 1024 / sizeof(Bucket);
-  m_fullnessElement  = m_bucketCount * BucketSize;
+  m_bucketCount     = newSizeMb * 1024 * 1024 / sizeof(Bucket);
+  m_fullnessElement = m_bucketCount * BucketSize;
   std::free(mem_);
   m_size = m_bucketCount * sizeof(Bucket) + CacheLineSize - 1;
-  mem_ = std::malloc(m_size);
+  mem_   = std::malloc(m_size);
 
-  if (!mem_)
-  {
+  if (!mem_) {
     fmt::print(stderr, "Failed to allocate {}MB for transposition table.\n", newSizeMb);
     exit(EXIT_FAILURE);
   }
 
-  table_   = reinterpret_cast<Bucket *>((uintptr_t(mem_) + CacheLineSize - 1) & ~(CacheLineSize - 1));
+  table_   = reinterpret_cast<Bucket*>((uintptr_t(mem_) + CacheLineSize - 1) & ~(CacheLineSize - 1));
   m_sizeMb = newSizeMb;
   clear();
 }
 
-void HashTable::clear()
-{
+void HashTable::clear() {
   // Original code from SF
 
   const auto threadCount = static_cast<std::size_t>(Options[uci::uciName<uci::UciOptions::THREADS>()]);
   std::vector<std::jthread> threads(threadCount);
 
-  for (std::size_t idx = 0; idx < threadCount; idx++)
-  {
+  for (std::size_t idx = 0; idx < threadCount; idx++) {
     threads.emplace_back(std::jthread([this, idx, threadCount]() {
       // Thread binding gives faster search on systems with a first-touch policy
       if (threadCount > 8)
         WinProcGroup::bind_this_thread(idx);
 
       // Each thread will zero its part of the hash table
-      const auto stride = m_bucketCount / threadCount, start = stride * idx,
-                 len = idx != threadCount - 1 ? stride : m_bucketCount - start;
+      const auto stride = m_bucketCount / threadCount, start = stride * idx, len = idx != threadCount - 1 ? stride : m_bucketCount - start;
 
       // treat as void* to shut up compiler warning -Wclass-memaccess as this is "totally" safe
-      std::memset(reinterpret_cast<void *>(&table_[start]), 0, len * sizeof(Bucket));
+      std::memset(reinterpret_cast<void*>(&table_[start]), 0, len * sizeof(Bucket));
     }));
   }
 }
 
-HashEntry *HashTable::find(const Key key) const
-{
-  auto *bucket     = findBucket(key);
+HashEntry* HashTable::find(const Key key) const {
+  auto* bucket     = findBucket(key);
   const auto k32   = key32(key);
-  const auto found = std::ranges::find_if(bucket->entry.begin(), bucket->entry.end(), [&k32](const HashEntry &e) {
-    return e.k == k32 && e.f;
-  });
+  const auto found = std::ranges::find_if(bucket->entry.begin(), bucket->entry.end(), [&k32](const HashEntry& e) { return e.k == k32 && e.f; });
   return found != bucket->entry.end() ? found : nullptr;
 }
 
-HashEntry *HashTable::insert(
-  const Key key,
-  const int depth,
-  const int score,
-  const NodeType nt,
-  const Move m,
-  const int eval)
-{
-  auto *transp = getEntryToReplace(key, depth);
+HashEntry* HashTable::insert(const Key key, const int depth, const int score, const NodeType nt, const Move m, const int eval) {
+  auto* transp = getEntryToReplace(key, depth);
 
   if (transp->f == NO_NT)
     m_occupied++;
@@ -112,9 +94,8 @@ HashEntry *HashTable::insert(
   return transp;
 }
 
-void HashTable::insert(const PVEntry &pv)
-{
-  auto *transp = getEntryToReplace(pv.key, pv.depth);
+void HashTable::insert(const PVEntry& pv) {
+  auto* transp = getEntryToReplace(pv.key, pv.depth);
 
   if (transp->f == NO_NT)
     m_occupied++;
@@ -132,35 +113,28 @@ void HashTable::insert(const PVEntry &pv)
   transp->e = static_cast<std::int16_t>(pv.eval);
 }
 
-HashEntry *HashTable::getEntryToReplace(Key key,
-  [[maybe_unused]] int depth) const
-{
-  auto *bucket   = findBucket(key);
+HashEntry* HashTable::getEntryToReplace(Key key, [[maybe_unused]] int depth) const {
+  auto* bucket   = findBucket(key);
   const auto k32 = key32(key);
 
-  auto *entry = &bucket->entry.front();
+  auto* entry = &bucket->entry.front();
 
   if (entry->f == NO_NT || entry->k == k32)
     return entry;
 
-  constexpr auto replacementScore = [](const HashEntry *e) {
-    return (e->a << 9) + e->d;
-  };
-  auto match = [&k32](const HashEntry *e) {
-    return e->f == NO_NT || e->k == k32;
-  };
-  auto *replace      = entry;
-  auto replaceScore  = replacementScore(replace);
+  constexpr auto replacementScore = [](const HashEntry* e) { return (e->a << 9) + e->d; };
+  auto match                      = [&k32](const HashEntry* e) { return e->f == NO_NT || e->k == k32; };
+  auto* replace                   = entry;
+  auto replaceScore               = replacementScore(replace);
 
   // Returns true if match is found, otherwise it updates the potential replacer entry
-  const auto replacer = [&](HashEntry &e) {
+  const auto replacer = [&](HashEntry& e) {
     if (match(&e))
       return true;
 
-    if (const auto score = replacementScore(&e); score < replaceScore)
-    {
-      replaceScore  = score;
-      replace       = &e;
+    if (const auto score = replacementScore(&e); score < replaceScore) {
+      replaceScore = score;
+      replace      = &e;
     }
 
     return false;
@@ -176,7 +150,7 @@ HashEntry *HashTable::getEntryToReplace(Key key,
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

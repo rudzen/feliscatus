@@ -13,8 +13,7 @@
 #include <io/directory_resolver.hpp>
 #include <io/settings_resolver.hpp>
 
-int main(const int argc, char *argv[])
-{
+int main(const int argc, char* argv[]) {
   util::checkSize<PawnHashEntry, 96>();
 
   spdlog::flush_every(std::chrono::seconds(3));
@@ -28,8 +27,7 @@ int main(const int argc, char *argv[])
 
   auto f = directory_resolver::get_book_list(Settings::settings.books_directory());
 
-  if (!f.empty())
-    fmt::print("info string Detected {} books\n", f.size());
+  if (!f.empty()) fmt::print("info string Detected {} books\n", f.size());
 
   uci::init(Options, f);
 
@@ -41,7 +39,7 @@ int main(const int argc, char *argv[])
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

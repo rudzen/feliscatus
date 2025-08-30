@@ -8,8 +8,7 @@
 #include <felis/types.hpp>
 #include <felis/miscellaneous.hpp>
 
-struct PVEntry final
-{
+struct PVEntry final {
   Key key;
   int depth;
   int score;
@@ -20,53 +19,44 @@ struct PVEntry final
 };
 
 #pragma pack(1)
-struct alignas(CacheLineSize / 4) HashEntry final
-{
+struct alignas(CacheLineSize / 4) HashEntry final {
   [[nodiscard]]
-  bool isExact() const noexcept
-  {
+  bool isExact() const noexcept {
     return f & EXACT;
   }
 
   [[nodiscard]]
-  bool isBeta() const noexcept
-  {
+  bool isBeta() const noexcept {
     return f & BETA;
   }
 
   [[nodiscard]]
-  bool isAlpha() const noexcept
-  {
+  bool isAlpha() const noexcept {
     return f & ALPHA;
   }
 
   [[nodiscard]]
-  std::uint8_t depth() const noexcept
-  {
+  std::uint8_t depth() const noexcept {
     return d;
   }
 
   [[nodiscard]]
-  NodeType flags() const noexcept
-  {
+  NodeType flags() const noexcept {
     return static_cast<NodeType>(f & 7);
   }
 
   [[nodiscard]]
-  std::int16_t score() const noexcept
-  {
+  std::int16_t score() const noexcept {
     return s;
   }
 
   [[nodiscard]]
-  std::int16_t eval() const noexcept
-  {
+  std::int16_t eval() const noexcept {
     return e;
   }
 
   [[nodiscard]]
-  Move move() const noexcept
-  {
+  Move move() const noexcept {
     return m;
   }
 
@@ -74,17 +64,16 @@ private:
   std::uint32_t k;   // key
   std::uint16_t a;   // age, 7 bits left
   std::uint8_t d;    // depth
-  NodeType f;   // flags, 5 bits left
+  NodeType f;        // flags, 5 bits left
   std::int16_t s;    // score
-  Move m;       // move
+  Move m;            // move
   std::int16_t e;    // eval
 
   friend struct HashTable;
 };
 #pragma pack()
 
-struct HashTable final
-{
+struct HashTable final {
 private:
   friend struct HashEntry;
 
@@ -93,18 +82,17 @@ private:
   using BucketArray = std::array<HashEntry, BucketSize>;
 
   // Just use a simple array for bucket
-  struct Bucket final
-  {
+  struct Bucket final {
     alignas(CacheLineSize) BucketArray entry{};
   };
 
 public:
   ~HashTable();
-  constexpr HashTable()             = default;
-  HashTable(const HashTable &other) = delete;
-  HashTable(HashTable &&other)      = delete;
-  HashTable &operator=(const HashTable &) = delete;
-  HashTable &operator=(HashTable &&other) = delete;
+  constexpr HashTable()                   = default;
+  HashTable(const HashTable& other)       = delete;
+  HashTable(HashTable&& other)            = delete;
+  HashTable& operator=(const HashTable&)  = delete;
+  HashTable& operator=(HashTable&& other) = delete;
 
   void init(std::uint64_t newSizeMb);
 
@@ -113,26 +101,24 @@ public:
   void initSearch();
 
   [[nodiscard]]
-  HashEntry *firstEntry(const Key key) const
-  {
+  HashEntry* firstEntry(const Key key) const {
     return &table_[mul_hi64(key, m_bucketCount)].entry[0];
   }
 
   [[nodiscard]]
-  Bucket *findBucket(const Key key) const
-  {
+  Bucket* findBucket(const Key key) const {
     return &table_[mul_hi64(key, m_bucketCount)];
   }
 
   [[nodiscard]]
-  HashEntry *find(Key key) const;
+  HashEntry* find(Key key) const;
 
-  HashEntry *insert(Key key, int depth, int score, NodeType nt, Move m, int eval);
+  HashEntry* insert(Key key, int depth, int score, NodeType nt, Move m, int eval);
 
-  void insert(const PVEntry &pv);
+  void insert(const PVEntry& pv);
 
   [[nodiscard]]
-  HashEntry *getEntryToReplace(Key key, [[maybe_unused]] int depth) const;
+  HashEntry* getEntryToReplace(Key key, [[maybe_unused]] int depth) const;
 
   [[nodiscard]]
   int load() const;
@@ -143,8 +129,8 @@ public:
 private:
   static_assert(CacheLineSize % sizeof(Bucket) == 0, "Bucket size incorrect");
 
-  Bucket *table_{};
-  void *mem_{};
+  Bucket* table_{};
+  void* mem_{};
 
   std::size_t m_bucketCount{};
   std::size_t m_fullnessElement{};
@@ -154,18 +140,15 @@ private:
   int m_age{};
 };
 
-inline void HashTable::initSearch()
-{
+inline void HashTable::initSearch() {
   m_age++;
 }
 
-inline int HashTable::load() const
-{
+inline int HashTable::load() const {
   return static_cast<int>(static_cast<double>(m_occupied) / m_fullnessElement * 1000);
 }
 
-inline int HashTable::sizeMb() const
-{
+inline int HashTable::sizeMb() const {
   return static_cast<int>(m_sizeMb);
 }
 
@@ -174,7 +157,7 @@ constinit inline HashTable TT;
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

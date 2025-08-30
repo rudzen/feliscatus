@@ -12,29 +12,20 @@
 #include <felis/tpool.hpp>
 #include <felis/moves.hpp>
 
-namespace
-{
+namespace {
 
 constexpr auto detect_piece = [](const int from) {
-  switch (from)
-  {
-  case 'N':
-    return KNIGHT;
-  case 'B':
-    return BISHOP;
-  case 'R':
-    return ROOK;
-  case 'Q':
-    return QUEEN;
-  case 'K':
-    return KING;
-  default:
-    return NO_PT;
+  switch (from) {
+    case 'N': return KNIGHT;
+    case 'B': return BISHOP;
+    case 'R': return ROOK;
+    case 'Q': return QUEEN;
+    case 'K': return KING;
+    default: return NO_PT;
   };
 };
 
-bool strieq(const char *s1, const char *s2)
-{
+bool strieq(const char* s1, const char* s2) {
   if (std::strlen(s1) != std::strlen(s2))
     return false;
 
@@ -47,47 +38,38 @@ bool strieq(const char *s1, const char *s2)
 
 }   // namespace
 
-pgn::PGNPlayer::PGNPlayer([[maybe_unused]] bool check_legal) : PGNFileReader(), b(std::make_unique<Board>())
-{ }
+pgn::PGNPlayer::PGNPlayer([[maybe_unused]] bool check_legal) : PGNFileReader(), b(std::make_unique<Board>()) {}
 
-void pgn::PGNPlayer::read_pgn_game()
-{
+void pgn::PGNPlayer::read_pgn_game() {
   b->new_game(pool.main());
   PGNFileReader::read_pgn_game();
 }
 
-void pgn::PGNPlayer::read_tag_pair()
-{
+void pgn::PGNPlayer::read_tag_pair() {
   PGNFileReader::read_tag_pair();
 
-  if (strieq(tag_name_, "FEN"))
-  {
+  if (strieq(tag_name_, "FEN")) {
     const auto fen = std::string(tag_value_).substr(1, strlen(tag_value_) - 2);
     b->set_fen(fen, pool.main());
   }
 }
 
-void pgn::PGNPlayer::read_san_move()
-{
+void pgn::PGNPlayer::read_san_move() {
   PGNFileReader::read_san_move();
 
   Piece piece;
 
   auto mg = Moves<true>(b.get());
 
-  if (pawn_move_)
-  {
+  if (pawn_move_) {
     piece = make_piece(PAWN, side_to_move);
     mg.generate_pawn_moves(capture_, bit(to_square_), side_to_move);
-  } else if (castle_move_)
-  {
+  } else if (castle_move_) {
     piece = make_piece(KING, side_to_move);
     mg.generate_moves();
-  } else if (piece_move_)
-  {
+  } else if (piece_move_) {
     const auto pt = detect_piece(from_piece_);
-    if (pt == NO_PT)
-    {
+    if (pt == NO_PT) {
       fmt::print("default [{}]\n", std::string(token_str));
       exit(0);
     }
@@ -96,19 +78,16 @@ void pgn::PGNPlayer::read_san_move()
       mg.generate_moves<WHITE>(pt, bit(to_square_));
     else
       mg.generate_moves<BLACK>(pt, bit(to_square_));
-  } else
-  {
+  } else {
     fmt::print("else\n");
     exit(0);
   }
 
   Piece promoted{NO_PIECE};
 
-  if (promoted_to != -1)
-  {
+  if (promoted_to != -1) {
     const auto pt = detect_piece(promoted_to);
-    if (pt == NO_PT)
-    {
+    if (pt == NO_PT) {
       fmt::print("promoted_to error [{}]\n", std::string(token_str));
       exit(0);
     }
@@ -117,8 +96,7 @@ void pgn::PGNPlayer::read_san_move()
 
   auto found = false;
 
-  while (auto *const move_data = mg.next_move())
-  {
+  while (auto* const move_data = mg.next_move()) {
     const auto m = move_data->move;
     if (move_piece(m) != piece || move_to(m) != to_square_ || (promoted != NO_PIECE && move_promoted(m) != promoted) || (capture_ && !is_capture(m)) || (from_file_ != -1 && file_of(move_from(m)) != from_file_) || (from_rank_ != -1 && rank_of(move_from(m)) != from_rank_))
       continue;
@@ -130,8 +108,7 @@ void pgn::PGNPlayer::read_san_move()
     break;
   }
 
-  if (!found)
-  {
+  if (!found) {
     fmt::print("!found [{}]\n", token_str);
     fmt::print("to_square_: {}\n", square_to_string(to_square_));
     fmt::print("piece: {}\n", (int)piece);
@@ -150,7 +127,7 @@ void pgn::PGNPlayer::read_san_move()
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

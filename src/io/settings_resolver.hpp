@@ -6,29 +6,26 @@
 #include <string>
 #include <string_view>
 
-struct EngineSettings final
-{
+struct EngineSettings final {
   EngineSettings();
   std::string_view books_directory() const;
 
-  private:
+private:
   std::string books_directory_{};
 };
 
-inline std::string_view EngineSettings::books_directory() const
-{
-    return books_directory_;
+inline std::string_view EngineSettings::books_directory() const {
+  return books_directory_;
 }
 
-namespace Settings
-{
+namespace Settings {
 inline EngineSettings settings;
 }
 
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

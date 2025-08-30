@@ -9,8 +9,7 @@
 #include <felis/score.hpp>
 #include <felis/types.hpp>
 
-namespace params
-{
+namespace params {
 
 using S = Score;
 
@@ -320,8 +319,7 @@ consteval std::array<PcSqArr, PIECETYPE_NB> make_pst()
 
 inline std::array<PcSqArr, PIECETYPE_NB> pc_sq_arr{};
 
-inline void init()
-{
+inline void init() {
   pc_sq_arr = make_pst();
 }
 
@@ -334,7 +332,7 @@ constexpr std::array<PcSqArr, PIECETYPE_NB> pc_sq_arr = make_pst();
 template<PieceType Pt>
 [[nodiscard]]
 #if defined(TUNER)
-Score &pst(const Square sq)
+Score& pst(const Square sq)
 #else
 constexpr Score pst(const Square sq)
 #endif
@@ -342,12 +340,12 @@ constexpr Score pst(const Square sq)
   return pc_sq_arr[Pt][sq];
 }
 
-}
+}   // namespace params
 
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

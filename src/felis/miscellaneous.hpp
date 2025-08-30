@@ -19,20 +19,17 @@ constexpr int CacheLineSize = 64;
 
 #if defined(NO_PREFETCH)
 
-inline void prefetch(void *)
-{ }
+inline void prefetch(void*) {}
 
 #else
 
-inline void prefetch(void *addr)
-{
+inline void prefetch(void* addr) {
   __builtin_prefetch(addr);
 }
 #endif
 
 [[nodiscard]]
-inline std::uint64_t mul_hi64(const std::uint64_t a, const std::uint64_t b)
-{
+inline std::uint64_t mul_hi64(const std::uint64_t a, const std::uint64_t b) {
 #if defined(__GNUC__)
   __extension__ typedef unsigned __int128 uint128;
   return (static_cast<uint128>(a) * static_cast<uint128>(b)) >> 64;
@@ -54,13 +51,11 @@ inline std::uint64_t mul_hi64(const std::uint64_t a, const std::uint64_t b)
 /// called to set group affinity for each thread. Original code from Texel by
 /// Peter Österlund.
 
-namespace WinProcGroup
-{
+namespace WinProcGroup {
 void bind_this_thread(std::size_t idx);
 }
 
-namespace misc
-{
+namespace misc {
 template<bool AsUci>
 [[nodiscard]]
 std::string print_engine_info();
@@ -69,7 +64,7 @@ std::string print_engine_info();
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

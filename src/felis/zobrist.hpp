@@ -10,59 +10,57 @@
 
 struct Zobrist final {
 
-constexpr explicit Zobrist() {
-  PRNG rng(seed());
+  constexpr explicit Zobrist() {
+    PRNG rng(seed());
 
-  zobristSide    = rng();
-  zobristNopawn  = rng();
+    zobristSide   = rng();
+    zobristNopawn = rng();
 
-  for (auto &z : zobristPst)
-    for (auto &zPst : z)
-      zPst = rng();
+    for (auto& z : zobristPst)
+      for (auto& zPst : z)
+        zPst = rng();
 
-  for (auto &z : zobristCastling)
-    z = rng();
+    for (auto& z : zobristCastling)
+      z = rng();
 
-  for (auto &z : zobristEpFile)
-    z = rng();
-}
+    for (auto& z : zobristEpFile)
+      z = rng();
+  }
 
-[[nodiscard]] constexpr Key pst(const Piece pc, const Square sq) const {
+  [[nodiscard]] constexpr Key pst(const Piece pc, const Square sq) const {
     return zobristPst[pc][sq];
-}
+  }
 
-[[nodiscard]] constexpr Key castle(const int castleRights) const {
+  [[nodiscard]] constexpr Key castle(const int castleRights) const {
     return zobristCastling[castleRights];
-}
+  }
 
-[[nodiscard]] constexpr Key ep(const File f) const {
+  [[nodiscard]] constexpr Key ep(const File f) const {
     return zobristEpFile[f];
-}
+  }
 
-[[nodiscard]] constexpr Key side() const {
+  [[nodiscard]] constexpr Key side() const {
     return zobristSide;
-}
+  }
 
-[[nodiscard]] constexpr Key noPawn() const {
+  [[nodiscard]] constexpr Key noPawn() const {
     return zobristNopawn;
-}
+  }
 
-[[nodiscard]] constexpr Key zero() const {
-  return 0;
-}
+  [[nodiscard]] constexpr Key zero() const {
+    return 0;
+  }
 
 private:
+  [[nodiscard]] constexpr Key seed() const {
+    return 1070372;
+  }
 
-[[nodiscard]] constexpr Key seed() const {
-  return 1070372;
-}
-
-std::array<std::array<Key, PIECE_NB>, SQ_NB> zobristPst{};
-std::array<Key, CASTLING_RIGHT_NB> zobristCastling{};
-std::array<Key, FILE_NB> zobristEpFile{};
-Key zobristSide{};
-Key zobristNopawn{};
-
+  std::array<std::array<Key, PIECE_NB>, SQ_NB> zobristPst{};
+  std::array<Key, CASTLING_RIGHT_NB> zobristCastling{};
+  std::array<Key, FILE_NB> zobristEpFile{};
+  Key zobristSide{};
+  Key zobristNopawn{};
 };
 
 constinit inline const Zobrist zobrist;
@@ -70,7 +68,7 @@ constinit inline const Zobrist zobrist;
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

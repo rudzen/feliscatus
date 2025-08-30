@@ -14,14 +14,12 @@
 #include <felis/polyglot.hpp>
 #include <felis/types.hpp>
 
-namespace
-{
+namespace {
 
 constexpr TimeUnit time_safety_margin = 1;
 
 [[nodiscard]]
-std::unique_ptr<Board> new_board()
-{
+std::unique_ptr<Board> new_board() {
   const std::size_t num_threads = static_cast<std::size_t>(Options[uci::uciName<uci::UciOptions::THREADS>()]);
   pool.set(num_threads);
   auto board = std::make_unique<Board>();
@@ -30,51 +28,44 @@ std::unique_ptr<Board> new_board()
 }
 
 [[nodiscard]]
-constexpr u64 nps(const u64 nodes, const TimeUnit time)
-{
+constexpr u64 nps(const u64 nodes, const TimeUnit time) {
   return nodes * 1000 / time;
 }
 
-struct NodeInfo
-{
+struct NodeInfo {
   u64 nodes;
   u64 nps;
 };
 
 [[nodiscard]]
-NodeInfo node_info(const TimeUnit time)
-{
+NodeInfo node_info(const TimeUnit time) {
   const u64 nodes = pool.node_count();
   return {.nodes = nodes, .nps = nps(nodes, time)};
 }
 
 [[nodiscard]]
-Move string_to_move(Board *b, const std::string_view m)
-{
+Move string_to_move(Board* b, const std::string_view m) {
   Moves<> mg = Moves(b);
   mg.generate_moves();
 
-  while (const MoveData *move_data = mg.next_move()) [[unlikely]]
+  while (const MoveData* move_data = mg.next_move()) [[unlikely]]
     if (m == uci::displayUci(move_data->move))
       return move_data->move;
   return MOVE_NONE;
 }
 
-void position(Board *b, std::istringstream &input)
-{
+void position(Board* b, std::istringstream& input) {
   std::string token;
 
   input >> token;
 
   [[likely]]
-  if (token == "startpos")
-  {
+  if (token == "startpos") {
     b->new_game(pool.main());
 
     // get rid of "moves" token
     input >> token;
-  } else if (token == "fen")
-  {
+  } else if (token == "fen") {
     fmt::memory_buffer fen;
     auto inserter = std::back_inserter(fen);
     while (input >> token && token != "moves")
@@ -89,8 +80,7 @@ void position(Board *b, std::istringstream &input)
       b->make_move(m, false, true);
 }
 
-void set_option(std::istringstream &input)
-{
+void set_option(std::istringstream& input) {
   std::string token, option_name, option_value, output;
 
   // get rid of "name"
@@ -105,8 +95,7 @@ void set_option(std::istringstream &input)
     option_value += (option_value.empty() ? "" : " ") + token;
 
   [[likely]]
-  if (Options.contains(option_name))
-  {
+  if (Options.contains(option_name)) {
     Options[option_name] = option_value;
     output               = fmt::format("Option {} = {}\n", option_name, option_value);
   } else
@@ -116,9 +105,8 @@ void set_option(std::istringstream &input)
   fmt::print("{}", uci_info);
 }
 
-void go(std::istringstream &input, const std::string_view fen)
-{
-  SearchLimits *limits = pool.limits;
+void go(std::istringstream& input, const std::string_view fen) {
+  SearchLimits* limits = pool.limits;
 
   ClearSearchLimits(limits);
 
@@ -149,8 +137,7 @@ void go(std::istringstream &input, const std::string_view fen)
 
 }   // namespace
 
-void uci::postMoves(const Move m, const Move ponderMove)
-{
+void uci::postMoves(const Move m, const Move ponderMove) {
   fmt::memory_buffer buffer;
   auto inserter = std::back_inserter(buffer);
 
@@ -163,8 +150,7 @@ void uci::postMoves(const Move m, const Move ponderMove)
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-void uci::postInfo(const int d, const int selectiveDepth)
-{
+void uci::postInfo(const int d, const int selectiveDepth) {
   const TimeUnit time     = elapsed(&pool.main()->time) + time_safety_margin;
   const NodeInfo nodeInfo = node_info(time);
   if (!Options[uciName<UciOptions::SHOW_CPU>()])
@@ -173,13 +159,11 @@ void uci::postInfo(const int d, const int selectiveDepth)
     fmt::print("info depth {} seldepth {} hashfull {} nodes {} nps {} time {} cpuload {}\n", d, selectiveDepth, TT.load(), nodeInfo.nodes, nodeInfo.nps, time, Cpu.usage());
 }
 
-void uci::postCurrMove(const Move m, int number)
-{
+void uci::postCurrMove(const Move m, int number) {
   fmt::print("info currmove {} currmovenumber {}\n", displayUci(m), number);
 }
 
-void uci::postPv(int d, int maxPly, int score, const std::span<PVEntry> &pvLine, const NodeType nt)
-{
+void uci::postPv(int d, int maxPly, int score, const std::span<PVEntry>& pvLine, const NodeType nt) {
   fmt::memory_buffer buffer;
   auto inserter = std::back_inserter(buffer);
 
@@ -195,14 +179,13 @@ void uci::postPv(int d, int maxPly, int score, const std::span<PVEntry> &pvLine,
 
   fmt::format_to(inserter, "hashfull {} nodes {} nps {} time {} pv ", TT.load(), node_count, nodes_per_second, time);
 
-  for (const PVEntry &pv : pvLine)
+  for (const PVEntry& pv : pvLine)
     fmt::format_to(inserter, "{} ", displayUci(pv.move));
 
   fmt::print("{}\n", fmt::to_string(buffer));
 }
 
-std::string uci::displayUci(const Move m)
-{
+std::string uci::displayUci(const Move m) {
   [[unlikely]]
   if (m == MOVE_NONE)
     return {"0000"};
@@ -211,13 +194,11 @@ std::string uci::displayUci(const Move m)
   return !is_promotion(m) ? fmt::format("{}{}", square_to_string(move_from(m)), square_to_string(move_to(m))) : fmt::format("{}{}{}", square_to_string(move_from(m)), square_to_string(move_to(m)), piece_index[type_of(move_promoted(m))]);
 }
 
-std::string uci::info(const std::string_view infoString)
-{
+std::string uci::info(const std::string_view infoString) {
   return fmt::format("info string {}", infoString);
 }
 
-void uci::run(const int argc, char *argv[])
-{
+void uci::run(const int argc, char* argv[]) {
   std::setbuf(stdout, nullptr);
 
   auto board = new_board();
@@ -228,8 +209,7 @@ void uci::run(const int argc, char *argv[])
   for (auto argument_index = 1; argument_index < argc; ++argument_index)
     command += fmt::format("{} ", argv[argument_index]);
 
-  do
-  {
+  do {
     [[unlikely]]
     if (argc == 1 && !std::getline(std::cin, command))
       command = "quit";
@@ -244,15 +224,13 @@ void uci::run(const int argc, char *argv[])
       pool.stop = true;
     else if (token == "ponder")
       pool.main()->ponder = true;
-    else if (token == "uci")
-    {
+    else if (token == "uci") {
       // auto output = fmt::format("{}{}\nuciok\n", misc::print_engine_info<true>(), Options);
       // fmt::print("{}{}\nuciok\n", misc::print_engine_info<true>(), Options);
       fmt::print("uciok\n");
     } else if (token == "isready")
       fmt::print("readyok\n");
-    else if (token == "ucinewgame")
-    {
+    else if (token == "ucinewgame") {
       if (Options[uci::uciName<UciOptions::CLEAR_HASH_NEW_GAME>()])
         TT.clear();
       board = new_board();
@@ -263,25 +241,21 @@ void uci::run(const int argc, char *argv[])
       position(board.get(), input);
     else if (token == "go")
       go(input, board->fen());
-    else if (token == "perft")
-    {
+    else if (token == "perft") {
       const auto total = perft::perft(board.get(), 6);
       fmt::print("Total nodes: {}\n", total);
-    } else if (token == "divide")
-    {
+    } else if (token == "divide") {
       const auto total = perft::divide(board.get(), 6);
       fmt::print("Total nodes: {}\n", total);
     } else if (token == "print")
       board->print_moves();
     else if (token == "d")
       board->print();
-    else if (token == "eval")
-    {
+    else if (token == "eval") {
       board->print();
       const auto e = Eval::evaluate(board.get(), 0, 0, 0);
       fmt::print("Eval: {}\n", e);
-    } else if (token == "book")
-    {
+    } else if (token == "book") {
       const Move m = book.probe(board.get());
       postMoves(m, MOVE_NONE);
     } else if (token == "exit")
@@ -292,7 +266,7 @@ void uci::run(const int argc, char *argv[])
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

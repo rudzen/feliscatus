@@ -9,52 +9,50 @@
 
 struct Board;
 
-struct Material
-{
+struct Material {
   i32 material_value[COL_NB];
   i32 drawish;
   i32 material_flags;
   u32 key[COL_NB];
-  const Board *board;
+  const Board* board;
 };
 
-namespace material
-{
+namespace material {
 
-constexpr int RECOGNIZEDDRAW = 1;
+constexpr int RECOGNIZEDDRAW          = 1;
 constexpr int max_value_without_pawns = 2 * (2 * piece_values[KNIGHT] + 2 * piece_values[BISHOP] + 2 * piece_values[ROOK] + piece_values[QUEEN]);
 constexpr int max_value               = max_value_without_pawns + 2 * 8 * piece_values[PAWN];
 
-void clear(Material *m);
+void clear(Material* m);
 
-void remove(Material *m, Piece pc);
+void remove(Material* m, Piece pc);
 
-void add(Material *m, Piece pc);
+void add(Material* m, Piece pc);
 
-i32 count(const Material *m, Color c, PieceType pt);
+i32 count(const Material* m, Color c, PieceType pt);
 
-void make_move(Material *m, Move move);
+void make_move(Material* m, Move move);
 
-bool is_kx(const Material *m, Color c);
-
-[[nodiscard]]
-int value(const Material *m);
+bool is_kx(const Material* m, Color c);
 
 [[nodiscard]]
-int pawn_value(const Material *m);
+int value(const Material* m);
 
 [[nodiscard]]
-int pawn_count(const Material *m);
+int pawn_value(const Material* m);
 
 [[nodiscard]]
-int evaluate(Material *m, int &flags, int eval, const Board *b, Color us);
+int pawn_count(const Material* m);
+
+[[nodiscard]]
+int evaluate(Material* m, int& flags, int eval, const Board* b, Color us);
 
 }   // namespace material
 
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

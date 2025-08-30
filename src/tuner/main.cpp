@@ -15,8 +15,7 @@
 #include <felis/tpool.hpp>
 #include <felis/parameters.hpp>
 
-namespace
-{
+namespace {
 
 constexpr auto title =
   R"(
@@ -30,8 +29,7 @@ constexpr auto title =
 
 }   // namespace
 
-int main(const int argc, char **argv)
-{
+int main(const int argc, char** argv) {
   fmt::print("{}\n", title);
 
   const auto cli_parser_settings = cli::makeParser(argc, argv, title, ParserType::Tuner);
@@ -44,7 +42,7 @@ int main(const int argc, char **argv)
 
   Stopwatch sw;
   start(&sw);
-  auto t = eval::Tune(std::make_unique<Board>(), cli_parser_settings.get());
+  auto t             = eval::Tune(std::make_unique<Board>(), cli_parser_settings.get());
   const auto seconds = elapsed_seconds(&sw);
   fmt::print("{} seconds\n", seconds);
 }
@@ -52,7 +50,7 @@ int main(const int argc, char **argv)
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

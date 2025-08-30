@@ -22,7 +22,7 @@
 extern "C" {
 typedef bool (*fun1_t)(LOGICAL_PROCESSOR_RELATIONSHIP, PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, PDWORD);
 typedef bool (*fun2_t)(USHORT, PGROUP_AFFINITY);
-typedef bool (*fun3_t)(HANDLE, CONST GROUP_AFFINITY *, PGROUP_AFFINITY);
+typedef bool (*fun3_t)(HANDLE, CONST GROUP_AFFINITY*, PGROUP_AFFINITY);
 }
 #endif
 
@@ -33,11 +33,9 @@ typedef bool (*fun3_t)(HANDLE, CONST GROUP_AFFINITY *, PGROUP_AFFINITY);
 #include <felis/miscellaneous.hpp>
 #include <felis/util.hpp>
 
-namespace
-{
+namespace {
 
-std::string compiler_info()
-{
+std::string compiler_info() {
 #if defined(__clang__)
   return fmt::format("[Clang/LLVM {}{}{}]", std::string(__clang_major__), __clang_minor__, __clang_patchlevel__);
 #elif defined(__GNUC__) || defined(__GNUG__)
@@ -51,13 +49,11 @@ std::string compiler_info()
 
 }   // namespace
 
-namespace WinProcGroup
-{
+namespace WinProcGroup {
 
 #ifndef _WIN32
 
-void bind_this_thread(std::size_t)
-{ }
+void bind_this_thread(std::size_t) {}
 
 #else
 
@@ -65,18 +61,16 @@ void bind_this_thread(std::size_t)
 /// API and returns the best group id for the thread with index idx. Original
 /// code from Texel by Peter Österlund.
 
-std::optional<int> best_group(const std::size_t idx)
-{
-  auto threads = 0;
-  auto nodes = 0;
-  auto cores = 0;
+std::optional<int> best_group(const std::size_t idx) {
+  auto threads        = 0;
+  auto nodes          = 0;
+  auto cores          = 0;
   DWORD return_length = 0;
-  DWORD byte_offset = 0;
+  DWORD byte_offset   = 0;
 
   // Early exit if the needed API is not available at runtime
-  auto *const k32 = GetModuleHandle("Kernel32.dll");
-  const auto fun1 =
-    reinterpret_cast<fun1_t>(reinterpret_cast<void (*)()>(GetProcAddress(k32, "GetLogicalProcessorInformationEx")));
+  auto* const k32 = GetModuleHandle("Kernel32.dll");
+  const auto fun1 = reinterpret_cast<fun1_t>(reinterpret_cast<void (*)()>(GetProcAddress(k32, "GetLogicalProcessorInformationEx")));
   if (!fun1)
     return std::nullopt;
 
@@ -85,30 +79,27 @@ std::optional<int> best_group(const std::size_t idx)
     return std::nullopt;
 
   // Once we know returnLength, allocate the buffer
-  SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *buffer;
-  auto *ptr = buffer = static_cast<SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *>(malloc(return_length));
+  SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* buffer;
+  auto* ptr = buffer = static_cast<SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*>(malloc(return_length));
 
   // Second call, now we expect to succeed
-  if (!fun1(RelationAll, buffer, &return_length))
-  {
+  if (!fun1(RelationAll, buffer, &return_length)) {
     std::free(buffer);
     return std::nullopt;
   }
 
-  while (byte_offset < return_length)
-  {
+  while (byte_offset < return_length) {
     if (ptr->Relationship == RelationNumaNode)
       nodes++;
 
-    else if (ptr->Relationship == RelationProcessorCore)
-    {
+    else if (ptr->Relationship == RelationProcessorCore) {
       cores++;
       threads += ptr->Processor.Flags == LTP_PC_SMT ? 2 : 1;
     }
 
     assert(ptr->Size);
     byte_offset += ptr->Size;
-    ptr = reinterpret_cast<SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *>(reinterpret_cast<char *>(ptr) + ptr->Size);
+    ptr = reinterpret_cast<SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*>(reinterpret_cast<char*>(ptr) + ptr->Size);
   }
 
   std::free(buffer);
@@ -132,11 +123,9 @@ std::optional<int> best_group(const std::size_t idx)
   return idx < groups.size() ? std::make_optional(groups[idx]) : std::nullopt;
 }
 
-
 /// bind_this_thread() set the group affinity of the current thread
 
-void bind_this_thread(const std::size_t idx)
-{
+void bind_this_thread(const std::size_t idx) {
   // Use only local variables to be thread-safe
   const auto group = best_group(idx);
 
@@ -145,11 +134,9 @@ void bind_this_thread(const std::size_t idx)
     return;
 
   // Early exit if the needed API are not available at runtime
-  auto *const k32 = GetModuleHandle("Kernel32.dll");
-  const auto fun2 =
-    reinterpret_cast<fun2_t>(reinterpret_cast<void (*)()>(GetProcAddress(k32, "GetNumaNodeProcessorMaskEx")));
-  const auto fun3 =
-    reinterpret_cast<fun3_t>(reinterpret_cast<void (*)()>(GetProcAddress(k32, "SetThreadGroupAffinity")));
+  auto* const k32 = GetModuleHandle("Kernel32.dll");
+  const auto fun2 = reinterpret_cast<fun2_t>(reinterpret_cast<void (*)()>(GetProcAddress(k32, "GetNumaNodeProcessorMaskEx")));
+  const auto fun3 = reinterpret_cast<fun3_t>(reinterpret_cast<void (*)()>(GetProcAddress(k32, "SetThreadGroupAffinity")));
 
   if (!fun2 || !fun3)
     return;
@@ -163,12 +150,10 @@ void bind_this_thread(const std::size_t idx)
 
 }   // namespace WinProcGroup
 
-namespace misc
-{
+namespace misc {
 
 template<bool AsUci>
-std::string print_engine_info()
-{
+std::string print_engine_info() {
   static constexpr std::string_view title_short{"FelisCatus"};
   static constexpr std::string_view all_months{"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec"};
   std::string m, d, y, uci;
@@ -184,8 +169,7 @@ std::string print_engine_info()
   const auto year     = y.substr(y.size() - 2);
   const auto compiler = compiler_info();
 
-  if constexpr (AsUci)
-  {
+  if constexpr (AsUci) {
     constexpr std::string_view authors{"Gunnar Harms, FireFather, Rudy Alex Kohn"};
     fmt::format_to(inserter, "id name {} {:02}-{:02}-{} {}\nid author {}", title_short, month, day, year, compiler, authors);
   } else
@@ -214,7 +198,7 @@ template std::string misc::print_engine_info<false>();
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

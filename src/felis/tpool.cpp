@@ -11,12 +11,10 @@
 #include <felis/transpositional.hpp>
 #include <felis/search_limits.hpp>
 
-namespace
-{
+namespace {
 
 // Calculate required memory for thread objects
-constexpr size_t calculate_thread_memory_requirement()
-{
+constexpr size_t calculate_thread_memory_requirement() {
   // Basic thread object size
   constexpr size_t thread_base_size = sizeof(struct thread);
   constexpr size_t main_thread_size = sizeof(struct main_thread);
@@ -37,8 +35,7 @@ constexpr size_t PARALLEL_THRESHOLD = 8;
  * Reset and prepare arena for thread allocation based on thread count
  * Calculates required memory for threads and boards, resets arena state
  */
-void reset_thread_arena(Arena &arena, size_t thread_count)
-{
+void reset_thread_arena(Arena& arena, size_t thread_count) {
   // Calculate total memory needed for all threads
   // Main thread (slightly larger) + regular threads + boards + alignment padding
   const size_t total_memory_needed = thread_count * THREAD_MEMORY_SIZE;
@@ -50,14 +47,12 @@ void reset_thread_arena(Arena &arena, size_t thread_count)
   const size_t arena_size = total_memory_needed + search_limits_size + ((total_memory_needed + search_limits_size) / 5);
 
   // Check if current arena capacity is sufficient
-  if (arena.capacity() < arena_size)
-  {
+  if (arena.capacity() < arena_size) {
     // Need to resize the arena - calculate new size with some growth factor
     // Use at least 50% more than required to avoid frequent resizing
     const size_t new_capacity = arena_size + (arena_size / 2);
 
-    if (!arena.resize_and_reset(new_capacity))
-    {
+    if (!arena.resize_and_reset(new_capacity)) {
       // Failed to resize arena - this is a critical error
       // For now, we'll continue with existing capacity and hope it works
       // In a production system, you might want to throw an exception or handle this differently
@@ -73,15 +68,14 @@ void reset_thread_arena(Arena &arena, size_t thread_count)
  * Returns nullptr if out of memory
  */
 template<typename ThreadType>
-ThreadType *allocate_thread_from_arena(Arena &arena, size_t index)
-{
+ThreadType* allocate_thread_from_arena(Arena& arena, size_t index) {
   // Allocate thread object from arena
-  ThreadType *thread_obj = arena.allocate<ThreadType>(1);
+  ThreadType* thread_obj = arena.allocate<ThreadType>(1);
   if (!thread_obj)
     return nullptr;   // Out of memory
 
   // Allocate Board object from arena
-  Board *board_obj = arena.allocate<Board>(1);
+  Board* board_obj = arena.allocate<Board>(1);
   if (!board_obj)
     return nullptr;   // Out of memory - arena will be reset anyway
 
@@ -100,19 +94,16 @@ ThreadType *allocate_thread_from_arena(Arena &arena, size_t index)
 
 }   // namespace
 
-thread::thread(const size_t index) : jthread(&thread::idleLoop, this), idx(index), searching(true)
-{ }
+thread::thread(const size_t index) : jthread(&thread::idleLoop, this), idx(index), searching(true) {}
 
-thread::~thread()
-{
+thread::~thread() {
   assert(!searching.load());
 
   exit.store(true);
   start_searching();
 }
 
-void thread::clearData()
-{
+void thread::clearData() {
   std::memset(history_scores.data(), 0, sizeof history_scores);
   std::memset(counter_moves.data(), 0, sizeof counter_moves);
   pv_length.fill(0);
@@ -120,22 +111,18 @@ void thread::clearData()
   draw_score.fill(0);
 }
 
-void thread::idleLoop()
-{
+void thread::idleLoop() {
   // NUMA fix
   if (Options[uci::uciName<uci::UciOptions::THREADS>()] > 8)
     WinProcGroup::bind_this_thread(idx);
 
-  do
-  {
+  do {
     std::unique_lock lk(mutex);
     searching.store(false);
 
     // Wake up anyone waiting for search finished
     cv.notify_one();
-    cv.wait(lk, [&] {
-      return searching.load(std::memory_order_relaxed);
-    });
+    cv.wait(lk, [&] { return searching.load(std::memory_order_relaxed); });
 
     // check exit flag, this is set when the class is being destroyed
     [[unlikely]]
@@ -148,32 +135,22 @@ void thread::idleLoop()
   } while (true);
 }
 
-void thread::start_searching()
-{
+void thread::start_searching() {
   std::lock_guard lk(mutex);
   searching.store(true);
   cv.notify_one();   // Wake up the thread in idleLoop()
 }
 
-void thread::wait_for_search_finished()
-{
+void thread::wait_for_search_finished() {
   std::unique_lock lk(mutex);
-  cv.wait(lk, [&] {
-    return !searching.load();
-  });
+  cv.wait(lk, [&] { return !searching.load(); });
 }
 
 #if defined(linux)
 thread_pool::thread_pool()
 #else
 thread_pool::thread_pool()
-  : node_counters(
-      {[&] {
-         return node_count_seq();
-       },
-       [&] {
-         return node_count_par();
-       }})
+  : node_counters({[&] { return node_count_seq(); }, [&] { return node_count_par(); }})
 #endif
 {
   // Don't allocate from arena during constructor - the arena will be reset in set()
@@ -181,8 +158,7 @@ thread_pool::thread_pool()
   limits = nullptr;
 }
 
-void thread_pool::set(const size_t v)
-{
+void thread_pool::set(const size_t v) {
   while (!empty())
     pop_back();
 
@@ -206,14 +182,13 @@ void thread_pool::set(const size_t v)
   }
 
   // Allocate main thread from arena
-  main_thread *main_t = allocate_thread_from_arena<main_thread>(thread_arena, 0);
+  main_thread* main_t = allocate_thread_from_arena<main_thread>(thread_arena, 0);
   if (main_t)
     emplace_back(main_t);
 
   // Allocate remaining threads from arena
-  while (size() < v)
-  {
-    thread *t = allocate_thread_from_arena<thread>(thread_arena, size());
+  while (size() < v) {
+    thread* t = allocate_thread_from_arena<thread>(thread_arena, size());
     if (t)
       emplace_back(t);
   }
@@ -232,16 +207,15 @@ void thread_pool::set(const size_t v)
 #endif
 }
 
-void thread_pool::start_thinking(std::string_view fen)
-{
-  auto *front_thread = main();
+void thread_pool::start_thinking(std::string_view fen) {
+  auto* front_thread = main();
 
   front_thread->wait_for_search_finished();
 
   stop                 = false;
   front_thread->ponder = limits->ponder;
 
-  const auto setup = [&fen](thread *t) {
+  const auto setup = [&fen](thread* t) {
     t->node_count = 0;
     t->root_board->set_fen(fen, t);
   };
@@ -255,37 +229,27 @@ void thread_pool::start_thinking(std::string_view fen)
   front_thread->start_searching();
 }
 
-void thread_pool::start_searching()
-{
-  auto start = [](thread *t) {
-    t->start_searching();
-  };
+void thread_pool::start_searching() {
+  auto start = [](thread* t) { t->start_searching(); };
   std::for_each(std::next(begin()), end(), start);
 }
 
-void thread_pool::wait_for_search_finished()
-{
-  auto wait = [](thread *t) {
-    t->wait_for_search_finished();
-  };
+void thread_pool::wait_for_search_finished() {
+  auto wait = [](thread* t) { t->wait_for_search_finished(); };
   std::for_each(std::next(begin()), end(), wait);
 }
 
-void thread_pool::clear_data() const
-{
-  for (auto &w : *this)
+void thread_pool::clear_data() const {
+  for (auto& w : *this)
     w->clearData();
 }
 
 // Initialize the static thread arena with a reasonable size (32MB)
 Arena thread_pool::thread_arena(32 * 1024 * 1024);
 
-u64 thread_pool::node_count() const
-{
+u64 thread_pool::node_count() const {
 #if defined(linux)
-  const auto accumulator = [](const u64 r, const thread *d) {
-    return r + d->node_count.load(std::memory_order_relaxed);
-  };
+  const auto accumulator = [](const u64 r, const thread* d) { return r + d->node_count.load(std::memory_order_relaxed); };
   return std::accumulate(cbegin(), cend(), 0ull, accumulator);
 #else
   return node_counters[parallel]();
@@ -293,19 +257,13 @@ u64 thread_pool::node_count() const
 }
 
 #if !defined(linux)
-u64 thread_pool::node_count_seq() const
-{
-  const auto accumulator = [](const u64 r, const thread *d) {
-    return r + d->node_count.load(std::memory_order_relaxed);
-  };
+u64 thread_pool::node_count_seq() const {
+  const auto accumulator = [](const u64 r, const thread* d) { return r + d->node_count.load(std::memory_order_relaxed); };
   return std::accumulate(cbegin(), cend(), 0ull, accumulator);
 }
 
-u64 thread_pool::node_count_par() const
-{
-  const auto accumulator = [](const thread *d) {
-    return d->node_count.load(std::memory_order_relaxed);
-  };
+u64 thread_pool::node_count_par() const {
+  const auto accumulator = [](const thread* d) { return d->node_count.load(std::memory_order_relaxed); };
   return std::transform_reduce(std::execution::par_unseq, cbegin(), cend(), 0ull, std::plus(), accumulator);
 }
 #endif
@@ -313,7 +271,7 @@ u64 thread_pool::node_count_par() const
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

@@ -1,5 +1,3 @@
-# Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
-# Copyright (C) 2017      FireFather (Tomcat author)
 # Copyright (C) 2020-2025 Rudy Alex Kohn
 # See end of file for extended copyright information.
 
@@ -81,11 +79,11 @@ CPMAddPackage(
 include(cmake/Engine.cmake)
 enable_engine_options()
 
-#if(ENABLE_TESTING)
-#  enable_testing()
-#  message("Building Tests.")
-#  add_subdirectory(test)
-#endif()
+if(ENABLE_TESTING)
+  enable_testing()
+  message("Building Tests.")
+  add_subdirectory(test)
+endif()
 
 if(ENABLE_FUZZING)
   message("Building Fuzz Tests, using fuzzing sanitizer https://www.llvm.org/docs/LibFuzzer.html")
@@ -95,9 +93,7 @@ endif()
 add_subdirectory(src)
 
 # Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
-# Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
-# Copyright (C) 2017      FireFather (Tomcat author)
-# Copyright (C) 2020-2022 Rudy Alex Kohn
+# Copyright (C) 2020-2025 Rudy Alex Kohn
 #
 # Feliscatus is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

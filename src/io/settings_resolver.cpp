@@ -7,19 +7,16 @@
 #include <fmt/format.h>
 #include <io/settings_resolver.hpp>
 
-namespace
-{
+namespace {
 constexpr std::string_view settings_file = "Feliscatus.json";
 }
 
-EngineSettings::EngineSettings()
-{
+EngineSettings::EngineSettings() {
   namespace fs = std::filesystem;
 
   auto p = fs::exists(settings_file);
 
-  if (!p)
-  {
+  if (!p) {
     fmt::print("info string Unable to locate {}, no books will be enabled\n", fs::path(settings_file).string());
     return;
   }
@@ -34,7 +31,7 @@ EngineSettings::EngineSettings()
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

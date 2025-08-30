@@ -8,8 +8,7 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <io/directory_resolver.hpp>
 
-namespace
-{
+namespace {
 
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
@@ -20,8 +19,7 @@ constexpr std::string_view extension = ".bin";
 
 }   // namespace
 
-std::vector<std::string> directory_resolver::get_book_list(const std::string_view directory)
-{
+std::vector<std::string> directory_resolver::get_book_list(const std::string_view directory) {
   if (directory.empty())
     return {};
 
@@ -30,18 +28,15 @@ std::vector<std::string> directory_resolver::get_book_list(const std::string_vie
   const std::filesystem::path path = fs::absolute(directory);
   const std::filesystem::path cwd  = !fs::exists(path) ? fs::current_path().append(directory) : path;
 
-  if (!fs::is_directory(cwd))
-  {
+  if (!fs::is_directory(cwd)) {
     logger->info("Unable to proceed, unknown path. path={}", cwd.string());
     return {};
   }
 
   std::vector<std::string> file_names;
 
-  for (const auto &entry : fs::directory_iterator(cwd))
-  {
-    if (entry.is_regular_file())
-    {
+  for (const auto& entry : fs::directory_iterator(cwd)) {
+    if (entry.is_regular_file()) {
       const std::string s = fs::absolute(entry.path()).string();
       if (s.ends_with(extension))
         file_names.emplace_back(s);
@@ -54,7 +49,7 @@ std::vector<std::string> directory_resolver::get_book_list(const std::string_vie
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

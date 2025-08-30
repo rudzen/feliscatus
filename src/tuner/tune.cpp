@@ -23,13 +23,10 @@
 #include <felis/util.hpp>
 #include <felis/tpool.hpp>
 
-namespace eval
-{
+namespace eval {
 
-struct Node final
-{
-  Node(std::string fen) : fen_(std::move(fen))
-  { }
+struct Node final {
+  Node(std::string fen) : fen_(std::move(fen)) {}
 
   std::string fen_;
   double result_{};
@@ -37,43 +34,37 @@ struct Node final
 
 inline bool x_;
 
-struct Param final
-{
-  Param(std::string name, Score &value, const Score initialValue, const int step, const int stages = 2) : name_(std::move(name)), initial_value_(initialValue), value_(value), step_(step), stages_(stages)
-  {
+struct Param final {
+  Param(std::string name, Score& value, const Score initialValue, const int step, const int stages = 2) : name_(std::move(name)), initial_value_(initialValue), value_(value), step_(step), stages_(stages) {
     if (x_)
       value = initialValue;
   }
 
   std::string name_;
   Score initial_value_;
-  Score &value_;
+  Score& value_;
   int step_;
   int stages_;
 };
 
-struct ParamIndexRecord final
-{
+struct ParamIndexRecord final {
   size_t idx_{};
   double improved_{};
 };
 
-inline bool operator<(const ParamIndexRecord &lhs, const ParamIndexRecord &rhs)
-{
+inline bool operator<(const ParamIndexRecord& lhs, const ParamIndexRecord& rhs) {
   return lhs.improved_ >= rhs.improved_;
 }
 
 }   // namespace eval
 
-namespace
-{
+namespace {
 
 auto console   = spdlog::stdout_color_mt("tuner");
 auto errLogger = spdlog::stderr_color_mt("stderr");
 std::shared_ptr<spdlog::logger> fileLogger;
 
-enum SelectedParams : std::uint64_t
-{
+enum SelectedParams : std::uint64_t {
   none          = 0,
   psqt          = 1,
   piecevalue    = 1 << 1,
@@ -97,18 +88,16 @@ enum SelectedParams : std::uint64_t
 };
 
 template<bool Hr>
-std::string emitCode(std::vector<eval::Param> &params0)
-{
+std::string emitCode(std::vector<eval::Param>& params0) {
   std::unordered_map<std::string, std::vector<eval::Param>> params1;
 
-  for (const auto &param : params0)
+  for (const auto& param : params0)
     params1[param.name_].emplace_back(param);
 
   fmt::memory_buffer s;
   auto inserter = std::back_inserter(s);
 
-  for (auto &params2 : params1)
-  {
+  for (auto& params2 : params1) {
     const auto n = params2.second.size();
 
     if (n > 1)
@@ -116,11 +105,9 @@ std::string emitCode(std::vector<eval::Param> &params0)
     else
       fmt::format_to(inserter, "inline int {} = ", params2.first);
 
-    for (size_t i = 0; i < n; ++i)
-    {
+    for (size_t i = 0; i < n; ++i) {
       const Score s = params2.second[i].value_;
-      if (Hr && n == 64)
-      {
+      if (Hr && n == 64) {
         if (i % 8 == 0)
           fmt::format_to(inserter, "\n ");
       }
@@ -139,12 +126,10 @@ std::string emitCode(std::vector<eval::Param> &params0)
   return fmt::to_string(s);
 }
 
-void printBestValues(const double e, const std::vector<eval::Param> &params)
-{
+void printBestValues(const double e, const std::vector<eval::Param>& params) {
   auto finished = 0;
 
-  for (std::size_t i = 0; i < params.size(); ++i)
-  {
+  for (std::size_t i = 0; i < params.size(); ++i) {
     if (params[i].step_ == 0)
       finished++;
     const Score s = params[i].value_;
@@ -155,8 +140,7 @@ void printBestValues(const double e, const std::vector<eval::Param> &params)
   console->info("Finished:{} %", finished == 0 ? 100.0 : finished * 100.0 / params.size());
 }
 
-constexpr double bestK()
-{
+constexpr double bestK() {
   /*
   double smallestE;
   double bestK = -1;
@@ -173,80 +157,69 @@ constexpr double bestK()
   return 1.12;
 }
 
-
-void initEval(std::vector<eval::Param> &params, const ParserSettings *settings)
-{
+void initEval(std::vector<eval::Param>& params, const ParserSettings* settings) {
   auto step = 1;
 
   eval::x_ = false;
 
-  if (settings->pawn)
-  {
+  if (settings->pawn) {
     console->info("Pawn tuning active");
-    if (settings->psqt)
-    {
+    if (settings->psqt) {
       console->info("Pawn psqt tuning active");
-      for (const auto sq : Squares)
-      {
+      for (const auto sq : Squares) {
         auto istep = sq > 7 && sq < 56 ? step : 0;
         params.emplace_back("pawn_pst", params::pst<PAWN>(sq), 0, istep);
       }
     }
 
-    if (settings->mobility)
-    {
+    if (settings->mobility) {
       console->info("Pawn mobility tuning active");
-      for (auto &v : params::pawn_isolated)
+      for (auto& v : params::pawn_isolated)
         params.emplace_back("pawn_isolated", v, 0, step);
 
-      for (auto &v : params::pawn_behind)
+      for (auto& v : params::pawn_behind)
         params.emplace_back("pawn_behind", v, 0, step);
 
-      for (auto &v : params::pawn_doubled)
+      for (auto& v : params::pawn_doubled)
         params.emplace_back("pawn_doubled", v, 0, step);
     }
 
-    if (settings->passed_pawn)
-    {
-      for (auto &v : params::passed_pawn)
+    if (settings->passed_pawn) {
+      for (auto& v : params::passed_pawn)
         params.emplace_back("passed_pawn", v, 0, step);
 
-      for (auto &v : params::passed_pawn_no_us)
+      for (auto& v : params::passed_pawn_no_us)
         params.emplace_back("passed_pawn_no_us", v, 0, step);
 
-      for (auto &v : params::passed_pawn_no_them)
+      for (auto& v : params::passed_pawn_no_them)
         params.emplace_back("passed_pawn_no_them", v, 0, step);
 
-      for (auto &v : params::passed_pawn_no_attacks)
+      for (auto& v : params::passed_pawn_no_attacks)
         params.emplace_back("passed_pawn_no_attacks", v, 0, step);
 
-      for (auto &v : params::passed_pawn_king_dist_us)
+      for (auto& v : params::passed_pawn_king_dist_us)
         params.emplace_back("passed_pawn_king_dist_us", v, 0, step);
 
-      for (auto &v : params::passed_pawn_king_dist_them)
+      for (auto& v : params::passed_pawn_king_dist_them)
         params.emplace_back("passed_pawn_king_dist_them", v, 0, step);
     }
   }
 
-  if (settings->knight)
-  {
-    if (settings->psqt)
-    {
-      for (const auto sq : Squares)
-      {
+  if (settings->knight) {
+    if (settings->psqt) {
+      for (const auto sq : Squares) {
         params.emplace_back("knight_pst", params::pst<KNIGHT>(sq), 0, step);
       }
     }
 
-    if (settings->mobility)
-    {
-      for (auto &v : params::knight_mob)
+    if (settings->mobility) {
+      for (auto& v : params::knight_mob)
         params.emplace_back("knight_mob", v, 0, step);
 
-      for (auto &v : params::knight_mob2)
+      for (auto& v : params::knight_mob2)
         params.emplace_back("knight_mob2", v, 0, step);
 
-      for (auto &v : params::knight_mob2)
+      for (auto& v : params::knight_mob2)
         params.emplace_back("knight_mob2", v, 0, step);
     }
 
@@ -257,25 +230,21 @@ void initEval(std::vector<eval::Param> &params, const ParserSettings *settings)
     //   params.emplace_back("knight_attack_king", params::attacks_on_king[Knight], 0, step);
   }
 
-  if (settings->bishop)
-  {
-    if (settings->psqt)
-    {
+  if (settings->bishop) {
+    if (settings->psqt) {
       for (const auto sq : Squares)
         params.emplace_back("bishop_pst", params::pst<BISHOP>(sq), 0, step);
     }
 
-    if (settings->mobility)
-    {
-      for (auto &v : params::bishop_mob)
+    if (settings->mobility) {
+      for (auto& v : params::bishop_mob)
         params.emplace_back("bishop_mob", v, 0, step);
 
-      for (auto &v : params::bishop_mob2)
+      for (auto& v : params::bishop_mob2)
         params.emplace_back("bishop_mob2", v, 0, step);
     }
 
-    if (settings->coordination)
-    {
+    if (settings->coordination) {
       params.emplace_back("bishop_pair", params::bishop_pair, 0, step);
     }
 
@@ -286,19 +255,15 @@ void initEval(std::vector<eval::Param> &params, const ParserSettings *settings)
     //   params.emplace_back("attacks_on_king[Bishop]", params::attacks_on_king[Bishop], 0, step);
   }
 
-  if (settings->rook)
-  {
-    if (settings->psqt)
-    {
-      for (const auto sq : Squares)
-      {
+  if (settings->rook) {
+    if (settings->psqt) {
+      for (const auto sq : Squares) {
         params.emplace_back("rook_pst", params::pst<ROOK>(sq), 0, step);
       }
     }
 
-    if (settings->mobility)
-    {
-      for (auto &v : params::rook_mob)
+    if (settings->mobility) {
+      for (auto& v : params::rook_mob)
         params.emplace_back("rook_mob", v, 0, step);
 
       params.emplace_back("king_obstructs_rook", params::king_obstructs_rook, 0, step);
@@ -313,17 +278,14 @@ void initEval(std::vector<eval::Param> &params, const ParserSettings *settings)
     //   params.emplace_back("attacks_on_king[Rook]", params::attacks_on_king[Rook], 0, step);
   }
 
-  if (settings->queen)
-  {
-    if (settings->psqt)
-    {
+  if (settings->queen) {
+    if (settings->psqt) {
       for (const auto sq : Squares)
         params.emplace_back("queen_pst", params::pst<QUEEN>(sq), 0, step);
     }
 
-    if (settings->mobility)
-    {
-      for (auto &v : params::queen_mob)
+    if (settings->mobility) {
+      for (auto& v : params::queen_mob)
         params.emplace_back("queen_mob", v, 0, step);
     }
 
@@ -334,21 +296,19 @@ void initEval(std::vector<eval::Param> &params, const ParserSettings *settings)
     //   params.emplace_back("attacks_on_king[Queen]", params::attacks_on_king[Queen], 0, step);
   }
 
-  if (settings->king)
-  {
-    if (settings->psqt)
-    {
+  if (settings->king) {
+    if (settings->psqt) {
       for (const auto sq : Squares)
         params.emplace_back("king_pst", params::pst<KING>(sq), 0, step);
     }
 
-    for (auto &v : params::king_pawn_shelter)
+    for (auto& v : params::king_pawn_shelter)
       params.emplace_back("king_pawn_shelter", v, 0, step);
 
-    for (auto &v : params::king_on_open)
+    for (auto& v : params::king_on_open)
       params.emplace_back("king_on_open", v, 0, step);
 
-    for (auto &v : params::king_on_half_open)
+    for (auto& v : params::king_on_half_open)
       params.emplace_back("king_on_half_open", v, 0, step);
   }
 
@@ -361,20 +321,16 @@ void initEval(std::vector<eval::Param> &params, const ParserSettings *settings)
 
 }   // namespace
 
-namespace eval
-{
+namespace eval {
 
-PGNPlayer::PGNPlayer() : pgn::PGNPlayer()
-{ }
+PGNPlayer::PGNPlayer() : pgn::PGNPlayer() {}
 
-void PGNPlayer::read_pgn_database()
-{
+void PGNPlayer::read_pgn_database() {
   PGNFileReader::read_pgn_database();
   printProgress(true);
 }
 
-void PGNPlayer::read_san_move()
-{
+void PGNPlayer::read_san_move() {
   pgn::PGNPlayer::read_san_move();
 
   all_nodes_count_++;
@@ -383,11 +339,10 @@ void PGNPlayer::read_san_move()
     current_game_nodes_.emplace_back(b->fen());
 }
 
-void PGNPlayer::read_game_termination()
-{
+void PGNPlayer::read_game_termination() {
   pgn::PGNPlayer::read_game_termination();
 
-  for (auto &node : current_game_nodes_)
+  for (auto& node : current_game_nodes_)
     node.result_ = result_ == WhiteWin ? 1 : result_ == Draw ? 0.5 : 0;
 
   all_selected_nodes_.insert(all_selected_nodes_.end(), current_game_nodes_.begin(), current_game_nodes_.end());
@@ -396,21 +351,18 @@ void PGNPlayer::read_game_termination()
   printProgress(false);
 }
 
-void PGNPlayer::read_comment1()
-{
+void PGNPlayer::read_comment1() {
   pgn::PGNPlayer::read_comment1();
 }
 
-void PGNPlayer::printProgress(const bool force) const
-{
+void PGNPlayer::printProgress(const bool force) const {
   if (!force && game_count_ % 100 != 0)
     return;
 
   fmt::print("game_count_: {} position_count_: {},  all_nodes_.size: {}\n", game_count_, all_nodes_count_, all_selected_nodes_.size());
 }
 
-Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std::move(board)), score_static_(false)
-{
+Tune::Tune(std::unique_ptr<Board> board, const ParserSettings* settings) : b(std::move(board)), score_static_(false) {
   PGNPlayer pgn;
   pgn.read(settings->file_name);
 
@@ -448,18 +400,15 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
   auto stage = 0;
   Score original;
 
-  while (improved)
-  {
+  while (improved) {
     printBestValues(bestE, params);
     improved = false;
 
-    for (std::size_t i = 0; i < params_index.size(); ++i)
-    {
+    for (std::size_t i = 0; i < params_index.size(); ++i) {
       auto idx    = params_index[i].idx_;
-      auto &step  = params[idx].step_;
-      auto &value = params[idx].value_;
-      do
-      {
+      auto& step  = params[idx].step_;
+      auto& value = params[idx].value_;
+      do {
 
         if (step == 0)
           continue;
@@ -477,15 +426,13 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
 
         auto newE = e(pgn.all_selected_nodes_, params, params_index, K);
 
-        if (newE < bestE)
-        {
+        if (newE < bestE) {
           params_index[i].improved_ = bestE - newE;
           bestE                     = newE;
           improved                  = true;
           out << "E:" << bestE << "\n";
           out << emitCode<true>(params);
-        } else if (step > 0)
-        {
+        } else if (step > 0) {
           step = -step;
           value += 2 * step;
 
@@ -494,21 +441,18 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
 
           newE = e(pgn.all_selected_nodes_, params, params_index, K);
 
-          if (newE < bestE)
-          {
+          if (newE < bestE) {
             params_index[i].improved_ = bestE - newE;
             bestE                     = newE;
             improved                  = true;
             out << "E:" << bestE << "\n";
             out << emitCode<true>(params);
-          } else
-          {
+          } else {
             params_index[i].improved_ = 0;
             value                     = original;
             step                      = 0;
           }
-        } else
-        {
+        } else {
           params_index[i].improved_ = 0;
           value                     = original;
           step                      = 0;
@@ -517,8 +461,7 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
       } while (stage <= params[idx].stages_);
     }
 
-    if (improved)
-    {
+    if (improved) {
       // std::stable_sort(params_index.begin(), params_index.end());
     }
   }
@@ -529,12 +472,10 @@ Tune::Tune(std::unique_ptr<Board> board, const ParserSettings *settings) : b(std
   fmt::print("{}\n", emitCode<true>(params));
 }
 
-double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params, const std::vector<ParamIndexRecord> &paramsIndex, const double k)
-{
+double Tune::e(const std::vector<Node>& nodes, const std::vector<Param>& params, const std::vector<ParamIndexRecord>& paramsIndex, const double k) {
   auto x = 0.0;
 
-  for (const auto &node : nodes)
-  {
+  for (const auto& node : nodes) {
     b->set_fen(node.fen_, pool.main());
     const auto z = node.result_ - util::sigmoid(score(WHITE), k);
     x += z * z;
@@ -548,8 +489,7 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
   fmt::format_to(inserter, "x:{:.{}f}", x, 12);
 
   for (std::size_t i = 0; i < paramsIndex.size(); ++i)
-    if (params[paramsIndex[i].idx_].step_)
-    {
+    if (params[paramsIndex[i].idx_].step_) {
       auto v = params[paramsIndex[i].idx_].value_;
       fmt::format_to(inserter, " prm[{}]:{}/{}\n", i, v.mg(), v.eg());
     }
@@ -559,27 +499,23 @@ double Tune::e(const std::vector<Node> &nodes, const std::vector<Param> &params,
   return x;
 }
 
-void Tune::makeQuiet(std::vector<Node> &nodes)
-{
-  auto *t = pool.main();
-  for (auto &node : nodes)
-  {
+void Tune::makeQuiet(std::vector<Node>& nodes) {
+  auto* t = pool.main();
+  for (auto& node : nodes) {
     b->set_fen(node.fen_, t);
     t->pv_length[0] = 0;
-    //auto q          = quiesceScore(-32768, 32768, true, 0);
+    // auto q          = quiesceScore(-32768, 32768, true, 0);
     playPv();
     node.fen_ = b->fen();
   }
 }
 
-int Tune::score(const Color c) const
-{
+int Tune::score(const Color c) const {
   const auto score = score_static_ ? Eval::tune(b.get(), 0, -100000, 100000) : quiesceScore(-32768, 32768, false, 0);
   return b->side_to_move() == c ? score : -score;
 }
 
-int Tune::quiesceScore(int alpha, const int beta, const bool storePv, const int ply) const
-{
+int Tune::quiesceScore(int alpha, const int beta, const bool storePv, const int ply) const {
   auto score = Eval::tune(b.get(), 0, -100000, 100000);
 
   if (score >= beta)
@@ -596,23 +532,19 @@ int Tune::quiesceScore(int alpha, const int beta, const bool storePv, const int 
 
   // b->pos->generate_captures_and_promotions(this);
 
-  while (const auto *const moveData = mg.next_move())
-  {
+  while (const auto* const moveData = mg.next_move()) {
     if (!is_promotion(moveData->move) && moveData->score < 0)
       break;
 
-    if (makeMove(moveData->move, ply))
-    {
+    if (makeMove(moveData->move, ply)) {
       score = -quiesceScore(-beta, -alpha, storePv, ply + 1);
 
       b->unmake_move();
 
-      if (score > bestScore)
-      {
+      if (score > bestScore) {
         bestScore = score;
 
-        if (bestScore > alpha)
-        {
+        if (bestScore > alpha) {
           if (score >= beta)
             break;
 
@@ -627,8 +559,7 @@ int Tune::quiesceScore(int alpha, const int beta, const bool storePv, const int 
   return bestScore;
 }
 
-bool Tune::makeMove(Move m, int ply) const
-{
+bool Tune::makeMove(Move m, int ply) const {
   if (!b->make_move(m, true, true))
     return false;
 
@@ -637,24 +568,21 @@ bool Tune::makeMove(Move m, int ply) const
   return true;
 }
 
-void Tune::unmakeMove() const
-{
+void Tune::unmakeMove() const {
   b->unmake_move();
 }
 
-void Tune::playPv() const
-{
-  auto *t = b->my_thread();
+void Tune::playPv() const {
+  auto* t = b->my_thread();
   for (auto i = 0; i < t->pv_length[0]; ++i)
     b->make_move(t->pv[0][i].move, false, true);
 }
 
-void Tune::updatePv(Move m, int score, int ply) const
-{
-  auto *t = b->my_thread();
+void Tune::updatePv(Move m, int score, int ply) const {
+  auto* t = b->my_thread();
   assert(ply < MAXDEPTH);
   assert(t->pv_length[ply] < MAXDEPTH);
-  auto *entry = &t->pv[ply][ply];
+  auto* entry = &t->pv[ply][ply];
 
   entry->score = score;
   entry->move  = m;
@@ -673,7 +601,7 @@ void Tune::updatePv(Move m, int score, int ply) const
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

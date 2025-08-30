@@ -9,21 +9,20 @@
 
 struct Board;
 
-namespace perft
-{
+namespace perft {
 
 [[nodiscard]]
-std::uint64_t perft(Board *b, int depth = 6);
+std::uint64_t perft(Board* b, int depth = 6);
 
 [[nodiscard]]
-std::uint64_t divide(Board *b, int depth = 6);
+std::uint64_t divide(Board* b, int depth = 6);
 
 }   // namespace perft
 
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

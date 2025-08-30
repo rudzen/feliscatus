@@ -14,8 +14,7 @@
 
 enum Move : std::uint32_t;
 
-struct Board
-{
+struct Board {
   using PositionList = std::array<Position, MAX_MOVES>;
 
   Board();
@@ -36,9 +35,9 @@ struct Board
   [[nodiscard]]
   i64 half_move_count() const;
 
-  void new_game(thread *t);
+  void new_game(thread* t);
 
-  void set_fen(std::string_view fen, thread *t);
+  void set_fen(std::string_view fen, thread* t);
 
   [[nodiscard]]
   std::string fen() const;
@@ -144,7 +143,7 @@ struct Board
   Material* material() const;
 
   [[nodiscard]]
-  i32 &flags() const;
+  i32& flags() const;
 
   [[nodiscard]]
   Square en_passant_square() const;
@@ -159,7 +158,7 @@ struct Board
   Bitboard pinned() const;
 
   [[nodiscard]]
-  thread *my_thread() const;
+  thread* my_thread() const;
 
   [[nodiscard]]
   Move counter_move(Move m) const;
@@ -178,7 +177,7 @@ struct Board
   [[nodiscard]]
   Square king_to() const;
 
-  Position *pos;
+  Position* pos;
   i32 plies{};
   i32 max_ply{};
   i32 search_depth{};
@@ -186,7 +185,6 @@ struct Board
   bool chess960{};
 
 private:
-
   void clear();
 
   [[nodiscard]]
@@ -221,7 +219,7 @@ private:
   [[nodiscard]]
   int see_rec(int mat_change, Piece next_capture, Square to, Color c);
 
-  void update_position(Position *p) const;
+  void update_position(Position* p) const;
 
   [[nodiscard]]
   Bitboard attackers_to(Square s, Bitboard occ) const;
@@ -236,22 +234,20 @@ private:
   std::array<Bitboard, COL_NB> occupied_by_side{};
   std::array<Bitboard, PIECETYPE_NB> occupied_by_type{};
   PositionList position_list;
-  thread *my_t{};
+  thread* my_t{};
   std::array<Square, COL_NB> oo_king_from{NO_SQ, NO_SQ};
   std::array<Square, COL_NB> ooo_king_from{NO_SQ, NO_SQ};
   std::array<Bitboard, CASTLING_RIGHT_NB> castling_path{};
 };
 
-inline void Board::add_piece(const Piece pc, const Square s)
-{
+inline void Board::add_piece(const Piece pc, const Square s) {
   occupied_by_side[color_of(pc)] |= s;
   occupied_by_type[type_of(pc)] |= s;
   occupied_by_type[ALL_PIECE_TYPES] |= s;
   board[s] = pc;
 }
 
-inline void Board::remove_piece(const Square s)
-{
+inline void Board::remove_piece(const Square s) {
   const auto pc = board[s];
 
   assert(type_of(pc) != KING);
@@ -262,174 +258,138 @@ inline void Board::remove_piece(const Square s)
   board[s] = NO_PIECE;
 }
 
-inline Piece Board::piece(const Square s) const
-{
+inline Piece Board::piece(const Square s) const {
   return board[s];
 }
 
-inline PieceType Board::piece_type(const Square s) const
-{
+inline PieceType Board::piece_type(const Square s) const {
   return type_of(piece(s));
 }
 
-inline bool Board::is_occupied(const Square s) const
-{
+inline bool Board::is_occupied(const Square s) const {
   return piece(s) != NO_PIECE;
 }
 
-inline bool Board::is_attacked(const Square s, const Color c) const
-{
-  return is_attacked_by_slider(s, c)
-         || is_attacked_by_knight(s, c)
-         || is_attacked_by_pawn(s, c)
-         || is_attacked_by_king(s, c);
+inline bool Board::is_attacked(const Square s, const Color c) const {
+  return is_attacked_by_slider(s, c) || is_attacked_by_knight(s, c) || is_attacked_by_pawn(s, c) || is_attacked_by_king(s, c);
 }
 
-inline bool Board::is_attacked_by_knight(const Square s, const Color c) const
-{
+inline bool Board::is_attacked_by_knight(const Square s, const Color c) const {
   return pieces(KNIGHT, c) & piece_attacks_bb(KNIGHT, s);
 }
 
-inline bool Board::is_attacked_by_pawn(const Square s, const Color c) const
-{
+inline bool Board::is_attacked_by_pawn(const Square s, const Color c) const {
   return pieces(PAWN, c) & pawn_attacks_bb(~c, s);
 }
 
-inline bool Board::is_attacked_by_king(const Square s, const Color c) const
-{
+inline bool Board::is_attacked_by_king(const Square s, const Color c) const {
   return piece_attacks_bb(KING, s) & square<KING>(c);
 }
 
-inline Bitboard Board::pieces() const
-{
+inline Bitboard Board::pieces() const {
   return occupied_by_type[ALL_PIECE_TYPES];
 }
 
-inline Bitboard Board::pieces(const Piece pc) const
-{
+inline Bitboard Board::pieces(const Piece pc) const {
   return pieces(type_of(pc), color_of(pc));
 }
 
-inline Bitboard Board::pieces(const PieceType pt) const
-{
+inline Bitboard Board::pieces(const PieceType pt) const {
   return occupied_by_type[pt];
 }
 
-inline Bitboard Board::pieces(const PieceType pt, const PieceType pt2) const
-{
+inline Bitboard Board::pieces(const PieceType pt, const PieceType pt2) const {
   return occupied_by_type[pt] | occupied_by_type[pt2];
 }
 
-inline Bitboard Board::pieces(const PieceType pt, const Color c) const
-{
+inline Bitboard Board::pieces(const PieceType pt, const Color c) const {
   return occupied_by_side[c] & occupied_by_type[pt];
 }
 
-inline Bitboard Board::pieces(const PieceType pt, const PieceType pt2, const Color c) const
-{
+inline Bitboard Board::pieces(const PieceType pt, const PieceType pt2, const Color c) const {
   return occupied_by_side[c] & (occupied_by_type[pt] | occupied_by_type[pt2]);
 }
 
-inline Bitboard Board::pieces(const Color c) const
-{
+inline Bitboard Board::pieces(const Color c) const {
   return occupied_by_side[c];
 }
 
 template<PieceType Pt>
-Square Board::square(const Color c) const
-{
+Square Board::square(const Color c) const {
   assert(Pt == KING);
   assert(piece_count(c, Pt) == 1);
   return lsb(pieces(Pt, c));
 }
 
-inline bool Board::is_pawn_passed(const Square s, const Color c) const
-{
+inline bool Board::is_pawn_passed(const Square s, const Color c) const {
   return !(passed_pawn_front_span[c][s] & pieces(PAWN, ~c));
 }
 
-inline bool Board::is_piece_on_square(const PieceType pt, const Square s, const Color c) const
-{
+inline bool Board::is_piece_on_square(const PieceType pt, const Square s, const Color c) const {
   return board[s] == make_piece(pt, c);
 }
 
-inline bool Board::is_piece_on_file(const PieceType pt, const Square s, const Color c) const
-{
+inline bool Board::is_piece_on_file(const PieceType pt, const Square s, const Color c) const {
   return bb_file(s) & pieces(pt, c);
 }
 
-inline bool Board::is_draw() const
-{
+inline bool Board::is_draw() const {
   return pos->flags & material::RECOGNIZEDDRAW;
 }
 
-inline bool Board::can_castle() const
-{
+inline bool Board::can_castle() const {
   return pos->castle_rights;
 }
 
-inline bool Board::can_castle(const CastlingRight cr) const
-{
+inline bool Board::can_castle(const CastlingRight cr) const {
   return pos->castle_rights & cr;
 }
 
-inline Key Board::pawn_key() const
-{
+inline Key Board::pawn_key() const {
   return pos->pawn_structure_key;
 }
 
-inline Key Board::key() const
-{
+inline Key Board::key() const {
   return pos->key;
 }
 
-inline Material* Board::material() const
-{
+inline Material* Board::material() const {
   return &pos->material;
 }
 
-inline i32 &Board::flags() const
-{
+inline i32& Board::flags() const {
   return pos->flags;
 }
 
-inline Square Board::en_passant_square() const
-{
+inline Square Board::en_passant_square() const {
   return pos->en_passant_square;
 }
 
-inline Color Board::side_to_move() const
-{
+inline Color Board::side_to_move() const {
   return pos->side_to_move;
 }
 
-inline Bitboard Board::checkers() const
-{
+inline Bitboard Board::checkers() const {
   return pos->checkers;
 }
 
-inline bool Board::in_check() const
-{
+inline bool Board::in_check() const {
   return pos->in_check;
 }
 
-inline Bitboard Board::pinned() const
-{
+inline Bitboard Board::pinned() const {
   return pos->pinned;
 }
 
-inline thread *Board::my_thread() const
-{
+inline thread* Board::my_thread() const {
   return my_t;
 }
 
-inline Move Board::counter_move(const Move m) const
-{
+inline Move Board::counter_move(const Move m) const {
   return my_t->counter_moves[move_piece(m)][move_to(m)];
 }
 
-inline i32 Board::history_score(const Move m) const
-{
+inline i32 Board::history_score(const Move m) const {
   return my_t->history_scores[move_piece(m)][move_to(m)];
 }
 
@@ -454,7 +414,7 @@ Square Board::king_to() const {
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

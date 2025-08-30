@@ -12,8 +12,7 @@
 
 using std::string;
 
-namespace
-{
+namespace {
 
 constexpr std::array<std::string_view, 2> boolString{"false", "true"};
 constexpr int MaxHashMB            = 131072;
@@ -21,40 +20,31 @@ constinit std::size_t insert_order = 0;
 
 }   // namespace
 
-namespace uci
-{
+namespace uci {
 
-void onClearHash(const Option &)
-{
+void onClearHash(const Option&) {
   TT.clear();
 }
 
-void onHashSize(const Option &o)
-{
+void onHashSize(const Option& o) {
   TT.init(o);
 }
 
-void onBookChange(const Option &o)
-{
+void onBookChange(const Option& o) {
   std::string_view s = o.currentValue();
   fmt::print("book on_change: {}\n", s);
   book.open(o);
 }
 
-void onThreads(const Option &o)
-{
+void onThreads(const Option& o) {
   pool.set(o);
 }
 
-bool CaseInsensitiveLess::operator()(const std::string_view s1, const std::string_view s2) const noexcept
-{
-  return std::lexicographical_compare(s1.begin(), s1.end(), s2.begin(), s2.end(), [](const char c1, const char c2) {
-    return tolower(c1) < tolower(c2);
-  });
+bool CaseInsensitiveLess::operator()(const std::string_view s1, const std::string_view s2) const noexcept {
+  return std::lexicographical_compare(s1.begin(), s1.end(), s2.begin(), s2.end(), [](const char c1, const char c2) { return tolower(c1) < tolower(c2); });
 }
 
-void init(OptionsMap &o, std::span<std::string> bookFiles)
-{
+void init(OptionsMap& o, std::span<std::string> bookFiles) {
   o[uciName<UciOptions::THREADS>()] << Option(1, 1, 512, onThreads);
   o[uciName<UciOptions::HASH>()] << Option(256, 1, MaxHashMB, onHashSize);
   o[uciName<UciOptions::HASH_X_THREADS>()] << Option(true);
@@ -67,8 +57,7 @@ void init(OptionsMap &o, std::span<std::string> bookFiles)
   // configure polyglot book options
   const bool hasBookFiles = !bookFiles.empty();
   o[uciName<UciOptions::USE_BOOK>()] << Option(hasBookFiles);
-  if (hasBookFiles)
-  {
+  if (hasBookFiles) {
     const string selected = bookFiles.front();
     o[uciName<UciOptions::BOOKS>()] << Option(bookFiles, selected.c_str(), onBookChange);
     // if (o[uciName<UciOptions::USE_BOOK>()])
@@ -81,60 +70,43 @@ void init(OptionsMap &o, std::span<std::string> bookFiles)
 
 /// Option class constructors and conversion operators
 
-Option::Option(const char *v, const on_change f) : default_value_(v), current_value_(v), type_(OptionType::String), on_change_(f)
-{ }
+Option::Option(const char* v, const on_change f) : default_value_(v), current_value_(v), type_(OptionType::String), on_change_(f) {}
 
-Option::Option(const bool v, const on_change f)
-  : default_value_(boolString[v]), current_value_(default_value_), type_(OptionType::Check), on_change_(f)
-{ }
+Option::Option(const bool v, const on_change f) : default_value_(boolString[v]), current_value_(default_value_), type_(OptionType::Check), on_change_(f) {}
 
-Option::Option(const on_change f) : type_(OptionType::Button), on_change_(f)
-{ }
+Option::Option(const on_change f) : type_(OptionType::Button), on_change_(f) {}
 
-Option::Option(const int v, const int minv, const int maxv, const on_change f)
-  : default_value_(fmt::format("{}", v)), current_value_(default_value_), type_(OptionType::Spin), min_(minv), max_(maxv),
-    on_change_(f)
-{ }
+Option::Option(const int v, const int minv, const int maxv, const on_change f) : default_value_(fmt::format("{}", v)), current_value_(default_value_), type_(OptionType::Spin), min_(minv), max_(maxv), on_change_(f) {}
 
-Option::Option(const std::span<std::string> variants, const char *cur, const on_change f)
-  : variants_(variants), default_value_(cur), current_value_(cur), type_(OptionType::Combo), on_change_(f)
-{ }
+Option::Option(const std::span<std::string> variants, const char* cur, const on_change f) : variants_(variants), default_value_(cur), current_value_(cur), type_(OptionType::Combo), on_change_(f) {}
 
-Option::operator int() const
-{
+Option::operator int() const {
   assert(type_ == OptionType::Check || type_ == OptionType::Spin);
   return type_ == OptionType::Spin ? util::toIntegral<int>(current_value_) : current_value_ == boolString[true];
 }
 
-Option::operator std::string_view() const
-{
+Option::operator std::string_view() const {
   assert(type_ == OptionType::String || type_ == OptionType::Combo);
   return current_value_;
 }
 
-bool Option::operator==(const char *s) const
-{
+bool Option::operator==(const char* s) const {
   assert(type_ == OptionType::Combo);
   return !CaseInsensitiveLess()(current_value_, s) && !CaseInsensitiveLess()(s, current_value_);
 }
 
-void Option::operator<<(const Option &o)
-{
+void Option::operator<<(const Option& o) {
   *this = o;
   idx_  = insert_order++;
 }
 
-
 /// It's up to the GUI to check for option's limits, but we could receive the new value from
 /// the user by console window, so let's check the bounds anyway.
 
-Option &Option::operator=(const string &v) noexcept
-{
+Option& Option::operator=(const string& v) noexcept {
   const auto isButton = type_ == OptionType::Button;
 
-  if (
-    (!isButton && v.empty()) || (type_ == OptionType::Check && v != "true" && v != "false")
-    || (type_ == OptionType::Spin && (!util::inBetween(util::toIntegral<int>(v), min_, max_))))
+  if ((!isButton && v.empty()) || (type_ == OptionType::Check && v != "true" && v != "false") || (type_ == OptionType::Spin && (!util::inBetween(util::toIntegral<int>(v), min_, max_))))
     return *this;
 
   if (!isButton)
@@ -146,38 +118,31 @@ Option &Option::operator=(const string &v) noexcept
   return *this;
 }
 
-std::size_t Option::index() const noexcept
-{
+std::size_t Option::index() const noexcept {
   return idx_;
 }
 
-std::span<std::string> Option::variants() const noexcept
-{
+std::span<std::string> Option::variants() const noexcept {
   return variants_;
 }
 
-std::string_view Option::defaultValue() const noexcept
-{
+std::string_view Option::defaultValue() const noexcept {
   return default_value_;
 }
 
-std::string_view Option::currentValue() const noexcept
-{
+std::string_view Option::currentValue() const noexcept {
   return current_value_;
 }
 
-OptionType Option::type() const noexcept
-{
+OptionType Option::type() const noexcept {
   return type_;
 }
 
-int Option::min() const noexcept
-{
+int Option::min() const noexcept {
   return min_;
 }
 
-int Option::max() const noexcept
-{
+int Option::max() const noexcept {
   return max_;
 }
 
@@ -186,7 +151,7 @@ int Option::max() const noexcept
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

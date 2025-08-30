@@ -19,15 +19,14 @@
 #include "sys/vtimes.h"
 #endif
 
-struct CpuLoad final
-{
+struct CpuLoad final {
 
   CpuLoad();
-  ~CpuLoad()                    = default;
-  CpuLoad(const CpuLoad &other) = delete;
-  CpuLoad(CpuLoad &&other)      = delete;
-  CpuLoad &operator=(const CpuLoad &) = delete;
-  CpuLoad &operator=(CpuLoad &&other) = delete;
+  ~CpuLoad()                          = default;
+  CpuLoad(const CpuLoad& other)       = delete;
+  CpuLoad(CpuLoad&& other)            = delete;
+  CpuLoad& operator=(const CpuLoad&)  = delete;
+  CpuLoad& operator=(CpuLoad&& other) = delete;
 
   [[nodiscard]]
   int usage();
@@ -54,7 +53,7 @@ private:
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

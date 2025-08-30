@@ -9,8 +9,7 @@
 #include <felis/miscellaneous.hpp>
 #include <felis/types.hpp>
 
-struct SearchLimits final
-{
+struct SearchLimits final {
   TimeUnit time[2];
   TimeUnit inc[2];
   TimeUnit movetime;
@@ -24,15 +23,14 @@ struct SearchLimits final
   u16 search_moves_count;
 };
 
-inline void ClearSearchLimits(SearchLimits* limits)
-{
-    std::memset(limits, 0, sizeof(SearchLimits) + sizeof(Move) * MAX_MOVES);
+inline void ClearSearchLimits(SearchLimits* limits) {
+  std::memset(limits, 0, sizeof(SearchLimits) + sizeof(Move) * MAX_MOVES);
 }
 
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

@@ -8,14 +8,9 @@
 #include <memory>
 #include <string>
 
-enum ParserType
-{
-  Tuner,
-  Engine
-};
+enum ParserType { Tuner, Engine };
 
-struct ParserSettings
-{
+struct ParserSettings {
   std::string file_name{};
   std::string log_file_prefix{};
   bool pawn{};
@@ -34,17 +29,16 @@ struct ParserSettings
   bool passed_pawn{};
 };
 
-namespace cli
-{
+namespace cli {
 
-std::unique_ptr<ParserSettings> makeParser(int argc, char **argv, const std::string &title, ParserType type);
+std::unique_ptr<ParserSettings> makeParser(int argc, char** argv, const std::string& title, ParserType type);
 
 }
 
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

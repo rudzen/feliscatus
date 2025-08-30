@@ -6,38 +6,31 @@
 #include <felis/moves.hpp>
 #include <felis/board.hpp>
 
-namespace
-{
+namespace {
 
 constexpr std::array<PieceType, 5> MoveGenPieceTypes{QUEEN, ROOK, BISHOP, KNIGHT, KING};
 
 template<Color Us>
 [[nodiscard]]
-bool can_castle_short(Board *b)
-{
+bool can_castle_short(Board* b) {
   constexpr auto cr = make_castling<Us, KING_SIDE>();
   return b->can_castle(cr) && !b->is_castleling_impeeded(cr);
 }
 
 template<Color Us>
 [[nodiscard]]
-bool can_castle_long(Board *b)
-{
+bool can_castle_long(Board* b) {
   constexpr auto cr = make_castling<Us, QUEEN_SIDE>();
   return b->can_castle(cr) && !b->is_castleling_impeeded(cr);
 }
 
 }   // namespace
 
-namespace MoveGen
-{
+namespace MoveGen {
 
 template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]
-MoveData *add_move(
-  Board *b, const Piece pc, const Square from, const Square to, const MoveType mt, MoveData *md,
-  const PieceType promo_pt = NO_PT)
-{
+MoveData* add_move(Board* b, const Piece pc, const Square from, const Square to, const MoveType mt, MoveData* md, const PieceType promo_pt = NO_PT) {
   const auto captured = [&mt, &b, &to]() {
     if (mt & CAPTURE)
       return b->piece(to);
@@ -60,12 +53,10 @@ MoveData *add_move(
 
 template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]
-MoveData *add_moves(Board *b, const PieceType pt, const Square from, const Bitboard attacks, MoveData *md)
-{
+MoveData* add_moves(Board* b, const PieceType pt, const Square from, const Bitboard attacks, MoveData* md) {
   const auto pc = make_piece(pt, Us);
 
-  for (auto bb = attacks; bb;)
-  {
+  for (auto bb = attacks; bb;) {
     const auto to = pop_lsb(&bb);
     md            = add_move<Flags, Us>(b, pc, from, to, b->piece(to) == NO_PIECE ? NORMAL : CAPTURE, md);
   }
@@ -75,15 +66,12 @@ MoveData *add_moves(Board *b, const PieceType pt, const Square from, const Bitbo
 
 template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]
-MoveData *add_moves(Board *b, const Bitboard to_squares, MoveData *md)
-{
+MoveData* add_moves(Board* b, const Bitboard to_squares, MoveData* md) {
   const auto pieces = b->pieces();
 
-  for (const auto pt : MoveGenPieceTypes)
-  {
+  for (const auto pt : MoveGenPieceTypes) {
     auto bb = b->pieces(pt, Us);
-    while (bb)
-    {
+    while (bb) {
       const auto from = pop_lsb(&bb);
       md              = add_moves<Flags, Us>(b, pt, from, piece_attacks_bb(pt, from, pieces) & to_squares, md);
     }
@@ -94,27 +82,23 @@ MoveData *add_moves(Board *b, const Bitboard to_squares, MoveData *md)
 
 template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]
-MoveData *add_castle_move(Board *b, const Square from, const Square to, MoveData *md)
-{
+MoveData* add_castle_move(Board* b, const Square from, const Square to, MoveData* md) {
   return add_move<Flags, Us>(b, make_piece(KING, Us), from, to, CASTLE, md);
 }
 
 template<MoveGenFlags Flags, Color Us, MoveType Type, Direction D>
 [[nodiscard]]
-MoveData *add_pawn_moves(Board *b, const Bitboard to_squares, MoveData *md)
-{
+MoveData* add_pawn_moves(Board* b, const Bitboard to_squares, MoveData* md) {
   constexpr auto Rank8 = bit(relative_rank(Us, RANK_8));
   const auto pawn      = make_piece(PAWN, Us);
 
   Bitboard targets;
 
   // promotion moves
-  if constexpr (Type != DOUBLEPUSH || Type != EPCAPTURE)
-  {
+  if constexpr (Type != DOUBLEPUSH || Type != EPCAPTURE) {
     targets = to_squares & Rank8;
 
-    while (targets)
-    {
+    while (targets) {
       const auto to             = pop_lsb(&targets);
       const auto from           = to - D;
       constexpr auto promo_type = Type | PROMOTION;
@@ -127,8 +111,7 @@ MoveData *add_pawn_moves(Board *b, const Bitboard to_squares, MoveData *md)
 
   targets = to_squares & ~Rank8;
 
-  while (targets)
-  {
+  while (targets) {
     const auto to = pop_lsb(&targets);
     md            = add_move<Flags, Us>(b, pawn, to - D, to, Type, md);
   }
@@ -138,8 +121,7 @@ MoveData *add_pawn_moves(Board *b, const Bitboard to_squares, MoveData *md)
 
 template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]
-MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets)
-{
+MoveData* generate_pawn_moves(Board* b, MoveData* md, const Bitboard targets) {
   constexpr auto pc   = make_piece(PAWN, Us);
   constexpr auto Them = ~Us;
   constexpr auto Up   = pawn_push(Us);
@@ -159,40 +141,34 @@ MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets)
   else
     opponents = b->pieces(Them);
 
-  if constexpr (Flags == QUIET)
-  {
+  if constexpr (Flags == QUIET) {
     constexpr auto Rank3 = rank_3[Us];
     not_occupied         = targets;
 
     auto pawn_single_push = shift_bb<Up>(non_promotion_pawns) & not_occupied;
     auto pawn_double_push = shift_bb<Up>(pawn_single_push & Rank3) & not_occupied;
 
-    while (pawn_single_push)
-    {
+    while (pawn_single_push) {
       const auto to = pop_lsb(&pawn_single_push);
       *md++         = init_move<NORMAL>(pc, NO_PIECE, to - Up, to, NO_PIECE);
     }
 
-    while (pawn_double_push)
-    {
+    while (pawn_double_push) {
       const auto to = pop_lsb(&pawn_double_push);
       *md++         = init_move<DOUBLEPUSH>(pc, NO_PIECE, to - (Up * 2), to, NO_PIECE);
     }
   }
 
-  if (promotion_pawns)
-  {
+  if (promotion_pawns) {
     // handle captures
-    if constexpr (Flags == CAPTURES)
-    {
+    if constexpr (Flags == CAPTURES) {
       constexpr Direction NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
       constexpr Direction NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
 
       Bitboard pawns_up_east = shift_bb<NorthEast>(promotion_pawns) & opponents;
       Bitboard pawns_up_west = shift_bb<NorthWest>(promotion_pawns) & opponents;
 
-      while (pawns_up_east)
-      {
+      while (pawns_up_east) {
         const Square to = pop_lsb(&pawns_up_east);
         md              = add_move<Flags, Us>(b, pc, to - NorthEast, to, PROMOTION | CAPTURE, md, QUEEN);
         md              = add_move<Flags, Us>(b, pc, to - NorthEast, to, PROMOTION | CAPTURE, md, ROOK);
@@ -200,20 +176,17 @@ MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets)
         md              = add_move<Flags, Us>(b, pc, to - NorthEast, to, PROMOTION | CAPTURE, md, KNIGHT);
       }
 
-      while (pawns_up_west)
-      {
+      while (pawns_up_west) {
         const Square to = pop_lsb(&pawns_up_west);
         md              = add_move<Flags, Us>(b, pc, to - NorthWest, to, PROMOTION | CAPTURE, md, QUEEN);
         md              = add_move<Flags, Us>(b, pc, to - NorthWest, to, PROMOTION | CAPTURE, md, ROOK);
         md              = add_move<Flags, Us>(b, pc, to - NorthWest, to, PROMOTION | CAPTURE, md, ROOK);
         md              = add_move<Flags, Us>(b, pc, to - NorthWest, to, PROMOTION | CAPTURE, md, KNIGHT);
       }
-    } else if constexpr (Flags == QUIET)
-    {
+    } else if constexpr (Flags == QUIET) {
       not_occupied      = ~b->pieces();
       Bitboard pawns_up = shift_bb<Up>(promotion_pawns) & not_occupied;
-      while (pawns_up)
-      {
+      while (pawns_up) {
         const Square to = pop_lsb(&pawns_up);
         md              = add_move<Flags, Us>(b, pc, to - Up, to, PROMOTION, md, QUEEN);
         md              = add_move<Flags, Us>(b, pc, to - Up, to, PROMOTION, md, ROOK);
@@ -228,8 +201,7 @@ MoveData *generate_pawn_moves(Board *b, MoveData *md, const Bitboard targets)
 
 template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]
-MoveData *generate_quiet_moves(Board *b, MoveData *md)
-{
+MoveData* generate_quiet_moves(Board* b, MoveData* md) {
   constexpr Bitboard NotRank7  = ~rank_7[Us];
   constexpr Bitboard Rank3     = rank_3[Us];
   constexpr Direction Up       = pawn_push(Us);
@@ -255,8 +227,7 @@ MoveData *generate_quiet_moves(Board *b, MoveData *md)
 
 template<MoveGenFlags Flags, Color Us>
 [[nodiscard]]
-MoveData *generate_captures_and_promotions(Board *b, MoveData *md)
-{
+MoveData* generate_captures_and_promotions(Board* b, MoveData* md) {
   constexpr Color Them           = ~Us;
   constexpr Direction NorthWest  = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
   constexpr Direction NorthEast  = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
@@ -270,8 +241,7 @@ MoveData *generate_captures_and_promotions(Board *b, MoveData *md)
   md = add_pawn_moves<Flags, Us, CAPTURE, NorthEast>(b, shift_bb<NorthEast>(pawns) & opponent_pieces, md);
 
   [[unlikely]]
-  if (b->en_passant_square() != NO_SQ)
-  {
+  if (b->en_passant_square() != NO_SQ) {
     md = add_pawn_moves<Flags, Us, EPCAPTURE, NorthWest>(b, shift_bb<NorthWest>(pawns) & b->en_passant_square(), md);
     md = add_pawn_moves<Flags, Us, EPCAPTURE, NorthEast>(b, shift_bb<NorthEast>(pawns) & b->en_passant_square(), md);
   }
@@ -281,8 +251,7 @@ MoveData *generate_captures_and_promotions(Board *b, MoveData *md)
 
 template<Color Us, MoveGenFlags Flags>
 [[nodiscard]]
-MoveData *generate_all_moves(Board *b, MoveData *md)
-{
+MoveData* generate_all_moves(Board* b, MoveData* md) {
   constexpr auto Them = ~Us;
 
   Bitboard targets;
@@ -299,25 +268,21 @@ MoveData *generate_all_moves(Board *b, MoveData *md)
 
 template<>
 [[nodiscard]]
-MoveData *generate<CAPTURES>(Board *b, MoveData *md)
-{
+MoveData* generate<CAPTURES>(Board* b, MoveData* md) {
   const auto c = b->side_to_move();
-  return c == WHITE ? generate_captures_and_promotions<LEGALMOVES, WHITE>(b, md)
-                    : generate_captures_and_promotions<LEGALMOVES, BLACK>(b, md);
+  return c == WHITE ? generate_captures_and_promotions<LEGALMOVES, WHITE>(b, md) : generate_captures_and_promotions<LEGALMOVES, BLACK>(b, md);
 }
 
 template<>
 [[nodiscard]]
-MoveData *generate<QUIET>(Board *b, MoveData *md)
-{
+MoveData* generate<QUIET>(Board* b, MoveData* md) {
   const auto c = b->side_to_move();
   return c == WHITE ? generate_quiet_moves<QUIET, WHITE>(b, md) : generate_quiet_moves<QUIET, BLACK>(b, md);
 }
 
 template<MoveGenFlags Flags>
 [[nodiscard]]
-MoveData *generate(Board *b, MoveData *md)
-{
+MoveData* generate(Board* b, MoveData* md) {
   static_assert(Flags == LEGALMOVES);
 
   md = generate<CAPTURES>(b, md);
@@ -325,14 +290,14 @@ MoveData *generate(Board *b, MoveData *md)
   return md;
 }
 
-template MoveData *generate<LEGALMOVES>(Board *, MoveData *);
+template MoveData* generate<LEGALMOVES>(Board*, MoveData*);
 
 }   // namespace MoveGen
 
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

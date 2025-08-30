@@ -11,35 +11,30 @@
 #include <felis/board.hpp>
 #include <felis/parameters.hpp>
 
-namespace
-{
+namespace {
 
 constexpr auto max_log_file_size = 1048576 * 5;
 constexpr auto max_log_files     = 3;
 
 const std::shared_ptr<spdlog::logger> eval_logger = spdlog::rotating_logger_mt("eval_logger", "logs/eval.txt", max_log_file_size, max_log_files);
 
-struct Stages
-{
+struct Stages {
   r64 mg;
   r64 eg;
 };
 
 [[nodiscard]]
-Stages stages(Material *mat)
-{
+Stages stages(Material* mat) {
   const r64 stage = (material::value(mat) - material::pawn_value(mat)) / static_cast<double>(material::max_value_without_pawns);
   return {.mg = stage, .eg = 1 - stage};
 }
 
-constexpr bool is_bishop_squares_colors_disparate(Bitboard bishops)
-{
+constexpr bool is_bishop_squares_colors_disparate(Bitboard bishops) {
   if (!bishops)
     return false;
 
   bool cols[COL_NB] = {false, false};
-  while (bishops)
-  {
+  while (bishops) {
     const auto sq      = pop_lsb(&bishops);
     cols[color_of(sq)] = true;
   }
@@ -49,11 +44,10 @@ constexpr bool is_bishop_squares_colors_disparate(Bitboard bishops)
 
 }   // namespace
 
-struct EvalD
-{
-  const Board *b{};
+struct EvalD {
+  const Board* b{};
   std::size_t pool_index_;
-  PawnHashEntry *phe;
+  PawnHashEntry* phe;
   std::array<Score, COL_NB> poseval;
 
   i32 posistion_value[COL_NB];
@@ -64,8 +58,7 @@ struct EvalD
 };
 
 template<bool Tuning>
-void InitEvalD(EvalD *eval, const Board *board, const std::size_t pool_index)
-{
+void InitEvalD(EvalD* eval, const Board* board, const std::size_t pool_index) {
   eval->b           = board;
   eval->pool_index_ = pool_index;
   eval->phe         = Pawn::at<Tuning>(board);
@@ -74,15 +67,12 @@ void InitEvalD(EvalD *eval, const Board *board, const std::size_t pool_index)
 }
 
 template<PieceType Pt, Color Us>
-void set_attacks(EvalD *eval, const Bitboard attacks)
-{
+void set_attacks(EvalD* eval, const Bitboard attacks) {
   constexpr auto Them = ~Us;
   eval->piece_attacks[Us][ALL_PIECE_TYPES] |= attacks;
   eval->piece_attacks[Us][Pt] |= attacks;
-  if constexpr (Pt != KING)
-  {
-    if (const auto attacks_king = attacks & eval->king_area[Them]; attacks_king)
-    {
+  if constexpr (Pt != KING) {
+    if (const auto attacks_king = attacks & eval->king_area[Them]; attacks_king) {
       eval->attack_counter[Us] += popcount(attacks_king) * params::attacks_on_king[Pt];
       ++eval->attack_count[Us];
     }
@@ -90,15 +80,13 @@ void set_attacks(EvalD *eval, const Bitboard attacks)
 }
 
 template<Color Us>
-void eval_material(EvalD *eval)
-{
+void eval_material(EvalD* eval) {
   eval->posistion_value[Us] = eval->b->material()->material_value[Us];
   bool add                  = false;
 
   const i32 bishop_count = eval->b->piece_count(Us, BISHOP);
 
-  if (bishop_count == 2)
-  {
+  if (bishop_count == 2) {
     Bitboard bishops = eval->b->pieces(BISHOP, Us);
     add              = is_opposite_colors(lsb(bishops), msb(bishops));
   } else if (bishop_count > 2)   // edge case with more than two bishops
@@ -112,8 +100,7 @@ void eval_material(EvalD *eval)
 }
 
 template<Color Us>
-void init_evaluate(EvalD *eval)
-{
+void init_evaluate(EvalD* eval) {
   const auto ksq     = eval->b->square<KING>(Us);
   const auto attacks = all_attacks<KING>(ksq);
 
@@ -128,27 +115,24 @@ void init_evaluate(EvalD *eval)
 }
 
 template<Color C, typename... PieceTypes>
-Bitboard attacked_by(EvalD *eval, PieceTypes... piece_types)
-{
+Bitboard attacked_by(EvalD* eval, PieceTypes... piece_types) {
   return (... | eval->piece_attacks[C][piece_types]);
 }
 
 template<PieceType Pt, Color Us>
-Score eval_pieces(EvalD *eval)
-{
+Score eval_pieces(EvalD* eval) {
   static_assert(Pt != PAWN && Pt != KING && Pt != NO_PT);
 
   constexpr Color Them = ~Us;
 
-  const Board *b            = eval->b;
+  const Board* b            = eval->b;
   const Bitboard all_pieces = b->pieces();
   Bitboard pieces           = b->pieces(Pt, Us);
   Bitboard attacks          = ZeroBB;
   i32 score_pos             = 0;
   Score result              = ZeroScore;
 
-  while (pieces)
-  {
+  while (pieces) {
     const Square s      = pop_lsb(&pieces);
     const Square flip_s = relative_square(Them, s);
 
@@ -169,16 +153,14 @@ Score eval_pieces(EvalD *eval)
 
     result += params::pst<Pt>(flip_s);
 
-    if constexpr (Pt == KNIGHT)
-    {
+    if constexpr (Pt == KNIGHT) {
       result += params::knight_mob[mob];
       result += params::knight_mob2[not_defended_by_pawns];
 
       if (attacked_by<Them>(eval, PAWN) & s)
         score_pos -= params::piece_in_danger[Pt];
 
-    } else if constexpr (Pt == BISHOP)
-    {
+    } else if constexpr (Pt == BISHOP) {
       result += params::bishop_mob[mob];
       result += params::bishop_mob2[not_defended_by_pawns];
 
@@ -188,8 +170,7 @@ Score eval_pieces(EvalD *eval)
       if (attacked_by<Them>(eval, PAWN) & s)
         score_pos -= params::piece_in_danger[Pt];
 
-    } else if constexpr (Pt == ROOK)
-    {
+    } else if constexpr (Pt == ROOK) {
       result += params::rook_mob[mob];
 
       if (eval->phe->open_files[Us] & s)
@@ -198,19 +179,16 @@ Score eval_pieces(EvalD *eval)
       if (attacked_by<Them>(eval, PAWN, KNIGHT, BISHOP) & s)
         score_pos -= params::piece_in_danger[Pt];
 
-      if (mob <= 3)
-      {
+      if (mob <= 3) {
         const File king_file              = file_of(b->square<KING>(Us));
         const bool kingFileLessThanFileE  = king_file < FILE_E;
         const bool squareLessThanKingFile = file_of(s) < king_file;
-        if (kingFileLessThanFileE == squareLessThanKingFile)
-        {
+        if (kingFileLessThanFileE == squareLessThanKingFile) {
           const i32 modifier = 1 + (Us & !b->can_castle());
           result -= params::king_obstructs_rook * modifier;
         }
       }
-    } else if constexpr (Pt == QUEEN)
-    {
+    } else if constexpr (Pt == QUEEN) {
       result += params::queen_mob[mob];
 
       if (attacked_by<Them>(eval, PAWN, KNIGHT, BISHOP, ROOK) & s)
@@ -224,14 +202,13 @@ Score eval_pieces(EvalD *eval)
 }
 
 template<Color Us>
-Score eval_king(EvalD *eval)
-{
+Score eval_king(EvalD* eval) {
   constexpr auto Up        = Us == WHITE ? NORTH : SOUTH;
   constexpr auto NorthEast = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
   constexpr auto NorthWest = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
 
-  const Board *b           = eval->b;
-  const PawnHashEntry *phe = eval->phe;
+  const Board* b           = eval->b;
+  const PawnHashEntry* phe = eval->phe;
   const Square ksq         = b->square<KING>(Us);
   const Bitboard bb        = bit(ksq);
   const Square flip_ksq    = relative_square(~Us, ksq);
@@ -253,12 +230,11 @@ Score eval_king(EvalD *eval)
 }
 
 template<Color Us>
-Score eval_passed_pawns(EvalD *eval)
-{
+Score eval_passed_pawns(EvalD* eval) {
   constexpr Color Them = ~Us;
 
-  const Board *b           = eval->b;
-  const PawnHashEntry *phe = eval->phe;
+  const Board* b           = eval->b;
+  const PawnHashEntry* phe = eval->phe;
 
   Bitboard pp                  = phe->passed_pawns[Us];
   const Bitboard enemy_attacks = attacked_by<Them>(eval, ALL_PIECE_TYPES);
@@ -269,8 +245,7 @@ Score eval_passed_pawns(EvalD *eval)
 
   Score result = ZeroScore;
 
-  while (pp)
-  {
+  while (pp) {
     const Square s            = pop_lsb(&pp);
     const Bitboard front_span = pawn_front_spanBB(Us, s);
     const Rank r              = relative_rank(Us, s);
@@ -287,23 +262,21 @@ Score eval_passed_pawns(EvalD *eval)
 }
 
 template<Color Us>
-void eval_king_attack(EvalD *eval)
-{
+void eval_king_attack(EvalD* eval) {
   if (eval->attack_count[Us] > 1)
     eval->poseval[Us] += eval->attack_counter[Us] * (eval->attack_count[Us] - 1);
 }
 
 template<Color Us>
-i32 evaluate(EvalD *eval, const int alpha, const int beta)
-{
+i32 evaluate(EvalD* eval, const int alpha, const int beta) {
   init_evaluate<WHITE>(eval);
   init_evaluate<BLACK>(eval);
 
   eval_material<WHITE>(eval);
   eval_material<BLACK>(eval);
 
-  const Board *b           = eval->b;
-  const PawnHashEntry *phe = eval->phe;
+  const Board* b           = eval->b;
+  const PawnHashEntry* phe = eval->phe;
 
 #if !defined(NO_EVAL_LAZY_THRESHOLD)
 
@@ -345,11 +318,9 @@ i32 evaluate(EvalD *eval, const int alpha, const int beta)
   return score;
 }
 
-namespace Eval
-{
+namespace Eval {
 
-i32 evaluate(const Board *b, const std::size_t pool_index, const int alpha, const int beta)
-{
+i32 evaluate(const Board* b, const std::size_t pool_index, const int alpha, const int beta) {
   EvalD e;
 
   InitEvalD<false>(&e, b, pool_index);
@@ -360,8 +331,7 @@ i32 evaluate(const Board *b, const std::size_t pool_index, const int alpha, cons
   return evaluate<BLACK>(&e, alpha, beta);
 }
 
-i32 tune(const Board *b, const std::size_t pool_index, const int alpha, const int beta)
-{
+i32 tune(const Board* b, const std::size_t pool_index, const int alpha, const int beta) {
   EvalD e;
 
   InitEvalD<true>(&e, b, pool_index);
@@ -377,7 +347,7 @@ i32 tune(const Board *b, const std::size_t pool_index, const int alpha, const in
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

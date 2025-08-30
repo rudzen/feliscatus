@@ -16,15 +16,13 @@
 struct Board;
 struct FileResolver;
 
-namespace eval
-{
+namespace eval {
 
 struct Node;
 struct Param;
 struct ParamIndexRecord;
 
-class PGNPlayer : public pgn::PGNPlayer
-{
+class PGNPlayer : public pgn::PGNPlayer {
 public:
   PGNPlayer();
 
@@ -49,13 +47,11 @@ private:
 
 class Tune final {
 public:
-  explicit Tune(std::unique_ptr<Board> board, const ParserSettings *settings);
+  explicit Tune(std::unique_ptr<Board> board, const ParserSettings* settings);
 
-  double
-    e(const std::vector<Node> &nodes, const std::vector<Param> &params,
-      const std::vector<ParamIndexRecord> &paramsIndex, double k);
+  double e(const std::vector<Node>& nodes, const std::vector<Param>& params, const std::vector<ParamIndexRecord>& paramsIndex, double k);
 
-  void makeQuiet(std::vector<Node> &nodes);
+  void makeQuiet(std::vector<Node>& nodes);
 
   [[nodiscard]] int score(Color c) const;
 
@@ -79,7 +75,7 @@ private:
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

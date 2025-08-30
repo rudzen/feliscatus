@@ -46,12 +46,7 @@
 class Arena final {
 public:
   /// Constructor with initial capacity
-  explicit Arena(const size_t capacity = 4096)
-    : m_buffer(std::make_unique<std::byte[]>(capacity))
-      , m_capacity(capacity)
-      , m_offset(0)
-  {
-  }
+  explicit Arena(const size_t capacity = 4096) : m_buffer(std::make_unique<std::byte[]>(capacity)), m_capacity(capacity), m_offset(0) {}
 
   /// Non-copyable but movable
   Arena(const Arena&)            = delete;
@@ -61,13 +56,12 @@ public:
 
   /// Allocate memory for count objects of type T
   template<typename T>
-  T* allocate(const size_t count = 1)
-  {
+  T* allocate(const size_t count = 1) {
     const size_t size           = sizeof(T) * count;
     const size_t aligned_offset = align_offset(m_offset, alignof(T));
 
     if (aligned_offset + size > m_capacity)
-      return nullptr; // Out of memory
+      return nullptr;   // Out of memory
 
     m_offset = aligned_offset + size;
     return reinterpret_cast<T*>(m_buffer.get() + aligned_offset);
@@ -75,8 +69,7 @@ public:
 
   /// Allocate and zero-initialize memory
   template<typename T>
-  T* allocate_zero(const size_t count = 1)
-  {
+  T* allocate_zero(const size_t count = 1) {
     T* result = allocate<T>(count);
     if (result)
       std::memset(result, 0, sizeof(T) * count);
@@ -85,13 +78,12 @@ public:
 
   /// Allocate memory with custom alignment
   template<typename T>
-  T* allocate_aligned(const size_t count = 1, const size_t alignment = alignof(T))
-  {
+  T* allocate_aligned(const size_t count = 1, const size_t alignment = alignof(T)) {
     const size_t size           = sizeof(T) * count;
     const size_t aligned_offset = align_offset(m_offset, alignment);
 
     if (aligned_offset + size > m_capacity)
-      return nullptr; // Out of memory
+      return nullptr;   // Out of memory
 
     T* result = reinterpret_cast<T*>(m_buffer.get() + aligned_offset);
     m_offset  = aligned_offset + size;
@@ -99,43 +91,37 @@ public:
   }
 
   /// Reset the arena, making all memory available again
-  void reset()
-  {
+  void reset() {
     m_offset = 0;
   }
 
   /// Resize the arena to a new capacity, preserving existing data if possible
-  bool resize(const size_t new_capacity)
-  {
+  bool resize(const size_t new_capacity) {
     // If new capacity is smaller or equal, no need to resize
     if (new_capacity <= m_capacity)
       return true;
 
     // Create new buffer with increased capacity
     auto new_buffer = std::make_unique<std::byte[]>(new_capacity);
-    if (!new_buffer)
-    {
-      return false; // Failed to allocate new buffer
+    if (!new_buffer) {
+      return false;   // Failed to allocate new buffer
     }
 
     // Copy existing data to new buffer if there's any
-    if (m_offset > 0 && m_buffer)
-    {
+    if (m_offset > 0 && m_buffer) {
       std::memcpy(new_buffer.get(), m_buffer.get(), m_offset);
     }
 
     // Replace old buffer with new one
-    m_buffer = std::move(new_buffer);
+    m_buffer   = std::move(new_buffer);
     m_capacity = new_capacity;
 
     return true;
   }
 
   // Resize and reset the arena to a new capacity
-  bool resize_and_reset(const size_t new_capacity)
-  {
-    if (new_capacity <= m_capacity)
-    {
+  bool resize_and_reset(const size_t new_capacity) {
+    if (new_capacity <= m_capacity) {
       // If new capacity is smaller or equal, just reset
       reset();
       return true;
@@ -143,50 +129,56 @@ public:
 
     // Create new buffer with increased capacity
     auto new_buffer = std::make_unique<std::byte[]>(new_capacity);
-    if (!new_buffer)
-    {
-      return false; // Failed to allocate new buffer
+    if (!new_buffer) {
+      return false;   // Failed to allocate new buffer
     }
 
     // Replace old buffer and reset offset
-    m_buffer = std::move(new_buffer);
+    m_buffer   = std::move(new_buffer);
     m_capacity = new_capacity;
-    m_offset = 0;
+    m_offset   = 0;
 
     return true;
   }
 
   // Get current memory usage
-  size_t used() const { return m_offset; }
+  size_t used() const {
+    return m_offset;
+  }
 
   // Get total capacity
-  size_t capacity() const { return m_capacity; }
+  size_t capacity() const {
+    return m_capacity;
+  }
 
   // Get remaining free space
-  size_t remaining() const { return m_capacity - m_offset; }
+  size_t remaining() const {
+    return m_capacity - m_offset;
+  }
 
   // Check if arena is empty
-  bool empty() const { return m_offset == 0; }
+  bool empty() const {
+    return m_offset == 0;
+  }
 
   // Get current position (for saving/restoring state)
-  size_t position() const { return m_offset; }
+  size_t position() const {
+    return m_offset;
+  }
 
   // Restore to a previous position
-  void restore(const size_t pos)
-  {
+  void restore(const size_t pos) {
     if (pos <= m_capacity)
       m_offset = pos;
   }
 
   // Align offset to the specified alignment
-  static size_t align_offset(const size_t offset, const size_t alignment)
-  {
+  static size_t align_offset(const size_t offset, const size_t alignment) {
     return (offset + alignment - 1) & ~(alignment - 1);
   }
 
   template<typename T>
-  static constexpr size_t aligned_sizeof(const size_t count = 1)
-  {
+  static constexpr size_t aligned_sizeof(const size_t count = 1) {
     constexpr size_t alignment = alignof(T);
     constexpr size_t size      = sizeof(T);
     const size_t total         = size * count;
@@ -206,14 +198,9 @@ private:
  */
 class ScopedArena final {
 public:
-  explicit ScopedArena(Arena& arena)
-    : m_arena(arena)
-      , m_saved_position(arena.position())
-  {
-  }
+  explicit ScopedArena(Arena& arena) : m_arena(arena), m_saved_position(arena.position()) {}
 
-  ~ScopedArena()
-  {
+  ~ScopedArena() {
     m_arena.restore(m_saved_position);
   }
 
@@ -225,25 +212,24 @@ public:
 
   // Forward allocation methods to the underlying arena
   template<typename T>
-  T* allocate(const size_t count = 1)
-  {
+  T* allocate(const size_t count = 1) {
     return m_arena.allocate<T>(count);
   }
 
   template<typename T>
-  T* allocate_zero(const size_t count = 1)
-  {
+  T* allocate_zero(const size_t count = 1) {
     return m_arena.allocate_zero<T>(count);
   }
 
   template<typename T>
-  T* allocate_aligned(const size_t count = 1, const size_t alignment = alignof(T))
-  {
+  T* allocate_aligned(const size_t count = 1, const size_t alignment = alignof(T)) {
     return m_arena.allocate_aligned<T>(count, alignment);
   }
 
   // Get the underlying arena
-  Arena& arena() { return m_arena; }
+  Arena& arena() {
+    return m_arena;
+  }
 
 private:
   Arena& m_arena;
@@ -253,7 +239,7 @@ private:
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

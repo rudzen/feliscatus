@@ -8,8 +8,7 @@
 #include <felis/cpu.hpp>
 #include <felis/util.hpp>
 
-namespace
-{
+namespace {
 
 constexpr double DEFAULT_OVERFLOW_VALUE = std::numeric_limits<double>::min();
 
@@ -17,8 +16,7 @@ constexpr double DEFAULT_OVERFLOW_VALUE = std::numeric_limits<double>::min();
 
 #if defined(WIN32)
 
-CpuLoad::CpuLoad() : self(GetCurrentProcess())
-{
+CpuLoad::CpuLoad() : self(GetCurrentProcess()) {
   SYSTEM_INFO sys_info{};
   FILETIME ftime{};
   FILETIME fsys{};
@@ -37,20 +35,16 @@ CpuLoad::CpuLoad() : self(GetCurrentProcess())
 }
 #else
 
-CpuLoad::CpuLoad()
-{
-  struct tms time_sample
-  {
-  };
+CpuLoad::CpuLoad() {
+  struct tms time_sample{};
   std::array<char, 128> line{};
 
   last_cpu      = times(&time_sample);
   last_sys_cpu  = time_sample.tms_stime;
   last_user_cpu = time_sample.tms_utime;
 
-  FILE *file = fopen("/proc/cpuinfo", "r");
-  while (fgets(line.data(), 128, file) != nullptr)
-  {
+  FILE* file = fopen("/proc/cpuinfo", "r");
+  while (fgets(line.data(), 128, file) != nullptr) {
     if (std::strncmp(line.data(), "processor", 9) == 0)
       num_processors++;
   }
@@ -59,8 +53,7 @@ CpuLoad::CpuLoad()
 
 #endif
 
-int CpuLoad::usage()
-{
+int CpuLoad::usage() {
   double percent;
 
 #if defined(WIN32)
@@ -86,17 +79,13 @@ int CpuLoad::usage()
   last_sys_cpu  = sys;
 
 #else
-  struct tms time_sample
-  {
-  };
+  struct tms time_sample{};
   const clock_t now = times(&time_sample);
 
-  if (now <= last_cpu || time_sample.tms_stime < last_sys_cpu || time_sample.tms_utime < last_user_cpu)
-  {
+  if (now <= last_cpu || time_sample.tms_stime < last_sys_cpu || time_sample.tms_utime < last_user_cpu) {
     // Overflow detection. Just skip this value.
     percent = DEFAULT_OVERFLOW_VALUE;
-  } else
-  {
+  } else {
     percent = (time_sample.tms_stime - last_sys_cpu) + (time_sample.tms_utime - last_user_cpu);
     percent /= (now - last_cpu);
     percent /= num_processors;
@@ -113,7 +102,7 @@ int CpuLoad::usage()
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

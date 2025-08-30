@@ -8,12 +8,10 @@
 #include <felis/board.hpp>
 #include <felis/moves.hpp>
 
-namespace
-{
+namespace {
 
 template<MoveGenFlags Flags>
-u64 p(Board *b, const i32 depth)
-{
+u64 p(Board* b, const i32 depth) {
   if (depth == 0)
     return 1;
 
@@ -25,8 +23,7 @@ u64 p(Board *b, const i32 depth)
 
   u64 nodes = 0;
 
-  for (const auto m : ml)
-  {
+  for (const auto m : ml) {
     [[unlikely]]
     if (!b->make_move(m, true, true))
       continue;
@@ -41,32 +38,28 @@ u64 p(Board *b, const i32 depth)
 }   // namespace
 
 template<MoveGenFlags Flags = LEGALMOVES>
-struct Perft final
-{
+struct Perft final {
   Perft() = delete;
-  Perft(Board *board) : b(board)
-  { }
-  explicit Perft(Board *board, int flags);
+  Perft(Board* board) : b(board) {}
+  explicit Perft(Board* board, int flags);
 
   u64 perft(int depth) const;
 
   u64 perft_divide(int depth) const;
 
 private:
-  Board *b{};
+  Board* b{};
 };
 
 template<MoveGenFlags Flags>
-u64 Perft<Flags>::perft(const i32 depth) const
-{
+u64 Perft<Flags>::perft(const i32 depth) const {
   std::size_t nps = 0;
   u64 total_nodes = 0;
 
   Stopwatch sw;
   start(&sw);
 
-  for (i32 i = 1; i <= depth; i++)
-  {
+  for (i32 i = 1; i <= depth; i++) {
     start(&sw);
     const u64 nodes     = p<Flags>(b, i);
     const TimeUnit time = elapsed_milliseconds(&sw) + 1;
@@ -79,8 +72,7 @@ u64 Perft<Flags>::perft(const i32 depth) const
 }
 
 template<MoveGenFlags Flags>
-u64 Perft<Flags>::perft_divide(const i32 depth) const
-{
+u64 Perft<Flags>::perft_divide(const i32 depth) const {
   fmt::print("depth: {}\n", depth);
 
   u64 nodes = 0;
@@ -90,8 +82,7 @@ u64 Perft<Flags>::perft_divide(const i32 depth) const
 
   auto ml = MoveList<Flags>(b);
 
-  for (const auto m : ml)
-  {
+  for (const auto m : ml) {
     [[unlikely]]
     if (!b->make_move(m, true, true))
       continue;
@@ -111,20 +102,18 @@ u64 Perft<Flags>::perft_divide(const i32 depth) const
   return nodes;
 }
 
-u64 perft::perft(Board *b, const int depth)
-{
+u64 perft::perft(Board* b, const int depth) {
   return Perft(b).perft(depth);
 }
 
-u64 perft::divide(Board *b, const int depth)
-{
+u64 perft::divide(Board* b, const int depth) {
   return Perft(b).perft_divide(depth);
 }
 
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

@@ -10,20 +10,16 @@
 #include <functional>
 #include <felis/types.hpp>
 
-struct MoveData final
-{
+struct MoveData final {
   Move move{};
   int score{};
-  constexpr operator Move() const
-  {
+  constexpr operator Move() const {
     return move;
   }
-  void operator=(const Move m)
-  {
+  void operator=(const Move m) {
     move = m;
   }
-  constexpr auto operator<=>(const MoveData &rhs)
-  {
+  constexpr auto operator<=>(const MoveData& rhs) {
     return score <=> rhs.score;
   }
 };
@@ -31,10 +27,8 @@ struct MoveData final
 struct Board;
 
 template<bool Tuning = false>
-struct Moves final
-{
-  explicit Moves(Board *board) : b(board)
-  { }
+struct Moves final {
+  explicit Moves(Board* board) : b(board) {}
 
   void generate_moves(Move tt_move = MOVE_NONE, int flags = 0);
 
@@ -46,7 +40,7 @@ struct Moves final
   void generate_pawn_moves(bool capture, Bitboard to_squares, Color c);
 
   [[nodiscard]]
-  const MoveData *next_move();
+  const MoveData* next_move();
 
   [[nodiscard]]
   int move_count() const;
@@ -87,7 +81,7 @@ private:
   void add_castle_move(Square from, Square to);
 
   template<Color Us>
-  [[nodiscard]] const MoveData *next_move();
+  [[nodiscard]] const MoveData* next_move();
 
   template<Color Us>
   [[nodiscard]]
@@ -98,7 +92,7 @@ private:
   bool can_castle_long() const;
 
   std::array<MoveData, MAX_MOVES> move_list{};
-  Board *b{};
+  Board* b{};
   int iteration_{};
   int number_moves_{};
   int move_flags_{};
@@ -108,49 +102,42 @@ private:
 };
 
 template<bool Tuning>
-int Moves<Tuning>::move_count() const
-{
+int Moves<Tuning>::move_count() const {
   return number_moves_;
 }
 
-namespace MoveGen
-{
+namespace MoveGen {
 
 template<MoveGenFlags Flags>
-MoveData *generate(Board *b, MoveData *md);
+MoveData* generate(Board* b, MoveData* md);
 
 }
 
 // A simple array wrapper for storing the generated moves
 
 template<MoveGenFlags Flags>
-struct MoveList final : std::array<MoveData, MAX_MOVES>
-{
+struct MoveList final : std::array<MoveData, MAX_MOVES> {
   [[nodiscard]]
-  explicit MoveList(Board *b)
-    : std::array<MoveData, MAX_MOVES>({}), last_move(MoveGen::generate<Flags>(b, begin())){};
+  explicit MoveList(Board* b)
+    : std::array<MoveData, MAX_MOVES>({}), last_move(MoveGen::generate<Flags>(b, begin())) {};
 
   [[nodiscard]]
-  const_iterator end() const
-  {
+  const_iterator end() const {
     return last_move;
   }
 
   [[nodiscard]]
-  std::size_t size() const
-  {
+  std::size_t size() const {
     return std::distance(begin(), end());
   }
 
   [[nodiscard]]
-  bool empty() const
-  {
+  bool empty() const {
     return size() == 0;
   }
 
   [[nodiscard]]
-  bool contains(const Move move) const
-  {
+  bool contains(const Move move) const {
     return std::find(begin(), end(), move) != end();
   }
 
@@ -161,7 +148,7 @@ private:
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

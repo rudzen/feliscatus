@@ -27,20 +27,15 @@ using CounterMoves  = std::array<std::array<Move, SQ_NB>, 16>;
 
 struct SearchLimits;
 
-enum class Searcher
-{
-  Master,
-  Slave
-};
+enum class Searcher { Master, Slave };
 
-struct thread
-{
+struct thread {
   explicit thread(size_t index);
   virtual ~thread();
-  thread(const thread &other)       = delete;
-  thread(thread &&other)            = delete;
-  thread &operator=(const thread &) = delete;
-  thread &operator=(thread &&other) = delete;
+  thread(const thread& other)       = delete;
+  thread(thread&& other)            = delete;
+  thread& operator=(const thread&)  = delete;
+  thread& operator=(thread&& other) = delete;
 
   virtual void search();
   void clearData();
@@ -49,8 +44,7 @@ struct thread
   void wait_for_search_finished();
 
   [[nodiscard]]
-  size_t index() const
-  {
+  size_t index() const {
     return idx;
   }
 
@@ -61,7 +55,7 @@ struct thread
   std::array<i32, MAXDEPTH> pv_length{};
   std::atomic_uint64_t node_count;
   std::condition_variable waiter;
-  Board *root_board{};
+  Board* root_board{};
   std::array<i32, COL_NB> draw_score{};
 
 private:
@@ -73,8 +67,7 @@ private:
   std::atomic_bool searching{};
 };
 
-struct main_thread final : thread
-{
+struct main_thread final : thread {
   using thread::thread;
 
   void search() override;
@@ -83,14 +76,13 @@ struct main_thread final : thread
   Time time{};
 };
 
-struct thread_pool final : std::vector<thread *>
-{
+struct thread_pool final : std::vector<thread*> {
   thread_pool();
   ~thread_pool()                              = default;
-  thread_pool(const thread_pool &other)       = delete;
-  thread_pool(thread_pool &&other)            = delete;
-  thread_pool &operator=(const thread_pool &) = delete;
-  thread_pool &operator=(thread_pool &&other) = delete;
+  thread_pool(const thread_pool& other)       = delete;
+  thread_pool(thread_pool&& other)            = delete;
+  thread_pool& operator=(const thread_pool&)  = delete;
+  thread_pool& operator=(thread_pool&& other) = delete;
 
   void set(size_t v);
 
@@ -99,9 +91,8 @@ struct thread_pool final : std::vector<thread *>
   void wait_for_search_finished();
 
   [[nodiscard]]
-  main_thread *main() const
-  {
-    return static_cast<main_thread *>(front());
+  main_thread* main() const {
+    return static_cast<main_thread*>(front());
   }
 
   void clear_data() const;
@@ -110,24 +101,21 @@ struct thread_pool final : std::vector<thread *>
   u64 node_count() const;
 
   [[nodiscard]]
-  bool is_analysing() const noexcept
-  {
+  bool is_analysing() const noexcept {
     return limits->infinite | limits->ponder;
   }
 
   [[nodiscard]]
-  bool is_fixed_depth() const noexcept
-  {
+  bool is_fixed_depth() const noexcept {
     return limits->fixed_depth;
   }
 
   [[nodiscard]]
-  i32 depth() const noexcept
-  {
+  i32 depth() const noexcept {
     return limits->depth;
   }
 
-  SearchLimits *limits;
+  SearchLimits* limits;
   std::atomic_bool stop;
 
 #if !defined(linux)
@@ -151,7 +139,7 @@ inline thread_pool pool;
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

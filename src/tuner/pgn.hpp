@@ -11,18 +11,11 @@
 struct PGNFile;
 enum Token : e8;
 
-enum Result : e8
-{
-  WhiteWin,
-  Draw,
-  BlackWin
-};
+enum Result : e8 { WhiteWin, Draw, BlackWin };
 
-namespace pgn
-{
+namespace pgn {
 
-class PGNFileReader
-{
+class PGNFileReader {
 public:
   PGNFileReader();
 
@@ -57,30 +50,29 @@ protected:
 
   virtual void read_san_move();
 
-  virtual bool read_san_move_suffix(char *&p);
+  virtual bool read_san_move_suffix(char*& p);
 
-  virtual void read_pawn_move(char *&p);
+  virtual void read_pawn_move(char*& p);
 
-  virtual void read_pawn_capture_or_quiet_move(char *&p);
+  virtual void read_pawn_capture_or_quiet_move(char*& p);
 
-  virtual void read_pawn_capture(char *&p);
+  virtual void read_pawn_capture(char*& p);
 
-  virtual void read_pawn_quiet_move(char *&p)
-  {
+  virtual void read_pawn_quiet_move(char*& p) {
     p += 2;
   }
 
-  virtual void read_promoted_to(char *&p);
+  virtual void read_promoted_to(char*& p);
 
-  virtual void read_move(char *&p);
+  virtual void read_move(char*& p);
 
-  virtual void read_capture_or_quiet_move(char *&p);
+  virtual void read_capture_or_quiet_move(char*& p);
 
-  virtual void read_capture(char *&p);
+  virtual void read_capture(char*& p);
 
-  virtual void read_castle_move(char *&p);
+  virtual void read_castle_move(char*& p);
 
-  virtual void read_quiet_move(char *&p);
+  virtual void read_quiet_move(char*& p);
 
   virtual void read_numeric_annotation_glyph();
 
@@ -104,41 +96,41 @@ protected:
   bool start_of_san_move();
 
   [[nodiscard]]
-  bool start_of_pawn_move(const char *p);
+  bool start_of_pawn_move(const char* p);
 
   [[nodiscard]]
-  bool is_pawn_piece_letter(const char *p) const;
+  bool is_pawn_piece_letter(const char* p) const;
 
   [[nodiscard]]
-  bool start_of_pawn_capture_or_quiet_move(const char *p);
+  bool start_of_pawn_capture_or_quiet_move(const char* p);
 
   [[nodiscard]]
-  bool start_of_pawn_capture(const char *p);
+  bool start_of_pawn_capture(const char* p);
 
   [[nodiscard]]
-  bool start_of_move(const char *p);
+  bool start_of_move(const char* p);
 
   [[nodiscard]]
-  bool is_non_pawn_piece_letter(const char *p, int &piece_letter) const;
+  bool is_non_pawn_piece_letter(const char* p, int& piece_letter) const;
 
   [[nodiscard]]
-  bool start_of_capture_or_quiet_move(const char *p);
+  bool start_of_capture_or_quiet_move(const char* p);
 
   [[nodiscard]]
-  bool start_of_capture(const char *p);
+  bool start_of_capture(const char* p);
 
   [[nodiscard]]
-  bool start_of_quiet_move(const char *p);
+  bool start_of_quiet_move(const char* p);
 
   [[nodiscard]]
   bool start_of_numeric_annotation_glyph();
 
-  virtual void read_token(Token &token);
+  virtual void read_token(Token& token);
 
-  virtual void read_next_token(Token &token);
+  virtual void read_next_token(Token& token);
 
   [[nodiscard]]
-  i32 get_char(unsigned char &c);
+  i32 get_char(unsigned char& c);
 
   [[nodiscard]]
   bool read_symbol();
@@ -150,14 +142,14 @@ protected:
   bool read_string();
 
   [[nodiscard]]
-  i32 get_char(unsigned char &c, bool get, bool skip_ws, bool skip_comment);
+  i32 get_char(unsigned char& c, bool get, bool skip_ws, bool skip_comment);
 
   virtual void read_comment1();
 
-  virtual void read_comment2(uchar &c);
+  virtual void read_comment2(uchar& c);
 
   std::unique_ptr<PGNFile> file_;
-  uchar *buffer_;
+  uchar* buffer_;
   std::size_t readpos_;
   std::size_t fillpos_;
   std::size_t line_;
@@ -267,7 +259,7 @@ http://www.saremba.de/chessgml/standards/pgn/pgn-complete.htm
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

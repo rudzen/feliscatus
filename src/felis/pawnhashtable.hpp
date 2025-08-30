@@ -13,12 +13,10 @@
 struct Board;
 
 #pragma pack(1)
-struct alignas(CacheLineSize / 2) PawnHashEntry final
-{
+struct alignas(CacheLineSize / 2) PawnHashEntry final {
   // TODO : Move more pawn-related only things here
   [[nodiscard]]
-  Score eval() const noexcept
-  {
+  Score eval() const noexcept {
     return scores[WHITE] - scores[BLACK];
   }
 
@@ -33,18 +31,17 @@ struct alignas(CacheLineSize / 2) PawnHashEntry final
 
 using PawnHashTable = Table<PawnHashEntry, 131072>;
 
-namespace Pawn
-{
+namespace Pawn {
 template<bool Tuning>
 [[nodiscard]]
-PawnHashEntry *at(const Board *b);
+PawnHashEntry* at(const Board* b);
 
 }   // namespace Pawn
 
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

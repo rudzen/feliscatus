@@ -8,14 +8,11 @@
 #include <felis/board.hpp>
 #include <felis/bitboard.hpp>
 
-namespace
-{
+namespace {
 
 template<Direction D>
-struct MakePawnFromTo final
-{
-  constexpr std::pair<Square, Square> operator()(Bitboard *b) const
-  {
+struct MakePawnFromTo final {
+  constexpr std::pair<Square, Square> operator()(Bitboard* b) const {
     const auto to   = pop_lsb(b);
     const auto from = to - D;
     return {to, from};
@@ -23,8 +20,7 @@ struct MakePawnFromTo final
 };
 
 template<bool Tuning>
-void score_move(MoveData &md, Board *b)
-{
+void score_move(MoveData& md, Board* b) {
   constexpr int KILLERMOVESCORE    = 124900;
   constexpr int PROMOTIONMOVESCORE = 50000;
 
@@ -38,8 +34,7 @@ void score_move(MoveData &md, Board *b)
     return value_captured * 20 - value_piece + values[index];
   };
 
-  if constexpr (!Tuning)
-  {
+  if constexpr (!Tuning) {
     if (b->pos->transp_move == md)
       md.score = 890010;
     else if (is_queen_promotion(md))
@@ -60,8 +55,7 @@ void score_move(MoveData &md, Board *b)
       md.score = 60000;
     else
       md.score = b->history_score(md);
-  } else
-  {
+  } else {
     if (is_queen_promotion(md))
       md.score = 890000;
     else if (is_promotion(md))
@@ -73,24 +67,18 @@ void score_move(MoveData &md, Board *b)
   }
 }
 
-void partial_limit_sort(MoveData *begin, MoveData *end, const int limit)
-{
+void partial_limit_sort(MoveData* begin, MoveData* end, const int limit) {
   // Partition: moves with score >= limit to the front
-  MoveData *mid = std::partition(begin, end, [limit](const MoveData &m) {
-    return m.score >= limit;
-  });
+  MoveData* mid = std::partition(begin, end, [limit](const MoveData& m) { return m.score >= limit; });
 
   // Sort only the high-score moves in descending order
-  std::sort(begin, mid, [](const MoveData &a, const MoveData &b) {
-    return a.score > b.score;
-  });
+  std::sort(begin, mid, [](const MoveData& a, const MoveData& b) { return a.score > b.score; });
 }
 
 }   // namespace
 
 template<bool Tuning>
-void Moves<Tuning>::generate_moves(const Move tt_move, const int flags)
-{
+void Moves<Tuning>::generate_moves(const Move tt_move, const int flags) {
   reset(tt_move, flags);
   max_stage_ = END_STAGE;
 
@@ -100,12 +88,10 @@ void Moves<Tuning>::generate_moves(const Move tt_move, const int flags)
   const auto stm = b->side_to_move();
 
   generate_hash_move();
-  if (stm == WHITE)
-  {
+  if (stm == WHITE) {
     generate_captures_and_promotions<WHITE>();
     generate_quiet_moves<WHITE>();
-  } else
-  {
+  } else {
     generate_captures_and_promotions<BLACK>();
     generate_quiet_moves<BLACK>();
   }
@@ -115,8 +101,7 @@ template void Moves<true>::generate_moves(Move, int);
 template void Moves<false>::generate_moves(Move, int);
 
 template<bool Tuning>
-void Moves<Tuning>::generate_captures_and_promotions()
-{
+void Moves<Tuning>::generate_captures_and_promotions() {
   reset(MOVE_NONE, STAGES);
   max_stage_ = QUIET_STAGE;
   stage_     = CAPTURE_STAGE;
@@ -127,15 +112,13 @@ template void Moves<false>::generate_captures_and_promotions();
 
 template<bool Tuning>
 template<Color Us>
-void Moves<Tuning>::generate_moves(const PieceType pt, const Bitboard to_squares)
-{
+void Moves<Tuning>::generate_moves(const PieceType pt, const Bitboard to_squares) {
   reset(MOVE_NONE, 0);
 
   const auto pieces = b->pieces();
   auto bb           = b->pieces(pt, Us);
 
-  while (bb)
-  {
+  while (bb) {
     const auto from = pop_lsb(&bb);
     add_moves<Us>(pt, from, piece_attacks_bb(pt, from, pieces) & to_squares);
   }
@@ -147,18 +130,15 @@ template void Moves<false>::generate_moves<WHITE>(PieceType, Bitboard);
 template void Moves<false>::generate_moves<BLACK>(PieceType, Bitboard);
 
 template<bool Tuning>
-void Moves<Tuning>::generate_pawn_moves(const bool capture, const Bitboard to_squares, const Color c)
-{
+void Moves<Tuning>::generate_pawn_moves(const bool capture, const Bitboard to_squares, const Color c) {
   reset(MOVE_NONE, 0);
 
-  if (c == WHITE)
-  {
+  if (c == WHITE) {
     if (capture)
       add_pawn_capture_moves<WHITE>(to_squares);
     else
       add_pawn_quiet_moves<WHITE>(to_squares);
-  } else
-  {
+  } else {
     if (capture)
       add_pawn_capture_moves<BLACK>(to_squares);
     else
@@ -170,17 +150,15 @@ template void Moves<true>::generate_pawn_moves(bool, Bitboard, Color);
 template void Moves<false>::generate_pawn_moves(bool, Bitboard, Color);
 
 template<bool Tuning>
-const MoveData *Moves<Tuning>::next_move()
-{
+const MoveData* Moves<Tuning>::next_move() {
   return b->side_to_move() == WHITE ? next_move<WHITE>() : next_move<BLACK>();
 }
 
-template const MoveData *Moves<true>::next_move();
-template const MoveData *Moves<false>::next_move();
+template const MoveData* Moves<true>::next_move();
+template const MoveData* Moves<false>::next_move();
 
 template<bool Tuning>
-void Moves<Tuning>::reset(const Move m, const int flags)
-{
+void Moves<Tuning>::reset(const Move m, const int flags) {
   transp_move_  = m;
   move_flags_   = flags;
   iteration_    = 0;
@@ -188,12 +166,10 @@ void Moves<Tuning>::reset(const Move m, const int flags)
   stage_        = TT_STAGE;
 
   [[likely]]
-  if (m)
-  {
+  if (m) {
     const auto mt = type_of(m);
     [[unlikely]]
-    if (mt & (CASTLE | EPCAPTURE))
-    {
+    if (mt & (CASTLE | EPCAPTURE)) {
       // TODO : Finish up Board.is_pseudo_legal()
       // needed because is_pseudo_legal() is not complete yet.
       transp_move_ = MOVE_NONE;
@@ -203,8 +179,7 @@ void Moves<Tuning>::reset(const Move m, const int flags)
 }
 
 template<bool Tuning>
-void Moves<Tuning>::generate_hash_move()
-{
+void Moves<Tuning>::generate_hash_move() {
   if (transp_move_ && b->is_pseudo_legal(transp_move_))
     move_list[number_moves_++] = {.move = transp_move_, .score = 890010};
   ++stage_;
@@ -212,8 +187,7 @@ void Moves<Tuning>::generate_hash_move()
 
 template<bool Tuning>
 template<Color Us>
-void Moves<Tuning>::generate_captures_and_promotions()
-{
+void Moves<Tuning>::generate_captures_and_promotions() {
   constexpr auto Them        = ~Us;
   constexpr auto NorthWest   = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
   constexpr auto NorthEast   = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
@@ -227,8 +201,7 @@ void Moves<Tuning>::generate_captures_and_promotions()
   add_pawn_moves<Us, CAPTURE>(shift_bb<NorthEast>(pawns) & opponent_pieces, NorthEast);
   add_moves<Us>(opponent_pieces);
   [[unlikely]]
-  if (b->en_passant_square() != NO_SQ)
-  {
+  if (b->en_passant_square() != NO_SQ) {
     add_pawn_moves<Us, EPCAPTURE>(shift_bb<NorthWest>(pawns) & b->en_passant_square(), NorthWest);
     add_pawn_moves<Us, EPCAPTURE>(shift_bb<NorthEast>(pawns) & b->en_passant_square(), NorthEast);
   }
@@ -237,16 +210,14 @@ void Moves<Tuning>::generate_captures_and_promotions()
 
 template<bool Tuning>
 template<Color Us>
-void Moves<Tuning>::generate_quiet_moves()
-{
+void Moves<Tuning>::generate_quiet_moves() {
   constexpr auto NotRank7  = ~rank_7[Us];
   constexpr auto Rank3     = rank_3[Us];
   constexpr auto Up        = pawn_push(Us);
   const auto empty_squares = ~b->pieces();
   const auto pushed        = shift_bb<Up>(b->pieces(PAWN, Us) & NotRank7) & empty_squares;
 
-  if (!b->in_check())
-  {
+  if (!b->in_check()) {
     if (can_castle_short<Us>())
       add_castle_move<Us>(b->king_from<KING_SIDE, Us>(), b->king_to<KING_SIDE, Us>());
 
@@ -262,8 +233,7 @@ void Moves<Tuning>::generate_quiet_moves()
 
 template<bool Tuning>
 template<Color Us, MoveType Type>
-void Moves<Tuning>::add_move(const Piece pc, const Square from, const Square to, const Piece promoted)
-{
+void Moves<Tuning>::add_move(const Piece pc, const Square from, const Square to, const Piece promoted) {
   constexpr auto Them = ~Us;
 
   const auto captured = [&]() {
@@ -285,7 +255,7 @@ void Moves<Tuning>::add_move(const Piece pc, const Square from, const Square to,
   if (move_flags_ & LEGALMOVES && !b->is_legal(move, pc, from, Type))
     return;
 
-  auto &move_data = move_list[number_moves_++];
+  auto& move_data = move_list[number_moves_++];
   move_data       = move;
 
   score_move<Tuning>(move_data, b);
@@ -293,13 +263,11 @@ void Moves<Tuning>::add_move(const Piece pc, const Square from, const Square to,
 
 template<bool Tuning>
 template<Color Us, PieceType Pt>
-void Moves<Tuning>::add_piece_moves(const Bitboard to_squares)
-{
+void Moves<Tuning>::add_piece_moves(const Bitboard to_squares) {
   const auto pieces = b->pieces();
 
   auto bb = b->pieces(Pt, Us);
-  while (bb)
-  {
+  while (bb) {
     const auto from = pop_lsb(&bb);
     add_moves<Us>(Pt, from, piece_attacks_bb<Pt>(from, pieces) & to_squares);
   }
@@ -307,8 +275,7 @@ void Moves<Tuning>::add_piece_moves(const Bitboard to_squares)
 
 template<bool Tuning>
 template<Color Us>
-void Moves<Tuning>::add_moves(const Bitboard to_squares)
-{
+void Moves<Tuning>::add_moves(const Bitboard to_squares) {
   add_piece_moves<Us, KING>(to_squares);
   add_piece_moves<Us, QUEEN>(to_squares);
   add_piece_moves<Us, ROOK>(to_squares);
@@ -318,8 +285,7 @@ void Moves<Tuning>::add_moves(const Bitboard to_squares)
 
 template<bool Tuning>
 template<Color Us>
-void Moves<Tuning>::add_moves(const PieceType pt, const Square from, const Bitboard attacks)
-{
+void Moves<Tuning>::add_moves(const PieceType pt, const Square from, const Bitboard attacks) {
   constexpr auto Them = ~Us;
 
   const auto pc = make_piece(pt, Us);
@@ -337,8 +303,7 @@ void Moves<Tuning>::add_moves(const PieceType pt, const Square from, const Bitbo
 
 template<bool Tuning>
 template<Color Us>
-void Moves<Tuning>::add_pawn_quiet_moves(const Bitboard to_squares)
-{
+void Moves<Tuning>::add_pawn_quiet_moves(const Bitboard to_squares) {
   constexpr auto Rank_3    = relative_rank(Us, RANK_3);
   const auto Up            = pawn_push(Us);
   const auto empty_squares = ~b->pieces();
@@ -350,8 +315,7 @@ void Moves<Tuning>::add_pawn_quiet_moves(const Bitboard to_squares)
 
 template<bool Tuning>
 template<Color Us>
-void Moves<Tuning>::add_pawn_capture_moves(const Bitboard to_squares)
-{
+void Moves<Tuning>::add_pawn_capture_moves(const Bitboard to_squares) {
   constexpr auto Them        = ~Us;
   constexpr auto NorthWest   = Us == WHITE ? NORTH_WEST : SOUTH_EAST;
   constexpr auto NorthEast   = Us == WHITE ? NORTH_EAST : SOUTH_WEST;
@@ -361,8 +325,7 @@ void Moves<Tuning>::add_pawn_capture_moves(const Bitboard to_squares)
   add_pawn_moves<Us, CAPTURE>(shift_bb<NorthWest>(pawns) & opponent_pieces & to_squares, NorthWest);
   add_pawn_moves<Us, CAPTURE>(shift_bb<NorthEast>(pawns) & opponent_pieces & to_squares, NorthEast);
   [[unlikely]]
-  if (b->en_passant_square() != NO_SQ)
-  {
+  if (b->en_passant_square() != NO_SQ) {
     add_pawn_moves<Us, EPCAPTURE>(shift_bb<NorthWest>(pawns) & to_squares & b->en_passant_square(), NorthWest);
     add_pawn_moves<Us, EPCAPTURE>(shift_bb<NorthEast>(pawns) & to_squares & b->en_passant_square(), NorthEast);
   }
@@ -370,23 +333,20 @@ void Moves<Tuning>::add_pawn_capture_moves(const Bitboard to_squares)
 
 template<bool Tuning>
 template<Color Us, MoveType Type>
-void Moves<Tuning>::add_pawn_moves(const Bitboard to_squares, const Direction d)
-{
+void Moves<Tuning>::add_pawn_moves(const Bitboard to_squares, const Direction d) {
   constexpr auto Rank8 = bit(relative_rank(Us, RANK_8));
   constexpr auto pawn  = make_piece(PAWN, Us);
 
   Bitboard targets;
 
-  if constexpr (Type != EPCAPTURE)
-  {
+  if constexpr (Type != EPCAPTURE) {
     // promotion moves
 
     targets = to_squares & Rank8;
 
     constexpr auto promo_type = Type | PROMOTION;
 
-    while (targets)
-    {
+    while (targets) {
       const auto to   = pop_lsb(&targets);
       const auto from = to - d;
       add_move<Us, promo_type>(pawn, from, to, make_piece(QUEEN, Us));
@@ -400,8 +360,7 @@ void Moves<Tuning>::add_pawn_moves(const Bitboard to_squares, const Direction d)
 
   targets = to_squares & ~Rank8;
 
-  while (targets)
-  {
+  while (targets) {
     const auto to = pop_lsb(&targets);
     add_move<Us, Type>(pawn, to - d, to);
   }
@@ -409,47 +368,35 @@ void Moves<Tuning>::add_pawn_moves(const Bitboard to_squares, const Direction d)
 
 template<bool Tuning>
 template<Color Us>
-void Moves<Tuning>::add_castle_move(const Square from, const Square to)
-{
+void Moves<Tuning>::add_castle_move(const Square from, const Square to) {
   add_move<Us, CASTLE>(make_piece(KING, Us), from, to);
 }
 
 template<bool Tuning>
 template<Color Us>
-const MoveData *Moves<Tuning>::next_move()
-{
-  while (iteration_ == number_moves_ && stage_ < max_stage_)
-  {
-    switch (stage_)
-    {
-    case TT_STAGE:
-      generate_hash_move();
-      break;
-    case CAPTURE_STAGE:
-      generate_captures_and_promotions<Us>();
-      break;
-    case QUIET_STAGE:
-      generate_quiet_moves<Us>();
-      break;
+const MoveData* Moves<Tuning>::next_move() {
+  while (iteration_ == number_moves_ && stage_ < max_stage_) {
+    switch (stage_) {
+      case TT_STAGE: generate_hash_move(); break;
+      case CAPTURE_STAGE: generate_captures_and_promotions<Us>(); break;
+      case QUIET_STAGE: generate_quiet_moves<Us>(); break;
 
-    default:   // error
-      return nullptr;
+      default:   // error
+        return nullptr;
     }
   }
 
   if (iteration_ == number_moves_)
     return nullptr;
 
-  //partial_limit_sort(&move_list[iteration_], &move_list[number_moves_], 60000);
+  // partial_limit_sort(&move_list[iteration_], &move_list[number_moves_], 60000);
 
-  do
-  {
+  do {
     const auto first_md = &move_list[iteration_];
     const auto end_md   = &move_list[number_moves_];
     const auto best     = std::max_element(first_md, end_md);
 
-    if (max_stage_ > QUIET_STAGE && stage_ == QUIET_STAGE && best->score < 0)
-    {
+    if (max_stage_ > QUIET_STAGE && stage_ == QUIET_STAGE && best->score < 0) {
       generate_quiet_moves<Us>();
       continue;
     }
@@ -464,16 +411,14 @@ const MoveData *Moves<Tuning>::next_move()
 
 template<bool Tuning>
 template<Color Us>
-bool Moves<Tuning>::can_castle_short() const
-{
+bool Moves<Tuning>::can_castle_short() const {
   constexpr auto cr = make_castling<Us, KING_SIDE>();
   return b->can_castle(cr) && !b->is_castleling_impeeded(cr);
 }
 
 template<bool Tuning>
 template<Color Us>
-bool Moves<Tuning>::can_castle_long() const
-{
+bool Moves<Tuning>::can_castle_long() const {
   constexpr auto cr = make_castling<Us, QUEEN_SIDE>();
   return b->can_castle(cr) && !b->is_castleling_impeeded(cr);
 }
@@ -481,7 +426,7 @@ bool Moves<Tuning>::can_castle_long() const
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

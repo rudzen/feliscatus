@@ -27,41 +27,37 @@ concept PRNGCompatible = std::is_convertible_v<T, Key>;
 ///   <http://vigna.di.unimi.it/ftp/papers/xorshift.pdf>
 
 template<typename T>
-requires PRNGCompatible<T> struct PRNG final
-{
+  requires PRNGCompatible<T>
+struct PRNG final {
   PRNG() = delete;
-  constexpr explicit PRNG(const T seed) : s(seed)
-  {
+  constexpr explicit PRNG(const T seed) : s(seed) {
     assert(seed);
   }
 
-  ~PRNG()                 = default;
-  PRNG(const PRNG &other) = delete;
-  PRNG(PRNG &&other)      = delete;
-  PRNG &operator=(const PRNG &) = delete;
-  PRNG &operator=(PRNG &&other) = delete;
+  ~PRNG()                       = default;
+  PRNG(const PRNG& other)       = delete;
+  PRNG(PRNG&& other)            = delete;
+  PRNG& operator=(const PRNG&)  = delete;
+  PRNG& operator=(PRNG&& other) = delete;
 
   [[nodiscard]]
-  constexpr T operator()() noexcept
-  {
+  constexpr T operator()() noexcept {
     return T(rand64());
   }
 
   template<typename T2>
-  requires PRNGCompatible<T>
+    requires PRNGCompatible<T>
   [[nodiscard]]
-  constexpr T rand() noexcept
-  {
+  constexpr T rand() noexcept {
     return T2(rand64());
   }
 
   /// Special generator used to fast init magic numbers.
   /// Output values only have 1/8th of their bits set on average.
   template<typename T2>
-  requires PRNGCompatible<T>
+    requires PRNGCompatible<T>
   [[nodiscard]]
-  constexpr T sparse_rand()
-  {
+  constexpr T sparse_rand() {
     return T2(rand64() & rand64() & rand64());
   }
 
@@ -69,8 +65,7 @@ private:
   std::uint64_t s;
 
   [[nodiscard]]
-  constexpr std::uint64_t rand64()
-  {
+  constexpr std::uint64_t rand64() {
     s ^= s >> 12, s ^= s << 25, s ^= s >> 27;
     return s * 2685821657736338717LL;
   }
@@ -79,7 +74,7 @@ private:
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

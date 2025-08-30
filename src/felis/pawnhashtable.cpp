@@ -7,13 +7,11 @@
 #include <felis/board.hpp>
 #include <felis/parameters.hpp>
 
-namespace Pawn
-{
+namespace Pawn {
 
 template<Color Us>
 [[nodiscard]]
-Score eval_pawns(const Board *b, PawnHashEntry *phe)
-{
+Score eval_pawns(const Board* b, PawnHashEntry* phe) {
   constexpr Color Them     = ~Us;
   Score result             = ZeroScore;
   Bitboard pawns           = b->pieces(PAWN, Us);
@@ -22,8 +20,7 @@ Score eval_pawns(const Board *b, PawnHashEntry *phe)
   phe->open_files[Us]      = ~(pawn_fill[Us](pawn_fill[Them](pawns)) | pawn_fill[Us](pawn_fill[Them](b->pieces(PAWN, Them))));
   phe->half_open_files[Us] = ~fill<NORTH>(fill<SOUTH>(pawns)) & ~phe->open_files[Us];
 
-  while (pawns)
-  {
+  while (pawns) {
     const Square s      = pop_lsb(&pawns);
     const File f        = file_of(s);
     const Square flip_s = relative_square(Them, s);
@@ -47,10 +44,9 @@ Score eval_pawns(const Board *b, PawnHashEntry *phe)
 }
 
 template<>
-PawnHashEntry *at<true>(const Board *b)
-{
+PawnHashEntry* at<true>(const Board* b) {
   const Key pawn_key   = b->pawn_key();
-  PawnHashEntry *entry = b->my_thread()->pawn_hash[pawn_key];
+  PawnHashEntry* entry = b->my_thread()->pawn_hash[pawn_key];
 
   entry->scores[WHITE] = eval_pawns<WHITE>(b, entry);
   entry->scores[BLACK] = eval_pawns<BLACK>(b, entry);
@@ -59,13 +55,11 @@ PawnHashEntry *at<true>(const Board *b)
 }
 
 template<>
-PawnHashEntry *at<false>(const Board *b)
-{
+PawnHashEntry* at<false>(const Board* b) {
   const Key pawn_key   = b->pawn_key();
-  PawnHashEntry *entry = b->my_thread()->pawn_hash[pawn_key];
+  PawnHashEntry* entry = b->my_thread()->pawn_hash[pawn_key];
 
-  if (entry->zkey == 0)
-  {
+  if (entry->zkey == 0) {
     entry->scores[WHITE] = eval_pawns<WHITE>(b, entry);
     entry->scores[BLACK] = eval_pawns<BLACK>(b, entry);
     entry->zkey          = pawn_key;
@@ -79,7 +73,7 @@ PawnHashEntry *at<false>(const Board *b)
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

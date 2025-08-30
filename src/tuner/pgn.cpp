@@ -19,134 +19,96 @@
 #include <felis/types.hpp>
 #include <felis/util.hpp>
 
-enum Token : e8
-{
-  Symbol,
-  Integer,
-  String,
-  NAG,
-  Asterisk,
-  Period,
-  LParen,
-  RParen,
-  LBracket,
-  RBracket,
-  LT,
-  GT,
-  Invalid,
-  None
-};
+enum Token : e8 { Symbol, Integer, String, NAG, Asterisk, Period, LParen, RParen, LBracket, RBracket, LT, GT, Invalid, None };
 
-namespace
-{
+namespace {
 
 const char token_string[][12] = {"Symbol", "Integer", "String", "NAG", "Asterisk", "Period", "LParen", "RParen", "LBracket", "RBracket", "LT", "GT", "Invalid", "None"};
 
-constexpr bool is_white_space(const char c)
-{
+constexpr bool is_white_space(const char c) {
   return c == ' ' || c == '\t' || c == 0x0a || c == 0x0d;
 }
 
 constexpr std::size_t bufsize = 128 * 1024;
 
-bool start_of_castle_move(const char *p)
-{
+bool start_of_castle_move(const char* p) {
   return std::strlen(p) && p[0] == 'O';
 }
 
-bool start_of_promoted_to(const char *p)
-{
+bool start_of_promoted_to(const char* p) {
   return std::strlen(p) && p[0] == '=';
 }
 
-bool is_square(const char *p, Square &square)
-{
-  if (std::strlen(p) > 1 && util::inBetween<'a', 'h'>(p[0]) && util::inBetween<'0', '9'>(p[1]))
-  {
+bool is_square(const char* p, Square& square) {
+  if (std::strlen(p) > 1 && util::inBetween<'a', 'h'>(p[0]) && util::inBetween<'0', '9'>(p[1])) {
     square = static_cast<Square>(((p[1] - '1') << 3) + p[0] - 'a');
     return true;
   }
   return false;
 }
 
-bool is_rank_digit(const char *p, int &rank)
-{
-  if (std::strlen(p) && util::inBetween<'1', '8'>(p[0]))
-  {
+bool is_rank_digit(const char* p, int& rank) {
+  if (std::strlen(p) && util::inBetween<'1', '8'>(p[0])) {
     rank = p[0] - '1';
     return true;
   }
   return false;
 }
 
-bool is_file_letter(const char *p, int &file)
-{
-  if (std::strlen(p) && util::inBetween<'a', 'h'>(p[0]))
-  {
+bool is_file_letter(const char* p, int& file) {
+  if (std::strlen(p) && util::inBetween<'a', 'h'>(p[0])) {
     file = p[0] - 'a';
     return true;
   }
   return false;
 }
 
-bool start_of_pawn_quiet_move(const char *p, Square &to_square)
-{
+bool start_of_pawn_quiet_move(const char* p, Square& to_square) {
   return std::strlen(p) > 1 && is_square(p, to_square);
 }
 
-constexpr bool start_of_tag_pair(const Token token)
-{
+constexpr bool start_of_tag_pair(const Token token) {
   return token == LBracket;
 }
 
-constexpr bool start_of_tag_section(const Token token)
-{
+constexpr bool start_of_tag_section(const Token token) {
   return start_of_tag_pair(token);
 }
 
-constexpr bool start_of_recursive_variation(const Token token)
-{
+constexpr bool start_of_recursive_variation(const Token token) {
   return token == LParen;
 }
 
-constexpr bool start_of_tag_name(const Token token)
-{
+constexpr bool start_of_tag_name(const Token token) {
   return token == Symbol;
 }
 
-constexpr bool start_of_tag_value(const Token token)
-{
+constexpr bool start_of_tag_value(const Token token) {
   return token == String;
 }
 
 }   // namespace
 
-struct PGNFile final
-{
-  PGNFile(const char *path, const int oflag, const i32 pmode)
-  {
+struct PGNFile final {
+  PGNFile(const char* path, const int oflag, const i32 pmode) {
 #if defined(__linux__)
     constexpr int O_BINARY = 0;
 #endif
 
-    if ((fd = open(path, oflag | O_BINARY, pmode)) == -1)
-    {
+    if ((fd = open(path, oflag | O_BINARY, pmode)) == -1) {
       fmt::print(stderr, "File::File: cannot open file");
       exit(EXIT_FAILURE);
     }
   }
 
-  ~PGNFile()
-  {
+  ~PGNFile() {
     close(fd);
   }
 
-  size_t read(uchar *buf, const size_t count) const
-  {
+  size_t read(uchar* buf, const size_t count) const {
     int n;
 
-    if ((n = ::read(fd, buf, count)) == -1)
-    {
+    if ((n = ::read(fd, buf, count)) == -1) {
       fmt::print(stderr, "File::File: cannot read file");
       exit(EXIT_FAILURE);
     }
@@ -159,19 +121,16 @@ private:
 
 class UnexpectedToken final : std::exception {
 public:
-  UnexpectedToken(const Token expected, const char *found, const size_t line)
-  {
+  UnexpectedToken(const Token expected, const char* found, const size_t line) {
     s = fmt::format("Expected <{}> but found '{}', line={}", token_string[expected], found, line);
   }
 
-  UnexpectedToken(const char *expected, const char *found, const size_t line)
-  {
+  UnexpectedToken(const char* expected, const char* found, const size_t line) {
     s = fmt::format("Expected {} but found '{}', line={}", expected, found, line);
   }
 
   [[nodiscard]]
-  const char *str() const
-  {
+  const char* str() const {
     return s.data();
   }
 
@@ -179,25 +138,20 @@ private:
   std::string s;
 };
 
-namespace pgn
-{
+namespace pgn {
 
-PGNFileReader::PGNFileReader() : file_(nullptr)
-{
-  if ((buffer_ = new uchar[bufsize]) == nullptr)
-  {
+PGNFileReader::PGNFileReader() : file_(nullptr) {
+  if ((buffer_ = new uchar[bufsize]) == nullptr) {
     fmt::print(stderr, "PGNFileReader: unable to allocate buffer\n");
     exit(EXIT_FAILURE);
   }
 }
 
-PGNFileReader::~PGNFileReader()
-{
+PGNFileReader::~PGNFileReader() {
   delete[] buffer_;
 }
 
-void PGNFileReader::read(std::string_view path)
-{
+void PGNFileReader::read(std::string_view path) {
   readpos_    = 0;
   fillpos_    = 0;
   line_       = 1;
@@ -209,40 +163,31 @@ void PGNFileReader::read(std::string_view path)
 
   file_ = std::make_unique<PGNFile>(path.data(), O_RDONLY, 0);
 
-  if (file_ == nullptr)
-  {
+  if (file_ == nullptr) {
     fmt::print(stderr, "PGNFileReader::read: unable to create a File\n");
     exit(EXIT_FAILURE);
   }
   read();
 }
 
-void PGNFileReader::read()
-{
-  try
-  {
+void PGNFileReader::read() {
+  try {
     read_token(token_);
     read_pgn_database();
 
     if (token_ != None)
       throw UnexpectedToken("no more tokens", token_str, line_);
-  } catch (const UnexpectedToken &e)
-  {
+  } catch (const UnexpectedToken& e) {
     fmt::print(stderr, "%s\n", e.str());
   }
 }
 
-void PGNFileReader::read_pgn_database()
-{
-  while (start_of_pgn_game())
-  {
-    try
-    {
+void PGNFileReader::read_pgn_database() {
+  while (start_of_pgn_game()) {
+    try {
       read_pgn_game();
-    } catch (...)
-    {
-      do
-      {
+    } catch (...) {
+      do {
         read_token(token_);
 
         if (token_ == None)
@@ -252,17 +197,14 @@ void PGNFileReader::read_pgn_database()
   }
 }
 
-void PGNFileReader::read_pgn_game()
-{
+void PGNFileReader::read_pgn_game() {
   read_tag_section();
   read_move_text_section();
   ++game_count_;
 }
 
-void PGNFileReader::read_tag_section()
-{
-  while (start_of_tag_pair(token_))
-  {
+void PGNFileReader::read_tag_section() {
+  while (start_of_tag_pair(token_)) {
     read_tag_pair();
 
     if (token_ != RBracket)
@@ -272,8 +214,7 @@ void PGNFileReader::read_tag_section()
   }
 }
 
-void PGNFileReader::read_tag_pair()
-{
+void PGNFileReader::read_tag_pair() {
   read_token(token_);
 
   if (token_ != Symbol)
@@ -287,20 +228,17 @@ void PGNFileReader::read_tag_pair()
   read_tag_value();
 }
 
-void PGNFileReader::read_tag_name()
-{
+void PGNFileReader::read_tag_name() {
   strcpy(tag_name_, token_str);
   read_token(token_);
 }
 
-void PGNFileReader::read_tag_value()
-{
+void PGNFileReader::read_tag_value() {
   strcpy(tag_value_, token_str);
   read_token(token_);
 }
 
-void PGNFileReader::read_move_text_section()
-{
+void PGNFileReader::read_move_text_section() {
   read_element_sequence();
 
   if (start_of_game_termination())
@@ -309,10 +247,8 @@ void PGNFileReader::read_move_text_section()
     throw UnexpectedToken("<game-termination>", token_str, line_);
 }
 
-void PGNFileReader::read_element_sequence()
-{
-  do
-  {
+void PGNFileReader::read_element_sequence() {
+  do {
     if (start_of_element())
       read_element();
     else if (start_of_recursive_variation(token_))
@@ -322,12 +258,10 @@ void PGNFileReader::read_element_sequence()
   } while (true);
 }
 
-void PGNFileReader::read_element()
-{
+void PGNFileReader::read_element() {
   if (start_of_move_number_indication())
     read_move_number_indication();
-  else if (start_of_san_move())
-  {
+  else if (start_of_san_move()) {
     read_san_move();
     side_to_move = ~side_to_move;
     read_token(token_);
@@ -335,19 +269,16 @@ void PGNFileReader::read_element()
     read_numeric_annotation_glyph();
 }
 
-void PGNFileReader::read_game_termination()
-{
+void PGNFileReader::read_game_termination() {
   read_token(token_);
 }
 
-void PGNFileReader::read_move_number_indication()
-{
+void PGNFileReader::read_move_number_indication() {
   move_number_ = strtol(token_str, nullptr, 10);
 
   i32 periods = 0;
 
-  do
-  {
+  do {
     read_token(token_);
 
     if (token_ != Period)
@@ -359,8 +290,7 @@ void PGNFileReader::read_move_number_indication()
   side_to_move = periods >= 3 ? BLACK : WHITE;
 }
 
-void PGNFileReader::read_san_move()
-{
+void PGNFileReader::read_san_move() {
   from_piece_  = -1;
   from_file_   = -1;
   from_rank_   = -1;
@@ -372,7 +302,7 @@ void PGNFileReader::read_san_move()
   piece_move_  = false;
   capture_     = false;
 
-  char *p = token_str;
+  char* p = token_str;
 
   if (start_of_pawn_move(p))
     read_pawn_move(p);
@@ -388,8 +318,7 @@ void PGNFileReader::read_san_move()
     throw UnexpectedToken("<end-of-san-move>", p, line_);
 }
 
-bool PGNFileReader::read_san_move_suffix(char *&p)
-{
+bool PGNFileReader::read_san_move_suffix(char*& p) {
   const size_t len = strlen(p);
 
   if (len && (p[0] == '+' || p[0] == '#'))
@@ -404,10 +333,8 @@ bool PGNFileReader::read_san_move_suffix(char *&p)
   return true;
 }
 
-void PGNFileReader::read_pawn_move(char *&p)
-{
-  if (is_pawn_piece_letter(p))
-  {
+void PGNFileReader::read_pawn_move(char*& p) {
+  if (is_pawn_piece_letter(p)) {
     if (start_of_pawn_capture_or_quiet_move(++p))
       read_pawn_capture_or_quiet_move(p);
     else
@@ -418,8 +345,7 @@ void PGNFileReader::read_pawn_move(char *&p)
   pawn_move_ = true;
 }
 
-void PGNFileReader::read_pawn_capture_or_quiet_move(char *&p)
-{
+void PGNFileReader::read_pawn_capture_or_quiet_move(char*& p) {
   if (start_of_pawn_capture(p))
     read_pawn_capture(p);
   else if (start_of_pawn_quiet_move(p, to_square_))
@@ -429,8 +355,7 @@ void PGNFileReader::read_pawn_capture_or_quiet_move(char *&p)
     read_promoted_to(p);
 }
 
-void PGNFileReader::read_pawn_capture(char *&p)
-{
+void PGNFileReader::read_pawn_capture(char*& p) {
   p += 2;
 
   if (!is_square(p, to_square_))
@@ -440,8 +365,7 @@ void PGNFileReader::read_pawn_capture(char *&p)
   capture_ = true;
 }
 
-void PGNFileReader::read_promoted_to(char *&p)
-{
+void PGNFileReader::read_promoted_to(char*& p) {
   p += 1;
 
   if (strlen(p) && is_non_pawn_piece_letter(p, promoted_to))
@@ -450,8 +374,7 @@ void PGNFileReader::read_promoted_to(char *&p)
     throw UnexpectedToken("<piece-letter>", p, line_);
 }
 
-void PGNFileReader::read_move(char *&p)
-{
+void PGNFileReader::read_move(char*& p) {
   p += 1;
 
   if (!start_of_capture_or_quiet_move(p))
@@ -461,16 +384,14 @@ void PGNFileReader::read_move(char *&p)
   piece_move_ = true;
 }
 
-void PGNFileReader::read_capture_or_quiet_move(char *&p)
-{
+void PGNFileReader::read_capture_or_quiet_move(char*& p) {
   if (start_of_capture(p))
     read_capture(p);
   else if (start_of_quiet_move(p))
     read_quiet_move(p);
 }
 
-void PGNFileReader::read_capture(char *&p)
-{
+void PGNFileReader::read_capture(char*& p) {
   if (p[0] == 'x')
     p += 1;
   else if (p[1] == 'x' && (is_rank_digit(p, from_rank_) || is_file_letter(p, from_file_)))
@@ -486,54 +407,45 @@ void PGNFileReader::read_capture(char *&p)
   capture_ = true;
 }
 
-void PGNFileReader::read_castle_move(char *&p)
-{
+void PGNFileReader::read_castle_move(char*& p) {
   const int len = strlen(p);
 
   constexpr i32 queen_side_length = 5;
   constexpr i32 king_side_length  = 3;
 
-  if (len >= queen_side_length && strncmp(p, "O-O-O", queen_side_length) == 0)
-  {
+  if (len >= queen_side_length && strncmp(p, "O-O-O", queen_side_length) == 0) {
     to_square_ = ooo_king_to[side_to_move];
     p += queen_side_length;
-  } else if (len >= king_side_length && strncmp(p, "O-O", king_side_length) == 0)
-  {
+  } else if (len >= king_side_length && strncmp(p, "O-O", king_side_length) == 0) {
     to_square_ = oo_king_to[side_to_move];
     p += king_side_length;
-  } else
-  {
+  } else {
     // error
   }
   from_piece_  = 'K';
   castle_move_ = true;
 }
 
-void PGNFileReader::read_quiet_move(char *&p)
-{
+void PGNFileReader::read_quiet_move(char*& p) {
   if (is_square(p, to_square_))
     p += 2;
-  else if (is_rank_digit(p, from_rank_) || is_file_letter(p, from_file_))
-  {
+  else if (is_rank_digit(p, from_rank_) || is_file_letter(p, from_file_)) {
     p += 1;
 
     if (is_square(p, to_square_))
       p += 2;
     else
       throw UnexpectedToken("<to-square>", token_str, line_);
-  } else
-  {
+  } else {
     // error
   }
 }
 
-void PGNFileReader::read_numeric_annotation_glyph()
-{
+void PGNFileReader::read_numeric_annotation_glyph() {
   read_token(token_);
 }
 
-void PGNFileReader::read_recursive_variation()
-{
+void PGNFileReader::read_recursive_variation() {
   read_token(token_);
   read_element_sequence();
 
@@ -543,23 +455,19 @@ void PGNFileReader::read_recursive_variation()
   read_token(token_);
 }
 
-bool PGNFileReader::start_of_pgn_game()
-{
+bool PGNFileReader::start_of_pgn_game() {
   return start_of_tag_section(token_) || start_of_move_text_section();
 }
 
-bool PGNFileReader::start_of_move_text_section()
-{
+bool PGNFileReader::start_of_move_text_section() {
   return start_of_element();
 }
 
-bool PGNFileReader::start_of_element()
-{
+bool PGNFileReader::start_of_element() {
   return start_of_move_number_indication() || start_of_san_move() || start_of_numeric_annotation_glyph();
 }
 
-bool PGNFileReader::start_of_game_termination()
-{
+bool PGNFileReader::start_of_game_termination() {
   if (token_ != Symbol)
     return false;
 
@@ -575,78 +483,63 @@ bool PGNFileReader::start_of_game_termination()
   return true;
 }
 
-bool PGNFileReader::start_of_move_number_indication() const
-{
+bool PGNFileReader::start_of_move_number_indication() const {
   return token_ == Integer;
 }
 
-bool PGNFileReader::start_of_san_move()
-{
+bool PGNFileReader::start_of_san_move() {
   return token_ == Symbol && (start_of_pawn_move(token_str) || start_of_castle_move(token_str) || start_of_move(token_str));
 }
 
-bool PGNFileReader::start_of_pawn_move(const char *p)
-{
+bool PGNFileReader::start_of_pawn_move(const char* p) {
   return is_pawn_piece_letter(p) || start_of_pawn_capture_or_quiet_move(p);
 }
 
-bool PGNFileReader::is_pawn_piece_letter(const char *p) const
-{
+bool PGNFileReader::is_pawn_piece_letter(const char* p) const {
   return token_ == Symbol && strlen(p) && p[0] == 'P';
 }
 
-bool PGNFileReader::start_of_pawn_capture_or_quiet_move(const char *p)
-{
+bool PGNFileReader::start_of_pawn_capture_or_quiet_move(const char* p) {
   return start_of_pawn_capture(p) || start_of_pawn_quiet_move(p, to_square_);
 }
 
-bool PGNFileReader::start_of_pawn_capture(const char *p)
-{
+bool PGNFileReader::start_of_pawn_capture(const char* p) {
   return (strlen(p) > 1 && p[1] == 'x' && is_file_letter(p, from_file_));
 }
 
-bool PGNFileReader::start_of_move(const char *p)
-{
+bool PGNFileReader::start_of_move(const char* p) {
   return is_non_pawn_piece_letter(p, from_piece_);
 }
 
-bool PGNFileReader::is_non_pawn_piece_letter(const char *p, int &piece_letter) const
-{
-  if (token_ == Symbol && strlen(p) && (p[0] == 'N' || p[0] == 'B' || p[0] == 'R' || p[0] == 'Q' || p[0] == 'K'))
-  {
+bool PGNFileReader::is_non_pawn_piece_letter(const char* p, int& piece_letter) const {
+  if (token_ == Symbol && strlen(p) && (p[0] == 'N' || p[0] == 'B' || p[0] == 'R' || p[0] == 'Q' || p[0] == 'K')) {
     piece_letter = p[0];   // NOLINT(bugprone-signed-char-misuse)
     return true;
   }
   return false;
 }
 
-bool PGNFileReader::start_of_capture_or_quiet_move(const char *p)
-{
+bool PGNFileReader::start_of_capture_or_quiet_move(const char* p) {
   return start_of_capture(p) || start_of_quiet_move(p);
 }
 
-bool PGNFileReader::start_of_capture(const char *p)
-{
+bool PGNFileReader::start_of_capture(const char* p) {
   return (strlen(p) && p[0] == 'x') || (strlen(p) > 1 && p[1] == 'x' && is_rank_digit(p, from_rank_)) || (strlen(p) > 1 && p[1] == 'x' && is_file_letter(p, from_file_)) || (strlen(p) > 2 && p[2] == 'x' && is_square(p, from_square_));
 }
 
-bool PGNFileReader::start_of_quiet_move(const char *p)
-{
+bool PGNFileReader::start_of_quiet_move(const char* p) {
   return (strlen(p) > 1 && is_square(p, from_square_)) || (strlen(p) && is_rank_digit(p, from_rank_)) || (strlen(p) && is_file_letter(p, from_file_));
 }
 
-bool PGNFileReader::start_of_numeric_annotation_glyph()
-{
+bool PGNFileReader::start_of_numeric_annotation_glyph() {
   return strlen(token_str) && token_str[0] == '$';
 }
 
 //---------
 // scan for tokens
 //
-void PGNFileReader::read_token(Token &token)
-{
-  do
-  {
+void PGNFileReader::read_token(Token& token) {
+  do {
     read_next_token(token);
 
     if (strict_ || (token != Invalid && token != LT && token != GT))
@@ -654,19 +547,16 @@ void PGNFileReader::read_token(Token &token)
   } while (true);
 }
 
-void PGNFileReader::read_next_token(Token &token)
-{
+void PGNFileReader::read_next_token(Token& token) {
   const auto get = (token != Symbol && token != Integer && token != String && token != NAG);
 
-  if (get || is_white_space(ch_) || ch_ == '{' || ch_ == ';')
-  {
+  if (get || is_white_space(ch_) || ch_ == '{' || ch_ == ';') {
     const auto n = get_char(ch_, get, true, true);
 
     if (n == -1)
       throw 0;
 
-    if (n == 0)
-    {
+    if (n == 0) {
       token        = None;
       token_str[0] = '\0';
       return;
@@ -680,56 +570,34 @@ void PGNFileReader::read_next_token(Token &token)
   if (read_string())
     return;
 
-  switch (ch_)
-  {
-  case '[':
-    token = LBracket;
-    break;
+  switch (ch_) {
+    case '[': token = LBracket; break;
 
-  case ']':
-    token = RBracket;
-    break;
+    case ']': token = RBracket; break;
 
-  case '(':
-    token = LParen;
-    break;
+    case '(': token = LParen; break;
 
-  case ')':
-    token = RParen;
-    break;
+    case ')': token = RParen; break;
 
-  case '.':
-    token = Period;
-    break;
+    case '.': token = Period; break;
 
-  case '*':
-    token = Asterisk;
-    break;
+    case '*': token = Asterisk; break;
 
-  case '<':
-    token = LT;
-    break;
+    case '<': token = LT; break;
 
-  case '>':
-    token = GT;
-    break;
+    case '>': token = GT; break;
 
-  default:
-    token = Invalid;
-    break;
+    default: token = Invalid; break;
   }
   token_str[0] = ch_;
   token_str[1] = '\0';
 }
 
-int PGNFileReader::get_char(unsigned char &c)
-{
+int PGNFileReader::get_char(unsigned char& c) {
   auto escape = false;
 
-  do
-  {
-    if (fillpos_ <= readpos_)
-    {
+  do {
+    if (fillpos_ <= readpos_) {
       fillpos_ = fillpos_ % bufsize;
 
       const int n = file_->read(buffer_ + fillpos_, bufsize - fillpos_);
@@ -742,13 +610,11 @@ int PGNFileReader::get_char(unsigned char &c)
     readpos_ = readpos_ % bufsize;
     c        = buffer_[readpos_++];
 
-    if (c == 0x0a || c == 0x0d)
-    {
+    if (c == 0x0a || c == 0x0d) {
       escape = false;
       pos_   = 1;
       line_++;   // not always
-    } else
-    {
+    } else {
       if (++pos_ == 2 && c == '%')
         escape = true;
     }
@@ -756,16 +622,14 @@ int PGNFileReader::get_char(unsigned char &c)
   return 1;
 }
 
-bool PGNFileReader::read_symbol()
-{
+bool PGNFileReader::read_symbol() {
   if (!std::isalnum(ch_))
     return false;
 
   auto len    = 0;
   auto digits = true;
 
-  do
-  {
+  do {
     digits           = digits && std::isdigit(ch_) != 0;
     token_str[len++] = ch_;
 
@@ -780,8 +644,7 @@ bool PGNFileReader::read_symbol()
       break;
   } while (true);
 
-  while (ch_ == '!' || ch_ == '?')
-  {
+  while (ch_ == '!' || ch_ == '?') {
     digits           = false;
     token_str[len++] = ch_;
 
@@ -798,15 +661,13 @@ bool PGNFileReader::read_symbol()
   return true;
 }
 
-bool PGNFileReader::read_nag()
-{
+bool PGNFileReader::read_nag() {
   if (ch_ != '$')
     return false;
 
   int len = 0;
 
-  do
-  {
+  do {
     token_str[len++] = ch_;
 
     const auto n = get_char(ch_, true, false, false);
@@ -827,8 +688,7 @@ bool PGNFileReader::read_nag()
   return true;
 }
 
-bool PGNFileReader::read_string()
-{
+bool PGNFileReader::read_string() {
   if (ch_ != '\"')
     return false;
 
@@ -836,8 +696,7 @@ bool PGNFileReader::read_string()
   i32 i     = 0;
   char prev = 0;
 
-  do
-  {
+  do {
     token_str[len++] = ch_;
 
     if (ch_ == '\"' && prev != '\\')
@@ -852,8 +711,7 @@ bool PGNFileReader::read_string()
     if (n == 0)
       break;
 
-    if (i == 2)
-    {
+    if (i == 2) {
       token_ = String;
       break;
     }
@@ -862,12 +720,9 @@ bool PGNFileReader::read_string()
   return true;
 }
 
-int PGNFileReader::get_char(unsigned char &c, bool get, const bool skip_ws, const bool skip_comment)
-{
-  do
-  {
-    if (get)
-    {
+int PGNFileReader::get_char(unsigned char& c, bool get, const bool skip_ws, const bool skip_comment) {
+  do {
+    if (get) {
       const i32 n = get_char(c);
 
       if (n <= 0)
@@ -880,8 +735,7 @@ int PGNFileReader::get_char(unsigned char &c, bool get, const bool skip_ws, cons
 
     if (skip_comment && c == '{')
       read_comment1();
-    else if (skip_comment && c == ';')
-    {
+    else if (skip_comment && c == ';') {
       read_comment2(c);
       get = false;
     } else
@@ -891,13 +745,11 @@ int PGNFileReader::get_char(unsigned char &c, bool get, const bool skip_ws, cons
   return 1;
 }
 
-void PGNFileReader::read_comment1()
-{
+void PGNFileReader::read_comment1() {
   uchar c;
-  char *p = comment_;
+  char* p = comment_;
 
-  do
-  {
+  do {
     const i32 n = get_char(c);
 
     if (n <= 0)
@@ -906,8 +758,7 @@ void PGNFileReader::read_comment1()
     if (c == '}')
       break;
 
-    if (p - comment_ <= 2047)
-    {
+    if (p - comment_ <= 2047) {
       *p = c;
       ++p;
     }
@@ -916,19 +767,15 @@ void PGNFileReader::read_comment1()
   *p = '\0';
 }
 
-void PGNFileReader::read_comment2(uchar &c)
-{
-  do
-  {
+void PGNFileReader::read_comment2(uchar& c) {
+  do {
     i32 n = get_char(c);
 
     if (n <= 0)
       return;
 
-    if (c == 0x0a || c == 0x0d)
-    {
-      do
-      {
+    if (c == 0x0a || c == 0x0d) {
+      do {
         n = get_char(c);
 
         if (n <= 0)
@@ -947,7 +794,7 @@ void PGNFileReader::read_comment2(uchar &c)
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

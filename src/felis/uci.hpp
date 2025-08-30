@@ -19,56 +19,30 @@
 
 struct Board;
 
-namespace uci
-{
+namespace uci {
 
 inline CpuLoad Cpu;
 
-enum class UciOptions
-{
-  THREADS,
-  HASH,
-  HASH_X_THREADS,
-  CLEAR_HASH,
-  CLEAR_HASH_NEW_GAME,
-  PONDER,
-  UCI_Chess960,
-  SHOW_CPU,
-  USE_BOOK,
-  BOOKS,
-  BOOK_BEST_MOVE,
-  UCI_OPT_NB = 11
-};
+enum class UciOptions { THREADS, HASH, HASH_X_THREADS, CLEAR_HASH, CLEAR_HASH_NEW_GAME, PONDER, UCI_Chess960, SHOW_CPU, USE_BOOK, BOOKS, BOOK_BEST_MOVE, UCI_OPT_NB = 11 };
 
 using uci_t = std::underlying_type_t<UciOptions>;
 
 template<UciOptions Option>
 [[nodiscard]]
-constexpr std::string_view uciName()
-{
-  constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB)> UciStrings{
-    "Threads",      "Hash",           "Hash * Threads", "Clear Hash", "Clear hash on new game", "Ponder",
-    "UCI_Chess960", "Show CPU usage", "Use book",       "Books",      "Best Book Move"};
+constexpr std::string_view uciName() {
+  constexpr std::array<std::string_view, static_cast<uci_t>(UciOptions::UCI_OPT_NB)> UciStrings{"Threads", "Hash", "Hash * Threads", "Clear Hash", "Clear hash on new game", "Ponder", "UCI_Chess960", "Show CPU usage", "Use book", "Books", "Best Book Move"};
 
   return UciStrings[static_cast<uci_t>(Option)];
 }
 
 class Option;
 
-enum class OptionType
-{
-  String,
-  Check,
-  Button,
-  Spin,
-  Combo
-};
+enum class OptionType { String, Check, Button, Spin, Combo };
 
 using option_type_t = std::underlying_type_t<OptionType>;
 
 /// Custom comparator because UCI options should be case insensitive
-struct CaseInsensitiveLess final
-{
+struct CaseInsensitiveLess final {
   bool operator()(std::string_view, std::string_view) const noexcept;
 };
 
@@ -78,7 +52,7 @@ using OptionsMap = std::map<std::string_view, Option, CaseInsensitiveLess>;
 /// Option class implements an option as defined by UCI protocol
 class [[nodiscard]] Option final {
 
-  typedef void (*on_change)(const Option &);
+  typedef void (*on_change)(const Option&);
 
 public:
   [[nodiscard]]
@@ -88,24 +62,24 @@ public:
   Option(bool v, on_change = nullptr);
 
   [[nodiscard]]
-  Option(const char *v, on_change = nullptr);
+  Option(const char* v, on_change = nullptr);
 
   [[nodiscard]]
   Option(int v, int minv, int maxv, on_change = nullptr);
 
   [[nodiscard]]
-  Option(std::span<std::string> variants, const char *cur, on_change = nullptr);
+  Option(std::span<std::string> variants, const char* cur, on_change = nullptr);
 
-  Option &operator=(const std::string &) noexcept;
+  Option& operator=(const std::string&) noexcept;
 
-  void operator<<(const Option &);
+  void operator<<(const Option&);
 
   [[nodiscard]] operator int() const;
 
   [[nodiscard]] operator std::string_view() const;
 
   [[nodiscard]]
-  bool operator==(const char *) const;
+  bool operator==(const char*) const;
 
   [[nodiscard]]
   std::size_t index() const noexcept;
@@ -139,7 +113,7 @@ private:
   on_change on_change_{};
 };
 
-void init(OptionsMap &, std::span<std::string>);
+void init(OptionsMap&, std::span<std::string>);
 
 void postMoves(Move m, Move ponderMove);
 
@@ -147,7 +121,7 @@ void postInfo(int d, int selectiveDepth);
 
 void postCurrMove(Move m, int number);
 
-void postPv(int d, int maxPly, int score, const std::span<PVEntry> &pvLine, NodeType nt);
+void postPv(int d, int maxPly, int score, const std::span<PVEntry>& pvLine, NodeType nt);
 
 [[nodiscard]]
 std::string displayUci(Move m);
@@ -155,36 +129,33 @@ std::string displayUci(Move m);
 [[nodiscard]]
 std::string info(std::string_view infoString);
 
-void run(int argc, char *argv[]);
+void run(int argc, char* argv[]);
 
 }   // namespace uci
 
 constinit inline uci::OptionsMap Options;
 
 /// Options formatter
-template <>
-struct fmt::formatter<uci::OptionsMap> : formatter<string_view>
-{
+template<>
+struct fmt::formatter<uci::OptionsMap> : formatter<string_view> {
   // use inherited 'formatter<string_view>::parse'…
   // … and only implement 'format':
-  template <typename FmtContext>
-  auto format (const uci::OptionsMap& om, FmtContext& ctx) {
+  template<typename FmtContext>
+  auto format(const uci::OptionsMap& om, FmtContext& ctx) {
     static constexpr std::array<std::string_view, 5> Types{"string", "check", "button", "spin", "combo"};
     fmt::memory_buffer buffer;
     auto inserter = std::back_inserter(buffer);
 
     for (std::size_t idx = 0; idx < om.size(); ++idx)
-      for (const auto &it : om)
-      {
+      for (const auto& it : om) {
         if (it.second.index() != idx)
           continue;
 
-        const auto &o            = it.second;
-        const auto type          = o.type();
-        const auto defaultValue  = o.defaultValue();
+        const auto& o           = it.second;
+        const auto type         = o.type();
+        const auto defaultValue = o.defaultValue();
 
-        fmt::format_to(inserter, "\noption name {} type {} ", it.first,
-        Types[static_cast<uci::option_type_t>(type)]);
+        fmt::format_to(inserter, "\noption name {} type {} ", it.first, Types[static_cast<uci::option_type_t>(type)]);
 
         if (type != uci::OptionType::Button && type != uci::OptionType::Combo)
           fmt::format_to(inserter, "default {}", defaultValue);
@@ -192,15 +163,12 @@ struct fmt::formatter<uci::OptionsMap> : formatter<string_view>
         if (type == uci::OptionType::Spin)
           fmt::format_to(inserter, "min {} max {}", o.min(), o.max());
 
-        if (type == uci::OptionType::Combo)
-        {
+        if (type == uci::OptionType::Combo) {
           namespace fs = std::filesystem;
 
           fmt::format_to(inserter, "default {}", fs::path(o.currentValue()).filename().string());
 
-          std::for_each(o.variants().begin(), o.variants().end(), [&inserter](const auto v) {
-            fmt::format_to(inserter, " var {}", fs::path(v).filename().string());
-          });
+          std::for_each(o.variants().begin(), o.variants().end(), [&inserter](const auto v) { fmt::format_to(inserter, " var {}", fs::path(v).filename().string()); });
         }
 
         break;
@@ -259,31 +227,25 @@ struct fmt::formatter<uci::OptionsMap> : formatter<string_view>
 // };
 
 template<>
-struct fmt::formatter<Move> : formatter<std::string_view>
-{
+struct fmt::formatter<Move> : formatter<std::string_view> {
   template<typename FormatContext>
-  auto format(const Move m, FormatContext &ctx)
-  {
+  auto format(const Move m, FormatContext& ctx) {
     return formatter<std::string_view>::format(uci::displayUci(m), ctx);
   }
 };
 
 template<>
-struct fmt::formatter<Square> : formatter<std::string_view>
-{
+struct fmt::formatter<Square> : formatter<std::string_view> {
   template<typename FormatContext>
-  auto format(const Square s, FormatContext &ctx)
-  {
+  auto format(const Square s, FormatContext& ctx) {
     return formatter<std::string_view>::format(SquareString[s], ctx);
   }
 };
 
 template<>
-struct fmt::formatter<File> : formatter<std::string_view>
-{
+struct fmt::formatter<File> : formatter<std::string_view> {
   template<typename FormatContext>
-  auto format(const File f, FormatContext &ctx)
-  {
+  auto format(const File f, FormatContext& ctx) {
     return formatter<std::string_view>::format('a' + static_cast<char>(f), ctx);
   }
 };
@@ -291,7 +253,7 @@ struct fmt::formatter<File> : formatter<std::string_view>
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

@@ -9,51 +9,42 @@
 #include <fmt/format.h>
 
 /// Multivalued type which is used to hold the mg and mg scores.
-struct Score final
-{
+struct Score final {
   [[nodiscard]]
   constexpr Score() = default;
   [[nodiscard]]
   constexpr Score(const int mg, const int eg)
-    : value(static_cast<int>(static_cast<unsigned int>(eg) << 16) + mg)
-  { }
+    : value(static_cast<int>(static_cast<unsigned int>(eg) << 16) + mg) {}
 
-  constexpr Score(const std::array<int, 2> &arr)
-    : Score(arr[0], arr[1])
-  {}
+  constexpr Score(const std::array<int, 2>& arr) : Score(arr[0], arr[1]) {}
 
   [[nodiscard]]
-  constexpr Score(const int v) : value(v)
-  { }
+  constexpr Score(const int v)
+    : value(v) {}
 
   [[nodiscard]]
-  constexpr Score &operator=(const int v) noexcept
-  {
+  constexpr Score& operator=(const int v) noexcept {
     value = v;
     return *this;
   }
 
   [[nodiscard]]
-  constexpr bool operator==(const Score &b) const
-  {
+  constexpr bool operator==(const Score& b) const {
     return value == b.value;
   }
 
-  constexpr Score &operator+=(const int d2) noexcept
-  {
+  constexpr Score& operator+=(const int d2) noexcept {
     this->value += d2;
     return *this;
   }
 
-  constexpr Score &operator-=(const int d2) noexcept
-  {
+  constexpr Score& operator-=(const int d2) noexcept {
     value -= d2;
     return *this;
   }
 
   [[nodiscard]]
-  constexpr int eg() const noexcept
-  {
+  constexpr int eg() const noexcept {
     const union {
       std::uint16_t u;
       std::int16_t s;
@@ -62,8 +53,7 @@ struct Score final
   }
 
   [[nodiscard]]
-  constexpr int mg() const noexcept
-  {
+  constexpr int mg() const noexcept {
     const union {
       std::uint16_t u;
       std::int16_t s;
@@ -72,26 +62,22 @@ struct Score final
   }
 
   [[nodiscard]]
-  constexpr int raw() const noexcept
-  {
+  constexpr int raw() const noexcept {
     return value;
   }
 
   [[nodiscard]]
-  constexpr int combine() const noexcept
-  {
+  constexpr int combine() const noexcept {
     return mg() - eg();
   }
 
   [[nodiscard]]
-  constexpr std::array<int, 2> array() const
-  {
-    return { mg(), eg() };
+  constexpr std::array<int, 2> array() const {
+    return {mg(), eg()};
   }
 
   [[nodiscard]]
-  constexpr std::pair<int, int> pair() const
-  {
+  constexpr std::pair<int, int> pair() const {
     return std::make_pair(mg(), eg());
   }
 
@@ -101,47 +87,39 @@ private:
 
 constexpr Score ZeroScore = Score(0);
 
-constexpr Score operator+(const Score d1, const int d2) noexcept
-{
+constexpr Score operator+(const Score d1, const int d2) noexcept {
   return d1.raw() + d2;
 }
 
-constexpr Score operator-(const Score d1, const int d2) noexcept
-{
+constexpr Score operator-(const Score d1, const int d2) noexcept {
   return d1.raw() - d2;
 }
 
-constexpr Score operator-(const Score d1, const Score d2) noexcept
-{
+constexpr Score operator-(const Score d1, const Score d2) noexcept {
   return {d1.mg() - d2.mg(), d1.eg() - d2.eg()};
 }
 
-constexpr Score operator-(const Score d) noexcept
-{
+constexpr Score operator-(const Score d) noexcept {
   return -d.raw();
 }
 
-constexpr Score &operator+=(Score &d1, const Score d2) noexcept
-{
+constexpr Score& operator+=(Score& d1, const Score d2) noexcept {
   return d1 = {d1.mg() + d2.mg(), d1.eg() + d2.eg()};
 }
 
-constexpr Score &operator-=(Score &d1, const Score d2) noexcept
-{
+constexpr Score& operator-=(Score& d1, const Score d2) noexcept {
   return d1 = {d1.mg() - d2.mg(), d1.eg() - d2.eg()};
 }
 
 /// Division of a Score must be handled separately for each term
-constexpr Score operator/(const Score s, const int i)
-{
+constexpr Score operator/(const Score s, const int i) {
   return {s.mg() / i, s.eg() / i};
 }
 
 Score operator*(Score, Score) = delete;
 
 /// Multiplication of a Score by an integer. We check for overflow in debug mode.
-constexpr Score operator*(const Score s, const int i)
-{
+constexpr Score operator*(const Score s, const int i) {
   const auto result = Score(s.raw() * i);
 
   assert(result.eg() == i * s.eg());
@@ -152,17 +130,18 @@ constexpr Score operator*(const Score s, const int i)
 }
 
 /// Multiplication of a Score by a boolean
-constexpr Score operator*(const Score s, const bool b)
-{
+constexpr Score operator*(const Score s, const bool b) {
   return b ? s : ZeroScore;
 }
 
-template <>
+template<>
 struct fmt::formatter<Score> {
   // Parse format specifications (none supported here)
-  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+  constexpr auto parse(format_parse_context& ctx) {
+    return ctx.begin();
+  }
 
-  template <typename FormatContext>
+  template<typename FormatContext>
   auto format(const Score& s, FormatContext& ctx) {
     return fmt::format_to(ctx.out(), "m:{} e:{}", s.mg(), s.eg());
   }
@@ -171,7 +150,7 @@ struct fmt::formatter<Score> {
 // Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
 // Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
 // Copyright (C) 2017      FireFather (Tomcat author)
-// Copyright (C) 2020-2022 Rudy Alex Kohn
+// Copyright (C) 2020-2025 Rudy Alex Kohn
 //
 // Feliscatus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
