@@ -1,0 +1,66 @@
+// Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
+// Copyright (C) 2017      FireFather (Tomcat author)
+// Copyright (C) 2020-2025 Rudy Alex Kohn
+// See end of file for extended copyright information.
+
+#include <string>
+#include <memory>
+#include <chrono>
+#include <fmt/format.h>
+#include <cli/cli_parser.hpp>
+#include <tuner/tune.hpp>
+#include <felis/board.hpp>
+#include <felis/bitboard.hpp>
+#include <felis/transpositional.hpp>
+#include <felis/tpool.hpp>
+#include <felis/parameters.hpp>
+
+namespace {
+
+constexpr auto title =
+  R"(
+     ___    _ _     ___      _
+    | __|__| (_)___/ __|__ _| |_ _  _ ___
+    | _/ -_) | (_-< (__/ _` |  _| || (_-<
+    |_|\___|_|_/__/\___\__,_|\__|\_,_/__/
+           | |_ _  _ _ _  ___ _ _
+           |  _| || | ' \/ -_) '_|
+            \__|\_,_|_||_\___|_|)";
+
+}   // namespace
+
+int main(const int argc, char** argv) {
+  fmt::print("{}\n", title);
+
+  const auto cli_parser_settings = cli::makeParser(argc, argv, title, ParserType::Tuner);
+
+  TT.init(256);
+  params::init();
+
+  bitboard::init();
+  Board::init();
+
+  Stopwatch sw;
+  start(&sw);
+  auto t             = eval::Tune(std::make_unique<Board>(), cli_parser_settings.get());
+  const auto seconds = elapsed_seconds(&sw);
+  fmt::print("{} seconds\n", seconds);
+}
+
+// Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
+// Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
+// Copyright (C) 2017      FireFather (Tomcat author)
+// Copyright (C) 2020-2025 Rudy Alex Kohn
+//
+// Feliscatus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Feliscatus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Feliscatus.  If not, see <http://www.gnu.org/licenses/>.

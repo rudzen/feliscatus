@@ -1,0 +1,155 @@
+// Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
+// Copyright (C) 2017      FireFather (Tomcat author)
+// Copyright (C) 2020-2025 Rudy Alex Kohn
+// See end of file for extended copyright information.
+
+#pragma once
+
+#include <array>
+#include <atomic>
+#include <mutex>
+#include <thread>
+#include <condition_variable>
+#include <string_view>
+#include <vector>
+#include <functional>
+#include <felis/transpositional.hpp>
+#include <felis/pawnhashtable.hpp>
+#include <felis/time.hpp>
+#include <felis/types.hpp>
+#include <felis/arena.h>
+
+/// Main thread pool header
+/// Contains pool, thread and main_thread
+
+using HistoryScores = std::array<std::array<int, SQ_NB>, 16>;
+using CounterMoves  = std::array<std::array<Move, SQ_NB>, 16>;
+
+struct SearchLimits;
+
+enum class Searcher { Master, Slave };
+
+struct thread {
+  explicit thread(size_t index);
+  virtual ~thread();
+  thread(const thread& other)       = delete;
+  thread(thread&& other)            = delete;
+  thread& operator=(const thread&)  = delete;
+  thread& operator=(thread&& other) = delete;
+
+  virtual void search();
+  void clearData();
+  void idleLoop();
+  void start_searching();
+  void wait_for_search_finished();
+
+  [[nodiscard]]
+  size_t index() const {
+    return idx;
+  }
+
+  PawnHashTable pawn_hash{};
+  HistoryScores history_scores{};
+  CounterMoves counter_moves{};
+  std::array<std::array<PVEntry, MAXDEPTH>, MAXDEPTH> pv{};
+  std::array<i32, MAXDEPTH> pv_length{};
+  std::atomic_uint64_t node_count;
+  std::condition_variable waiter;
+  Board* root_board{};
+  std::array<i32, COL_NB> draw_score{};
+
+private:
+  std::jthread jthread;
+  std::mutex mutex;
+  std::condition_variable cv;
+  size_t idx;
+  std::atomic_bool exit{};
+  std::atomic_bool searching{};
+};
+
+struct main_thread final : thread {
+  using thread::thread;
+
+  void search() override;
+
+  std::atomic_bool ponder;
+  Time time{};
+};
+
+struct thread_pool final : std::vector<thread*> {
+  thread_pool();
+  ~thread_pool()                              = default;
+  thread_pool(const thread_pool& other)       = delete;
+  thread_pool(thread_pool&& other)            = delete;
+  thread_pool& operator=(const thread_pool&)  = delete;
+  thread_pool& operator=(thread_pool&& other) = delete;
+
+  void set(size_t v);
+
+  void start_thinking(std::string_view fen);
+  void start_searching();
+  void wait_for_search_finished();
+
+  [[nodiscard]]
+  main_thread* main() const {
+    return static_cast<main_thread*>(front());
+  }
+
+  void clear_data() const;
+
+  [[nodiscard]]
+  u64 node_count() const;
+
+  [[nodiscard]]
+  bool is_analysing() const noexcept {
+    return limits->infinite | limits->ponder;
+  }
+
+  [[nodiscard]]
+  bool is_fixed_depth() const noexcept {
+    return limits->fixed_depth;
+  }
+
+  [[nodiscard]]
+  i32 depth() const noexcept {
+    return limits->depth;
+  }
+
+  SearchLimits* limits;
+  std::atomic_bool stop;
+
+#if !defined(linux)
+private:
+  [[nodiscard]]
+  u64 node_count_par() const;
+
+  [[nodiscard]]
+  u64 node_count_seq() const;
+
+  bool parallel{};
+  const std::array<std::function<u64()>, 2> node_counters;
+#endif
+
+  static Arena thread_arena;
+};
+
+// global data object
+inline thread_pool pool;
+
+// Feliscatus, a UCI chess playing engine derived from Tomcat 1.0 (Bobcat 8.0)
+// Copyright (C) 2008-2016 Gunnar Harms (Bobcat author)
+// Copyright (C) 2017      FireFather (Tomcat author)
+// Copyright (C) 2020-2025 Rudy Alex Kohn
+//
+// Feliscatus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Feliscatus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Feliscatus.  If not, see <http://www.gnu.org/licenses/>.
